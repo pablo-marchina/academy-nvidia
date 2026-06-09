@@ -5,9 +5,9 @@ from __future__ import annotations
 from bs4 import BeautifulSoup
 
 try:
-    import trafilatura
+    import trafilatura  # type: ignore[import-not-found]
 except ImportError:  # pragma: no cover - optional at runtime
-    trafilatura = None
+    trafilatura = None  # type: ignore[assignment]
 
 
 def extract_clean_text(raw_html: str) -> str:
@@ -16,7 +16,7 @@ def extract_clean_text(raw_html: str) -> str:
     if trafilatura is not None:
         extracted = trafilatura.extract(raw_html)
         if extracted:
-            return extracted.strip()
+            return extracted.strip()  # type: ignore[no-any-return]
 
     soup = BeautifulSoup(raw_html, "html.parser")
     return soup.get_text(separator=" ", strip=True)
