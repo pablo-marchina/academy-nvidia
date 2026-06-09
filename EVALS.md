@@ -15,11 +15,11 @@
 | Inception Fit Score | `tests/unit/test_inception_fit_score.py` | 6 | ✅ |
 | Production Readiness | `tests/unit/test_production_readiness.py` | 6 | ✅ |
 | Composite Ranking | `tests/unit/test_composite_ranking.py` | 9 | ✅ |
-| Gap Diagnosis | `tests/unit/test_gap_diagnosis.py` | 9 | ✅ |
+| Gap Diagnosis | `tests/unit/test_gap_diagnosis.py` | 14 | ✅ |
 | NVIDIA Mapping | `tests/unit/test_nvidia_mapping.py` | 6 | ✅ |
 | Gap Taxonomy | `tests/unit/test_gap_taxonomy.py` | 1 | ✅ |
 | Pipeline | `tests/unit/test_pipeline.py` | 5 | ✅ |
-| **Total** | **15 arquivos** | **112** | **100% pass** |
+| **Total** | **15 arquivos** | **117** | **100% pass** |
 
 ## Cobertura por módulo
 
@@ -39,7 +39,6 @@
 | `pipeline/run_pipeline.py` | ✅ REAL | ✅ | 5 |
 | `diagnosis/gap_diagnosis.py` | ✅ REAL | ✅ | 9 |
 | `diagnosis/nvidia_mapping.py` | ✅ REAL | ✅ | 6 |
-| `recommendation/gap_taxonomy.py` | ✅ REAL | ✅ | 1 |
 | `config/settings.py` | ✅ REAL | ❌ | 0 |
 | `agents/` (9 files) | ❌ STUB | ❌ | 0 |
 | `rag/` (4 files) | ❌ STUB | ❌ | 0 |
@@ -70,6 +69,8 @@
 | Gap Diagnosis | 7 gaps + inferência + evidência faltante | ✅ |
 | NVIDIA Mapping | Gap conhecido/desconhecido, cobertura total | ✅ |
 | Pipeline | Ordem, evidência fraca, raw text, shape | ✅ |
+| Gap Diagnosis | 14 testes (10 gaps individuais + e2e + missing evidence) | ✅ |
+| NVIDIA Mapping | Gap conhecido/desconhecido, coverage total (15/15 gaps) | ✅ |
 
 ## Métricas aspiracionais (futuras)
 

@@ -274,6 +274,98 @@ class TestGapDiagnosis:
         for msg in result.missing_evidence:
             assert "inference" in msg or "inferred" in msg
 
+    def test_latency_gap(self) -> None:
+        """Startup with latency keywords without NVIDIA tech."""
+        profile = _make_profile(
+            tech_stack=["Python", "Flask"],
+            ai_signals=["AI signal: real-time", "AI signal: inference"],
+            description="Real-time inference API with low-latency requirements.",
+            product_summary="Low latency serving platform.",
+        )
+        result = diagnose_gaps(
+            "Latency Startup",
+            profile,
+            _make_classification(AINativeLevel.AI_NATIVE),
+            [],
+        )
+        gap = _find_gap(result, "high_latency")
+        assert gap is not None
+        assert gap.detected
+
+    def test_data_pipeline_gap(self) -> None:
+        """Startup with data tech without RAPIDS."""
+        profile = _make_profile(
+            tech_stack=["Python", "Kafka", "Spark", "Airflow"],
+            ai_signals=["AI signal: data pipeline"],
+            description="Data processing platform with large-scale ETL pipelines.",
+            product_summary="ETL platform for batch processing.",
+        )
+        result = diagnose_gaps(
+            "Data Startup",
+            profile,
+            _make_classification(AINativeLevel.AI_ENABLED),
+            [],
+        )
+        gap = _find_gap(result, "slow_data_pipeline")
+        assert gap is not None
+        assert gap.detected
+
+    def test_privacy_deployment_gap(self) -> None:
+        """Regulated sector without privacy evidence should detect gap."""
+        profile = _make_profile(
+            sector="FinTech",
+            tech_stack=["Python"],
+            ai_signals=["AI signal: nlp"],
+            description="FinTech processing sensitive customer financial data.",
+            product_summary="NLP-based financial document analysis.",
+        )
+        result = diagnose_gaps(
+            "Privacy Startup",
+            profile,
+            _make_classification(AINativeLevel.AI_ENABLED),
+            [],
+        )
+        gap = _find_gap(result, "privacy_or_controlled_deployment_gap")
+        assert gap is not None
+        assert gap.detected
+        assert gap.evidence_tag == EvidenceTag.INFERRED
+
+    def test_cybersecurity_gap(self) -> None:
+        """Startup with cybersecurity keywords."""
+        profile = _make_profile(
+            tech_stack=["Python"],
+            ai_signals=["AI signal: threat detection", "AI signal: security"],
+            description="AI-powered threat detection and intrusion prevention platform.",
+            product_summary="Cybersecurity platform using machine learning.",
+        )
+        result = diagnose_gaps(
+            "Security Startup",
+            profile,
+            _make_classification(AINativeLevel.AI_NATIVE),
+            [],
+        )
+        gap = _find_gap(result, "ai_cybersecurity_need")
+        assert gap is not None
+        assert gap.detected
+
+    def test_observability_gap(self) -> None:
+        """AI-native startup without monitoring/observability signals."""
+        profile = _make_profile(
+            tech_stack=["Python", "PyTorch"],
+            ai_signals=["AI signal: deep learning"],
+            description="Deep learning platform for image recognition.",
+            product_summary="Image recognition API.",
+        )
+        result = diagnose_gaps(
+            "Obs Startup",
+            profile,
+            _make_classification(AINativeLevel.AI_NATIVE),
+            [],
+        )
+        gap = _find_gap(result, "observability_gap")
+        assert gap is not None
+        assert gap.detected
+
 
 # ---------------------------------------------------------------------------
 # Helpers

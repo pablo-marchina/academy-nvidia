@@ -46,9 +46,13 @@
 
 ### Epic 7 — Gap Diagnosis + NVIDIA Mapping
 - [x] 15 gap detectors (`src/diagnosis/gap_diagnosis.py`, 902 lines)
-- [x] NVIDIA technology mapping matrix (`src/diagnosis/nvidia_mapping.py`)
-- [x] Gap taxonomy (`src/recommendation/gap_taxonomy.py`)
-- [x] 9 + 6 = 15 unit tests
+- [x] NVIDIA technology mapping matrix (`src/diagnosis/nvidia_mapping.py`, 228 lines)
+- [x] Schemas tipados (EvidenceTag, GapWithEvidence, NvidiaTechnologyCandidate, GapDiagnosisResult)
+- [x] Gaps inferidos marcados como INFERRED
+- [x] Output inclui evidence_used e missing_evidence
+- [x] Cobertura: 10/15 gaps testados individualmente
+- [x] Coverage mapping: todos os 15 gaps têm ≥1 tecnologia NVIDIA
+- [x] 14 + 6 + 1 = 21 unit tests
 
 ### Epic 7.1 — Architecture Utilization Audit + Pipeline Integration
 - [x] Pipeline orchestrator (`src/pipeline/run_pipeline.py`, 7 steps)

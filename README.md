@@ -51,8 +51,10 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `src/config/` — settings via pydantic-settings
 
 ### Testing
-- 112 unit tests across 15 test files
+- 117 unit tests across 15 test files
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
+- Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
+- NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
 - Pipeline integration verified with 5 tests covering order, weak evidence, and result shape
 
 ## Stack
@@ -171,7 +173,7 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - The system does not prove real internal usage of AI — it only structures publicly available signals.
 - `recommended_motion` is a preliminary suggestion based on deterministic rules, not a final business decision.
 - No human-in-the-loop technically implemented (only documented in architecture plan).
-- No integration tests exist — all 112 tests are unit tests.
+- No integration tests exist — all 117 tests are unit tests.
 - No eval harness exists — `tests/evals/` is empty.
 - Agents (`src/agents/`), RAG (`src/rag/`), database (`src/database/`), and interface (`src/interface/`) are stubs.
 - Obsidian vault has structure but no populated content beyond templates.

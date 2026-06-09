@@ -1,5 +1,6 @@
 from src.extraction.schemas import TechnicalGap
-from src.recommendation.gap_taxonomy import ALL_TECHNICAL_GAPS
+
+ALL_TECHNICAL_GAPS: tuple[TechnicalGap, ...] = tuple(TechnicalGap)
 
 
 def test_gap_taxonomy_contains_expected_gaps() -> None:
