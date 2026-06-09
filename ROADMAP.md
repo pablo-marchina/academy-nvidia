@@ -1,107 +1,105 @@
-# ROADMAP
+# ROADMAP — Status Real (Junho 2026)
 
-## Phase 1 - Foundation
+## ✅ Concluídos
 
-- Repository structure
-- Core documentation
-- Schemas
-- Skills
-- Prompts
-- Obsidian vault
-- Evaluation scaffolds
-- Initial tests
+### Epic 0 — Case Consolidation (concluído)
+- [x] docs/00_case_plan.md
+- [x] docs/08_demo_script.md
+- [x] docs/09_user_workflow.md
+- [x] ROADMAP.md
+- [x] DECISIONS.md
+- [x] README.md
 
-## Phase 2 - Minimal Scraping
+### Epic 1 — Foundation (Scraping + Extraction)
+- [x] Fetch public page (`src/scraping/fetcher.py`)
+- [x] Parse HTML to clean text (`src/scraping/parser.py`)
+- [x] Source policy (`src/scraping/source_policy.py`)
+- [x] Structured extraction (`src/extraction/extractor.py`)
+- [x] Pydantic schemas (`src/extraction/schemas.py`)
+- [x] 14 unit tests
 
-- Fetch a public page
-- Extract clean text
-- Save metadata
-- Build an initial startup profile
+### Epic 2 — AI-native Classification
+- [x] 5-level heuristic classifier (`src/classification/ai_native_classifier.py`)
+- [x] Fact/Inference/Hypothesis separation
+- [x] 10 unit tests covering all levels
 
-## Phase 3 - Agents
+### Epic 3 — Evidence Validation
+- [x] Deterministic evidence validator (`src/validation/evidence_validator.py`)
+- [x] Confidence recalibration per source type
+- [x] 14 unit tests
 
-- Search Planner
-- Scraper Agent
-- Extractor Agent
-- Classifier Agent
-- Evidence Validator
+### Epic 4 — Dual Scoring Engine
+- [x] AI-Native Defensibility Score (`src/scoring/defensibility_score.py`, 6 dims)
+- [x] NVIDIA Inception Fit Score (`src/scoring/inception_fit_score.py`, 4 dims)
+- [x] Composite score with configurable weights
+- [x] 6 + 6 + 9 = 21 unit tests with golden examples
 
-## Phase 4 - NVIDIA RAG
+### Epic 5 — Production AI Readiness
+- [x] 4-dimension readiness scoring (`src/scoring/production_readiness.py`)
+- [x] Evidence-aware confidence penalty
+- [x] 6 unit tests
 
-- Ingestion
-- Chunking
-- Qdrant integration
-- Hybrid retrieval
-- Reranking
-- Citations
+### Epic 6 — Composite Ranking + Motion Hints
+- [x] Confidence-aware weighted ranking (`src/scoring/composite_ranking.py`)
+- [x] Motion hints (immediate_outreach → not_recommended)
+- [x] 9 unit tests
 
-## Phase 5 - Recommendation
+### Epic 7 — Gap Diagnosis + NVIDIA Mapping
+- [x] 15 gap detectors (`src/diagnosis/gap_diagnosis.py`, 902 lines)
+- [x] NVIDIA technology mapping matrix (`src/diagnosis/nvidia_mapping.py`)
+- [x] Gap taxonomy (`src/recommendation/gap_taxonomy.py`)
+- [x] 9 + 6 = 15 unit tests
 
-- Gap diagnosis
-- NVIDIA mapping
-- Prioritization
-- Technical and business justification
-
-## Phase 6 - Briefing and Interface
-
-- Executive briefing
-- Streamlit MVP
-- Export paths
-
-## Phase 7 - Differentiation
-
-- AI-Native Defensibility Score
-- Startup ranking
-- Startup comparison
-- Human-in-the-loop review
+### Epic 7.1 — Architecture Utilization Audit + Pipeline Integration
+- [x] Pipeline orchestrator (`src/pipeline/run_pipeline.py`, 7 steps)
+- [x] Pipeline calls all 3 scores + composite ranking
+- [x] 5 pipeline unit tests
+- [x] AGENTS.md updated with closure checklist
+- [x] README.md with Current Capabilities + Known Limitations
+- [x] DECISIONS.md updated
+- [x] EVALS.md with real coverage
+- [x] docs/25_end_of_epic_closure.md
+- [x] docs/26_architecture_utilization_audit.md
+- [x] Obsidian vault backfill
 
 ---
 
-## Case Epics (sobreposição às fases técnicas)
+## 🚧 Em andamento / Próximos
 
-Os épicos abaixo representam o plano de entrega do case final, do documento ao código. Eles não substituem as fases técnicas acima — as complementam, organizando a implementação em torno da proposta de valor do Radar.
+### Epic 8 — Startup Action Brief
+- [ ] Brief template (markdown + JSON output)
+- [ ] Consolidate scores + gaps + experiment into single output
+- [ ] CLI entry point
 
-### Epic 0 — Case Consolidation (concluído)
+### Epic 9 — End-to-End CLI
+- [ ] `radar analyze <startup-name> <url1> <url2> ...`
+- [ ] Batch mode for multiple startups
+- [ ] Report generation (markdown, JSON)
 
-- [x] docs/00_case_plan.md
-- [x] docs/08_demo_script.md atualizado
-- [x] docs/09_user_workflow.md atualizado
-- [x] ROADMAP.md atualizado
-- [x] DECISIONS.md atualizado
-- [x] README.md atualizado
+---
 
-### Epic 1 — Dual Scoring Engine
+## 📋 Backlog (não iniciado)
 
-- AI-Native Defensibility Score (lógica, pesos, validação)
-- NVIDIA Inception Fit Score
-- Score composto com pesos configuráveis (α/β)
-- Testes com golden examples
-- Documentação dos algoritmos
+### RAG Pipeline
+- Ingestion + chunking + Qdrant
+- Hybrid retrieval + reranking
+- NVIDIA playbook retrieval
 
-### Epic 2 — Confidence-aware Ranking
+### Recommendation Engine
+- Gap → technology mapping integrated in pipeline
+- Technical experiment suggestion
+- Business justification
 
-- Algoritmo de ranking ponderado por confiança
-- Badges de confiança (alta/média/baixa)
-- Testes com cenários de evidência parcial
-- Validação contra ranking manual
+### Agents (LangGraph)
+- Multi-agent orchestration graph
+- Human-in-the-loop review
 
-### Epic 3 — Suggested Technical Experiment
+### Interface
+- FastAPI endpoints
+- Streamlit MVP
+- Export paths
 
-- Template de experimento
-- Lógica de recomendação baseada em gap de maior prioridade
-- Validação com arquiteto de soluções NVIDIA
-- Testes de plausibilidade técnica
-
-### Epic 4 — Startup Action Brief
-
-- Montagem do brief completo (scores + gaps + experimento)
-- Output em markdown e JSON
-- Testes de completeza e acionabilidade
-- Integração com pipeline existente
-
-### Epic 5 — Demo Integration
-
-- Script de demo funcional (CLI)
-- Cenário único ponta-a-ponta
-- Documentação de apresentação
-- Preparação para validação com time NVIDIA
+### Production Readiness
+- Docker Compose
+- PostgreSQL + Qdrant
+- CI/CD

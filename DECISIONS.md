@@ -98,3 +98,30 @@
 - Rationale: Um experimento concreto é o gancho técnico-comercial mais forte para o time NVIDIA iniciar uma conversa. Ele demonstra aplicação prática da tecnologia.
 - Risks: Experimento pode ser tecnicamente inválido se baseado em inferência fraca. Pode soar como presunção se não for claramente marcado como hipótese.
 - Validation: Revisão por arquiteto de soluções NVIDIA em 70%+ dos casos. Template exige que todo experimento explicite sua hipótese e métrica.
+
+## Decision 012 — Pipeline Orchestrator como integrador determinístico
+
+- Context: Os módulos de scoring (defensibility, inception fit, production readiness) foram implementados como funções independentes. Era necessário um orquestrador que as chamasse na ordem correta, consolidasse resultados e garantisse rastreabilidade.
+- Decision: Criar `src/pipeline/run_pipeline.py` com `run_full_pipeline()` que executa 7 steps em sequência determinística: extração → classificação → validação → defensibility → inception fit → production readiness → composite ranking. O output é um `PipelineResult` Pydantic com todos os campos intermediários e finais.
+- Alternatives considered: LangGraph graph, script ad hoc, cada módulo chamado manualmente.
+- Rationale: Um orquestrador determinístico mantém a pipeline testável, rastreável e substituível por LangGraph no futuro sem mudar contratos.
+- Risks: Pipeline pode crescer demais se não houver disciplina de separação.
+- Validation: 5 testes unitários verificam ordem, campos obrigatórios e tratamento de evidência fraca.
+
+## Decision 013 — Production AI Readiness como quarto pilar do Composite Score
+
+- Context: O Composite Score original considerava apenas defensibility (α) e inception fit (β). Produção AI Readiness foi adicionada como dimensão independente para capturar maturidade operacional.
+- Decision: O Composite Score agora usa 4 pilares com pesos fixos: defensibility 30%, inception fit 25%, production readiness 35%, classification 10%. Pesos redistribuem proporcionalmente quando um pilar está ausente.
+- Alternatives considered: Manter apenas 2 scores, adicionar como bônus, média simples.
+- Rationale: Production readiness é o melhor preditor de adoção real de infraestrutura NVIDIA. Peso maior reflete prioridade comercial.
+- Risks: Startup early-stage sem produção será penalizada — mitigado pelo confidence penalty que sinaliza baixa confiança em vez de descartar.
+- Validation: Testes de composite ranking verificam redistribuição de pesos e confidence penalty.
+
+## Decision 014 — Gap Diagnosis como módulo independente (não integrado ao pipeline)
+
+- Context: O diagnóstico de gaps técnicos (`src/diagnosis/gap_diagnosis.py`) é o maior arquivo do projeto (902 linhas, 15 detectores). Ele depende de todos os 3 scores e da classificação.
+- Decision: Manter gap diagnosis como módulo independente chamável sob demanda, não integrado ao pipeline principal. A integração será feita quando o Recommendation Engine estiver pronto.
+- Alternatives considered: Integrar imediatamente, fundir com o scoring.
+- Rationale: Evitar acoplamento prematuro. O pipeline já expõe os dados necessários (scores, classification, validated_evidence) para que gap diagnosis os consuma quando for integrado.
+- Risks: Módulo pode ficar obsoleto se não for revisado periodicamente.
+- Validation: 9 testes unitários verificam detectores individuais. Coverage mapping testa que todos os 15 gaps têm ao menos uma tecnologia NVIDIA mapeada.

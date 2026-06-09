@@ -37,6 +37,32 @@ Construir uma plataforma multiagente para identificar startups brasileiras AI-na
 6. Atualizar documentacao se necessario.
 7. Sugerir proximo passo.
 
+## End-of-Epic Autonomous Closure
+
+Ao finalizar um épico (antes de marcar como concluído), executar obrigatoriamente:
+
+### Checklist de fechamento
+
+- [ ] `pytest` passa sem erros.
+- [ ] `ruff check .` passa sem erros.
+- [ ] `black --check .` passa sem erros.
+- [ ] `mypy src` passa sem erros.
+- [ ] `README.md` atualizado com Current Capabilities e Known Limitations.
+- [ ] `ROADMAP.md` atualizado com status real do épico.
+- [ ] `DECISIONS.md` atualizado com decisoes arquiteturais do épico.
+- [ ] `EVALS.md` atualizado com baseline de testes e cobertura.
+- [ ] `ERROR_LOG.md` revisado e atualizado se houve erros.
+- [ ] `docs/` — documentacao relevante atualizada ou criada.
+- [ ] `obsidian-vault/` — backfill realizado:
+  - Nota de decisao em `04 Decisions/`
+  - Nota resumo do épico em `03 Research/`
+  - `Known Limitations.md` revisado
+- [ ] Nenhuma dependencia nova foi adicionada sem justificativa.
+- [ ] Nenhuma feature fantasma foi documentada.
+
+### Regra
+Se qualquer item do checklist falhar, o épico nao pode ser marcado como concluido. Corrigir antes de prosseguir.
+
 ## Comandos de validacao
 - pytest
 - ruff check .

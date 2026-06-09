@@ -6,10 +6,19 @@ Organizar a pesquisa, as decisoes e os artefatos de apoio do projeto NVIDIA Star
 
 ## Links para notas principais
 
-- [[../03 Research/Startups]]
-- [[../04 Decisions]]
-- [[../07 Evidence]]
-- [[../08 Briefings]]
+- [[../03 Research/Epic 1 Foundation]]
+- [[../03 Research/Epic 2 AI Classification]]
+- [[../03 Research/Epic 3 Evidence Validation]]
+- [[../03 Research/Epic 4 Dual Scoring]]
+- [[../03 Research/Epic 5 Production Readiness]]
+- [[../03 Research/Epic 6 Composite Ranking]]
+- [[../03 Research/Epic 7 Gap Diagnosis]]
+- [[../03 Research/Epic 7.1 Pipeline]]
+- [[../04 Decisions/Decision 012 Pipeline Orchestrator]]
+- [[../04 Decisions/Decision 013 Production Readiness as Composite Pillar]]
+- [[../04 Decisions/Decision 014 Gap Diagnosis Independent]]
+- [[Known Limitations]]
+- [[../07 Evidence/Index]]
 - [[../Templates/Startup]]
 - [[../Templates/Evidence]]
 - [[../Templates/Decision]]
