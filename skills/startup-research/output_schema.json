@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "required": ["startup_profile", "ai_signals", "evidences", "gaps", "confidence"],
+  "properties": {
+    "startup_profile": {"type": "object"},
+    "ai_signals": {"type": "array", "items": {"type": "string"}},
+    "evidences": {"type": "array", "items": {"type": "object"}},
+    "gaps": {"type": "array", "items": {"type": "string"}},
+    "confidence": {"type": "string"}
+  }
+}

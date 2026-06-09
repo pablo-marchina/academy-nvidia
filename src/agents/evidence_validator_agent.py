@@ -1,0 +1,1 @@
+"""Evidence validator agent scaffold."""
