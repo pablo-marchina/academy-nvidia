@@ -66,16 +66,58 @@
 - [x] docs/26_architecture_utilization_audit.md
 - [x] Obsidian vault backfill
 
+### Epic 8 — Recommendation Engine (concluído)
+- [x] Schemas tipados: SuggestedTechnicalExperiment, RecommendedNextAction, PerGapRecommendation, RecommendationResult
+- [x] Engine determinístico sem RAG, LangGraph ou LLM
+- [x] Action matrix com 4 ações (approach_now → not_recommended)
+- [x] Prioridade e complexidade por gap + tecnologia
+- [x] SuggestedTechnicalExperiment gerado apenas para APPROACH_NOW (14 templates)
+- [x] 22 unit tests (ação, prioridade, experimentos, per-gap, integração)
+- [x] NvidiaRecommendation antigo removido de src/extraction/schemas.py
+- [x] docs/06_recommendation_logic.md reescrito
+
+### Epic 7.2 — Development Workspace Quality System (concluído)
+- [x] docs/plans/PLAN_TEMPLATE.md
+- [x] docs/adr/ADR_TEMPLATE.md
+- [x] docs/contracts/ — 6 contratos de desenvolvimento
+- [x] docs/27_developer_rag_design.md
+- [x] docs/28_development_workspace_quality.md
+- [x] 7 prompts versionados
+- [x] AGENTS.md com 10 regras de workspace
+- [x] DECISIONS.md com 5 decisões de workspace
+- [x] EVALS.md com critérios de qualidade do desenvolvimento
+- [x] Obsidian — 5 notas em 02 Project Control/
+
+### Epic 9.1 — Integrate Diagnosis and Recommendation into Full Pipeline (concluído)
+- [x] Pipeline estendido de 7 para 11 steps
+- [x] `run_full_pipeline()` agora chama gap diagnosis, NVIDIA mapping e recommendation engine
+- [x] `PipelineResult` inclui `gap_diagnosis` e `recommendation`
+- [x] missing_evidence propagado de todos os módulos até o output final
+- [x] Nenhuma tecnologia NVIDIA recomendada sem gap diagnosticado
+- [x] Evidência fraca reduz força da recomendação (action != APPROACH_NOW)
+- [x] 10 pipeline tests (5 existentes atualizados + 5 novos)
+- [x] Total: 148 testes (138 + 10)
+- [x] Contrato pipeline_output atualizado para v2.0
+- [x] DECISIONS.md: Decision 016 registrada
+
 ---
 
 ## 🚧 Em andamento / Próximos
 
-### Epic 8 — Startup Action Brief
-- [ ] Brief template (markdown + JSON output)
-- [ ] Consolidate scores + gaps + experiment into single output
-- [ ] CLI entry point
+### Epic 10 — Startup Action Brief (concluído)
+- [x] `src/briefing/` module with schemas, builder, and markdown renderer
+- [x] `StartupActionBrief` Pydantic schema with 13 sections
+- [x] `build_action_brief(PipelineResult) → StartupActionBrief`
+- [x] `render_action_brief_markdown(brief) → str`
+- [x] Verdict logic (high_priority → not_recommended)
+- [x] Evidence-aware: uncertainties, missing_evidence preserved
+- [x] No NVIDIA tech without diagnosed gap
+- [x] 10 unit tests (high-fit, weak, no-gap, missing, markdown, JSON, schema)
+- [x] `docs/16_briefing_template.md` reescrito
+- [x] `docs/contracts/briefing_contract.md` criado
+- [x] Total: 153 tests, 17 arquivos
 
-### Epic 9 — End-to-End CLI
+### Epic 10 — End-to-End CLI
 - [ ] `radar analyze <startup-name> <url1> <url2> ...`
 - [ ] Batch mode for multiple startups
 - [ ] Report generation (markdown, JSON)
@@ -88,11 +130,6 @@
 - Ingestion + chunking + Qdrant
 - Hybrid retrieval + reranking
 - NVIDIA playbook retrieval
-
-### Recommendation Engine
-- Gap → technology mapping integrated in pipeline
-- Technical experiment suggestion
-- Business justification
 
 ### Agents (LangGraph)
 - Multi-agent orchestration graph

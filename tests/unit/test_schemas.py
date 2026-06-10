@@ -1,18 +1,9 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
 
-from src.extraction.schemas import (
-    ConfidenceLevel,
-    Evidence,
-    ImplementationComplexity,
-    NvidiaRecommendation,
-    RecommendationPriority,
-    SourceType,
-    StartupProfile,
-    TechnicalGap,
-)
+from src.extraction.schemas import ConfidenceLevel, Evidence, SourceType, StartupProfile
 
 
 def make_evidence() -> Evidence:
@@ -22,7 +13,7 @@ def make_evidence() -> Evidence:
         source_type=SourceType.BLOG,
         quote_or_evidence="We launched AI copilots for operations teams.",
         confidence=ConfidenceLevel.MEDIUM,
-        collected_at=datetime.now(timezone.utc),
+        collected_at=datetime.now(UTC),
     )
 
 
@@ -46,21 +37,6 @@ def test_evidence_creation() -> None:
     assert evidence.confidence == ConfidenceLevel.MEDIUM
 
 
-def test_nvidia_recommendation_creation() -> None:
-    recommendation = NvidiaRecommendation(
-        startup_name="Example AI",
-        diagnosed_gap=TechnicalGap.HIGH_INFERENCE_COST,
-        recommended_nvidia_technologies=["TensorRT-LLM"],
-        technical_justification="Inference cost can be optimized with accelerated serving.",
-        business_justification="Lower cost improves gross margin for AI-heavy workloads.",
-        priority=RecommendationPriority.HIGH,
-        implementation_complexity=ImplementationComplexity.MEDIUM,
-        next_action_for_nvidia_team="Validate current inference architecture with the startup.",
-        evidence_used=[make_evidence()],
-    )
-    assert recommendation.priority == RecommendationPriority.HIGH
-
-
 def test_enum_validation() -> None:
     evidence = Evidence(
         claim="Example claim",
@@ -68,7 +44,7 @@ def test_enum_validation() -> None:
         source_type="official_site",
         quote_or_evidence="Example evidence",
         confidence="high",
-        collected_at=datetime.now(timezone.utc),
+        collected_at=datetime.now(UTC),
     )
     assert evidence.source_type == SourceType.OFFICIAL_SITE
 
@@ -81,5 +57,5 @@ def test_invalid_confidence_rejected() -> None:
             source_type="official_site",
             quote_or_evidence="Example evidence",
             confidence="certain",
-            collected_at=datetime.now(timezone.utc),
+            collected_at=datetime.now(UTC),
         )

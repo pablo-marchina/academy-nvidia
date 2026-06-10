@@ -141,8 +141,7 @@ def _build_missing_evidence(classification: AINativeLevel) -> list[str]:
         AINativeLevel.AI_NATIVE,
     ):
         missing.append(
-            "Evidence of proprietary data or workflow integration"
-            " (required for AI-native service)"
+            "Evidence of proprietary data or workflow integration (required for AI-native service)"
         )
 
     return missing

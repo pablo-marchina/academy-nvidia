@@ -143,7 +143,7 @@ def test_ai_native_promissora_evidencia_fraca() -> None:
             "AI signal: generative ai",
             "AI signal: agent",
         ],
-        product_summary=("Our AI platform uses deep learning and LLMs " "for document analysis."),
+        product_summary=("Our AI platform uses deep learning and LLMs for document analysis."),
         description=(
             "An AI-native company building document intelligence with "
             "computer vision and language models."
@@ -243,7 +243,7 @@ def test_fit_setorial_forte_mas_baixa_maturidade() -> None:
         ai_signals=[],
         product_summary="Healthcare records management system.",
         description=(
-            "A platform for managing patient health records " "with basic reporting features."
+            "A platform for managing patient health records with basic reporting features."
         ),
         tech_stack_signals=["Tech stack: python", "Tech stack: aws"],
         customers=["Local hospital"],

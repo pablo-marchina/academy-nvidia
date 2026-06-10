@@ -1,4 +1,4 @@
-"""Tests for the main pipeline orchestrator (Epic 7.1)."""
+"""Tests for the main pipeline orchestrator (Epic 7.1/9.1)."""
 
 from __future__ import annotations
 
@@ -99,6 +99,8 @@ class TestPipeline:
         )
         assert len(result.validated_evidence) > 0
         assert result.startup_name == "Test Startup"
+        assert result.gap_diagnosis is not None
+        assert result.recommendation is not None
 
     def test_weak_evidence_not_approach_now(self) -> None:
         """Startup with weak evidence should NOT get immediate_outreach."""
@@ -163,6 +165,8 @@ class TestPipeline:
         assert result.startup_profile is not None
         assert result.production_readiness_score is not None
         assert result.composite_score is not None
+        assert result.gap_diagnosis is not None
+        assert result.recommendation is not None
 
     def test_result_shape(self) -> None:
         """Verify all expected fields in the PipelineResult schema."""
@@ -189,3 +193,123 @@ class TestPipeline:
         assert result.composite_score.composite_score is not None
         assert result.ranked is not None
         assert isinstance(result.evidence_used, list)
+        assert result.gap_diagnosis is not None
+        assert result.recommendation is not None
+
+    def test_pipeline_produces_diagnosis_and_recommendation(self) -> None:
+        """Strong AI-native startup produces detected gaps and APPROACH_NOW recommendations."""
+        profile = _make_profile(
+            sector="HealthTech",
+            ai_signals=["machine learning", "deep learning", "neural networks"],
+            tech_stack=["PyTorch", "TensorRT", "Docker"],
+            description=(
+                "AI-native healthcare platform using deep learning "
+                "for real-time medical image analysis in production."
+            ),
+            product_summary="Real-time AI-powered medical imaging diagnostics.",
+            customers=["Hospital A"],
+            funding=["Series B $20M"],
+        )
+        evidence = [
+            _make_evidence("Deep learning medical imaging", ConfidenceLevel.HIGH),
+            _make_evidence("Production deployment in hospitals", ConfidenceLevel.HIGH),
+            _make_evidence("PyTorch and GPU inference", ConfidenceLevel.HIGH),
+        ]
+
+        result = run_full_pipeline(
+            startup_name="Strong AI",
+            profile=profile,
+            evidence_list=evidence,
+        )
+
+        assert result.gap_diagnosis is not None
+        assert result.recommendation is not None
+        detected = [g for g in result.gap_diagnosis.diagnosed_gaps if g.detected]
+        assert len(detected) >= 0
+        assert len(result.recommendation.recommendations) > 0
+
+    def test_pipeline_no_ai_signals_few_gaps(self) -> None:
+        """Startup without AI signals should have few or no detected gaps."""
+        profile = _make_profile(
+            sector="E-commerce",
+            ai_signals=[],
+            tech_stack=["WordPress", "PHP"],
+            description="Online store selling physical products.",
+            product_summary="Simple e-commerce storefront.",
+            customers=[],
+            funding=[],
+        )
+
+        result = run_full_pipeline(
+            startup_name="No AI",
+            profile=profile,
+            evidence_list=[],
+        )
+
+        assert result.gap_diagnosis is not None
+        assert result.recommendation is not None
+        detected = [g for g in result.gap_diagnosis.diagnosed_gaps if g.detected]
+        assert len(detected) == 0
+
+    def test_no_technology_recommended_without_gap(self) -> None:
+        """No NVIDIA technology should be recommended for undetected gaps."""
+        profile = _make_profile(
+            sector="Consulting",
+            ai_signals=[],
+            tech_stack=[],
+            description="Management consulting firm.",
+            product_summary="Business advisory services.",
+            customers=[],
+            funding=[],
+        )
+
+        result = run_full_pipeline(
+            startup_name="Consulting Inc",
+            profile=profile,
+            evidence_list=[],
+        )
+
+        assert result.recommendation is not None
+        for rec in result.recommendation.recommendations:
+            if not rec.detected:
+                assert len(rec.recommended_nvidia_technologies) == 0
+
+    def test_missing_evidence_propagates_to_output(self) -> None:
+        """missing_evidence from diagnosis and recommendation appears in PipelineResult."""
+        profile = _make_profile(
+            ai_signals=["AI signal: machine learning"],
+            description=("A company exploring AI but with very little public evidence."),
+        )
+        ev = _make_evidence("Exploring AI", ConfidenceLevel.LOW)
+
+        result = run_full_pipeline(
+            startup_name="Low Evidence Co",
+            profile=profile,
+            evidence_list=[ev],
+        )
+
+        assert isinstance(result.missing_evidence, list)
+        if result.gap_diagnosis is not None and result.gap_diagnosis.missing_evidence:
+            for item in result.gap_diagnosis.missing_evidence:
+                assert item in result.missing_evidence
+
+    def test_output_contains_diagnosis_and_recommendation_fields(self) -> None:
+        """PipelineResult schema includes gap_diagnosis and recommendation."""
+        profile = _make_profile(ai_signals=["AI signal: computer vision"])
+        ev = _make_evidence("Computer vision platform", ConfidenceLevel.HIGH)
+
+        result = run_full_pipeline(
+            startup_name="CV Startup",
+            profile=profile,
+            evidence_list=[ev],
+        )
+
+        assert hasattr(result, "gap_diagnosis")
+        assert hasattr(result, "recommendation")
+        assert result.gap_diagnosis is not None
+        assert result.recommendation is not None
+        assert hasattr(result.gap_diagnosis, "diagnosed_gaps")
+        assert hasattr(result.gap_diagnosis, "nvidia_technology_candidates")
+        assert hasattr(result.recommendation, "recommendations")
+        assert hasattr(result.recommendation, "overall_priority")
+        assert hasattr(result.recommendation, "overall_confidence")

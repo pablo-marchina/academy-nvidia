@@ -551,7 +551,7 @@ def compute_defensibility_score(
             missing.append(f"No evidence for dimension: {name}")
         elif ds.confidence == ConfidenceLevel.LOW:
             missing.append(
-                f"Weak evidence for dimension: {name} " f"(confidence: {ds.confidence.value})"
+                f"Weak evidence for dimension: {name} (confidence: {ds.confidence.value})"
             )
 
     conf_factors = [_CONFIDENCE_TO_FACTOR.get(s.confidence, 0.4) for s in scores.values()]

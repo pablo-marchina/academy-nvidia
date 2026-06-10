@@ -84,15 +84,3 @@ class StartupProfile(BaseModel):
     tech_stack_signals: list[str] = Field(default_factory=list)
     sources: list[Evidence] = Field(default_factory=list)
     confidence_score: float = Field(ge=0.0, le=1.0)
-
-
-class NvidiaRecommendation(BaseModel):
-    startup_name: str
-    diagnosed_gap: TechnicalGap
-    recommended_nvidia_technologies: list[str] = Field(default_factory=list)
-    technical_justification: str
-    business_justification: str
-    priority: RecommendationPriority
-    implementation_complexity: ImplementationComplexity
-    next_action_for_nvidia_team: str
-    evidence_used: list[Evidence] = Field(default_factory=list)

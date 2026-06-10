@@ -125,3 +125,72 @@
 - Rationale: Evitar acoplamento prematuro. O pipeline já expõe os dados necessários (scores, classification, validated_evidence) para que gap diagnosis os consuma quando for integrado.
 - Risks: Módulo pode ficar obsoleto se não for revisado periodicamente.
 - Validation: 9 testes unitários verificam detectores individuais. Coverage mapping testa que todos os 15 gaps têm ao menos uma tecnologia NVIDIA mapeada.
+
+---
+
+## Decisões do Workspace de Desenvolvimento
+
+Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arquitetura do produto.
+
+### WSD-001 — Plan Artifacts Obrigatórios
+
+- **Context:** Planos eram conversa temporária, sem versionamento. Não havia rastreabilidade do que foi planejado vs implementado.
+- **Decision:** Todo plano não trivial deve ser salvo em `docs/plans/` antes do Build Mode. O template está em `docs/plans/PLAN_TEMPLATE.md`.
+- **Consequences:** Planos são versionados e auditáveis. Custo adicional de ~5 minutos por plano para salvar o artifact.
+- **Status:** Implementado no Epic 7.2.
+
+### WSD-002 — Developer RAG como Memória de Desenvolvimento
+
+- **Context:** O agente IA não tem memória persistente. Decisões, regras e contratos ficam espalhados e são esquecidos entre sessões.
+- **Decision:** Criar uma fundação documental para Developer RAG (`docs/27_developer_rag_design.md`) com fontes indexáveis, fontes proibidas, regras de qualidade e critérios de avaliação. Implementação de vector DB é adiada.
+- **Consequences:** Documentos estruturados e prontos para indexação futura. Nenhum código de RAG foi implementado.
+- **Status:** Implementado no Epic 7.2.
+
+### WSD-003 — Review Diff Obrigatório
+
+- **Context:** Não havia revisão sistemática do diff antes do commit. Mudanças fora de escopo, contratos quebrados e docs desatualizados passavam despercebidos.
+- **Decision:** Review Diff é obrigatório antes de todo commit (prompt em `prompts/review_diff.md`). Verifica escopo, contratos, docs, testes, Obsidian, alucinações.
+- **Consequences:** Reduz erros de commit. Adiciona ~2 minutos ao ciclo.
+- **Status:** Implementado no Epic 7.2.
+
+### WSD-004 — Contratos de Desenvolvimento
+
+- **Context:** Módulos do produto não tinham contratos formais. A IA poderia assumir comportamentos que os módulos não implementam.
+- **Decision:** Criar `docs/contracts/` com contratos para pipeline_output, evidence, scoring, diagnosis, recommendation e end_of_epic. Cada contrato define o que o módulo promete e o que NÃO promete.
+- **Consequences:** Contratos reduzem ambiguidade. Precisam ser mantidos atualizados conforme os módulos evoluem.
+- **Status:** Implementado no Epic 7.2.
+
+### WSD-005 — Separação Workspace vs Produto
+
+- **Context:** Havia confusão entre melhorias na área de trabalho de desenvolvimento vs funcionalidades do produto. Épicos misturavam docs e código.
+- **Decision:** A área de trabalho de desenvolvimento (AGENTS.md, docs/plans/, docs/adr/, docs/contracts/, prompts/, Obsidian, ERROR_LOG, EVALS) é distinta da arquitetura do produto (src/, tests/). Épicos de workspace não alteram src/ ou tests/.
+- **Consequences:** Separação clara de responsabilidades. ROADMAP distingue épicos de workspace vs produto.
+- **Status:** Implementado no Epic 7.2.
+
+---
+
+## Decisões de Arquitetura do Produto (Suplementares)
+
+### Decision 016 — Pipeline Completo com Diagnosis + Recommendation
+
+- **Context:** Gap Diagnosis e Recommendation Engine foram implementados como módulos independentes (Decisions 014 e Epic 8). O pipeline orquestrador (`run_full_pipeline`) parava no composite ranking. Os módulos existiam mas não eram chamados.
+- **Decision:** Integrar ambos os módulos no pipeline principal, adicionando 3 novos steps após o composite ranking: (8) Gap Diagnosis, (9) NVIDIA Technology Mapping, (10) Recommendation Engine. O `PipelineResult` agora inclui `gap_diagnosis` e `recommendation`.
+- **Alternatives considered:** Manter separados (chamada externa pelo usuário), integrar via LangGraph, criar pipeline separado de diagnóstico.
+- **Rationale:** O pipeline é o entry point único do sistema. Integrar diagnosis + recommendation completa o fluxo de ponta a ponta sem depender de chamadas manuais. A natureza determinística mantém testabilidade.
+- **Risks:** Pipeline mais longo (11 steps) — compensado pela ausência de I/O nos novos steps. Módulos de diagnosis (902 linhas) e recommendation (414 linhas) são puramente determinísticos.
+- **Validation:** 10 testes de pipeline (5 existentes + 5 novos) verificam ordem, shape, propagação de missing_evidence e ausência de recomendação sem gap.
+- **Status:** Implementado no Epic 9.1.
+
+### Decision 017 — Startup Action Brief como módulo de consolidação
+
+- **Context:** O `PipelineResult` continha todos os dados brutos (scores, gaps, candidatos, recomendações, experimentos) mas não havia um formato executivo consolidado. O template existente (`docs/16_briefing_template.md`) era um esqueleto de 8 linhas sem schema ou código.
+- **Decision:** Criar `src/briefing/` com schemas Pydantic (`StartupActionBrief`, `BriefVerdict`, `BriefSection`, `BriefEvidenceItem`, `BriefUncertainty`) e funções determinísticas (`build_action_brief`, `render_action_brief_markdown`). O brief é uma projeção do `PipelineResult` — nenhuma nova lógica de scoring, diagnosis ou recommendation é introduzida.
+- **Alternatives considered:** Estender `PipelineResult` com mais campos, criar formato apenas Markdown sem schema, consolidar no próprio pipeline.
+- **Rationale:** Módulo separado mantém pipeline enxuto. Schema Pydantic garante serialização JSON + Markdown. Verdict determinístico (confidence + motion + approach_now) evita alucinação.
+- **Risks:** Brief pode duplicar informações do PipelineResult — mitigado pelo design de projeção (não cópia). Seções condicionais (Suggested Technical Experiment) podem estar ausentes em briefs de baixa confiança — comportamento esperado e documentado.
+- **Validation:** 10 testes unitários cobrem high-fit, weak evidence, no gaps, missing evidence, tech blocking, uncertainties, markdown, schema, JSON.
+- **Status:** Implementado no Epic 10.
+
+---
+
+ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

@@ -28,14 +28,38 @@ Construir uma plataforma multiagente para identificar startups brasileiras AI-na
 - Nao burlar login, paywall, robots.txt ou mecanismos de protecao.
 - Preferir entregas pequenas e testaveis.
 
+## Regras do Workspace de Desenvolvimento
+
+### Plano
+1. Todo trabalho nao trivial comeca em Plan Mode.
+2. Todo plano aprovado deve ser salvo em `docs/plans/YYYY-MM-DD_epic-XX_nome-do-plano.md`.
+3. Build Mode nao deve comecar sem plano salvo, exceto hotfix trivial justificado.
+
+### Contratos
+4. Antes de alterar um modulo, leia o contrato correspondente em `docs/contracts/`.
+5. Respeite o escopo do plano aprovado.
+
+### Revisao
+6. Review Diff e obrigatorio antes do commit (use `prompts/review_diff.md`).
+
+### Documentacao
+7. O agente deve atualizar README, ROADMAP, DECISIONS, EVALS, Known Limitations e Obsidian quando aplicavel.
+8. Erros relevantes devem ser registrados em `ERROR_LOG.md`.
+
+### Disciplina
+9. O agente nao deve implementar features fora do plano aprovado.
+10. Se um item de fechamento nao se aplica, diga explicitamente por que.
+
 ## Fluxo de trabalho esperado
 1. Entender a tarefa.
-2. Conferir arquivos relevantes.
-3. Propor plano curto.
+2. Conferir arquivos relevantes (AGENTS.md, contratos, planos anteriores).
+3. Propor plano curto (se nao trivial, salvar em `docs/plans/`).
 4. Executar menor incremento util.
-5. Validar resultado.
-6. Atualizar documentacao se necessario.
-7. Sugerir proximo passo.
+5. Rodar Review Diff antes do commit.
+6. Rodar validacoes (pytest, ruff, black, mypy).
+7. Atualizar documentacao se necessario (README, ROADMAP, DECISIONS, EVALS, ERROR_LOG).
+8. Atualizar Obsidian (decisoes, resumos, limitações).
+9. Sugerir proximo passo.
 
 ## End-of-Epic Autonomous Closure
 

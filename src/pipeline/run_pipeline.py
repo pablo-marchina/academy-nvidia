@@ -1,5 +1,5 @@
 """Pipeline orchestrator — coordinates extraction, classification, validation, scoring,
-and ranking into a single deterministic flow."""
+ranking, gap diagnosis, NVIDIA mapping, and recommendation into a single deterministic flow."""
 
 from __future__ import annotations
 
@@ -9,8 +9,14 @@ from src.classification.ai_native_classifier import (
     ClassificationResult,
     classify_ai_native,
 )
+from src.diagnosis import (
+    GapDiagnosisResult,
+    build_technology_candidates,
+    diagnose_gaps,
+)
 from src.extraction.extractor import extract_profile
 from src.extraction.schemas import Evidence, StartupProfile
+from src.recommendation import RecommendationResult, build_recommendations
 from src.scoring.composite_ranking import (
     CompositeResult,
     RankedStartup,
@@ -47,6 +53,8 @@ class PipelineResult(BaseModel):
     ranked: list[RankedStartup]
     final_priority_score: float
     recommended_motion: str
+    gap_diagnosis: GapDiagnosisResult | None = None
+    recommendation: RecommendationResult | None = None
     reasoning: str
     evidence_used: list[ValidatedEvidence] = Field(default_factory=list)
     missing_evidence: list[str] = Field(default_factory=list)
@@ -69,6 +77,9 @@ def run_full_pipeline(
       5. NVIDIA Inception Fit Score
       6. Production AI Readiness
       7. Composite Score + Confidence-aware Ranking
+      8. Gap Diagnosis
+      9. NVIDIA Technology Mapping
+     10. Deterministic Recommendation Engine
 
     Parameters
     ----------
@@ -88,7 +99,7 @@ def run_full_pipeline(
     Returns
     -------
     PipelineResult
-        All intermediate and final outputs.
+        All intermediate and final outputs including gaps and recommendations.
     """
     # Step 1: Extraction
     if profile is None:
@@ -142,13 +153,48 @@ def run_full_pipeline(
     final_priority_score = top.composite_score if top else 0.0
     recommended_motion = top.motion if top else "lack_evidence_more_research"
 
+    # Step 8: Gap Diagnosis
+    gap_diag = diagnose_gaps(
+        startup_name=startup_name,
+        profile=profile,
+        classification=classification,
+        validated_evidence=validated_evidence,
+        production_readiness=production_readiness,
+        defensibility=defensibility,
+        inception_fit=inception_fit,
+    )
+
+    # Step 9: NVIDIA Technology Mapping
+    candidates = build_technology_candidates(gap_diag.diagnosed_gaps)
+    gap_diagnosis = gap_diag.model_copy(update={"nvidia_technology_candidates": candidates})
+
+    # Step 10: Deterministic Recommendation Engine
+    recommendation = build_recommendations(
+        startup_name=startup_name,
+        profile=profile,
+        classification=classification,
+        validated_evidence=validated_evidence,
+        defensibility=defensibility,
+        inception_fit=inception_fit,
+        production_readiness=production_readiness,
+        composite=composite,
+        final_priority_score=final_priority_score,
+        recommended_motion=recommended_motion,
+        gap_diagnosis=gap_diagnosis,
+    )
+
+    # Aggregate evidence_used and missing_evidence
     all_missing: list[str] = list(defensibility.missing_evidence)
     all_missing.extend(inception_fit.missing_evidence)
     all_missing.extend(production_readiness.missing_evidence)
+    all_missing.extend(gap_diagnosis.missing_evidence)
+    all_missing.extend(recommendation.missing_evidence)
 
     all_evidence: list[ValidatedEvidence] = list(defensibility.evidence_used)
     all_evidence.extend(inception_fit.evidence_used)
     all_evidence.extend(production_readiness.evidence_used)
+    all_evidence.extend(gap_diagnosis.evidence_used)
+    all_evidence.extend(recommendation.evidence_used)
 
     def_total = defensibility.total_score
     def_conf = defensibility.confidence.value
@@ -158,6 +204,8 @@ def run_full_pipeline(
     pr_conf = production_readiness.confidence.value
     comp_score = composite.composite_score
     comp_conf = composite.confidence.value
+    detected_gaps = len([g for g in gap_diagnosis.diagnosed_gaps if g.detected])
+    rec_count = len(recommendation.recommendations)
     lines: list[str] = [
         f"Pipeline complete for {startup_name}",
         f"  Defensibility: {def_total}/100 ({def_conf})",
@@ -165,7 +213,8 @@ def run_full_pipeline(
         f"  Production Readiness: {pr_score}/100 ({pr_conf})",
         f"  Composite: {comp_score}/100 ({comp_conf})",
         f"  Motion: {recommended_motion}",
-        f"  Gaps: {len(inception_fit.detected_gaps)}",
+        f"  Gaps detected: {detected_gaps}",
+        f"  Recommendations: {rec_count}",
     ]
     if all_missing:
         lines.append(f"  Missing evidence items: {len(all_missing)}")
@@ -182,6 +231,8 @@ def run_full_pipeline(
         ranked=ranked,
         final_priority_score=final_priority_score,
         recommended_motion=recommended_motion,
+        gap_diagnosis=gap_diagnosis,
+        recommendation=recommendation,
         reasoning="\n".join(lines),
         evidence_used=all_evidence,
         missing_evidence=all_missing,

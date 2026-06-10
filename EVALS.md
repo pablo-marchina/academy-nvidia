@@ -18,8 +18,10 @@
 | Gap Diagnosis | `tests/unit/test_gap_diagnosis.py` | 14 | ✅ |
 | NVIDIA Mapping | `tests/unit/test_nvidia_mapping.py` | 6 | ✅ |
 | Gap Taxonomy | `tests/unit/test_gap_taxonomy.py` | 1 | ✅ |
-| Pipeline | `tests/unit/test_pipeline.py` | 5 | ✅ |
-| **Total** | **15 arquivos** | **117** | **100% pass** |
+| Pipeline | `tests/unit/test_pipeline.py` | 10 | ✅ |
+| Recommendation Engine | `tests/unit/test_recommendation_engine.py` | 22 | ✅ |
+| Action Brief | `tests/unit/test_action_brief.py` | 10 | ✅ |
+| **Total** | **17 arquivos** | **153** | **100% pass** |
 
 ## Cobertura por módulo
 
@@ -36,7 +38,11 @@
 | `scoring/inception_fit_score.py` | ✅ REAL | ✅ | 6 |
 | `scoring/production_readiness.py` | ✅ REAL | ✅ | 6 |
 | `scoring/composite_ranking.py` | ✅ REAL | ✅ | 9 |
-| `pipeline/run_pipeline.py` | ✅ REAL | ✅ | 5 |
+| `pipeline/run_pipeline.py` | ✅ REAL | ✅ | 10 |
+| `briefing/action_brief.py` | ✅ REAL | ✅ | 10 |
+| `briefing/schemas.py` | ✅ REAL | ✅ | (via action brief) |
+| `recommendation/schemas.py` | ✅ REAL | ✅ | (via recommendation engine) |
+| `recommendation/recommendation_engine.py` | ✅ REAL | ✅ | 22 |
 | `diagnosis/gap_diagnosis.py` | ✅ REAL | ✅ | 9 |
 | `diagnosis/nvidia_mapping.py` | ✅ REAL | ✅ | 6 |
 | `config/settings.py` | ✅ REAL | ❌ | 0 |
@@ -51,7 +57,6 @@
 - **Integração:** `tests/integration/` vazio — zero testes de integração
 - **Evals:** `tests/evals/` vazio — zero avaliações automatizadas
 - **Config:** `src/config/settings.py` sem testes
-- **Pipeline não chama gap_diagnosis:** módulo existe mas não integrado
 
 ## Critérios de aceite por módulo
 
@@ -68,9 +73,32 @@
 | Composite Ranking | Pesos, redistribuição, motion, ranking | ✅ |
 | Gap Diagnosis | 7 gaps + inferência + evidência faltante | ✅ |
 | NVIDIA Mapping | Gap conhecido/desconhecido, cobertura total | ✅ |
-| Pipeline | Ordem, evidência fraca, raw text, shape | ✅ |
-| Gap Diagnosis | 14 testes (10 gaps individuais + e2e + missing evidence) | ✅ |
-| NVIDIA Mapping | Gap conhecido/desconhecido, coverage total (15/15 gaps) | ✅ |
+| Recommendation Engine | 22 testes (ação, prioridade, experimento, per-gap, integração) | ✅ |
+| Pipeline | 10 testes (5 existentes + 5 integração: diagnóstico, recomendação, evidência fraca, missing_evidence, shape estendido) | ✅ |
+| Action Brief | 10 testes (high-fit, evidência fraca, sem gap, missing evidence, tech sem gap, incertezas, markdown, schema, JSON, low confidence) | ✅ |
+
+## Critérios de Qualidade do Desenvolvimento
+
+Estes critérios avaliam a **qualidade do processo de desenvolvimento assistido por IA**, não a qualidade do produto.
+
+| Critério | O que verifica | Como medir |
+|----------|---------------|------------|
+| Plano salvo | Plano foi versionado em `docs/plans/` antes do build | Verificar se existe arquivo .md para o épico/tarefa |
+| Escopo respeitado | Mudanças estão dentro do escopo aprovado | Review Diff: nenhum arquivo fora do escopo |
+| Contratos consultados | Contratos foram lidos antes de alterar módulos | Agente declara quais contratos leu (ou justifica por que não) |
+| Review Diff executado | Diff foi revisado antes do commit | Log da execução do review_diff.md |
+| Obsidian atualizado | Notas de decisão, resumo e limitações foram criadas/atualizadas | Verificar existência de notas em 03 Research/, 04 Decisions/, 02 Project Control/ |
+| Decisões registradas | Decisões arquiteturais ou de processo foram registradas | DECISIONS.md ou ADR em docs/adr/ |
+| Limitações registradas | Known Limitations foi revisado e atualizado | Diff no arquivo Known Limitations |
+| Validações executadas | pytest, ruff, black, mypy rodaram sem erros (ou com erros pre-existentes justificados) | Log dos comandos |
+| ERROR_LOG atualizado | Erros relevantes foram registrados | Conteúdo de ERROR_LOG.md (não vazio se houve erros) |
+| Alucinação zero | Nenhuma fonte, tecnologia ou feature foi inventada | Revisão manual do diff e do reasoning |
+| Feature fantasma zero | Nenhuma feature foi documentada sem ser implementada | Comparar docs com código real |
+
+### Alvos
+- **Curto prazo:** 100% dos épicos não triviais terão plano salvo, Review Diff executado, Obsidian atualizado
+- **Médio prazo:** Review Diff detecta 0 falsos negativos (nada fora de escopo passa)
+- **Longo prazo:** Developer RAG implementado com recall@5 ≥90%
 
 ## Métricas aspiracionais (futuras)
 

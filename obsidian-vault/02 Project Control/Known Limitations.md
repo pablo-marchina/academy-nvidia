@@ -12,8 +12,7 @@
 ## RAG e Recomendacao
 
 - NVIDIA RAG nao implementado (playbooks estaticos ou mocked)
-- Recommendation Engine nao implementado
-- Suggested Technical Experiment nao implementado
+- Recommendation Engine implementado (Epic 8) mas nao integrado ao pipeline
 
 ## Qualidade
 
@@ -38,4 +37,11 @@
 ## Documentacao
 
 - Scoring docs incompletas (inception fit, production readiness, composite ranking sem docs individuais)
-- Obsidian vault tem estrutura mas sem conteudo populado
+- Obsidian vault tem estrutura mas sem conteudo populado (parcialmente resolvido no Epic 7.2)
+
+## Workspace de Desenvolvimento
+
+- Developer RAG implementado apenas como fundacao documental — sem vector DB
+- Prompts de workflow criados no Epic 7.2 mas ainda nao testados em uso real
+- Plan artifacts obrigatorios a partir do Epic 7.2 — epicos anteriores nao tem planos versionados
+- Contratos de desenvolvimento criados no Epic 7.2 — precisam ser mantidos atualizados com o codigo
