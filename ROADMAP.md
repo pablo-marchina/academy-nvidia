@@ -239,6 +239,7 @@
 - [x] Validação de documentos (metadata obrigatória, arquivo vazio)
 - [x] content_hash (documento) e chunk_hash (chunk) via MD5 determinístico
 - [x] Embeddings via SentenceTransformerProvider ou MockEmbeddingProvider
+- [x] Extra opcional `rag` declarado para instalar `sentence-transformers` sem tornar RAG dependencia obrigatoria do core
 - [x] Upsert em Qdrant com payload completo (provenance, hashes, versão, filtros)
 - [x] Payload indexes automáticos (product, gap_types, source_id, version, document_type, content_hash)
 - [x] Relatório de ingestão com contadores
@@ -249,9 +250,10 @@
 - [x] `src/rag/qdrant_store.py` — payload indexes + novos campos no payload
 - [x] `data/nvidia_corpus/sources.yaml` — +version, document_type por source
 - [x] `tests/unit/test_ingest_nvidia_corpus.py` — 17 testes
+- [x] `tests/unit/test_rag_embeddings.py` — +1 teste para erro claro quando `sentence-transformers` nao esta instalado
 - [x] `tests/integration/test_qdrant_corpus_ingestion.py` — 3 testes (skippable)
 - [x] `docs/42_automated_qdrant_corpus_ingestion.md`
-- [x] Total: 375 tests (358 pre-existing + 17 novos), 37 test files
+- [x] Total: 448 tests (436 passing + 12 skippable), 39 test files
 
 - [x] README / EVALS / ROADMAP / docs / Obsidian atualizados
 

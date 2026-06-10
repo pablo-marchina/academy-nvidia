@@ -11,10 +11,10 @@
             "id": "c2769d37a79ecc66",
             "type": "leaf",
             "state": {
-              "type": "empty",
+              "type": "graph",
               "state": {},
-              "icon": "lucide-file",
-              "title": "Nova aba"
+              "icon": "lucide-git-fork",
+              "title": "Visualização em gráfico"
             }
           }
         ]
@@ -177,5 +177,7 @@
     }
   },
   "active": "c2769d37a79ecc66",
-  "lastOpenFiles": []
+  "lastOpenFiles": [
+    "data/nvidia_corpus/staging/nemo_guardrails/20260610T125726.md"
+  ]
 }

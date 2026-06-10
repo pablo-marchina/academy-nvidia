@@ -38,6 +38,22 @@ scripts/ingest_nvidia_corpus.py [OPCOES]
   --report-path PATH           Salvar relatorio em JSON
 ```
 
+## Dependencias RAG Opcionais
+
+Para gerar embeddings reais durante a ingestao Qdrant, instale o extra RAG:
+
+```bash
+pip install -e ".[rag]"
+```
+
+O extra e opcional porque `sentence-transformers` so e necessario para
+embeddings/RAG. O core do projeto, os testes offline e o modo
+`--mock-embeddings` continuam sem essa dependencia.
+
+Modelo padrao: `sentence-transformers/all-MiniLM-L6-v2`.
+Esse modelo gera vetores de 384 dimensoes; portanto a collection Qdrant usada
+por essa ingestao deve manter `QDRANT_VECTOR_SIZE=384`.
+
 ## Payload Schema (por chunk no Qdrant)
 
 | Campo | Tipo | Origem |
@@ -145,7 +161,7 @@ Novos campos opcionais com defaults (backward-compatible):
 - O script nao executa conteudo do corpus
 - O corpus e tratado como dado, nunca como instrucao
 - Nenhuma chamada externa durante execucao
-- Embeddings sao locais (sentence-transformers ou mock)
+- Embeddings sao locais (`sentence-transformers` via extra `rag` ou mock)
 - Sem secrets em logs (Qdrant URL pode ter API key, mas nao e logada)
 - Sem dependencia de internet
 
@@ -154,4 +170,7 @@ Novos campos opcionais com defaults (backward-compatible):
 Para adicionar um novo documento ao corpus:
 1. Criar arquivo `.md` em `data/nvidia_corpus/`
 2. Adicionar entrada em `sources.yaml` com `version` e `document_type`
-3. Executar `python scripts/ingest_nvidia_corpus.py` (ou `--source-id <novo_id>`)
+3. Para ingestao real em Qdrant, garantir `pip install -e ".[rag]"`,
+   `RAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2` e
+   `QDRANT_VECTOR_SIZE=384`
+4. Executar `python scripts/ingest_nvidia_corpus.py` (ou `--source-id <novo_id>`)

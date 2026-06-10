@@ -1,0 +1,14 @@
+{
+  "ingestion_run_id": "run_20260610_212711",
+  "documents_seen": 10,
+  "documents_valid": 10,
+  "documents_skipped": 0,
+  "chunks_created": 50,
+  "chunks_upserted": 0,
+  "sources_failed": [],
+  "validation_errors": [],
+  "collection_name": "nvidia_corpus",
+  "backend": "qdrant",
+  "started_at": "2026-06-10T21:27:11.535711+00:00",
+  "finished_at": "2026-06-10T21:27:47.026093+00:00"
+}

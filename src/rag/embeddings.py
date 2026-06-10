@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import math
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class EmbeddingProvider(ABC):
@@ -54,10 +55,16 @@ class SentenceTransformerProvider(EmbeddingProvider):
     """
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
-        import sentence_transformers as st
+        try:
+            import sentence_transformers as st
+        except ImportError as err:
+            raise ImportError(
+                "sentence-transformers is required for real RAG embeddings. "
+                'Install the optional RAG dependencies with: pip install -e ".[rag]"'
+            ) from err
 
         self.model = st.SentenceTransformer(model_name)
-        self._dim = self.model.get_sentence_embedding_dimension() or 384
+        self._dim = _embedding_dimension(self.model)
 
     @property
     def vector_size(self) -> int:
@@ -76,6 +83,23 @@ def _text_to_seed(text: str) -> int:
     """Convert arbitrary text to a deterministic integer seed."""
     h = hashlib.md5(text.encode("utf-8")).hexdigest()
     return int(h[:8], 16)
+
+
+def _embedding_dimension(model: Any) -> int:
+    """Return embedding dimension across sentence-transformers versions."""
+    get_dimension = getattr(model, "get_embedding_dimension", None)
+    if callable(get_dimension):
+        dimension = get_dimension()
+        if dimension is not None:
+            return int(dimension)
+
+    get_legacy_dimension = getattr(model, "get_sentence_embedding_dimension", None)
+    if callable(get_legacy_dimension):
+        dimension = get_legacy_dimension()
+        if dimension is not None:
+            return int(dimension)
+
+    return 384
 
 
 def _pseudo_embedding(seed: int, size: int) -> list[float]:

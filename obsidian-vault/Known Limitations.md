@@ -14,7 +14,8 @@
 
 - The pipeline uses deterministic heuristics, not an LLM, for all scoring and diagnosis steps.
 - Scraping collects from a single public URL — no crawling in scale.
-- RAG semantic/hybrid retrieval requires `sentence-transformers` for real embeddings (mock provider used in tests).
+- RAG semantic/hybrid retrieval requires the optional `rag` extra for real embeddings: `pip install -e ".[rag]"` (mock provider used in tests).
+- Qdrant ingestion with `sentence-transformers/all-MiniLM-L6-v2` requires `QDRANT_VECTOR_SIZE=384`.
 - RAG evaluation multi-mode comparison uses `MockEmbeddingProvider` by default.
 - Corpus is manually curated in `data/nvidia_corpus/` (10 documents — no automated ingestion).
 - Vector store is in-memory only (no persistence across sessions).

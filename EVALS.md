@@ -25,7 +25,7 @@
 | RAG Retrieval | `tests/unit/test_rag_retrieval.py` | 6 | ✅ |
 | Playbook Retriever | `tests/unit/test_playbook_retriever.py` | 5 | ✅ |
 | RAG Evaluation | `tests/unit/test_rag_eval.py` | 20 | ✅ |
-| RAG Embeddings | `tests/unit/test_rag_embeddings.py` | 11 | ✅ |
+| RAG Embeddings | `tests/unit/test_rag_embeddings.py` | 15 | ✅ |
 | Semantic Retrieval | `tests/unit/test_semantic_retrieval.py` | 15 | ✅ |
 | Hybrid Retrieval | `tests/unit/test_hybrid_retrieval.py` | 12 | ✅ |
 | RAG Evaluation Semantic | `tests/unit/test_rag_eval_semantic.py` | 14 | ✅ |
@@ -39,7 +39,7 @@
 | Corpus Freshness Audit | `tests/unit/test_corpus_freshness_audit.py` | 11 | ✅ |
 | Check Scope | `tests/unit/test_check_scope.py` | 7 | ✅ |
 | Check Docs Closure | `tests/unit/test_check_docs_closure.py` | 7 | ✅ |
-| **Total** | **39 arquivos** | **447** | **435 pass, 12 skip** |
+| **Total** | **39 arquivos** | **451** | **439 pass, 12 skip** |
 
 ## Cobertura por módulo
 
@@ -65,7 +65,7 @@
 | `diagnosis/nvidia_mapping.py` | ✅ REAL | ✅ | 6 |
 | `config/settings.py` | ✅ REAL | ❌ | 0 |
 | `agents/` (9 files) | ❌ STUB | ❌ | 0 |
-| `rag/` (10 files) | ✅ REAL | ✅ | 15 + 52 (Epic 13) + 22 (Epic 14) + 10 (Epic 14.1) + 20 (Epic 15) |
+| `rag/` (10 files) | ✅ REAL | ✅ | 15 + 56 (Epic 13) + 22 (Epic 14) + 10 (Epic 14.1) + 20 (Epic 15) |
 | `database/` (2 files) | ❌ STUB | ❌ | 0 |
 | `evaluation/` (4 files) | ✅ REAL | ✅ | 20 + 14 (Epic 13) + 11 (Epic 14) |
 | `interface/` (1 file) | ❌ STUB | ❌ | 0 |
@@ -100,7 +100,7 @@
 | RAG Retrieval | 6 testes (index, gap, tech, empty, keywords, scores) | ✅ |
 | Playbook Retriever | 5 testes (inference gap, agent gap, missing, brief dicts, no-rag) | ✅ |
 | RAG Evaluation | 20 testes (golden queries, metrics, quality gates, provenance, compatibility) | ✅ |
-| RAG Embeddings | 11 testes (mock provider, determinismo, normalização, batch, custom size) | ✅ |
+| RAG Embeddings | 15 testes (mock provider, determinismo, normalização, batch, custom size, erro claro sem `sentence-transformers`, compatibilidade de métodos de dimensão) | ✅ |
 | Semantic Retrieval | 15 testes (contextos, proveniência, store vazio, filtros por product/gap/source_id, top_k, score range, query text building) | ✅ |
 | Hybrid Retrieval | 12 testes (fallback lexical, fusão RRF, proveniência, top_k, score range, filtros, fusão vazia/dedup) | ✅ |
 | RAG Evaluation Semantic | 14 testes (mode eval lexical/semantic/hybrid, comparison, regressions, format, backward compat) | ✅ |

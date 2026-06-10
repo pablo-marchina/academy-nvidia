@@ -72,7 +72,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit
 
 ### Testing
-- 447 tests (435 passing + 12 skippable integration) across 39 test files
+- 448 tests (436 passing + 12 skippable integration) across 39 test files
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -82,7 +82,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - RAG retrieval: 6 tests (index, gap, tech, empty, keywords, scores)
 - Playbook retriever: 5 tests (inference gap, agent gap, missing, brief dicts, no-rag crash)
 - RAG Evaluation: 20 tests (golden queries, metrics, quality gates, provenance, brief compatibility)
-- RAG Embeddings: 11 tests (mock provider, determinism, normalization, batch)
+- RAG Embeddings: 12 tests (mock provider, determinism, normalization, batch, missing dependency message)
 - Semantic Retrieval: 15 tests (contexts, provenance, filters, query text)
 - Hybrid Retrieval: 12 tests (fallback, RRF fusion, filters, dedup)
 - Multi-Mode Eval: 14 tests (lexical/semantic/hybrid comparison, regressions)
@@ -129,12 +129,30 @@ Windows PowerShell:
 .\.venv\Scripts\Activate.ps1
 ```
 
-Install the project and developer dependencies:
+Install the core project:
+
+```bash
+pip install -e .
+```
+
+Install developer dependencies:
 
 ```bash
 pip install -e ".[dev]"
 playwright install
 ```
+
+Install optional RAG embedding dependencies when generating real local embeddings
+for semantic/hybrid retrieval or Qdrant ingestion:
+
+```bash
+pip install -e ".[rag]"
+```
+
+Use `pip install -e ".[dev,rag]"` for a development environment with both test
+tools and real RAG embeddings. The `rag` extra is optional because
+`sentence-transformers` is specific to embeddings/RAG and pulls heavier model
+runtime dependencies that the core pipeline does not need.
 
 ## Environment Configuration
 
@@ -148,6 +166,10 @@ Important variables:
 - `DATABASE_URL`
 - `QDRANT_URL`
 - `QDRANT_API_KEY`
+- `QDRANT_COLLECTION`
+- `QDRANT_VECTOR_SIZE` (default `384`, matching the default RAG embedding model)
+- `RAG_EMBEDDING_MODEL` (default `sentence-transformers/all-MiniLM-L6-v2`)
+- `RAG_VECTOR_BACKEND`
 - `LANGSMITH_API_KEY`
 - `LANGSMITH_PROJECT`
 
@@ -241,8 +263,9 @@ No startup recommendation is valid without evidence and an explicit technical ga
 
 - The pipeline uses deterministic heuristics, not an LLM, for all scoring and diagnosis steps.
 - Scraping collects from a single public URL — no crawling in scale.
-- RAG semantic/hybrid retrieval requires `sentence-transformers` for real embeddings (mock provider used in tests).
+- RAG semantic/hybrid retrieval requires the optional `rag` extra for real embeddings: `pip install -e ".[rag]"` (mock provider used in tests).
 - RAG evaluation multi-mode comparison uses `MockEmbeddingProvider` by default — real semantic quality requires `sentence-transformers`.
+- Qdrant ingestion with the default `sentence-transformers/all-MiniLM-L6-v2` model uses 384-dimensional vectors, so `QDRANT_VECTOR_SIZE` must remain `384` for that collection.
 - Corpus is local and allowlist-backed in `data/nvidia_corpus/`; sync, freshness audit, and Qdrant ingestion are script-driven, not scheduled.
 - Relevance scoring in lexical mode is keyword-match-based; semantic mode uses cosine similarity; reranking uses a deterministic composite formula (no cross-encoder).
 - Vector store is in-memory only (no persistence across sessions — Qdrant-ready for production; optional QdrantStore adapter available in Epic 15).

@@ -34,6 +34,17 @@ Abstract base class with two implementations:
 
 The mock provider generates deterministic pseudo-embeddings using MD5 hash + sin/cos. Similar texts produce related vectors. No external calls, no model download.
 
+Install real RAG embedding dependencies only when needed:
+
+```bash
+pip install -e ".[rag]"
+```
+
+The `rag` extra keeps `sentence-transformers` out of the core install because it
+is specific to embeddings/RAG and pulls heavier model runtime dependencies. The
+default real embedding model is `sentence-transformers/all-MiniLM-L6-v2`, which
+produces 384-dimensional vectors.
+
 ## Vector Store
 
 `InMemoryVectorStore` — local dict-backed store with:
@@ -96,14 +107,14 @@ RRF_score(chunk) = Σ 1/(k + rank_i)   for each list i where chunk appears
 | `src/rag/vector_store.py` | In-memory vector store |
 | `src/rag/semantic_retrieval.py` | Semantic retrieval function |
 | `src/rag/hybrid_retrieval.py` | Hybrid retrieval with RRF fusion |
-| `tests/unit/test_rag_embeddings.py` | 11 tests for embedding providers |
+| `tests/unit/test_rag_embeddings.py` | 12 tests for embedding providers |
 | `tests/unit/test_semantic_retrieval.py` | 15 tests for semantic retrieval |
 | `tests/unit/test_hybrid_retrieval.py` | 14 tests for hybrid retrieval |
 | `tests/unit/test_rag_eval_semantic.py` | 14 tests for multi-mode evaluation |
 
 ## Limitations
 
-- `SentenceTransformerProvider` requires `sentence-transformers` package (not in dev deps by default)
+- `SentenceTransformerProvider` requires `sentence-transformers` from the optional `rag` extra (`pip install -e ".[rag]"`)
 - Mock embedding provider does not capture real semantic relationships
 - Vector store is in-memory only (no persistence across sessions)
 - No cross-encoder reranking (deferred to future epic)

@@ -12,7 +12,8 @@
 ## RAG e Recomendacao
 
 - Product RAG Epic 13: semantic/hybrid retrieval usa MockEmbeddingProvider nos testes (nao captura relacoes semanticas reais)
-- SentenceTransformerProvider requer sentence-transformers (~500MB) — nao instalado por padrao
+- SentenceTransformerProvider requer o extra opcional `rag` (`pip install -e ".[rag]"`) para instalar sentence-transformers
+- Qdrant ingestion com `sentence-transformers/all-MiniLM-L6-v2` requer `QDRANT_VECTOR_SIZE=384`
 - Reranking deterministico usa pesos fixos (RerankingConfig) — pode nao ser otimo para todos os gaps/tecnologias
 - Context packing tem limites configurados (per-tech=2, per-gap=3, global=5) — pode descartar contextos relevantes em casos de borda
 - Sem cross-encoder reranking (backlog)
@@ -20,7 +21,7 @@
 - Recommendation Engine implementado e integrado ao pipeline (Epic 9.1)
 - RAG pipeline integrado como Step 11 opcional — sem suporte a contextos multi-turno ou consultas interativas
 - QdrantStore nao faz fallback automatico para in-memory em caso de erro de conexao (caller deve capturar QdrantConnectionError)
-- Script de ingestao (Epic 18) usa MockEmbeddingProvider por padrao se sentence-transformers nao estiver instalado — embeddings reais requerem sentence-transformers
+- Embeddings reais de RAG requerem sentence-transformers via extra opcional `rag`; testes continuam usando MockEmbeddingProvider sem download de modelo
 
 - Scores dependem da qualidade e cobertura das evidencias publicas disponiveis
 - Confianca das evidencias e atribuida heuristicamente, nao por modelo aprendido

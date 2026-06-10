@@ -17,3 +17,6 @@ pytest
 ruff
 black
 mypy
+
+[rag]
+sentence-transformers>=5.5.1

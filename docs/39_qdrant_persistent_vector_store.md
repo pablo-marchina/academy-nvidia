@@ -39,6 +39,7 @@ Implementação via `qdrant-client` com lazy connection, criação automática d
 | `QDRANT_API_KEY` | (vazio) | API key |
 | `QDRANT_COLLECTION` | `nvidia_corpus` | Nome da collection |
 | `QDRANT_VECTOR_SIZE` | `384` | Dimensão dos vetores |
+| `RAG_EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | Modelo local de embeddings RAG |
 
 ## Collection Schema
 
@@ -106,15 +107,22 @@ Skip: todos pulam quando `QDRANT_TEST_URL` não está definida.
 
 ## Como Habilitar Qdrant
 
-1. Iniciar Qdrant: `docker compose up qdrant -d`
-2. Configurar ambiente:
+1. Instalar dependencias opcionais de embeddings RAG:
+   ```bash
+   pip install -e ".[rag]"
+   ```
+2. Iniciar Qdrant: `docker compose up qdrant -d`
+3. Configurar ambiente:
    ```bash
    set RAG_VECTOR_BACKEND=qdrant
    set QDRANT_URL=http://localhost:6333
    set QDRANT_COLLECTION=nvidia_corpus
    set QDRANT_VECTOR_SIZE=384
+   set RAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
    ```
-3. Rodar ingestão manual (futuro script):
+   `QDRANT_VECTOR_SIZE=384` deve bater com o modelo padrao
+   `sentence-transformers/all-MiniLM-L6-v2`, que gera vetores de 384 dimensoes.
+4. Rodar ingestão manual (futuro script):
    ```python
    from src.rag.qdrant_store import build_qdrant_store
    from src.rag.ingestion import load_and_chunk_corpus
@@ -125,7 +133,7 @@ Skip: todos pulam quando `QDRANT_TEST_URL` não está definida.
    entries = [VectorEntry(...embedding=emb.embed(c.content)...) for c in chunks]
    store.add_entries(entries)
    ```
-4. Pipeline usará Qdrant automaticamente quando `vector_store=QdrantStore(...)` for passado.
+5. Pipeline usará Qdrant automaticamente quando `vector_store=QdrantStore(...)` for passado.
 
 ## Limitações
 
@@ -133,3 +141,4 @@ Skip: todos pulam quando `QDRANT_TEST_URL` não está definida.
 - Nenhum script de ingestão automatizada incluído
 - Testes de integração requerem `QDRANT_TEST_URL`
 - Payload version fixo em `"1.0"` (sem versionamento incremental)
+- Embeddings reais exigem o extra opcional `rag`; o core continua instalavel sem `sentence-transformers`
