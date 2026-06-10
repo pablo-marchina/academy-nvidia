@@ -201,6 +201,16 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 - **Validation:** 15 testes unitários (4 ingestion + 6 retrieval + 5 playbook). Corpus verificado contra `_TECH_MATRIX` e `_EXPERIMENT_TEMPLATES`. Brief funciona sem RAG (testado).
 - **Status:** Implementado no Epic 11.
 
+### Decision 019 — RAG Evaluation offline com golden queries e quality gates
+
+- **Context:** O Product RAG (Epic 11) foi implementado sem nenhuma camada de avaliação. Não era possível medir se o retrieval retornava o contexto correto para cada gap ou tecnologia. O Epic 12 exigia uma camada de avaliação offline, determinística, sem embeddings, sem Qdrant, sem LLM judge.
+- **Decision:** Criar `src/evaluation/rag_eval.py` + `src/evaluation/rag_eval_schemas.py` com 7 métricas determinísticas (hit_at_k, source/product coverage, irrelevant/missing count, top_1_match, precision), 6 quality gates, e dataset de 16 golden queries versionado em `examples/rag_eval/`. A avaliação reusa o `ChunkIndex` existente sem modificá-lo. O RAG Evaluation é um módulo independente que não altera pipeline, scoring, diagnosis, recommendation ou briefing.
+- **Alternatives considered:** LLM judge (rejeitado por não-determinismo), Qdrant + reranking (fora de escopo), integrar no pipeline (rejeitado para preservar separação), avaliação manual (não reproduzível).
+- **Rationale:** Golden queries e métricas determinísticas garantem que a qualidade do retrieval é medida de forma reproduzível e testável. Quality gates fornecem um ponto de falha explícito se o RAG degradar. A separação em módulo próprio mantém o RAG evaluation independente.
+- **Risks:** Golden queries podem desatualizar se o corpus mudar. Métricas puramente lexicais não detectam degradação semântica. Quality gates podem ser muito rigorosos ou muito laxos.
+- **Validation:** 20 testes unitários (golden queries, métricas, gates, provenance, brief compatibilidade). Todas as 16 golden queries passam com o corpus atual. Quality gates falham com índice vazio ou sem proveniência.
+- **Status:** Implementado no Epic 12.
+
 ---
 
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

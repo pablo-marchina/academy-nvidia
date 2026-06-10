@@ -24,7 +24,8 @@
 | RAG Ingestion | `tests/unit/test_rag_ingestion.py` | 4 | ✅ |
 | RAG Retrieval | `tests/unit/test_rag_retrieval.py` | 6 | ✅ |
 | Playbook Retriever | `tests/unit/test_playbook_retriever.py` | 5 | ✅ |
-| **Total** | **20 arquivos** | **168** | **100% pass** |
+| RAG Evaluation | `tests/unit/test_rag_eval.py` | 20 | ✅ |
+| **Total** | **21 arquivos** | **188** | **100% pass** |
 
 ## Cobertura por módulo
 
@@ -52,13 +53,12 @@
 | `agents/` (9 files) | ❌ STUB | ❌ | 0 |
 | `rag/` (5 files) | ✅ REAL | ✅ | 15 |
 | `database/` (2 files) | ❌ STUB | ❌ | 0 |
-| `evaluation/` (2 files) | ❌ STUB | ❌ | 0 |
+| `evaluation/` (4 files) | ✅ REAL | ✅ | 20 |
 | `interface/` (1 file) | ❌ STUB | ❌ | 0 |
 
 ## Lacunas de cobertura
 
 - **Integração:** `tests/integration/` vazio — zero testes de integração
-- **Evals:** `tests/evals/` vazio — zero avaliações automatizadas
 - **Config:** `src/config/settings.py` sem testes
 
 ## Critérios de aceite por módulo
@@ -82,6 +82,7 @@
 | RAG Ingestion | 4 testes (sources, corpus load, chunking metadata, source propagation) | ✅ |
 | RAG Retrieval | 6 testes (index, gap, tech, empty, keywords, scores) | ✅ |
 | Playbook Retriever | 5 testes (inference gap, agent gap, missing, brief dicts, no-rag) | ✅ |
+| RAG Evaluation | 20 testes (golden queries, metrics, quality gates, provenance, compatibility) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
 

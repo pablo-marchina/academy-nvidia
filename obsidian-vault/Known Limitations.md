@@ -18,6 +18,11 @@
 - Sem cross-chunk ranking ou query expansion.
 - Nenhum teste com corpus real da documentação NVIDIA.
 
+## RAG Evaluation
+- Métricas não medem relevância semântica (apenas lexical).
+- Golden queries manuais — mudanças no corpus podem exigir atualização.
+- Sem métricas agregadas entre queries (ex: mean average precision).
+
 ## Geral
 - Nenhum teste de integração com dados reais.
 - Nenhum teste de avaliação (evals) automatizado.

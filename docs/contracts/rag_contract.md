@@ -68,8 +68,20 @@ All defined in `src/rag/schemas.py` using Pydantic v2.
 - **Internal**: `src.rag` (no other internal module depends on RAG)
 - **External**: `PyYAML` (already present, 6.0.3)
 
+## RAG Evaluation
+
+Added in Epic 12 — offline evaluation of retrieval quality via golden queries.
+
+- `src/evaluation/rag_eval_schemas.py` — schemas for evaluation (RagEvalCase, RagRetrievalMetrics, RagEvalResult, RagQualityGateResult)
+- `src/evaluation/rag_eval.py` — `run_rag_eval()`, `run_quality_gates()`, `format_eval_summary()`
+- `examples/rag_eval/golden_queries.json` — 16 golden queries covering all gaps + negative cases
+- `examples/rag_eval/expected_contexts.json` — expected chunk IDs per query
+
+Evaluation is deterministic: no embeddings, no Qdrant, no LLM judge, no external calls.
+
 ## Test Coverage
 
 - `tests/unit/test_rag_ingestion.py` — 4 tests
 - `tests/unit/test_rag_retrieval.py` — 6 tests
 - `tests/unit/test_playbook_retriever.py` — 5 tests
+- `tests/unit/test_rag_eval.py` — 20 tests

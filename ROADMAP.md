@@ -131,7 +131,20 @@
 - [x] `docs/contracts/rag_contract.md` criado
 - [x] Total: 168 tests, 20 arquivos
 
-### Epic 12 — End-to-End CLI
+### Epic 12 — RAG Evaluation & Retrieval Quality Gates (concluído)
+- [x] `src/evaluation/rag_eval_schemas.py` — RagEvalCase, RagRetrievalMetrics, RagEvalResult, RagQualityGateResult
+- [x] `src/evaluation/rag_eval.py` — run_rag_eval(), run_quality_gates(), format_eval_summary()
+- [x] `examples/rag_eval/golden_queries.json` — 16 golden queries (10 gaps + 6 negativos)
+- [x] `examples/rag_eval/expected_contexts.json` — chunk_ids esperados por query
+- [x] 7 métricas: hit_at_k, source/product coverage, irrelevant/missing, top_1_match, precision
+- [x] 6 quality gates: hit_at_3, top_1, zero_missing, irrelevant_limit, provenance, missing_explicit
+- [x] 20 testes (golden, métricas, gates, provenance, brief compatibilidade)
+- [x] `docs/36_rag_evaluation.md` criado
+- [x] Total: 188 tests, 21 arquivos
+- [x] Nenhuma alteração em RAG, Briefing, Pipeline, Recommendation, Diagnosis
+- [x] Nenhuma dependência nova, embedding, Qdrant, LangGraph, LLM judge
+
+### Epic 13 — End-to-End CLI
 - [ ] `radar analyze <startup-name> <url1> <url2> ...`
 - [ ] Batch mode for multiple startups
 - [ ] Report generation (markdown, JSON)
