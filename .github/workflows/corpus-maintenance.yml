@@ -62,7 +62,7 @@ jobs:
           pip install -e ".[dev,rag]"
 
       - name: Start local Qdrant when real ingestion is enabled
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_ingestion }}
+        if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_ingestion == true || inputs.run_ingestion == 'true') }}
         run: docker compose up -d qdrant
 
       - name: Run corpus maintenance
@@ -78,19 +78,19 @@ jobs:
               --fail-on-expired \
               --reports-dir "${REPORTS_DIR}"
           else
-            python scripts/run_corpus_maintenance.py \
-              ${{ inputs.run_sync && '--run-sync' || '--no-run-sync' }} \
-              ${{ inputs.run_ingestion && '--run-ingestion' || '--no-run-ingestion' }} \
-              ${{ inputs.run_evals && '--run-evals' || '--no-run-evals' }} \
-              ${{ inputs.promote_sources && '--promote-sources' || '--no-promote-sources' }} \
-              ${{ inputs.recreate_collection && '--recreate-collection' || '--no-recreate-collection' }} \
-              ${{ inputs.fail_on_stale && '--fail-on-stale' || '--no-fail-on-stale' }} \
-              ${{ inputs.fail_on_expired && '--fail-on-expired' || '--no-fail-on-expired' }} \
-              --reports-dir "${REPORTS_DIR}"
+            args=()
+            if [ "${{ inputs.run_sync }}" = "true" ]; then args+=(--run-sync); else args+=(--no-run-sync); fi
+            if [ "${{ inputs.run_ingestion }}" = "true" ]; then args+=(--run-ingestion); else args+=(--no-run-ingestion); fi
+            if [ "${{ inputs.run_evals }}" = "true" ]; then args+=(--run-evals); else args+=(--no-run-evals); fi
+            if [ "${{ inputs.promote_sources }}" = "true" ]; then args+=(--promote-sources); else args+=(--no-promote-sources); fi
+            if [ "${{ inputs.recreate_collection }}" = "true" ]; then args+=(--recreate-collection); else args+=(--no-recreate-collection); fi
+            if [ "${{ inputs.fail_on_stale }}" = "true" ]; then args+=(--fail-on-stale); else args+=(--no-fail-on-stale); fi
+            if [ "${{ inputs.fail_on_expired }}" = "true" ]; then args+=(--fail-on-expired); else args+=(--no-fail-on-expired); fi
+            python scripts/run_corpus_maintenance.py "${args[@]}" --reports-dir "${REPORTS_DIR}"
           fi
 
       - name: Stop local Qdrant
-        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.run_ingestion }}
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && (inputs.run_ingestion == true || inputs.run_ingestion == 'true') }}
         run: docker compose down
 
       - name: Upload corpus maintenance reports
