@@ -7,6 +7,7 @@ while preserving the in-memory fallback for development and testing.
 from __future__ import annotations
 
 import hashlib
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -26,6 +27,8 @@ _PAYLOAD_INDEX_FIELDS = [
     "content_hash",
     "is_active",
 ]
+
+_POINT_ID_PREFIX = "nvidia-startup-ai-radar:nvidia_corpus:"
 
 
 class QdrantConnectionError(Exception):
@@ -123,8 +126,10 @@ class QdrantStore(VectorStore):
             existing = set()
         for field in _PAYLOAD_INDEX_FIELDS:
             if field not in existing:
-                field_type = self._models.PayloadSchemaType.BOOL if field == "is_active" else (
-                    self._models.PayloadSchemaType.KEYWORD
+                field_type = (
+                    self._models.PayloadSchemaType.BOOL
+                    if field == "is_active"
+                    else (self._models.PayloadSchemaType.KEYWORD)
                 )
                 try:
                     self._client.create_payload_index(  # type: ignore[attr-defined]
@@ -200,7 +205,7 @@ class QdrantStore(VectorStore):
         points = self._client.scroll(  # type: ignore[attr-defined]
             collection_name=self._config.collection_name,
             limit=1,
-            filter=self._models.Filter(
+            scroll_filter=self._models.Filter(
                 must=[
                     self._models.FieldCondition(
                         key="chunk_id",
@@ -333,7 +338,7 @@ def _entry_to_point(entry: VectorEntry, models_module: Any) -> Any:
     chunk_hash = entry.chunk_hash or hashlib.md5(entry.content.encode("utf-8")).hexdigest()
 
     return models_module.PointStruct(
-        id=entry.chunk_id,
+        id=_point_id_for_chunk(entry.chunk_id),
         vector=entry.embedding,
         payload={
             "chunk_id": entry.chunk_id,
@@ -364,6 +369,11 @@ def _entry_to_point(entry: VectorEntry, models_module: Any) -> Any:
             "ingestion_run_id": entry.ingestion_run_id or "",
         },
     )
+
+
+def _point_id_for_chunk(chunk_id: str) -> str:
+    """Return a deterministic Qdrant-compatible point id for a chunk."""
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, f"{_POINT_ID_PREFIX}{chunk_id}"))
 
 
 def _point_to_entry(point: Any) -> VectorEntry:

@@ -6,6 +6,7 @@ All tests mock ``qdrant-client`` so they run without a real Qdrant server.
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
+from uuid import UUID
 
 import pytest
 
@@ -92,7 +93,7 @@ def test_add_entry_upserts_point(
     points = call_args[1]["points"]
     assert len(points) == 1
     point = points[0]
-    assert point.id == "nim_000"
+    assert str(UUID(str(point.id))) == point.id
     assert point.vector == [0.1, 0.2, 0.3, 0.4]
     payload = point.payload
     assert payload["chunk_id"] == "nim_000"
@@ -165,6 +166,8 @@ def test_get_entry_returns_none_when_missing(store: QdrantStore, mock_qdrant: Ma
     mock_qdrant.scroll.return_value = ([], None)
     result = store.get_entry("nonexistent")
     assert result is None
+    assert "scroll_filter" in mock_qdrant.scroll.call_args.kwargs
+    assert "filter" not in mock_qdrant.scroll.call_args.kwargs
 
 
 # ------------------------------------------------------------------

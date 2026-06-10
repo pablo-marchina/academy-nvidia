@@ -38,12 +38,8 @@ def load_sources() -> dict[str, RagSource]:
             last_checked_at=active_info.get("last_checked_at", info.get("last_checked_at")),
             valid_from=active_info.get("valid_from", info.get("valid_from")),
             valid_until=active_info.get("valid_until", info.get("valid_until")),
-            freshness_policy=active_info.get(
-                "freshness_policy", info.get("freshness_policy")
-            ),
-            stale_after_days=active_info.get(
-                "stale_after_days", info.get("stale_after_days")
-            ),
+            freshness_policy=active_info.get("freshness_policy", info.get("freshness_policy")),
+            stale_after_days=active_info.get("stale_after_days", info.get("stale_after_days")),
             is_active=active_info.get("is_active", info.get("is_active", True)),
             deprecated_at=active_info.get("deprecated_at", info.get("deprecated_at")),
             superseded_by=active_info.get("superseded_by", info.get("superseded_by")),

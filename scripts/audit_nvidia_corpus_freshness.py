@@ -457,7 +457,9 @@ def _build_recommendations(report: CorpusFreshnessAuditReport) -> list[str]:
     if report.missing_metadata:
         recommendations.append("Backfill missing freshness/versioning metadata.")
     if report.duplicate_active_versions:
-        recommendations.append("Deactivate superseded versions so each source_id has one active version.")
+        recommendations.append(
+            "Deactivate superseded versions so each source_id has one active version."
+        )
     if report.stale_sources:
         recommendations.append("Run source sync or manually review stale sources.")
     if report.expired_sources:

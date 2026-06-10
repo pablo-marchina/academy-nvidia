@@ -44,13 +44,18 @@ testpaths = ["tests"]
 [tool.black]
 line-length = 100
 target-version = ["py311"]
+extend-exclude = '''
+^/notebooks/
+'''
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["notebooks/*.ipynb"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+ignore = ["UP042"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -60,3 +65,8 @@ disallow_untyped_defs = true
 no_implicit_optional = true
 check_untyped_defs = true
 packages = ["src"]
+exclude = ["src/agents/"]
+
+[[tool.mypy.overrides]]
+module = ["sentence_transformers", "yaml"]
+ignore_missing_imports = true

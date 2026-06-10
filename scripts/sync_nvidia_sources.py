@@ -47,10 +47,7 @@ _REPORTS_DIR = _CORPUS_DIR / "sync_reports"
 # Constants
 # ---------------------------------------------------------------------------
 
-_DEFAULT_USER_AGENT = (
-    "NVIDIA-Startup-AI-Radar/1.0"
-    " (sync; academic-project; contact@example.com)"
-)
+_DEFAULT_USER_AGENT = "NVIDIA-Startup-AI-Radar/1.0" " (sync; academic-project; contact@example.com)"
 _DEFAULT_TIMEOUT = 30
 _MAX_DOCUMENT_BYTES = 5_000_000
 _DEFAULT_RATE_LIMIT = 2.0
@@ -396,9 +393,7 @@ def update_sources_yaml(
         current["freshness_policy"] = entry.get(
             "freshness_policy", current.get("freshness_policy", entry.get("update_frequency"))
         )
-        current["stale_after_days"] = entry.get(
-            "stale_after_days", current.get("stale_after_days")
-        )
+        current["stale_after_days"] = entry.get("stale_after_days", current.get("stale_after_days"))
 
         versions = current.get("versions")
         if not isinstance(versions, list) or not versions:
@@ -407,7 +402,9 @@ def update_sources_yaml(
         active = _find_active_version(versions)
         active_hash = active.get("content_hash") if active else current.get("content_hash")
         if content_hash and active_hash and content_hash != active_hash:
-            previous_version = str(active.get("version", current.get("version", "1.0"))) if active else "1.0"
+            previous_version = (
+                str(active.get("version", current.get("version", "1.0"))) if active else "1.0"
+            )
             new_version = _next_version(previous_version)
             if active is not None:
                 active["is_active"] = False
@@ -525,9 +522,7 @@ def run_sync(args: argparse.Namespace) -> SyncReport:
     # 1. Load allowlist
     print("Step 1/5: Loading allowlist...")
     all_sources = load_allowlist()
-    report.allowlist_version = all_sources.get(
-        "_allowlist", {}
-    ).get("allowlist_version", "1.0")
+    report.allowlist_version = all_sources.get("_allowlist", {}).get("allowlist_version", "1.0")
     print(f"  Allowlist version: {all_sources.get('_allowlist_version', 'unknown')}")
     print(f"  Found {len(all_sources)} source(s) in allowlist")
 
@@ -553,9 +548,7 @@ def run_sync(args: argparse.Namespace) -> SyncReport:
 
     # Filter by source-id
     if args.source_id:
-        valid_entries = [
-            e for e in valid_entries if e["source_id"] in args.source_id
-        ]
+        valid_entries = [e for e in valid_entries if e["source_id"] in args.source_id]
         print(f"  Filtered by source_id: {args.source_id}")
 
     # Filter by product
@@ -563,9 +556,7 @@ def run_sync(args: argparse.Namespace) -> SyncReport:
         valid_entries = [
             e
             for e in valid_entries
-            if any(
-                p.lower() in e.get("product", "").lower() for p in args.product
-            )
+            if any(p.lower() in e.get("product", "").lower() for p in args.product)
         ]
         print(f"  Filtered by product: {args.product}")
 
@@ -619,16 +610,16 @@ def run_sync(args: argparse.Namespace) -> SyncReport:
             current_hash = get_current_corpus_hash(sid)
             if current_hash is None:
                 report.sources_new += 1
-                print(f"    New source (no existing corpus file)")
+                print("    New source (no existing corpus file)")
             elif current_hash == result["content_hash"]:
                 report.sources_unchanged += 1
-                print(f"    Unchanged (hash matches existing corpus)")
+                print("    Unchanged (hash matches existing corpus)")
             else:
                 report.sources_changed += 1
-                print(f"    Changed (hash differs from existing corpus)")
+                print("    Changed (hash differs from existing corpus)")
 
         elif result["status"] == "disallowed":
-            print(f"    Skipped (not allowed)")
+            print("    Skipped (not allowed)")
             report.skipped_files.append(sid)
         elif result["status"] == "failed":
             report.sources_failed.append(sid)

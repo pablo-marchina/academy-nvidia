@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 # ---------------------------------------------------------------------------
 # Import the module under test
 # ---------------------------------------------------------------------------
-
 from scripts.sync_nvidia_sources import (
     SyncReport,
     check_robots_txt,
@@ -126,7 +124,12 @@ class TestValidateAllowlistEntry:
 
 class TestDisallowedSource:
     def test_disallowed_source_skipped(self) -> None:
-        result = fetch_source(SAMPLE_DISALLOWED_ENTRY, rate_limit=0, max_docs=None, already_fetched=0)
+        result = fetch_source(
+            SAMPLE_DISALLOWED_ENTRY,
+            rate_limit=0,
+            max_docs=None,
+            already_fetched=0,
+        )
         assert result["status"] == "disallowed"
         assert result["content"] is None
 
@@ -171,7 +174,11 @@ class TestFetchUrl:
         mock_response.headers = MagicMock()
         mock_response.headers.get.return_value = "23"
         mock_response.headers.get_content_charset.return_value = "utf-8"
-        mock_response.read.return_value = b"Hello, NVIDIA World! This is a longer test content that exceeds the minimum length required for validation purposes. It needs to be at least 100 characters to pass the length check implemented in the fetch_url function."
+        mock_response.read.return_value = (
+            b"Hello, NVIDIA World! This is a longer test content that exceeds the "
+            b"minimum length required for validation purposes. It needs to be at least "
+            b"100 characters to pass the length check implemented in fetch_url."
+        )
         mock_response.headers.get_content_charset.return_value = "utf-8"
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
@@ -340,9 +347,7 @@ class TestFetchSource:
         mock_check_robots.return_value = True
         mock_fetch_url.return_value = ("NVIDIA NIM content here", None)
 
-        result = fetch_source(
-            SAMPLE_VALID_ENTRY, rate_limit=0, max_docs=None, already_fetched=0
-        )
+        result = fetch_source(SAMPLE_VALID_ENTRY, rate_limit=0, max_docs=None, already_fetched=0)
         assert result["status"] == "downloaded"
         assert result["content"] == "NVIDIA NIM content here"
         assert len(result["content_hash"]) == 32
@@ -357,9 +362,7 @@ class TestFetchSource:
         mock_check_robots.return_value = True
         mock_fetch_url.return_value = (None, "HTTP 404: Not Found")
 
-        result = fetch_source(
-            SAMPLE_VALID_ENTRY, rate_limit=0, max_docs=None, already_fetched=0
-        )
+        result = fetch_source(SAMPLE_VALID_ENTRY, rate_limit=0, max_docs=None, already_fetched=0)
         assert result["status"] == "failed"
         assert "404" in result["error"]
 
@@ -372,9 +375,7 @@ class TestFetchSource:
     ) -> None:
         mock_check_robots.return_value = False
 
-        result = fetch_source(
-            SAMPLE_VALID_ENTRY, rate_limit=0, max_docs=None, already_fetched=0
-        )
+        result = fetch_source(SAMPLE_VALID_ENTRY, rate_limit=0, max_docs=None, already_fetched=0)
         assert result["status"] == "failed"
         assert "robots" in result["error"].lower()
 
@@ -430,7 +431,6 @@ class TestReport:
         assert report.hashes == {}
 
     def test_report_roundtrip_json(self) -> None:
-        report = SyncReport(sync_run_id="test", sources_seen=3)
         data = json.loads(json.dumps({"sync_run_id": "test", "sources_seen": 3}))
         assert data["sync_run_id"] == "test"
         assert data["sources_seen"] == 3
@@ -471,9 +471,7 @@ class TestStagingIO:
             run_id="test_run",
         )
         # Find the meta file
-        meta_files = list(
-            (Path("data/nvidia_corpus/staging") / "test_source").glob("*_meta.json")
-        )
+        list((Path("data/nvidia_corpus/staging") / "test_source").glob("*_meta.json"))
         # May or may not exist depending on test execution path
         # Just verify no crash
 
