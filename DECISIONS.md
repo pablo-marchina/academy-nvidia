@@ -169,6 +169,18 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 
 ---
 
+### Decision 024 — CI/CD, Validation Automation & Quality Gates
+
+- **Context:** The project had a rigorous manual quality process documented in AGENTS.md, contracts, and prompts, but zero automation of linting, type-checking, testing, or documentation consistency. All 4 validation commands (pytest, ruff, black, mypy) depended on developer/agent discipline.
+- **Decision:** Add GitHub Actions CI (ruff, black, mypy, pytest on push/PR to main), pre-commit hooks (trailing-whitespace, end-of-file-fixer, check-yaml/toml/json, check-added-large-files, ruff, black), a Makefile with convenience targets, `scripts/validate.sh` for local validation, and two verification scripts (`check_scope.py` for contract/doc updates on sensitive changes, `check_docs_closure.py` for epic closure completeness).
+- **Alternatives considered:** GitLab CI (not GitHub-native), Azure Pipelines (overkill for current stage), no automation (status quo — too error-prone), Nox/tox (premature — single Python version).
+- **Rationale:** GitHub Actions is the natural CI platform for a GitHub-hosted project. Pre-commit hooks catch formatting/lint issues before they reach CI. The Makefile and validate.sh provide a single command for local validation. `check_scope.py` ensures contract/documentation discipline is maintained when product code changes. `check_docs_closure.py` formalizes the end-of-epic checklist.
+- **Risks:** CI requires a `.github/` directory and workflow file that may conflict with non-GitHub workflows. Pre-commit hooks that are too aggressive may frustrate development. `check_scope.py` uses `git diff HEAD` which may behave unexpectedly during rebase.
+- **Validation:** 13 new tests (7 check_scope, 6 check_docs_closure). CI passes on push to main. `make validate` completes with 0 errors. All 319 pre-existing tests pass unchanged.
+- **Status:** Implementado no Epic 16.
+
+---
+
 ## Decisões de Arquitetura do Produto (Suplementares)
 
 ### Decision 016 — Pipeline Completo com Diagnosis + Recommendation

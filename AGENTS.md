@@ -50,13 +50,18 @@ Construir uma plataforma multiagente para identificar startups brasileiras AI-na
 9. O agente nao deve implementar features fora do plano aprovado.
 10. Se um item de fechamento nao se aplica, diga explicitamente por que.
 
+### Validacao
+11. Sempre rodar `make validate` (ou `scripts/validate.sh`) antes do commit.
+12. Rodar `python scripts/check_scope.py` para verificar contratos e docs quando alterar `src/` ou `tests/`.
+13. Antes de fechar um épico, rodar `python scripts/check_docs_closure.py`.
+
 ## Fluxo de trabalho esperado
 1. Entender a tarefa.
 2. Conferir arquivos relevantes (AGENTS.md, contratos, planos anteriores).
 3. Propor plano curto (se nao trivial, salvar em `docs/plans/`).
 4. Executar menor incremento util.
 5. Rodar Review Diff antes do commit.
-6. Rodar validacoes (pytest, ruff, black, mypy).
+6. Rodar validacoes (`make validate` ou `scripts/validate.sh`).
 7. Atualizar documentacao se necessario (README, ROADMAP, DECISIONS, EVALS, ERROR_LOG).
 8. Atualizar Obsidian (decisoes, resumos, limitações).
 9. Sugerir proximo passo.
@@ -77,6 +82,8 @@ Ao finalizar um épico (antes de marcar como concluído), executar obrigatoriame
 - [ ] `EVALS.md` atualizado com baseline de testes e cobertura.
 - [ ] `ERROR_LOG.md` revisado e atualizado se houve erros.
 - [ ] `docs/` — documentacao relevante atualizada ou criada.
+- [ ] `python scripts/check_scope.py` passa (ou overrides justificados).
+- [ ] `python scripts/check_docs_closure.py` passa (ou justificativa).
 - [ ] `obsidian-vault/` — backfill realizado:
   - Nota de decisao em `04 Decisions/`
   - Nota resumo do épico em `03 Research/`
@@ -92,6 +99,9 @@ Se qualquer item do checklist falhar, o épico nao pode ser marcado como conclui
 - ruff check .
 - black --check .
 - mypy src
+- make validate (ou scripts/validate.sh)
+- python scripts/check_scope.py
+- python scripts/check_docs_closure.py
 
 ## Estilo de codigo
 - Python tipado.

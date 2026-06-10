@@ -1,32 +1,27 @@
 # Known Limitations
 
-## Briefing
-- Startup Action Brief é gerado a partir de dados sintéticos (PipelineResult construído com perfis de teste). Nenhum teste com dados reais de startup brasileira foi executado.
-- Seção "Suggested Technical Experiment" só aparece quando há APPROACH_NOW — briefs de baixa confiança omitem essa seção.
-- Markdown renderer não suporta customização de template (template fixo).
-- Nenhuma exportação PDF implementada.
+## CI/CD & Quality Gates
 
-## Pipeline
-- Pipeline usa dados sintéticos nos testes. Validação com dados reais de scraping é futura.
-- missing_evidence é populado mas nem sempre cobre todos os módulos (alguns módulos não reportam missing_evidence).
-- recommended_motion pode ser "lack_evidence_more_research" mesmo para startups com sinais fortes se o perfil tiver confidence_score baixo.
+- CI only tests on Ubuntu — no Windows/macOS matrix.
+- Integration tests excluded from CI (require QDRANT_TEST_URL).
+- Pre-commit hooks not auto-installed — developer must run `pre-commit install`.
+- `check_scope.py` relies on `git diff HEAD` — may behave unexpectedly during rebase.
+- `check_scope.py` does not validate file content, only file paths.
+- Makefile requires `make` (available via `choco install make` or git-bash on Windows).
+- No coverage threshold enforcement in CI yet.
 
-## RAG
-- Corpus manual em `data/nvidia_corpus/` — sem ingestão automatizada.
-- Semantic/hybrid retrieval usa `MockEmbeddingProvider` nos testes (não captura relações semânticas reais).
-- `SentenceTransformerProvider` requer `sentence-transformers` (~500MB) — não instalado por padrão.
-- Sem cross-encoder reranking (deferred para backlog).
-- Sem query expansion ou sinônimos.
-- Nenhum teste com corpus real da documentação NVIDIA.
-- Vector store é in-memory (sem persistência entre sessões — Qdrant-ready).
+## Product
 
-## RAG Evaluation
-- Golden queries manuais — mudanças no corpus podem exigir atualização.
-- Sem métricas agregadas entre queries (ex: mean average precision).
-- Comparação multi-modo usa mock embeddings — não valida qualidade semântica real.
-
-## Geral
-- Nenhum teste de integração com dados reais.
-- Nenhum teste de avaliação (evals) automatizado.
-- Config (src/config/settings.py) sem testes.
-- Módulos agents/, database/, evaluation/, interface/ são stubs não implementados.
+- The pipeline uses deterministic heuristics, not an LLM, for all scoring and diagnosis steps.
+- Scraping collects from a single public URL — no crawling in scale.
+- RAG semantic/hybrid retrieval requires `sentence-transformers` for real embeddings (mock provider used in tests).
+- RAG evaluation multi-mode comparison uses `MockEmbeddingProvider` by default.
+- Corpus is manually curated in `data/nvidia_corpus/` (10 documents — no automated ingestion).
+- Vector store is in-memory only (no persistence across sessions).
+- Context packing uses configurable limits (per-tech=2, per-gap=3, global=5).
+- No automated ingestion script for populating Qdrant from the corpus.
+- Recommendation Engine is deterministic (no LLM).
+- No human-in-the-loop technically implemented.
+- No integration tests exist — all tests are unit tests (9 integration tests skippable).
+- No eval harness exists — `tests/evals/` is empty.
+- Agents (`src/agents/`), database (`src/database/`), and interface (`src/interface/`) are stubs.

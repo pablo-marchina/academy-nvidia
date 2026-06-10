@@ -202,6 +202,21 @@
 - [x] Total: 315 testes (306 unit + 9 integration skippable), 31 test files
 - [x] Qdrant opcional — RAG continua funcionando sem Qdrant
 
+### Epic 16 — CI/CD, Validation Automation & Quality Gates (concluído)
+- [x] `.github/workflows/ci.yml` — GitHub Actions CI (ruff, black, mypy, pytest)
+- [x] `.pre-commit-config.yaml` — pre-commit hooks (trailing-whitespace, end-of-file-fixer, check-yaml/toml/json, check-added-large-files, ruff, black)
+- [x] `Makefile` — targets: test, lint, format-check, typecheck, validate, rag-eval, ci
+- [x] `scripts/validate.sh` — local validation runner
+- [x] `scripts/check_scope.py` — detects sensitive area changes, requires contract/doc/EVALS updates
+- [x] `scripts/check_docs_closure.py` — verifies plan, ROADMAP, EVALS, Obsidian, Known Limitations before epic close
+- [x] `tests/unit/test_check_scope.py` — 7 tests
+- [x] `tests/unit/test_check_docs_closure.py` — 6 tests
+- [x] `docs/40_ci_cd_quality_gates.md` — design doc
+- [x] `AGENTS.md`, `README.md`, `EVALS.md`, `ROADMAP.md`, `DECISIONS.md` updated
+- [x] Obsidian vault backfill
+- [x] Total: 329 tests (315 existing + 14 new), 34 test files
+- [x] No changes to src/ or product tests
+
 ### Product RAG (V3 — futuro / backlog)
 - Reranking cross-encoder (alternativa ao reranking determinístico)
 - Ingestão automatizada de documentação NVIDIA via crawler respeitando robots.txt
@@ -223,4 +238,3 @@
 ### Production Readiness
 - Docker Compose
 - PostgreSQL + Qdrant
-- CI/CD

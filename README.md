@@ -1,5 +1,7 @@
 # NVIDIA Startup AI Radar — Opportunity Intelligence for NVIDIA Inception
 
+[![CI](https://github.com/anomalyco/academy-nvidia/actions/workflows/ci.yml/badge.svg)](https://github.com/anomalyco/academy-nvidia/actions/workflows/ci.yml)
+
 NVIDIA Startup AI Radar transforma sinais públicos de startups brasileiras em um ranking acionável, combinando agentes de coleta, validação de evidências, classificação AI-native, Production AI Readiness, AI-Native Defensibility Score e NVIDIA Inception Fit Score. O sistema diagnostica production AI gaps, recupera playbooks NVIDIA via RAG e gera um Startup Action Brief com prioridade, evidências, tecnologias recomendadas, experimento técnico sugerido e próxima ação para o time de Startups & VCs.
 
 ## Objective
@@ -30,6 +32,7 @@ How can NVIDIA identify, attract, and nurture Brazilian AI-native startups in a 
 12. **RAG Evaluation** offline evaluation layer with golden queries, 7 retrieval metrics, and 6 quality gates for the Product RAG module.
 13. **Reranking + Context Packing** deterministic reranking (composite score: gap/tech boost + provenance/duplicate/irrelevant penalties) and context packing (dedup, gap/tech limits, provenance filtering) for enriched, clean NVIDIA context in briefs.
 14. **Persistent Vector Store (Qdrant)** optional Qdrant-backed vector store with lazy connection, full payload provenance, and server-side filtering — falls back to in-memory.
+15. **CI/CD & Quality Gates** GitHub Actions CI (ruff, black, mypy, pytest), pre-commit hooks, Makefile targets, scope/documentation validation scripts.
 
 See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [docs/02_architecture.md](docs/02_architecture.md) for the architectural flow.
 
@@ -49,6 +52,8 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 11. **Output Consolidation** — aggregated evidence_used, missing_evidence, reasoning
 12. **Product RAG (optional)** — hybrid retrieval (lexical/semantic), deterministic reranking, context packing, provenance tracking
 
+13. **CI/CD & Quality Gates** — GitHub Actions (ruff, black, mypy, pytest), pre-commit hooks, Makefile targets, scope-check and docs-closure verification scripts.
+
 ### Modules implemented
 - `src/scraping/` — fetcher, parser, source policy
 - `src/extraction/` — extractor, schemas (Pydantic)
@@ -62,9 +67,10 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `src/rag/` — Product RAG ingestion, lexical + semantic + hybrid retrieval, embeddings, vector store, playbook retriever, **deterministic reranking, context packing, Qdrant persistent vector store**
 - `src/evaluation/` — Offline RAG evaluation (golden queries, metrics, quality gates, multi-mode comparison, **reranking/packed**)
 - `src/config/` — settings via pydantic-settings
+- `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate)
 
 ### Testing
-- 306 unit tests across 31 test files (+ 9 skippable integration tests)
+- 329 tests (320 unit + 9 skippable integration) across 34 test files
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -85,6 +91,8 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - Pipeline RAG Integration: 10 tests (packed contexts, no RAG, empty index, brief section, dropped not in brief, motion unchanged, provenance, quality summary, backward compat, lexical mode)
 - Qdrant Store: 20 tests (lazy connection, error, add, remove, clear, get, size, search, filters, provenance, factory)
 - Qdrant Pipeline Integration: 9 tests (skippable — requires QDRANT_TEST_URL)
+- Check Scope: 7 tests (sensitive changes require docs, override flag, contract detection)
+- Check Docs Closure: 6 tests (plan, ROADMAP, EVALS, Obsidian checks)
 
 ## Stack
 
@@ -102,6 +110,8 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - ruff
 - black
 - mypy
+- pre-commit
+- GitHub Actions
 - Streamlit for a future MVP interface
 
 ## Installation
@@ -150,6 +160,40 @@ pytest
 ruff check .
 black --check .
 mypy src
+```
+
+Or use the Makefile:
+```bash
+make lint        # ruff check .
+make format-check  # black --check .
+make typecheck   # mypy src
+make test        # pytest (unit only)
+make validate    # all of the above
+make rag-eval    # RAG evaluation tests
+```
+
+## CI/CD
+
+GitHub Actions CI runs on push/PR to `main`:
+
+- `ruff check .`
+- `black --check .`
+- `mypy src`
+- `pytest -m "not integration"`
+
+Pre-commit hooks are available (install with `pre-commit install`):
+
+- `trailing-whitespace`, `end-of-file-fixer`, `check-yaml/toml/json`
+- `check-added-large-files`, `ruff`, `black`
+
+Local validation scripts:
+
+```bash
+make validate
+# or
+scripts/validate.sh
+python scripts/check_scope.py
+python scripts/check_docs_closure.py
 ```
 
 ## Running the API
@@ -214,4 +258,7 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - No eval harness exists — `tests/evals/` is empty.
 - Agents (`src/agents/`), database (`src/database/`), and interface (`src/interface/`) are stubs.
 - Obsidian vault has structure but no populated content beyond templates.
-- Obsidian vault has structure but no populated content beyond templates.
+- CI only tests on Ubuntu — no Windows/macOS matrix in CI.
+- Integration tests excluded from CI (require `QDRANT_TEST_URL`).
+- Pre-commit hooks not auto-installed — developer must run `pre-commit install`.
+- `check_scope.py` relies on `git diff` against HEAD — may behave unexpectedly during rebase.

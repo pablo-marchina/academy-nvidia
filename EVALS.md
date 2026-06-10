@@ -36,11 +36,13 @@
 | Pipeline RAG Integration | `tests/unit/test_pipeline_rag.py` | 10 | ✅ |
 | Qdrant Store Unit | `tests/unit/test_qdrant_store.py` | 20 | ✅ |
 | Qdrant Pipeline Integration | `tests/integration/test_qdrant_rag_pipeline.py` | 9 | ⏭️ (skippable) |
-| **Total** | **32 arquivos** | **315** | **306 pass, 9 skip** |
+| Check Scope | `tests/unit/test_check_scope.py` | 7 | ✅ |
+| Check Docs Closure | `tests/unit/test_check_docs_closure.py` | 7 | ✅ |
+| **Total** | **34 arquivos** | **329** | **320 pass, 9 skip** |
 
 ## Cobertura por módulo
 
-| Módulo src/ | Implementado? | Testado? | Testes |
+| Módulo | Implementado? | Testado? | Testes |
 |---|---|---|---|
 | `extraction/schemas.py` | ✅ REAL | ✅ | 4 |
 | `extraction/extractor.py` | ✅ REAL | ✅ | 14 |
@@ -66,11 +68,14 @@
 | `database/` (2 files) | ❌ STUB | ❌ | 0 |
 | `evaluation/` (4 files) | ✅ REAL | ✅ | 20 + 14 (Epic 13) + 11 (Epic 14) |
 | `interface/` (1 file) | ❌ STUB | ❌ | 0 |
+| `scripts/check_scope.py` | ✅ REAL | ✅ | 7 |
+| `scripts/check_docs_closure.py` | ✅ REAL | ✅ | 7 |
 
 ## Lacunas de cobertura
 
 - **Integração:** `tests/integration/` tem 9 testes Qdrant (skippable via QDRANT_TEST_URL)
 - **Config:** `src/config/settings.py` sem testes
+- **Novos scripts:** `scripts/check_scope.py` e `scripts/check_docs_closure.py` testados (14 testes)
 
 ## Critérios de aceite por módulo
 
@@ -128,6 +133,25 @@ Estes critérios avaliam a **qualidade do processo de desenvolvimento assistido 
 - **Curto prazo:** 100% dos épicos não triviais terão plano salvo, Review Diff executado, Obsidian atualizado
 - **Médio prazo:** Review Diff detecta 0 falsos negativos (nada fora de escopo passa)
 - **Longo prazo:** Developer RAG implementado com recall@5 ≥90%
+
+## CI/CD Quality Gates
+
+| Gate | Ferramenta | Onde roda | Falha bloqueia? |
+|------|-----------|-----------|-----------------|
+| Ruff lint | `ruff check .` | CI, pre-commit, `make lint` | ✅ |
+| Black format | `black --check .` | CI, pre-commit, `make format-check` | ✅ |
+| Mypy typecheck | `mypy src` | CI, `make typecheck` | ✅ |
+| Unit tests | `pytest` | CI, `make test` | ✅ |
+| Scope check | `python scripts/check_scope.py` | Manual (antes do commit) | ⚠️ (overridable) |
+| Docs closure | `python scripts/check_docs_closure.py` | Manual (antes de fechar épico) | ⚠️ (overridable) |
+| Pre-commit hooks | `.pre-commit-config.yaml` | `git commit` (se instalado) | ✅ |
+| Full validation | `make validate` / `scripts/validate.sh` | Local (antes do commit) | ✅ |
+
+### Gatilhos
+- **Push/PR para main:** CI roda automaticamente (ruff, black, mypy, pytest)
+- **git commit (local):** pre-commit hooks rodam se instalados
+- **Antes do commit (agente IA):** `make validate` + `python scripts/check_scope.py`
+- **Antes de fechar épico:** `python scripts/check_docs_closure.py`
 
 ## Métricas aspiracionais (futuras)
 
