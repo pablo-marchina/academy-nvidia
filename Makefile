@@ -1,4 +1,4 @@
-.PHONY: test lint format-check typecheck validate rag-eval ci
+.PHONY: test lint format-check typecheck validate rag-eval ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus
 
 test:
 	python -m pytest -m "not integration" --tb=short
@@ -24,3 +24,9 @@ ingest:
 
 ingest-qdrant:
 	python scripts/ingest_nvidia_corpus.py
+
+sync-corpus-dry-run:
+	python scripts/sync_nvidia_sources.py --dry-run
+
+sync-corpus:
+	python scripts/sync_nvidia_sources.py --staging-only

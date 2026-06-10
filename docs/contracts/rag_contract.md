@@ -197,3 +197,17 @@ for full documentation.
 5. `_point_to_entry` restores all new fields from Qdrant payload
 6. `QdrantStore._ensure_collection()` now also calls `_ensure_payload_indexes()` which creates keyword indexes for: product, gap_types, source_id, version, document_type, content_hash
 7. The ingestion script never makes external calls, never scrapes, never downloads
+
+## Source Sync (Epic 19)
+
+scripts/sync_nvidia_sources.py — automated download of allowed NVIDIA documentation
+URLs to a staging area before promotion to the local corpus.
+
+### Integration contract
+1. data/nvidia_corpus/source_allowlist.yaml defines allowed sources with metadata
+2. Only sources with llowed: true are fetched
+3. All downloads respect robots.txt, rate limiting, timeout, and max size
+4. Content is saved to staging/<source_id>/ before any corpus modification
+5. Promotion (--promote) archives the previous version before overwriting
+6. The sync script never ingests into Qdrant — run scripts/ingest_nvidia_corpus.py separately
+7. No external calls in tests — fetcher and urlopen are mocked

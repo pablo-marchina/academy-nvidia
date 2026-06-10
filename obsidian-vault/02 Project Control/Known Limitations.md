@@ -51,3 +51,9 @@
 - Prompts de workflow criados no Epic 7.2 mas ainda nao testados em uso real
 - Plan artifacts obrigatorios a partir do Epic 7.2 — epicos anteriores nao tem planos versionados
 - Contratos de desenvolvimento criados no Epic 7.2 — precisam ser mantidos atualizados com o codigo
+
+- Source sync script (Epic 19) only downloads from allowlisted URLs — no automatic discovery of new NVIDIA documentation pages
+- Source sync depends on URL stability in source_allowlist.yaml — 404s are detected but not auto-resolved
+- Sync script requires manual promote step (--promote) — no scheduled/cron mode
+- Sync script does not ingest into Qdrant — user must run ingest_nvidia_corpus.py separately
+- Test coverage: 49 mocked tests — real integration with NVIDIA docs is not tested in CI

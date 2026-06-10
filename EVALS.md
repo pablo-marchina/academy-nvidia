@@ -38,7 +38,7 @@
 | Qdrant Pipeline Integration | `tests/integration/test_qdrant_rag_pipeline.py` | 9 | ⏭️ (skippable) |
 | Check Scope | `tests/unit/test_check_scope.py` | 7 | ✅ |
 | Check Docs Closure | `tests/unit/test_check_docs_closure.py` | 7 | ✅ |
-| **Total** | **34 arquivos** | **329** | **320 pass, 9 skip** |
+| **Total** | **38 arquivos** | **378** | **369 pass, 9 skip** |
 
 ## Cobertura por módulo
 
@@ -227,3 +227,22 @@ python scripts/ingest_nvidia_corpus.py --mock-embeddings --backend in_memory  # 
 - Recall@k para cobertura de evidências
 - Faithfulness de diagnósticos vs julgamento especialista
 - Business usefulness score (survey time NVIDIA)
+
+## Source Sync (Epic 19)
+
+### Script
+`ash
+python scripts/sync_nvidia_sources.py --dry-run           # validar allowlist
+python scripts/sync_nvidia_sources.py --staging-only       # baixar para staging
+python scripts/sync_nvidia_sources.py --source-id nim --promote  # sync + promote
+python scripts/sync_nvidia_sources.py --promote --report-path report.json
+`
+
+### Testes
+- 49 unitarios (all mocked — zero chamadas externas)
+- Coverage: allowlist validation, CLI, fetcher, robots.txt, dry-run, staging, promote, hash, report
+
+### Fluxo
+`
+allowlist --> fetch (rate limit, robots.txt) --> staging --> hash compare --> promote (opcional)
+`

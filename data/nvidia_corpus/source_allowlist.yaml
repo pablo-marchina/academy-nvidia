@@ -1,0 +1,133 @@
+allowlist_version: "1.0"
+sources:
+  - source_id: nim
+    title: "NVIDIA NIM"
+    url: "https://docs.nvidia.com/nim/latest/"
+    product: "NVIDIA NIM"
+    gap_types: ["external_api_dependency", "high_inference_cost", "high_latency"]
+    document_type: "nvidia_corpus"
+    allowed: true
+    update_frequency: "weekly"
+    expected_format: "markdown"
+    license_note: "NVIDIA Documentation License — read-only, no redistribution"
+    notes: "Main NIM deployment guide. Covers inference optimization, model serving."
+
+  - source_id: tensorrt_llm
+    title: "TensorRT-LLM"
+    url: "https://docs.nvidia.com/deeplearning/tensorrt-llm/"
+    product: "TensorRT-LLM"
+    gap_types: ["high_inference_cost", "high_latency"]
+    document_type: "nvidia_corpus"
+    allowed: true
+    update_frequency: "weekly"
+    expected_format: "markdown"
+    license_note: "NVIDIA Documentation License"
+    notes: "LLM optimization toolkit documentation."
+
+  - source_id: triton
+    title: "Triton Inference Server"
+    url: "https://docs.nvidia.com/deeplearning/triton-inference-server/"
+    product: "Triton Inference Server"
+    gap_types: ["high_inference_cost", "high_latency"]
+    document_type: "nvidia_corpus"
+    allowed: true
+    update_frequency: "weekly"
+    expected_format: "markdown"
+    license_note: "NVIDIA Documentation License"
+    notes: "Multi-framework inference serving."
+
+  - source_id: nemo_guardrails
+    title: "NeMo Guardrails"
+    url: "https://docs.nvidia.com/nemo/guardrails/"
+    product: "NeMo Guardrails"
+    gap_types: ["agent_governance_gap"]
+    document_type: "nvidia_corpus"
+    allowed: true
+    update_frequency: "monthly"
+    expected_format: "markdown"
+    license_note: "NVIDIA Documentation License"
+    notes: "AI agent governance with NeMo Guardrails."
+
+  - source_id: rapids
+    title: "NVIDIA RAPIDS"
+    url: "https://docs.rapids.ai/"
+    product: "NVIDIA RAPIDS"
+    gap_types: ["slow_data_pipeline", "heavy_tabular_processing"]
+    document_type: "nvidia_corpus"
+    allowed: true
+    update_frequency: "monthly"
+    expected_format: "markdown"
+    license_note: "RAPIDS Open Source License"
+    notes: "GPU-accelerated data science."
+
+  - source_id: riva
+    title: "NVIDIA Riva"
+    url: "https://docs.nvidia.com/deeplearning/riva/"
+    product: "NVIDIA Riva"
+    gap_types: ["voice_need"]
+    document_type: "nvidia_corpus"
+    allowed: true
+    update_frequency: "monthly"
+    expected_format: "markdown"
+    license_note: "NVIDIA Documentation License"
+    notes: "Speech AI SDK documentation."
+
+  - source_id: omniverse
+    title: "NVIDIA Omniverse"
+    url: "https://docs.omniverse.nvidia.com/"
+    product: "NVIDIA Omniverse"
+    gap_types: ["simulation_need"]
+    document_type: "nvidia_corpus"
+    allowed: true
+    update_frequency: "monthly"
+    expected_format: "markdown"
+    license_note: "NVIDIA Documentation License"
+    notes: "3D simulation and digital twins."
+
+  - source_id: isaac
+    title: "NVIDIA Isaac"
+    url: "https://docs.isaac.robot.nvidia.com/"
+    product: "NVIDIA Isaac"
+    gap_types: ["robotics_need"]
+    document_type: "nvidia_corpus"
+    allowed: true
+    update_frequency: "monthly"
+    expected_format: "markdown"
+    license_note: "NVIDIA Documentation License"
+    notes: "Robotics development platform."
+
+  - source_id: clara_monai
+    title: "Clara / MONAI"
+    url: "https://docs.nvidia.com/clara/"
+    product: "Clara / MONAI"
+    gap_types: ["healthcare_compliance_need"]
+    document_type: "nvidia_corpus"
+    allowed: true
+    update_frequency: "monthly"
+    expected_format: "markdown"
+    license_note: "NVIDIA Documentation License"
+    notes: "Healthcare AI and medical imaging."
+
+  - source_id: morpheus
+    title: "NVIDIA Morpheus"
+    url: "https://docs.nvidia.com/morpheus/"
+    product: "NVIDIA Morpheus"
+    gap_types: ["ai_cybersecurity_need"]
+    document_type: "nvidia_corpus"
+    allowed: true
+    update_frequency: "monthly"
+    expected_format: "markdown"
+    license_note: "NVIDIA Documentation License"
+    notes: "AI-powered cybersecurity."
+
+  - source_id: blocked_test_source
+    title: "Blocked Source Example"
+    url: "https://example.com/not-allowed"
+    product: "None"
+    gap_types: []
+    document_type: "nvidia_corpus"
+    allowed: false
+    update_frequency: "never"
+    expected_format: "unknown"
+    license_note: "N/A"
+    notes: "Source explicitly disallowed for testing purposes."

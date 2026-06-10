@@ -252,7 +252,22 @@
 - [x] `tests/integration/test_qdrant_corpus_ingestion.py` — 3 testes (skippable)
 - [x] `docs/42_automated_qdrant_corpus_ingestion.md`
 - [x] Total: 375 tests (358 pre-existing + 17 novos), 37 test files
+
 - [x] README / EVALS / ROADMAP / docs / Obsidian atualizados
+
+
+### Epic 19 — Automated NVIDIA Corpus Source Sync (concluído)
+- [x] scripts/sync_nvidia_sources.py — script de sync automatizado com allowlist
+- [x] data/nvidia_corpus/source_allowlist.yaml — allowlist versionada com 10 fontes + 1 bloqueada
+- [x] data/nvidia_corpus/staging/, rchive/, sync_reports/ — diretorios de suporte
+- [x] CLI com --dry-run, --source-id, --product, --promote, --staging-only, --report-path, --fail-on-validation-error, --max-documents, --rate-limit-seconds
+- [x] Fluxo completo: carregar allowlist, validar, baixar com rate limit e robots.txt, salvar em staging, comparar hash, promover
+- [x] Seguranca: timeout, max-size, user-agent claro, sem cookies, sem login, sem follow de links
+- [x] 	ests/unit/test_sync_nvidia_sources.py — 49 testes mockados (zero chamadas externas)
+- [x] docs/43_automated_nvidia_source_sync.md
+- [x] Total: 424 tests (375 pre-existing + 49 novos), 38 test files
+- [x] README / EVALS / ROADMAP / docs / Obsidian atualizados
+- [x] Nenhuma alteracao em src/, nenhuma ingestao Qdrant, nenhuma dependencia nova
 
 ### Product RAG (V3 — futuro / backlog)
 - Reranking cross-encoder (alternativa ao reranking determinístico)
