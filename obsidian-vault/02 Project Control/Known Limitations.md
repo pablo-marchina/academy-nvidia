@@ -55,9 +55,9 @@
 
 - Source sync script (Epic 19) only downloads from allowlisted URLs — no automatic discovery of new NVIDIA documentation pages
 - Source sync depends on URL stability in source_allowlist.yaml — 404s are detected but not auto-resolved
-- Sync script requires manual promote step (--promote) — no scheduled/cron mode
-- Sync script does not ingest into Qdrant — user must run ingest_nvidia_corpus.py separately
+- Sync script requires explicit manual promote step (`--promote` or `promote_sources=true`); schedule never promotes sources.
+- Sync script does not ingest into Qdrant; real ingestion is handled only by explicit corpus maintenance input or manual ingest command.
 - Test coverage: 49 mocked tests — real integration with NVIDIA docs is not tested in CI
-- Corpus freshness audit (Epic 20) is offline/manual — no scheduled freshness monitor yet
+- Corpus freshness audit now runs in the safe corpus maintenance schedule, but stale content is not yet rendered as an Action Brief warning.
 - Existing Qdrant collections must be reingested to receive lifecycle payload fields
 - Stale corpus context is audit-visible but not yet rendered as an Action Brief warning

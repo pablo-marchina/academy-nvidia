@@ -35,6 +35,7 @@ How can NVIDIA identify, attract, and nurture Brazilian AI-native startups in a 
 15. **CI/CD & Quality Gates** GitHub Actions CI (ruff, black, mypy, pytest), pre-commit hooks, Makefile targets, scope/documentation validation scripts.
 16. **Source Sync** Allowlist-based download of NVIDIA documentation to staging with hash comparison, robots.txt verification, rate limiting, and optional promotion to the local corpus.
 17. **Corpus Freshness & Versioning** Local lifecycle policy with source versions, active/deprecated flags, stale/expired audit, and default retrieval filtering for active non-expired corpus chunks.
+18. **Scheduled Corpus Maintenance** Manual and scheduled-safe workflow that runs source sync dry-run, freshness audit, Qdrant ingest dry-run, optional real ingestion, RAG evals, golden evals, and artifact reports.
 
 See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [docs/02_architecture.md](docs/02_architecture.md) for the architectural flow.
 
@@ -69,7 +70,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `src/rag/` — Product RAG ingestion, lexical + semantic + hybrid retrieval, embeddings, vector store, playbook retriever, **deterministic reranking, context packing, Qdrant persistent vector store**
 - `src/evaluation/` — Offline RAG evaluation (golden queries, metrics, quality gates, multi-mode comparison, **reranking/packed**)
 - `src/config/` — settings via pydantic-settings
-- `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit
+- `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit, corpus maintenance orchestration
 
 ### Testing
 - 448 tests (436 passing + 12 skippable integration) across 39 test files
@@ -195,6 +196,9 @@ make typecheck   # mypy src
 make test        # pytest (unit only)
 make validate    # all of the above
 make rag-eval    # RAG evaluation tests
+make corpus-maintenance-dry-run  # sync dry-run + freshness audit + ingest dry-run
+make corpus-maintenance-evals    # safe maintenance + RAG/golden evals
+make corpus-maintenance-ingest   # explicit real Qdrant ingestion path
 ```
 
 ## CI/CD
@@ -205,6 +209,12 @@ GitHub Actions CI runs on push/PR to `main`:
 - `black --check .`
 - `mypy src`
 - `pytest -m "not integration"`
+
+Corpus maintenance has a separate workflow at `.github/workflows/corpus-maintenance.yml`.
+It supports manual `workflow_dispatch` and a safe weekly schedule. Real Qdrant ingestion
+is disabled by default and requires `run_ingestion=true`; source promotion is also
+disabled by default and requires `promote_sources=true`. Reports are uploaded as the
+`corpus-maintenance-reports` artifact.
 
 Pre-commit hooks are available (install with `pre-commit install`):
 
@@ -266,7 +276,7 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - RAG semantic/hybrid retrieval requires the optional `rag` extra for real embeddings: `pip install -e ".[rag]"` (mock provider used in tests).
 - RAG evaluation multi-mode comparison uses `MockEmbeddingProvider` by default — real semantic quality requires `sentence-transformers`.
 - Qdrant ingestion with the default `sentence-transformers/all-MiniLM-L6-v2` model uses 384-dimensional vectors, so `QDRANT_VECTOR_SIZE` must remain `384` for that collection.
-- Corpus is local and allowlist-backed in `data/nvidia_corpus/`; sync, freshness audit, and Qdrant ingestion are script-driven, not scheduled.
+- Corpus is local and allowlist-backed in `data/nvidia_corpus/`; scheduled maintenance is safe by default and does not promote sources or run real ingestion unless explicitly requested in a manual workflow run.
 - Relevance scoring in lexical mode is keyword-match-based; semantic mode uses cosine similarity; reranking uses a deterministic composite formula (no cross-encoder).
 - Vector store is in-memory only (no persistence across sessions — Qdrant-ready for production; optional QdrantStore adapter available in Epic 15).
 - Context packing uses configurable limits (per-tech=2, per-gap=3, global=5) — may drop relevant contexts in edge cases.

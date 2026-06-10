@@ -283,6 +283,16 @@
 - [x] Total validado: 447 tests (435 passed + 12 skipped)
 - [x] Nenhum crawler amplo, nenhuma chamada externa, nenhuma dependencia nova
 
+### Epic 21 - Scheduled Corpus Maintenance Workflow (concluido)
+- [x] `.github/workflows/corpus-maintenance.yml` - workflow manual com defaults seguros e schedule semanal seguro
+- [x] `scripts/run_corpus_maintenance.py` - orquestrador local para sync dry-run, freshness audit, ingest dry-run, ingestao real opcional, RAG evals e golden evals
+- [x] `Makefile` - alvos `corpus-maintenance-dry-run`, `corpus-maintenance-evals`, `corpus-maintenance-ingest`
+- [x] Reports em `reports/corpus-maintenance/<run-id>/` e artifact `corpus-maintenance-reports`
+- [x] Ingestao real exige `run_ingestion=true`; promocao exige `promote_sources=true`
+- [x] Schedule nao promove fontes, nao ingere real, nao faz auto-commit
+- [x] docs/45, README, EVALS, DECISIONS e Obsidian atualizados
+- [x] Nenhum crawler amplo, nenhuma mudanca em retrieval/embeddings/scoring/diagnosis/recommendation/briefing
+
 ### Product RAG (V3 — futuro / backlog)
 - Reranking cross-encoder (alternativa ao reranking determinístico)
 - Ingestão automatizada de documentação NVIDIA via crawler respeitando robots.txt

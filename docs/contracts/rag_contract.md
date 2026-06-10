@@ -241,3 +241,17 @@ URLs to a staging area before promotion to the local corpus.
 5. Promotion (--promote) archives the previous version before overwriting
 6. The sync script never ingests into Qdrant — run scripts/ingest_nvidia_corpus.py separately
 7. No external calls in tests — fetcher and urlopen are mocked
+
+## Corpus Maintenance Workflow (Epic 21)
+
+`scripts/run_corpus_maintenance.py` orchestrates the existing RAG corpus maintenance
+steps without changing retrieval behavior.
+
+### Integration contract
+1. Source sync dry-run validates the allowlist before any optional promotion.
+2. Freshness audit runs before Qdrant ingest dry-run and real ingestion.
+3. Qdrant ingest dry-run always runs without upsert.
+4. Real Qdrant ingestion requires explicit `--run-ingestion`.
+5. Source promotion requires explicit `--promote-sources`.
+6. Scheduled GitHub Actions runs must keep `run_ingestion=false` and `promote_sources=false`.
+7. Reports are written under `reports/corpus-maintenance/<run-id>/` and uploaded as GitHub Actions artifacts.

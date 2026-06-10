@@ -26,6 +26,6 @@
 - No integration tests exist — all tests are unit tests (9 integration tests skippable).
 - No eval harness exists — `tests/evals/` is empty.
 - Agents (`src/agents/`), database (`src/database/`), and interface (`src/interface/`) are stubs.
-- Corpus freshness audit is offline and manual; there is no scheduled sync/audit job yet.
+- Corpus maintenance has a safe scheduled workflow, but it does not promote sources or run real Qdrant ingestion automatically.
 - Existing Qdrant collections need reingestion to receive Epic 20 lifecycle payload fields.
 - Stale corpus content is reported by audit but not yet surfaced as an Action Brief warning.

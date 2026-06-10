@@ -283,6 +283,16 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 - **Validation:** 38 golden tests pass. 358 total tests (320 pre-existing + 38 new + 0 regression). Full CI passes offline. All 7 cases produce correct pipeline contract, motion, gaps, brief sections, and RAG invariants.
 - **Status:** Implementado no Epic 17.
 
+### Decision 026 - Scheduled Corpus Maintenance is Safe by Default
+
+- **Context:** Source sync, freshness audit, Qdrant ingestion, RAG evals, and golden evals existed as separate manual steps. Running them manually made corpus maintenance error-prone, while automatic real ingestion or source promotion could publish bad corpus changes silently.
+- **Decision:** Add a dedicated corpus maintenance workflow and local orchestrator with safe defaults: source sync dry-run enabled, freshness audit enabled, Qdrant ingest dry-run enabled, evals enabled, real ingestion disabled, source promotion disabled, collection recreation disabled, stale warnings non-blocking, expired sources blocking. Scheduled runs use only the safe path; real ingestion and promotion require explicit manual inputs.
+- **Alternatives considered:** Put the sequence in CI (rejected because corpus maintenance is operational, not every PR validation), enable automatic ingestion on schedule (rejected because it can mutate Qdrant silently), use shell-only orchestration (rejected because Python gives structured summary reports and safer argument handling).
+- **Rationale:** The workflow provides repeatable maintenance and artifacts while preserving human review for any corpus mutation. It keeps all source downloads allowlist-based and keeps Qdrant local to the runner.
+- **Risks:** The new script has no dedicated unit tests because Epic 21 scope excludes `tests/`; mitigated by local safe execution, structured reports, and full repo quality gates. Real ingestion still depends on Docker/Qdrant availability when explicitly enabled.
+- **Validation:** `scripts/run_corpus_maintenance.py` safe mode, `pytest`, `ruff check .`, `black --check .`, and `mypy src`.
+- **Status:** Implementado no Epic 21.
+
 ---
 
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

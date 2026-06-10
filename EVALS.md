@@ -267,3 +267,32 @@ python scripts/audit_nvidia_corpus_freshness.py --fail-on-expired
 - Retrieval padrao exclui inactive/deprecated/superseded/expired
 - `sources.yaml` permite multiplas versoes por `source_id`
 - Apenas uma versao ativa por `source_id`, salvo excecao futura explicita
+
+## Corpus Maintenance Workflow (Epic 21)
+
+### Script
+```bash
+python scripts/run_corpus_maintenance.py
+python scripts/run_corpus_maintenance.py --no-run-ingestion --run-evals
+python scripts/run_corpus_maintenance.py --run-ingestion
+```
+
+### Reports
+- `maintenance_summary.json`
+- `source_sync_dry_run.json`
+- `freshness_audit.json`
+- `qdrant_ingest_dry_run.json`
+- `qdrant_ingestion.json`, se `run_ingestion=true`
+- `rag_eval_junit.xml`, se `run_evals=true`
+- `golden_eval_junit.xml`, se `run_evals=true`
+- stdout/stderr logs por etapa
+
+### Validacao
+- Script local validado por execucao em modo seguro.
+- Sem novos testes unitarios porque o escopo aprovado do Epic 21 nao inclui `tests/`; a cobertura operacional fica registrada pelos reports e pelos quality gates existentes.
+
+### Invariantes
+- Ingestao real nao roda por default.
+- Schedule nao promove fontes.
+- Schedule nao ingere Qdrant real.
+- `fail_on_expired=true` por default.
