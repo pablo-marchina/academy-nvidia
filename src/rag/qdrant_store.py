@@ -17,6 +17,16 @@ if TYPE_CHECKING:
     from qdrant_client import QdrantClient
 
 
+_PAYLOAD_INDEX_FIELDS = [
+    "product",
+    "gap_types",
+    "source_id",
+    "version",
+    "document_type",
+    "content_hash",
+]
+
+
 class QdrantConnectionError(Exception):
     """Raised when Qdrant is unreachable or returns an unexpected error."""
 
@@ -96,6 +106,31 @@ class QdrantStore(VectorStore):
                     distance=self._models.Distance.COSINE,
                 ),
             )
+        self._ensure_payload_indexes()
+
+    def _ensure_payload_indexes(self) -> None:
+        """Create payload indexes if they do not exist."""
+        assert self._client is not None
+        assert self._models is not None
+        try:
+            existing = set(
+                self._client.get_collection(  # type: ignore[attr-defined]
+                    self._config.collection_name
+                ).payload_schema.keys()
+            )
+        except Exception:
+            existing = set()
+        for field in _PAYLOAD_INDEX_FIELDS:
+            if field not in existing:
+                try:
+                    self._client.create_payload_index(  # type: ignore[attr-defined]
+                        collection_name=self._config.collection_name,
+                        field_name=field,
+                        field_type=self._models.PayloadSchemaType.KEYWORD,
+                        wait=True,
+                    )
+                except Exception:
+                    pass
 
     # ------------------------------------------------------------------
     # Mutation
@@ -152,6 +187,7 @@ class QdrantStore(VectorStore):
                 distance=self._models.Distance.COSINE,
             ),
         )
+        self._ensure_payload_indexes()
 
     def get_entry(self, chunk_id: str) -> VectorEntry | None:
         """Retrieve a single point by chunk_id."""
@@ -272,7 +308,7 @@ class QdrantStore(VectorStore):
 def _entry_to_point(entry: VectorEntry, models_module: Any) -> Any:
     """Convert a ``VectorEntry`` to a Qdrant ``PointStruct``."""
     now = datetime.now(UTC).isoformat()
-    content_hash = hashlib.md5(entry.content.encode("utf-8")).hexdigest()
+    chunk_hash = entry.chunk_hash or hashlib.md5(entry.content.encode("utf-8")).hexdigest()
 
     return models_module.PointStruct(
         id=entry.chunk_id,
@@ -284,14 +320,16 @@ def _entry_to_point(entry: VectorEntry, models_module: Any) -> Any:
             "source_url": entry.url or "",
             "product": entry.product,
             "gap_types": list(entry.gap_types),
-            "version": "1.0",
-            "content_hash": content_hash,
+            "version": entry.version,
+            "content_hash": entry.content_hash or chunk_hash,
+            "chunk_hash": chunk_hash,
             "collected_at": now,
-            "document_type": "nvidia_corpus",
+            "document_type": entry.document_type,
             "provenance": {
                 "source_url": entry.url or "",
                 "source_title": entry.title,
             },
+            "ingestion_run_id": entry.ingestion_run_id or "",
         },
     )
 
@@ -310,6 +348,11 @@ def _point_to_entry(point: Any) -> VectorEntry:
         gap_types=list(payload.get("gap_types", [])),
         url=payload.get("source_url") or None,
         embedding=vector,
+        version=payload.get("version", "1.0"),
+        document_type=payload.get("document_type", "nvidia_corpus"),
+        content_hash=payload.get("content_hash"),
+        chunk_hash=payload.get("chunk_hash"),
+        ingestion_run_id=payload.get("ingestion_run_id"),
     )
 
 

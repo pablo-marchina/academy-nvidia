@@ -20,6 +20,7 @@
 - Recommendation Engine implementado e integrado ao pipeline (Epic 9.1)
 - RAG pipeline integrado como Step 11 opcional — sem suporte a contextos multi-turno ou consultas interativas
 - QdrantStore nao faz fallback automatico para in-memory em caso de erro de conexao (caller deve capturar QdrantConnectionError)
+- Script de ingestao (Epic 18) usa MockEmbeddingProvider por padrao se sentence-transformers nao estiver instalado — embeddings reais requerem sentence-transformers
 
 - Scores dependem da qualidade e cobertura das evidencias publicas disponiveis
 - Confianca das evidencias e atribuida heuristicamente, nao por modelo aprendido

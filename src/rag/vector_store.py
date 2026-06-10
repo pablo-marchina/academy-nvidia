@@ -24,6 +24,11 @@ class VectorEntry:
     gap_types: list[str] = field(default_factory=list)
     url: str | None = None
     embedding: list[float] = field(default_factory=list)
+    version: str = "1.0"
+    document_type: str = "nvidia_corpus"
+    content_hash: str | None = None
+    chunk_hash: str | None = None
+    ingestion_run_id: str | None = None
 
 
 class VectorStore(ABC):
@@ -197,9 +202,9 @@ class InMemoryVectorStore(VectorStore):
         if source_id:
             result = [e for e in result if e.source_id == source_id]
         if version:
-            result = [e for e in result if _getattr(e, "version", None) == version]
+            result = [e for e in result if e.version == version]
         if document_type:
-            result = [e for e in result if _getattr(e, "document_type", None) == document_type]
+            result = [e for e in result if e.document_type == document_type]
         return result
 
 
@@ -219,8 +224,3 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
     if norm_a == 0.0 or norm_b == 0.0:
         return 0.0
     return dot / (norm_a * norm_b)
-
-
-def _getattr(obj: object, name: str, default: object = None) -> object:
-    """Safe getattr that returns *default* instead of raising."""
-    return getattr(obj, name, default)

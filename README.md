@@ -70,7 +70,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate)
 
 ### Testing
-- 358 tests (320 unit + 38 golden evals + 9 skippable integration) across 35 test files
+- 375 tests (337 unit + 38 golden evals + 12 skippable integration) across 37 test files
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -246,7 +246,7 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - Context packing uses configurable limits (per-tech=2, per-gap=3, global=5) — may drop relevant contexts in edge cases.
 - RAG pipeline integrated as optional Step 11 — no support for multi-turn or interactive context queries.
 - QdrantStore does not auto-fallback to in-memory on connection error (caller must catch `QdrantConnectionError`).
-- No automated ingestion script for populating Qdrant from the corpus.
+- Automated ingestion script at `scripts/ingest_nvidia_corpus.py` handles corpus → Qdrant pipeline with validation, hashing, embeddings, and provenance preservation.
 - Recommendation Engine is deterministic (no LLM) — now fully integrated in the pipeline.
 - Gap Diagnosis module (`src/diagnosis/gap_diagnosis.py`) exists but is not yet called by the pipeline — scores are available but not part of the output.
 - Scores depend on the quality and coverage of public evidence available for the startup.

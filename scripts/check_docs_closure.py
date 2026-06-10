@@ -47,7 +47,7 @@ def check_plan_saved(plan_arg: str | None, repo_root: Path) -> bool:
             return True
         print(f"  {FAIL} Plan not found: {plan_arg}")
         return False
-        latest = find_latest_plan(repo_root)
+    latest = find_latest_plan(repo_root)
     if latest:
         print(f"  {OK} Plan: {latest.relative_to(repo_root)}")
         return True

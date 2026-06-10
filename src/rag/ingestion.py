@@ -27,6 +27,8 @@ def load_sources() -> dict[str, RagSource]:
             url=info.get("url"),
             product=info.get("product", ""),
             gap_types=info.get("gap_types", []),
+            version=info.get("version", "1.0"),
+            document_type=info.get("document_type", "nvidia_corpus"),
         )
     return sources
 
@@ -109,6 +111,8 @@ def _make_chunk(
         product=source_info.product if source_info else doc.title,
         gap_types=source_info.gap_types if source_info else [],
         url=source_info.url if source_info else None,
+        version=source_info.version if source_info else "1.0",
+        document_type=source_info.document_type if source_info else "nvidia_corpus",
     )
 
 

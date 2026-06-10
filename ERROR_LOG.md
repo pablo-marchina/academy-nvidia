@@ -27,6 +27,20 @@
 
 ## Erro 003 — Flat scoring causa perda de diversidade nos resultados (Epic 11)
 
+---
+
+## Erro 004 — check_docs_closure.py UnboundLocalError (Epic 18)
+
+**Data:** 2026-06-10
+
+**O que aconteceu:** `python scripts/check_docs_closure.py` crashou com `UnboundLocalError: cannot access local variable 'latest' where it is not associated with a value`.
+
+**Causa provável:** Variável `latest = find_latest_plan(repo_root)` estava posicionada após `return False` dentro do `if plan_arg:` — código inatingível.
+
+**Como corrigimos:** Movemos a linha `latest = find_latest_plan(repo_root)` para fora do `if` block.
+
+**Como evitar no futuro:** Sempre executar `python scripts/check_docs_closure.py` antes de fechar épico. Em scripts de validação, verificar dead code com ruff (`F841` não pega variáveis após return).
+
 **Data:** 2026-06-09
 
 **O que aconteceu:** `retrieve_by_gap_type("high_inference_cost", top_k=5)` retornava apenas chunks da NVIDIA NIM (5/5), mesmo havendo chunks de TensorRT-LLM e Triton no índice com o mesmo gap_type e score.

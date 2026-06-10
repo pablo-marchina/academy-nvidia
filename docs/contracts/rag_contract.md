@@ -180,3 +180,20 @@ Evaluation is deterministic when using `MockEmbeddingProvider`. No LLM judge, no
 - `tests/unit/test_pipeline_rag.py` — 10 tests (Epic 14.1)
 - `tests/unit/test_qdrant_store.py` — 20 tests (Epic 15)
 - `tests/integration/test_qdrant_rag_pipeline.py` — 9 tests (Epic 15, skippable)
+- `tests/unit/test_ingest_nvidia_corpus.py` — 17 tests (Epic 18)
+- `tests/integration/test_qdrant_corpus_ingestion.py` — 3 tests (Epic 18, skippable)
+
+## Ingestion Script (Epic 18)
+
+`scripts/ingest_nvidia_corpus.py` — automated pipeline for populating Qdrant from the
+local corpus at `data/nvidia_corpus/`. See `docs/42_automated_qdrant_corpus_ingestion.md`
+for full documentation.
+
+### Integration contract
+1. `RagSource` now carries `version` and `document_type` (defaults: "1.0", "nvidia_corpus")
+2. `RagChunk` now carries `version`, `document_type`, `content_hash` (backward-compatible)
+3. `VectorEntry` now carries `version`, `document_type`, `content_hash`, `chunk_hash`, `ingestion_run_id` (backward-compatible, all optional with defaults)
+4. `_entry_to_point` uses `entry.version`/`entry.document_type` if set, falls back to defaults
+5. `_point_to_entry` restores all new fields from Qdrant payload
+6. `QdrantStore._ensure_collection()` now also calls `_ensure_payload_indexes()` which creates keyword indexes for: product, gap_types, source_id, version, document_type, content_hash
+7. The ingestion script never makes external calls, never scrapes, never downloads

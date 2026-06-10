@@ -18,3 +18,9 @@ rag-eval:
 	python -m pytest tests/unit/test_rag_eval.py tests/unit/test_rag_eval_semantic.py tests/unit/test_rag_eval_reranking.py --tb=short
 
 ci: validate
+
+ingest:
+	python scripts/ingest_nvidia_corpus.py --mock-embeddings --backend in_memory --dry-run
+
+ingest-qdrant:
+	python scripts/ingest_nvidia_corpus.py

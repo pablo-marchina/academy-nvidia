@@ -233,10 +233,30 @@
 - [x] Total: 358 tests (329 pre-existing + 38 golden evals), 36 test files
 - [x] No changes to src/ — pure test infrastructure
 
+### Epic 18 — Automated Qdrant Corpus Ingestion (concluído)
+- [x] `scripts/ingest_nvidia_corpus.py` — script de ingestão automatizada
+- [x] CLI com `--dry-run`, `--recreate-collection`, `--skip-existing`, `--source-id`, `--product`, `--backend`, `--mock-embeddings`, `--report-path`
+- [x] Validação de documentos (metadata obrigatória, arquivo vazio)
+- [x] content_hash (documento) e chunk_hash (chunk) via MD5 determinístico
+- [x] Embeddings via SentenceTransformerProvider ou MockEmbeddingProvider
+- [x] Upsert em Qdrant com payload completo (provenance, hashes, versão, filtros)
+- [x] Payload indexes automáticos (product, gap_types, source_id, version, document_type, content_hash)
+- [x] Relatório de ingestão com contadores
+- [x] Idempotência via chunk_hash + --skip-existing
+- [x] Nenhuma chamada externa, nenhum scraping, nenhum crawler
+- [x] `src/rag/schemas.py` — +version, document_type, content_hash em RagChunk/RagSource
+- [x] `src/rag/vector_store.py` — +version, document_type, content_hash, chunk_hash, ingestion_run_id em VectorEntry
+- [x] `src/rag/qdrant_store.py` — payload indexes + novos campos no payload
+- [x] `data/nvidia_corpus/sources.yaml` — +version, document_type por source
+- [x] `tests/unit/test_ingest_nvidia_corpus.py` — 17 testes
+- [x] `tests/integration/test_qdrant_corpus_ingestion.py` — 3 testes (skippable)
+- [x] `docs/42_automated_qdrant_corpus_ingestion.md`
+- [x] Total: 375 tests (358 pre-existing + 17 novos), 37 test files
+- [x] README / EVALS / ROADMAP / docs / Obsidian atualizados
+
 ### Product RAG (V3 — futuro / backlog)
 - Reranking cross-encoder (alternativa ao reranking determinístico)
 - Ingestão automatizada de documentação NVIDIA via crawler respeitando robots.txt
-- Script de ingestão para popular Qdrant a partir do corpus manual
 
 ---
 

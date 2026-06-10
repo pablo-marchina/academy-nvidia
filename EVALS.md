@@ -110,6 +110,8 @@
 | Pipeline RAG Integration | 10 testes (pipeline com packed contexts, sem RAG, empty index, brief section, dropped not in brief, motion unchanged, provenance, quality summary, backward compat, lexical mode) | ✅ |
 | Qdrant Store Unit | 20 tests (lazy conn, error, add, remove, clear, get, size, search, filters, provenance, factory) | ✅ |
 | Qdrant Pipeline Integration | 9 tests (upsert, filters, remove, clear, get, provenance, error) | ⏭️ skippable |
+| Ingest NVIDIA Corpus | 17 tests (hash, CLI, dry-run, ingest in-memory, payload, report) | ✅ |
+| Qdrant Corpus Ingestion | 3 tests (ingest, recreate, idempotence) | ⏭️ skippable |
 
 ## Critérios de Qualidade do Desenvolvimento
 
@@ -195,7 +197,31 @@ Se um golden case falhar:
 3. Atualizar `expected_outputs.json` e o campo `expected` no JSON do caso
 4. Re-executar `pytest tests/evals/` para confirmar
 
-## Métricas aspiracionais (futuras)
+## Ingestion (Epic 18)
+
+### Script
+```bash
+python scripts/ingest_nvidia_corpus.py              # ingestao real (Qdrant)
+python scripts/ingest_nvidia_corpus.py --dry-run     # validacao sem upsert
+python scripts/ingest_nvidia_corpus.py --mock-embeddings --backend in_memory  # offline
+```
+
+### Payload Qdrant por chunk
+| Campo | Descricao |
+|-------|-----------|
+| `chunk_id` | Deterministico: `{source_id}_{index:03d}` |
+| `content_hash` | MD5 do documento completo |
+| `chunk_hash` | MD5 do conteudo do chunk |
+| `version` | Versao do source |
+| `document_type` | Tipo do documento |
+| `provenance` | `{source_url, source_title}` |
+| `ingestion_run_id` | Identificador unico da execucao |
+
+### Testes
+- 17 unitarios (backend in_memory, sem Qdrant)
+- 3 integracao (skippable — requer QDRANT_TEST_URL)
+
+## Metricas aspiracionais (futuras)
 
 - Precision@k para ranking de startups
 - Recall@k para cobertura de evidências

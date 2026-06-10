@@ -15,6 +15,8 @@ class RagSource(BaseModel):
     url: str | None = None
     product: str
     gap_types: list[str] = Field(default_factory=list)
+    version: str = "1.0"
+    document_type: str = "nvidia_corpus"
 
 
 class RagDocument(BaseModel):
@@ -31,6 +33,9 @@ class RagChunk(BaseModel):
     product: str
     gap_types: list[str] = Field(default_factory=list)
     url: str | None = None
+    version: str = "1.0"
+    document_type: str = "nvidia_corpus"
+    content_hash: str | None = None
 
 
 class RetrievalQuery(BaseModel):
