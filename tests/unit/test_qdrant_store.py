@@ -271,14 +271,15 @@ def test_search_combined_filters(store: QdrantStore, mock_qdrant: MagicMock) -> 
     )
     call_filter = mock_qdrant.query_points.call_args[1].get("query_filter")
     assert call_filter is not None
-    assert len(call_filter.must) == 3
+    assert len(call_filter.must) == 4
 
 
 def test_search_no_filters(store: QdrantStore, mock_qdrant: MagicMock) -> None:
-    """Without filters, query_filter is None."""
+    """Default search filters active entries."""
     store.search([0.1, 0.2, 0.3, 0.4])
     call_filter = mock_qdrant.query_points.call_args[1].get("query_filter")
-    assert call_filter is None
+    assert call_filter is not None
+    assert len(call_filter.must) == 1
 
 
 # ------------------------------------------------------------------

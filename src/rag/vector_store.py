@@ -10,6 +10,7 @@ from __future__ import annotations
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -29,6 +30,17 @@ class VectorEntry:
     content_hash: str | None = None
     chunk_hash: str | None = None
     ingestion_run_id: str | None = None
+    previous_content_hash: str | None = None
+    collected_at: str | None = None
+    last_checked_at: str | None = None
+    valid_from: str | None = None
+    valid_until: str | None = None
+    freshness_policy: str | None = None
+    stale_after_days: int | None = None
+    is_active: bool = True
+    deprecated_at: str | None = None
+    superseded_by: str | None = None
+    deprecation_reason: str | None = None
 
 
 class VectorStore(ABC):
@@ -75,6 +87,8 @@ class VectorStore(ABC):
         source_id: str | None = None,
         version: str | None = None,
         document_type: str | None = None,
+        include_deprecated: bool = False,
+        include_expired: bool = False,
     ) -> list[VectorEntry]:
         """Cosine-similarity search with optional metadata filters.
 
@@ -94,6 +108,10 @@ class VectorStore(ABC):
             If set, only return entries whose ``version`` matches.
         document_type:
             If set, only return entries whose ``document_type`` matches.
+        include_deprecated:
+            If false, return only active entries without deprecation metadata.
+        include_expired:
+            If false, exclude entries whose ``valid_until`` is in the past.
 
         Returns
         -------
@@ -160,6 +178,8 @@ class InMemoryVectorStore(VectorStore):
         source_id: str | None = None,
         version: str | None = None,
         document_type: str | None = None,
+        include_deprecated: bool = False,
+        include_expired: bool = False,
     ) -> list[VectorEntry]:
         """Cosine-similarity search with optional metadata filters."""
         candidates = self._filter(
@@ -168,6 +188,8 @@ class InMemoryVectorStore(VectorStore):
             source_id=source_id,
             version=version,
             document_type=document_type,
+            include_deprecated=include_deprecated,
+            include_expired=include_expired,
         )
         if not candidates:
             return []
@@ -191,6 +213,8 @@ class InMemoryVectorStore(VectorStore):
         source_id: str | None = None,
         version: str | None = None,
         document_type: str | None = None,
+        include_deprecated: bool = False,
+        include_expired: bool = False,
     ) -> list[VectorEntry]:
         """Return all entries matching the given filters."""
         result = self.entries
@@ -205,6 +229,14 @@ class InMemoryVectorStore(VectorStore):
             result = [e for e in result if e.version == version]
         if document_type:
             result = [e for e in result if e.document_type == document_type]
+        if not include_deprecated:
+            result = [
+                e
+                for e in result
+                if e.is_active is True and not e.deprecated_at and not e.superseded_by
+            ]
+        if not include_expired:
+            result = [e for e in result if not _is_expired(e.valid_until)]
         return result
 
 
@@ -224,3 +256,15 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
     if norm_a == 0.0 or norm_b == 0.0:
         return 0.0
     return dot / (norm_a * norm_b)
+
+
+def _is_expired(valid_until: str | None) -> bool:
+    if not valid_until:
+        return False
+    try:
+        parsed = datetime.fromisoformat(valid_until.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC) < datetime.now(UTC)

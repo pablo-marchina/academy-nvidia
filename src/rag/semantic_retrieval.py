@@ -16,6 +16,8 @@ def semantic_retrieve(
     product: str | None = None,
     gap_type: str | None = None,
     source_id: str | None = None,
+    include_deprecated: bool = False,
+    include_expired: bool = False,
 ) -> list[RetrievedContext]:
     """Retrieve contexts semantically by embedding the query and searching the vector store.
 
@@ -50,6 +52,8 @@ def semantic_retrieve(
         product=product,
         gap_type=gap_type,
         source_id=source_id,
+        include_deprecated=include_deprecated,
+        include_expired=include_expired,
     )
 
     contexts: list[RetrievedContext] = []
@@ -65,6 +69,14 @@ def semantic_retrieve(
                 gap_types=list(entry.gap_types),
                 url=entry.url,
                 relevance_score=score,
+                version=entry.version,
+                valid_from=entry.valid_from,
+                valid_until=entry.valid_until,
+                freshness_policy=entry.freshness_policy,
+                stale_after_days=entry.stale_after_days,
+                is_active=entry.is_active,
+                deprecated_at=entry.deprecated_at,
+                superseded_by=entry.superseded_by,
             )
         )
     return contexts

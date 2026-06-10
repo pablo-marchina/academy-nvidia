@@ -37,8 +37,11 @@ SAMPLE_VALID_ENTRY = {
     "url": "https://docs.nvidia.com/nim/latest/",
     "product": "NVIDIA NIM",
     "gap_types": ["external_api_dependency"],
+    "version": "1.0",
     "document_type": "nvidia_corpus",
     "allowed": True,
+    "freshness_policy": "weekly",
+    "stale_after_days": 7,
 }
 
 SAMPLE_DISALLOWED_ENTRY = {
@@ -47,8 +50,11 @@ SAMPLE_DISALLOWED_ENTRY = {
     "url": "https://example.com/not-allowed",
     "product": "None",
     "gap_types": [],
+    "version": "0.0",
     "document_type": "nvidia_corpus",
     "allowed": False,
+    "freshness_policy": "never",
+    "stale_after_days": None,
 }
 
 VALID_ALLOWLIST_YAML = """
@@ -59,8 +65,11 @@ sources:
     url: "https://docs.nvidia.com/nim/latest/"
     product: "NVIDIA NIM"
     gap_types: ["external_api_dependency"]
+    version: "1.0"
     document_type: "nvidia_corpus"
     allowed: true
+    freshness_policy: "weekly"
+    stale_after_days: 7
 """
 
 
@@ -255,9 +264,8 @@ class TestDryRun:
 
 class TestStagingOnly:
     def test_staging_only_does_not_promote(self) -> None:
-        args = parse_args(["--staging-only"])
+        args = parse_args(["--staging-only", "--max-documents", "0"])
         report = run_sync(args)
-        # No allowlist in test env, so no sources
         assert report.promoted_files == []
 
 

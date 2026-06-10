@@ -123,6 +123,12 @@ def validate_allowlist_entry(entry: dict[str, Any]) -> list[str]:
         errors.append(f"source '{sid}': gap_types must be a list")
     if "document_type" not in entry or not entry["document_type"]:
         errors.append(f"source '{sid}': document_type is required")
+    if "version" not in entry or not entry["version"]:
+        errors.append(f"source '{sid}': version is required")
+    if "freshness_policy" not in entry or not entry["freshness_policy"]:
+        errors.append(f"source '{sid}': freshness_policy is required")
+    if entry.get("allowed") is True and "stale_after_days" not in entry:
+        errors.append(f"source '{sid}': stale_after_days is required")
     if "allowed" not in entry or not isinstance(entry["allowed"], bool):
         errors.append(f"source '{sid}': allowed must be true or false")
     return errors
@@ -348,6 +354,8 @@ def update_sources_yaml(
     entry: dict[str, Any],
     allowlist_path: Path = _ALLOWLIST_FILE,
     sources_path: Path = _SOURCES_FILE,
+    content_hash: str | None = None,
+    checked_at: str | None = None,
 ) -> bool:
     """Update sources.yaml with metadata from allowlist if changed. Returns True if updated."""
     if not sources_path.exists():
@@ -356,15 +364,25 @@ def update_sources_yaml(
     sources_dict: dict[str, Any] = raw.get("sources", {})
     sid = entry["source_id"]
     current = sources_dict.get(sid)
+    checked_at = checked_at or datetime.now(UTC).isoformat()
     if current is None:
         # New source
+        version = entry.get("version", "1.0")
+        lifecycle = _build_active_lifecycle(
+            version=version,
+            content_hash=content_hash,
+            previous_content_hash=None,
+            checked_at=checked_at,
+            entry=entry,
+        )
         sources_dict[sid] = {
             "title": entry.get("title", ""),
             "url": entry.get("url", ""),
             "product": entry.get("product", ""),
             "gap_types": entry.get("gap_types", []),
-            "version": entry.get("version", "1.0"),
             "document_type": entry.get("document_type", "nvidia_corpus"),
+            **lifecycle,
+            "versions": [lifecycle],
         }
     else:
         # Update metadata from allowlist
@@ -372,16 +390,122 @@ def update_sources_yaml(
         current["url"] = entry.get("url", current.get("url", ""))
         current["product"] = entry.get("product", current.get("product", ""))
         current["gap_types"] = entry.get("gap_types", current.get("gap_types", []))
-        current["version"] = entry.get("version", current.get("version", "1.0"))
         current["document_type"] = entry.get(
             "document_type", current.get("document_type", "nvidia_corpus")
         )
+        current["freshness_policy"] = entry.get(
+            "freshness_policy", current.get("freshness_policy", entry.get("update_frequency"))
+        )
+        current["stale_after_days"] = entry.get(
+            "stale_after_days", current.get("stale_after_days")
+        )
+
+        versions = current.get("versions")
+        if not isinstance(versions, list) or not versions:
+            versions = [_lifecycle_from_top_level(current)]
+
+        active = _find_active_version(versions)
+        active_hash = active.get("content_hash") if active else current.get("content_hash")
+        if content_hash and active_hash and content_hash != active_hash:
+            previous_version = str(active.get("version", current.get("version", "1.0"))) if active else "1.0"
+            new_version = _next_version(previous_version)
+            if active is not None:
+                active["is_active"] = False
+                active["deprecated_at"] = checked_at
+                active["superseded_by"] = new_version
+                active["deprecation_reason"] = "superseded_by_new_content_hash"
+            lifecycle = _build_active_lifecycle(
+                version=new_version,
+                content_hash=content_hash,
+                previous_content_hash=active_hash,
+                checked_at=checked_at,
+                entry=entry,
+            )
+            versions.append(lifecycle)
+            _copy_lifecycle_to_top_level(current, lifecycle)
+        else:
+            if active is None:
+                active = _build_active_lifecycle(
+                    version=entry.get("version", current.get("version", "1.0")),
+                    content_hash=content_hash or current.get("content_hash"),
+                    previous_content_hash=current.get("previous_content_hash"),
+                    checked_at=checked_at,
+                    entry=entry,
+                )
+                versions.append(active)
+            active["last_checked_at"] = checked_at
+            if content_hash:
+                active["content_hash"] = content_hash
+            _copy_lifecycle_to_top_level(current, active)
+
+        current["versions"] = versions
     raw["sources"] = sources_dict
     sources_path.write_text(
         yaml.safe_dump(raw, default_flow_style=False, allow_unicode=True, sort_keys=False),
         encoding="utf-8",
     )
     return True
+
+
+def _build_active_lifecycle(
+    *,
+    version: str,
+    content_hash: str | None,
+    previous_content_hash: str | None,
+    checked_at: str,
+    entry: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "version": version,
+        "content_hash": content_hash,
+        "previous_content_hash": previous_content_hash,
+        "collected_at": checked_at,
+        "last_checked_at": checked_at,
+        "valid_from": checked_at,
+        "valid_until": None,
+        "freshness_policy": entry.get("freshness_policy", entry.get("update_frequency")),
+        "stale_after_days": entry.get("stale_after_days"),
+        "is_active": True,
+        "deprecated_at": None,
+        "superseded_by": None,
+        "deprecation_reason": None,
+    }
+
+
+def _lifecycle_from_top_level(current: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "version": current.get("version", "1.0"),
+        "content_hash": current.get("content_hash"),
+        "previous_content_hash": current.get("previous_content_hash"),
+        "collected_at": current.get("collected_at"),
+        "last_checked_at": current.get("last_checked_at"),
+        "valid_from": current.get("valid_from"),
+        "valid_until": current.get("valid_until"),
+        "freshness_policy": current.get("freshness_policy"),
+        "stale_after_days": current.get("stale_after_days"),
+        "is_active": current.get("is_active", True),
+        "deprecated_at": current.get("deprecated_at"),
+        "superseded_by": current.get("superseded_by"),
+        "deprecation_reason": current.get("deprecation_reason"),
+    }
+
+
+def _find_active_version(versions: list[dict[str, Any]]) -> dict[str, Any] | None:
+    active_versions = [v for v in versions if v.get("is_active") is True]
+    return active_versions[-1] if active_versions else None
+
+
+def _copy_lifecycle_to_top_level(current: dict[str, Any], lifecycle: dict[str, Any]) -> None:
+    for field_name, value in lifecycle.items():
+        current[field_name] = value
+
+
+def _next_version(version: str) -> str:
+    parts = version.split(".")
+    if parts and all(part.isdigit() for part in parts):
+        parts[-1] = str(int(parts[-1]) + 1)
+        return ".".join(parts)
+    return f"{version}+{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
 
 # ---------------------------------------------------------------------------
@@ -525,13 +649,20 @@ def run_sync(args: argparse.Namespace) -> SyncReport:
             current_hash = get_current_corpus_hash(sid)
             if current_hash == result["content_hash"]:
                 print(f"  Skipping promote for {sid} (unchanged)")
+                update_sources_yaml(
+                    next(e for e in valid_entries if e["source_id"] == sid),
+                    content_hash=result["content_hash"],
+                    checked_at=result["fetch_time"],
+                )
                 continue
             content = result["content"]
             if content is None:
                 continue
             promote_path = promote_to_corpus(sid, content, run_timestamp)
             update_sources_yaml(
-                next(e for e in valid_entries if e["source_id"] == sid)
+                next(e for e in valid_entries if e["source_id"] == sid),
+                content_hash=result["content_hash"],
+                checked_at=result["fetch_time"],
             )
             report.promoted_files.append(str(promote_path))
             promoted += 1

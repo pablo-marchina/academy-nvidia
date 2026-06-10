@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from src.rag.ingestion import load_and_chunk_corpus
 from src.rag.schemas import RagChunk, RetrievalQuery, RetrievedContext
 
@@ -32,14 +34,14 @@ class ChunkIndex:
 
         if query.gap_type:
             for c in self.by_gap.get(query.gap_type, []):
-                if c.chunk_id not in seen:
+                if c.chunk_id not in seen and _is_retrievable(c, query):
                     seen.add(c.chunk_id)
                     result.append(c)
 
         if query.technology:
             tech_key = query.technology.lower()
             for c in self.by_tech.get(tech_key, []):
-                if c.chunk_id not in seen:
+                if c.chunk_id not in seen and _is_retrievable(c, query):
                     seen.add(c.chunk_id)
                     result.append(c)
 
@@ -49,7 +51,7 @@ class ChunkIndex:
                 product_lower = c.product.lower()
                 kw_lower = query.keywords
                 if any(k.lower() in content_lower or k.lower() in product_lower for k in kw_lower):
-                    if c.chunk_id not in seen:
+                    if c.chunk_id not in seen and _is_retrievable(c, query):
                         seen.add(c.chunk_id)
                         result.append(c)
 
@@ -113,8 +115,39 @@ def _score_chunk(chunk: RagChunk, query: RetrievalQuery) -> tuple[RetrievedConte
         gap_types=list(chunk.gap_types),
         url=chunk.url,
         relevance_score=round(min(score, 1.0), 2),
+        version=chunk.version,
+        valid_from=chunk.valid_from,
+        valid_until=chunk.valid_until,
+        freshness_policy=chunk.freshness_policy,
+        stale_after_days=chunk.stale_after_days,
+        is_active=chunk.is_active,
+        deprecated_at=chunk.deprecated_at,
+        superseded_by=chunk.superseded_by,
     )
     return ctx, score
+
+
+def _is_retrievable(chunk: RagChunk, query: RetrievalQuery) -> bool:
+    if not query.include_deprecated:
+        if chunk.is_active is not True:
+            return False
+        if chunk.deprecated_at or chunk.superseded_by:
+            return False
+    if not query.include_expired and _is_expired(chunk.valid_until):
+        return False
+    return True
+
+
+def _is_expired(valid_until: str | None) -> bool:
+    if not valid_until:
+        return False
+    try:
+        parsed = datetime.fromisoformat(valid_until.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC) < datetime.now(UTC)
 
 
 def build_default_index() -> ChunkIndex:

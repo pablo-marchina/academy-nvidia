@@ -17,6 +17,18 @@ class RagSource(BaseModel):
     gap_types: list[str] = Field(default_factory=list)
     version: str = "1.0"
     document_type: str = "nvidia_corpus"
+    content_hash: str | None = None
+    previous_content_hash: str | None = None
+    collected_at: str | None = None
+    last_checked_at: str | None = None
+    valid_from: str | None = None
+    valid_until: str | None = None
+    freshness_policy: str | None = None
+    stale_after_days: int | None = None
+    is_active: bool = True
+    deprecated_at: str | None = None
+    superseded_by: str | None = None
+    deprecation_reason: str | None = None
 
 
 class RagDocument(BaseModel):
@@ -36,12 +48,26 @@ class RagChunk(BaseModel):
     version: str = "1.0"
     document_type: str = "nvidia_corpus"
     content_hash: str | None = None
+    previous_content_hash: str | None = None
+    collected_at: str | None = None
+    last_checked_at: str | None = None
+    valid_from: str | None = None
+    valid_until: str | None = None
+    freshness_policy: str | None = None
+    stale_after_days: int | None = None
+    is_active: bool = True
+    deprecated_at: str | None = None
+    superseded_by: str | None = None
+    deprecation_reason: str | None = None
 
 
 class RetrievalQuery(BaseModel):
     technology: str | None = None
     gap_type: str | None = None
     keywords: list[str] = Field(default_factory=list)
+    include_deprecated: bool = False
+    include_expired: bool = False
+    include_stale: bool = False
 
 
 class RetrievedContext(BaseModel):
@@ -53,6 +79,14 @@ class RetrievedContext(BaseModel):
     gap_types: list[str] = Field(default_factory=list)
     url: str | None = None
     relevance_score: float = 0.0
+    version: str = "1.0"
+    valid_from: str | None = None
+    valid_until: str | None = None
+    freshness_policy: str | None = None
+    stale_after_days: int | None = None
+    is_active: bool = True
+    deprecated_at: str | None = None
+    superseded_by: str | None = None
 
 
 class PlaybookRetrievalResult(BaseModel):
@@ -89,6 +123,14 @@ class PackedContext(BaseModel):
     rerank_score: float = 0.0
     matched_gap: str | None = None
     matched_technology: str | None = None
+    version: str = "1.0"
+    valid_from: str | None = None
+    valid_until: str | None = None
+    freshness_policy: str | None = None
+    stale_after_days: int | None = None
+    is_active: bool = True
+    deprecated_at: str | None = None
+    superseded_by: str | None = None
 
 
 class DroppedContext(BaseModel):

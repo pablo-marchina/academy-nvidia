@@ -87,6 +87,18 @@ def validate_document(
             errors.append(f"source '{source_id}': version is required")
         if not info.get("document_type"):
             errors.append(f"source '{source_id}': document_type is required")
+        if not info.get("content_hash"):
+            errors.append(f"source '{source_id}': content_hash is required")
+        if not info.get("last_checked_at"):
+            errors.append(f"source '{source_id}': last_checked_at is required")
+        if not info.get("valid_from"):
+            errors.append(f"source '{source_id}': valid_from is required")
+        if not info.get("freshness_policy"):
+            errors.append(f"source '{source_id}': freshness_policy is required")
+        if info.get("stale_after_days") is None:
+            errors.append(f"source '{source_id}': stale_after_days is required")
+        if info.get("is_active") is None:
+            errors.append(f"source '{source_id}': is_active is required")
 
     if md_path.stat().st_size == 0:
         errors.append(f"file '{md_path.name}' is empty")
@@ -201,6 +213,7 @@ def run_ingestion(args: argparse.Namespace) -> IngestionReport:
     print("Step 2/7: Scanning corpus files...")
     md_files = sorted(_CORPUS_DIR.glob("*.md"))
     md_files = [f for f in md_files if f.name != "README.md"]
+    md_files = [f for f in md_files if f.stem in raw_sources]
 
     if args.source_id:
         md_files = [f for f in md_files if f.stem in args.source_id]
@@ -283,6 +296,17 @@ def run_ingestion(args: argparse.Namespace) -> IngestionReport:
                 content_hash=chunk.content_hash,
                 chunk_hash=chunk_hash,
                 ingestion_run_id=run_id,
+                previous_content_hash=chunk.previous_content_hash,
+                collected_at=chunk.collected_at,
+                last_checked_at=chunk.last_checked_at,
+                valid_from=chunk.valid_from,
+                valid_until=chunk.valid_until,
+                freshness_policy=chunk.freshness_policy,
+                stale_after_days=chunk.stale_after_days,
+                is_active=chunk.is_active,
+                deprecated_at=chunk.deprecated_at,
+                superseded_by=chunk.superseded_by,
+                deprecation_reason=chunk.deprecation_reason,
             )
         )
 

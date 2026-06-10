@@ -36,9 +36,10 @@
 | Pipeline RAG Integration | `tests/unit/test_pipeline_rag.py` | 10 | ✅ |
 | Qdrant Store Unit | `tests/unit/test_qdrant_store.py` | 20 | ✅ |
 | Qdrant Pipeline Integration | `tests/integration/test_qdrant_rag_pipeline.py` | 9 | ⏭️ (skippable) |
+| Corpus Freshness Audit | `tests/unit/test_corpus_freshness_audit.py` | 11 | ✅ |
 | Check Scope | `tests/unit/test_check_scope.py` | 7 | ✅ |
 | Check Docs Closure | `tests/unit/test_check_docs_closure.py` | 7 | ✅ |
-| **Total** | **38 arquivos** | **378** | **369 pass, 9 skip** |
+| **Total** | **39 arquivos** | **447** | **435 pass, 12 skip** |
 
 ## Cobertura por módulo
 
@@ -112,6 +113,7 @@
 | Qdrant Pipeline Integration | 9 tests (upsert, filters, remove, clear, get, provenance, error) | ⏭️ skippable |
 | Ingest NVIDIA Corpus | 17 tests (hash, CLI, dry-run, ingest in-memory, payload, report) | ✅ |
 | Qdrant Corpus Ingestion | 3 tests (ingest, recreate, idempotence) | ⏭️ skippable |
+| Corpus Freshness Audit | 11 tests (stale, expired, deprecated, superseded, missing metadata, duplicate active versions, fail flags, version promotion, retrieval/vector filters) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
 
@@ -246,3 +248,22 @@ python scripts/sync_nvidia_sources.py --promote --report-path report.json
 `
 allowlist --> fetch (rate limit, robots.txt) --> staging --> hash compare --> promote (opcional)
 `
+
+## Corpus Freshness Audit (Epic 20)
+
+### Script
+```bash
+python scripts/audit_nvidia_corpus_freshness.py --format json
+python scripts/audit_nvidia_corpus_freshness.py --format markdown --report-path corpus_audit.md
+python scripts/audit_nvidia_corpus_freshness.py --fail-on-stale
+python scripts/audit_nvidia_corpus_freshness.py --fail-on-expired
+```
+
+### Testes
+- 11 unitarios (offline, sem Qdrant, sem chamadas externas)
+- Coverage: stale, expired, deprecated, superseded, missing metadata, duplicate active versions, report counters, fail flags, version promotion, retrieval filter, vector-store filter
+
+### Invariantes
+- Retrieval padrao exclui inactive/deprecated/superseded/expired
+- `sources.yaml` permite multiplas versoes por `source_id`
+- Apenas uma versao ativa por `source_id`, salvo excecao futura explicita

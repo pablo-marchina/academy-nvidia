@@ -5,9 +5,12 @@ sources:
     url: "https://docs.nvidia.com/nim/latest/"
     product: "NVIDIA NIM"
     gap_types: ["external_api_dependency", "high_inference_cost", "high_latency"]
+    version: "1.0"
     document_type: "nvidia_corpus"
     allowed: true
     update_frequency: "weekly"
+    freshness_policy: "weekly"
+    stale_after_days: 7
     expected_format: "markdown"
     license_note: "NVIDIA Documentation License — read-only, no redistribution"
     notes: "Main NIM deployment guide. Covers inference optimization, model serving."
@@ -17,9 +20,12 @@ sources:
     url: "https://docs.nvidia.com/deeplearning/tensorrt-llm/"
     product: "TensorRT-LLM"
     gap_types: ["high_inference_cost", "high_latency"]
+    version: "1.0"
     document_type: "nvidia_corpus"
     allowed: true
     update_frequency: "weekly"
+    freshness_policy: "weekly"
+    stale_after_days: 7
     expected_format: "markdown"
     license_note: "NVIDIA Documentation License"
     notes: "LLM optimization toolkit documentation."
@@ -29,9 +35,12 @@ sources:
     url: "https://docs.nvidia.com/deeplearning/triton-inference-server/"
     product: "Triton Inference Server"
     gap_types: ["high_inference_cost", "high_latency"]
+    version: "1.0"
     document_type: "nvidia_corpus"
     allowed: true
     update_frequency: "weekly"
+    freshness_policy: "weekly"
+    stale_after_days: 7
     expected_format: "markdown"
     license_note: "NVIDIA Documentation License"
     notes: "Multi-framework inference serving."
@@ -41,9 +50,12 @@ sources:
     url: "https://docs.nvidia.com/nemo/guardrails/"
     product: "NeMo Guardrails"
     gap_types: ["agent_governance_gap"]
+    version: "1.0"
     document_type: "nvidia_corpus"
     allowed: true
     update_frequency: "monthly"
+    freshness_policy: "monthly"
+    stale_after_days: 30
     expected_format: "markdown"
     license_note: "NVIDIA Documentation License"
     notes: "AI agent governance with NeMo Guardrails."
@@ -53,9 +65,12 @@ sources:
     url: "https://docs.rapids.ai/"
     product: "NVIDIA RAPIDS"
     gap_types: ["slow_data_pipeline", "heavy_tabular_processing"]
+    version: "1.0"
     document_type: "nvidia_corpus"
     allowed: true
     update_frequency: "monthly"
+    freshness_policy: "monthly"
+    stale_after_days: 30
     expected_format: "markdown"
     license_note: "RAPIDS Open Source License"
     notes: "GPU-accelerated data science."
@@ -65,9 +80,12 @@ sources:
     url: "https://docs.nvidia.com/deeplearning/riva/"
     product: "NVIDIA Riva"
     gap_types: ["voice_need"]
+    version: "1.0"
     document_type: "nvidia_corpus"
     allowed: true
     update_frequency: "monthly"
+    freshness_policy: "monthly"
+    stale_after_days: 30
     expected_format: "markdown"
     license_note: "NVIDIA Documentation License"
     notes: "Speech AI SDK documentation."
@@ -77,9 +95,12 @@ sources:
     url: "https://docs.omniverse.nvidia.com/"
     product: "NVIDIA Omniverse"
     gap_types: ["simulation_need"]
+    version: "1.0"
     document_type: "nvidia_corpus"
     allowed: true
     update_frequency: "monthly"
+    freshness_policy: "monthly"
+    stale_after_days: 30
     expected_format: "markdown"
     license_note: "NVIDIA Documentation License"
     notes: "3D simulation and digital twins."
@@ -89,9 +110,12 @@ sources:
     url: "https://docs.isaac.robot.nvidia.com/"
     product: "NVIDIA Isaac"
     gap_types: ["robotics_need"]
+    version: "1.0"
     document_type: "nvidia_corpus"
     allowed: true
     update_frequency: "monthly"
+    freshness_policy: "monthly"
+    stale_after_days: 30
     expected_format: "markdown"
     license_note: "NVIDIA Documentation License"
     notes: "Robotics development platform."
@@ -101,9 +125,12 @@ sources:
     url: "https://docs.nvidia.com/clara/"
     product: "Clara / MONAI"
     gap_types: ["healthcare_compliance_need"]
+    version: "1.0"
     document_type: "nvidia_corpus"
     allowed: true
     update_frequency: "monthly"
+    freshness_policy: "monthly"
+    stale_after_days: 30
     expected_format: "markdown"
     license_note: "NVIDIA Documentation License"
     notes: "Healthcare AI and medical imaging."
@@ -113,9 +140,12 @@ sources:
     url: "https://docs.nvidia.com/morpheus/"
     product: "NVIDIA Morpheus"
     gap_types: ["ai_cybersecurity_need"]
+    version: "1.0"
     document_type: "nvidia_corpus"
     allowed: true
     update_frequency: "monthly"
+    freshness_policy: "monthly"
+    stale_after_days: 30
     expected_format: "markdown"
     license_note: "NVIDIA Documentation License"
     notes: "AI-powered cybersecurity."
@@ -125,9 +155,12 @@ sources:
     url: "https://example.com/not-allowed"
     product: "None"
     gap_types: []
+    version: "0.0"
     document_type: "nvidia_corpus"
     allowed: false
     update_frequency: "never"
+    freshness_policy: "never"
+    stale_after_days: null
     expected_format: "unknown"
     license_note: "N/A"
     notes: "Source explicitly disallowed for testing purposes."

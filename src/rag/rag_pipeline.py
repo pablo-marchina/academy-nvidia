@@ -149,6 +149,14 @@ def run_rag_pipeline(
                 rerank_score=ctx.relevance_score,
                 matched_gap=None,
                 matched_technology=None,
+                version=ctx.version,
+                valid_from=ctx.valid_from,
+                valid_until=ctx.valid_until,
+                freshness_policy=ctx.freshness_policy,
+                stale_after_days=ctx.stale_after_days,
+                is_active=ctx.is_active,
+                deprecated_at=ctx.deprecated_at,
+                superseded_by=ctx.superseded_by,
             )
             for ctx in deduped
         ]

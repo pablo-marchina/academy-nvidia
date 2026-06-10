@@ -57,3 +57,6 @@
 - Sync script requires manual promote step (--promote) — no scheduled/cron mode
 - Sync script does not ingest into Qdrant — user must run ingest_nvidia_corpus.py separately
 - Test coverage: 49 mocked tests — real integration with NVIDIA docs is not tested in CI
+- Corpus freshness audit (Epic 20) is offline/manual — no scheduled freshness monitor yet
+- Existing Qdrant collections must be reingested to receive lifecycle payload fields
+- Stale corpus context is audit-visible but not yet rendered as an Action Brief warning

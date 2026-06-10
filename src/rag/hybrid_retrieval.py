@@ -21,6 +21,8 @@ def hybrid_retrieve(
     product: str | None = None,
     gap_type: str | None = None,
     source_id: str | None = None,
+    include_deprecated: bool = False,
+    include_expired: bool = False,
 ) -> list[RetrievedContext]:
     """Retrieve contexts using hybrid lexical + semantic fusion.
 
@@ -63,6 +65,8 @@ def hybrid_retrieve(
             product=product,
             gap_type=gap_type,
             source_id=source_id,
+            include_deprecated=include_deprecated,
+            include_expired=include_expired,
         )
 
     if not semantic_results:

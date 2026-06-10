@@ -2,11 +2,11 @@
 
 **Module**: `src/rag/`
 **Last updated**: 2026-06-10
-**Epic**: 11 — Product RAG / Playbook Retrieval; 13 — Embeddings + Vector Store Retrieval; 14 — Reranking + Context Packing; 14.1 — Pipeline Integration; 15 — Persistent Vector Store with Qdrant
+**Epic**: 11 — Product RAG / Playbook Retrieval; 13 — Embeddings + Vector Store Retrieval; 14 — Reranking + Context Packing; 14.1 — Pipeline Integration; 15 — Persistent Vector Store with Qdrant; 20 — Corpus Freshness, Versioning & Deprecation Policy
 
 ## Scope
 
-Provide deterministic lexical retrieval and **optional semantic/hybrid retrieval** of NVIDIA documentation snippets to enrich Startup Action Briefs. The module defines ingestion (Markdown → chunks), indexing (in-memory by gap_type and product), lexical retrieval (scoring), **semantic retrieval (embedding + vector store)**, hybrid retrieval (RRF fusion), **deterministic reranking**, **context packing** (dedup, gap/tech limits, provenance filtering), playbook orchestration, and **optional Qdrant persistent vector store**.
+Provide deterministic lexical retrieval and **optional semantic/hybrid retrieval** of NVIDIA documentation snippets to enrich Startup Action Briefs. The module defines ingestion (Markdown → chunks), indexing (in-memory by gap_type and product), lexical retrieval (scoring), **semantic retrieval (embedding + vector store)**, hybrid retrieval (RRF fusion), **deterministic reranking**, **context packing** (dedup, gap/tech limits, provenance filtering), playbook orchestration, **optional Qdrant persistent vector store**, and corpus lifecycle filtering for active/non-expired sources.
 
 ## Public API
 
@@ -101,11 +101,11 @@ Provide deterministic lexical retrieval and **optional semantic/hybrid retrieval
 
 All defined in `src/rag/schemas.py` using Pydantic v2.
 
-- `RagSource`: metadata for a corpus source (source_id, title, url, product, gap_types)
+- `RagSource`: metadata for a corpus source (source_id, title, url, product, gap_types, lifecycle metadata)
 - `RagDocument`: raw document to chunk (source_id, title, raw_text)
-- `RagChunk`: a single chunk with full provenance (chunk_id, source_id, title, content, product, gap_types, url)
-- `RetrievalQuery`: query parameters (technology, gap_type, keywords)
-- `RetrievedContext`: scored result (chunk_id, source_id, title, content, product, gap_types, url, relevance_score)
+- `RagChunk`: a single chunk with full provenance and lifecycle metadata (chunk_id, source_id, title, content, product, gap_types, url, version, is_active, valid_until)
+- `RetrievalQuery`: query parameters (technology, gap_type, keywords, include_deprecated=false, include_expired=false, include_stale=false)
+- `RetrievedContext`: scored result with provenance and lifecycle metadata (chunk_id, source_id, title, content, product, gap_types, url, relevance_score, version, is_active, valid_until)
 - `PlaybookRetrievalResult`: grouped result per gap+tech combination (query, gap_type, technology, contexts, missing_context)
 - `RerankingConfig`: reranking weights (boost_gap_match=0.3, boost_technology_match=0.2, penalty_no_provenance=-0.5, penalty_duplicate=-0.3, penalty_irrelevant=-0.2, boost_known_source=0.1)
 - `PackedContext`: retrieved context with rerank_score, matched_gap, matched_technology
@@ -135,6 +135,9 @@ All defined in `src/rag/schemas.py` using Pydantic v2.
 16. QdrantStore connects lazily — `__init__` does not connect to Qdrant.
 17. QdrantStore payload preserves provenance: `source_url`, `source_title`, `chunk_id`, `source_id`, `product`, `gap_types`, `version`, `content_hash`, `collected_at`, `document_type`.
 18. QdrantStore supports server-side filters: `product`, `gap_type`, `source_id`, `version`, `document_type`.
+19. Corpus lifecycle metadata is preserved across `RagSource`, `RagChunk`, `RetrievedContext`, `PackedContext`, `VectorEntry`, and Qdrant payload.
+20. Default retrieval excludes chunks where `is_active=false`, `deprecated_at` is set, `superseded_by` is set, or `valid_until` is expired.
+21. `sources.yaml` is the authoritative lifecycle manifest. It may contain multiple versions per `source_id`, but only one active version is allowed by default.
 
 ## Error Handling
 
@@ -190,13 +193,40 @@ local corpus at `data/nvidia_corpus/`. See `docs/42_automated_qdrant_corpus_inge
 for full documentation.
 
 ### Integration contract
-1. `RagSource` now carries `version` and `document_type` (defaults: "1.0", "nvidia_corpus")
-2. `RagChunk` now carries `version`, `document_type`, `content_hash` (backward-compatible)
-3. `VectorEntry` now carries `version`, `document_type`, `content_hash`, `chunk_hash`, `ingestion_run_id` (backward-compatible, all optional with defaults)
+1. `RagSource` now carries `version`, `document_type`, `content_hash`, freshness fields, and deprecation fields (backward-compatible defaults)
+2. `RagChunk` now carries `version`, `document_type`, `content_hash`, freshness fields, and deprecation fields
+3. `VectorEntry` now carries `version`, `document_type`, `content_hash`, `chunk_hash`, `ingestion_run_id`, freshness fields, and deprecation fields
 4. `_entry_to_point` uses `entry.version`/`entry.document_type` if set, falls back to defaults
 5. `_point_to_entry` restores all new fields from Qdrant payload
-6. `QdrantStore._ensure_collection()` now also calls `_ensure_payload_indexes()` which creates keyword indexes for: product, gap_types, source_id, version, document_type, content_hash
+6. `QdrantStore._ensure_collection()` now also calls `_ensure_payload_indexes()` which creates indexes for: product, gap_types, source_id, version, document_type, content_hash, is_active
 7. The ingestion script never makes external calls, never scrapes, never downloads
+
+## Corpus Freshness Audit (Epic 20)
+
+`scripts/audit_nvidia_corpus_freshness.py` audits `data/nvidia_corpus/sources.yaml` offline.
+
+### CLI contract
+
+- `--report-path`
+- `--fail-on-stale`
+- `--fail-on-expired`
+- `--source-id`
+- `--product`
+- `--format json|markdown`
+
+### Report contract
+
+- `audit_run_id`
+- `generated_at`
+- `sources_seen`
+- `active_sources`
+- `stale_sources`
+- `expired_sources`
+- `deprecated_sources`
+- `superseded_sources`
+- `missing_metadata`
+- `duplicate_active_versions`
+- `recommendations`
 
 ## Source Sync (Epic 19)
 

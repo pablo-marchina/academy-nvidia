@@ -126,6 +126,16 @@
 - Risks: Módulo pode ficar obsoleto se não for revisado periodicamente.
 - Validation: 9 testes unitários verificam detectores individuais. Coverage mapping testa que todos os 15 gaps têm ao menos uma tecnologia NVIDIA mapeada.
 
+### Decision 026 — Corpus Lifecycle Filtering by Default
+
+- **Context:** Automated source sync and Qdrant ingestion made it possible for the NVIDIA corpus to contain updated, stale, expired, deprecated, or superseded content. Without lifecycle metadata and default filtering, Product RAG could retrieve obsolete context.
+- **Decision:** `data/nvidia_corpus/sources.yaml` becomes the authoritative lifecycle manifest for corpus versions. RAG ingestion and vector payloads preserve freshness/versioning metadata, and default retrieval excludes inactive, deprecated, superseded, and expired chunks.
+- **Alternatives considered:** Keep only content hashes without lifecycle policy; rely on full Qdrant collection recreation; filter only in audit reports and leave retrieval unchanged.
+- **Rationale:** Lifecycle-aware retrieval is safer than relying on manual collection cleanup. The audit script keeps stale/expired risks visible without adding crawler scope or external calls.
+- **Risks:** Existing Qdrant collections should be reingested to receive lifecycle payload fields. Stale content is currently audit-warning only, not an automatic Action Brief warning.
+- **Validation:** 11 unit tests cover stale, expired, deprecated, superseded, missing metadata, duplicate active versions, fail flags, version promotion, and default retrieval/vector-store filters.
+- **Status:** Implementado no Epic 20.
+
 ---
 
 ## Decisões do Workspace de Desenvolvimento

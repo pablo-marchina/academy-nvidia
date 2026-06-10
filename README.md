@@ -34,6 +34,7 @@ How can NVIDIA identify, attract, and nurture Brazilian AI-native startups in a 
 14. **Persistent Vector Store (Qdrant)** optional Qdrant-backed vector store with lazy connection, full payload provenance, and server-side filtering — falls back to in-memory.
 15. **CI/CD & Quality Gates** GitHub Actions CI (ruff, black, mypy, pytest), pre-commit hooks, Makefile targets, scope/documentation validation scripts.
 16. **Source Sync** Allowlist-based download of NVIDIA documentation to staging with hash comparison, robots.txt verification, rate limiting, and optional promotion to the local corpus.
+17. **Corpus Freshness & Versioning** Local lifecycle policy with source versions, active/deprecated flags, stale/expired audit, and default retrieval filtering for active non-expired corpus chunks.
 
 See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [docs/02_architecture.md](docs/02_architecture.md) for the architectural flow.
 
@@ -68,10 +69,10 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `src/rag/` — Product RAG ingestion, lexical + semantic + hybrid retrieval, embeddings, vector store, playbook retriever, **deterministic reranking, context packing, Qdrant persistent vector store**
 - `src/evaluation/` — Offline RAG evaluation (golden queries, metrics, quality gates, multi-mode comparison, **reranking/packed**)
 - `src/config/` — settings via pydantic-settings
-- `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate)
+- `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit
 
 ### Testing
-- 424 tests (386 unit + 38 golden evals + 12 skippable integration) across 38 test files
+- 447 tests (435 passing + 12 skippable integration) across 39 test files
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -92,6 +93,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - Pipeline RAG Integration: 10 tests (packed contexts, no RAG, empty index, brief section, dropped not in brief, motion unchanged, provenance, quality summary, backward compat, lexical mode)
 - Qdrant Store: 20 tests (lazy connection, error, add, remove, clear, get, size, search, filters, provenance, factory)
 - Qdrant Pipeline Integration: 9 tests (skippable — requires QDRANT_TEST_URL)
+- Corpus Freshness Audit: 11 tests (stale, expired, deprecated, superseded, missing metadata, duplicate active versions, fail flags, version promotion, retrieval/vector filters)
 - Check Scope: 7 tests (sensitive changes require docs, override flag, contract detection)
 - Check Docs Closure: 6 tests (plan, ROADMAP, EVALS, Obsidian checks)
 
@@ -241,13 +243,14 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - Scraping collects from a single public URL — no crawling in scale.
 - RAG semantic/hybrid retrieval requires `sentence-transformers` for real embeddings (mock provider used in tests).
 - RAG evaluation multi-mode comparison uses `MockEmbeddingProvider` by default — real semantic quality requires `sentence-transformers`.
-- Corpus is manually curated in `data/nvidia_corpus/` (10 documents — no automated ingestion).
+- Corpus is local and allowlist-backed in `data/nvidia_corpus/`; sync, freshness audit, and Qdrant ingestion are script-driven, not scheduled.
 - Relevance scoring in lexical mode is keyword-match-based; semantic mode uses cosine similarity; reranking uses a deterministic composite formula (no cross-encoder).
 - Vector store is in-memory only (no persistence across sessions — Qdrant-ready for production; optional QdrantStore adapter available in Epic 15).
 - Context packing uses configurable limits (per-tech=2, per-gap=3, global=5) — may drop relevant contexts in edge cases.
 - RAG pipeline integrated as optional Step 11 — no support for multi-turn or interactive context queries.
 - QdrantStore does not auto-fallback to in-memory on connection error (caller must catch `QdrantConnectionError`).
 - Automated ingestion script at `scripts/ingest_nvidia_corpus.py` handles corpus → Qdrant pipeline with validation, hashing, embeddings, and provenance preservation.
+- Corpus freshness audit at `scripts/audit_nvidia_corpus_freshness.py` runs offline and detects stale, expired, deprecated, superseded, missing metadata, and duplicate active versions.
 - Recommendation Engine is deterministic (no LLM) — now fully integrated in the pipeline.
 - Gap Diagnosis module (`src/diagnosis/gap_diagnosis.py`) exists but is not yet called by the pipeline — scores are available but not part of the output.
 - Scores depend on the quality and coverage of public evidence available for the startup.

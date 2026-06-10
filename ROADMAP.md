@@ -269,6 +269,18 @@
 - [x] README / EVALS / ROADMAP / docs / Obsidian atualizados
 - [x] Nenhuma alteracao em src/, nenhuma ingestao Qdrant, nenhuma dependencia nova
 
+### Epic 20 — Corpus Freshness, Versioning & Deprecation Policy (concluído)
+- [x] docs/44_corpus_freshness_versioning_policy.md — politica de versionamento, freshness, expiracao e deprecacao
+- [x] data/nvidia_corpus/sources.yaml — lifecycle metadata por source e versao ativa
+- [x] data/nvidia_corpus/source_allowlist.yaml — politica esperada de freshness por fonte permitida
+- [x] scripts/audit_nvidia_corpus_freshness.py — auditoria offline com JSON/Markdown, filtros e fail-on-stale/expired
+- [x] scripts/ingest_nvidia_corpus.py — preserva metadata de freshness/versioning no VectorEntry/payload
+- [x] src/rag/ — retrieval padrao filtra inactive/deprecated/superseded/expired
+- [x] tests/unit/test_corpus_freshness_audit.py — stale, expired, deprecated, superseded, missing metadata, duplicate active versions, fail flags, version promotion e retrieval filter
+- [x] docs/contracts/rag_contract.md, README, EVALS, DECISIONS e Obsidian atualizados
+- [x] Total validado: 447 tests (435 passed + 12 skipped)
+- [x] Nenhum crawler amplo, nenhuma chamada externa, nenhuma dependencia nova
+
 ### Product RAG (V3 — futuro / backlog)
 - Reranking cross-encoder (alternativa ao reranking determinístico)
 - Ingestão automatizada de documentação NVIDIA via crawler respeitando robots.txt

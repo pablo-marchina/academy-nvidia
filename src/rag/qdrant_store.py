@@ -24,6 +24,7 @@ _PAYLOAD_INDEX_FIELDS = [
     "version",
     "document_type",
     "content_hash",
+    "is_active",
 ]
 
 
@@ -122,11 +123,14 @@ class QdrantStore(VectorStore):
             existing = set()
         for field in _PAYLOAD_INDEX_FIELDS:
             if field not in existing:
+                field_type = self._models.PayloadSchemaType.BOOL if field == "is_active" else (
+                    self._models.PayloadSchemaType.KEYWORD
+                )
                 try:
                     self._client.create_payload_index(  # type: ignore[attr-defined]
                         collection_name=self._config.collection_name,
                         field_name=field,
-                        field_type=self._models.PayloadSchemaType.KEYWORD,
+                        field_type=field_type,
                         wait=True,
                     )
                 except Exception:
@@ -243,6 +247,8 @@ class QdrantStore(VectorStore):
         source_id: str | None = None,
         version: str | None = None,
         document_type: str | None = None,
+        include_deprecated: bool = False,
+        include_expired: bool = False,
     ) -> list[VectorEntry]:
         """Search with server-side metadata filters."""
         self._ensure_client()
@@ -285,6 +291,13 @@ class QdrantStore(VectorStore):
                     match=self._models.MatchValue(value=document_type),
                 )
             )
+        if not include_deprecated:
+            must_conditions.append(
+                self._models.FieldCondition(
+                    key="is_active",
+                    match=self._models.MatchValue(value=True),
+                )
+            )
 
         query_filter = self._models.Filter(must=must_conditions) if must_conditions else None
 
@@ -297,7 +310,16 @@ class QdrantStore(VectorStore):
             with_vectors=True,
         )
 
-        return [_point_to_entry(p) for p in results.points]
+        entries = [_point_to_entry(p) for p in results.points]
+        if not include_deprecated:
+            entries = [
+                e
+                for e in entries
+                if e.is_active is True and not e.deprecated_at and not e.superseded_by
+            ]
+        if not include_expired:
+            entries = [e for e in entries if not _is_expired(e.valid_until)]
+        return entries
 
 
 # ------------------------------------------------------------------
@@ -322,8 +344,18 @@ def _entry_to_point(entry: VectorEntry, models_module: Any) -> Any:
             "gap_types": list(entry.gap_types),
             "version": entry.version,
             "content_hash": entry.content_hash or chunk_hash,
+            "previous_content_hash": entry.previous_content_hash or "",
             "chunk_hash": chunk_hash,
-            "collected_at": now,
+            "collected_at": entry.collected_at or now,
+            "last_checked_at": entry.last_checked_at or "",
+            "valid_from": entry.valid_from or "",
+            "valid_until": entry.valid_until or "",
+            "freshness_policy": entry.freshness_policy or "",
+            "stale_after_days": entry.stale_after_days,
+            "is_active": entry.is_active,
+            "deprecated_at": entry.deprecated_at or "",
+            "superseded_by": entry.superseded_by or "",
+            "deprecation_reason": entry.deprecation_reason or "",
             "document_type": entry.document_type,
             "provenance": {
                 "source_url": entry.url or "",
@@ -353,7 +385,30 @@ def _point_to_entry(point: Any) -> VectorEntry:
         content_hash=payload.get("content_hash"),
         chunk_hash=payload.get("chunk_hash"),
         ingestion_run_id=payload.get("ingestion_run_id"),
+        previous_content_hash=payload.get("previous_content_hash") or None,
+        collected_at=payload.get("collected_at") or None,
+        last_checked_at=payload.get("last_checked_at") or None,
+        valid_from=payload.get("valid_from") or None,
+        valid_until=payload.get("valid_until") or None,
+        freshness_policy=payload.get("freshness_policy") or None,
+        stale_after_days=payload.get("stale_after_days"),
+        is_active=payload.get("is_active", True),
+        deprecated_at=payload.get("deprecated_at") or None,
+        superseded_by=payload.get("superseded_by") or None,
+        deprecation_reason=payload.get("deprecation_reason") or None,
     )
+
+
+def _is_expired(valid_until: str | None) -> bool:
+    if not valid_until:
+        return False
+    try:
+        parsed = datetime.fromisoformat(valid_until.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC) < datetime.now(UTC)
 
 
 # ------------------------------------------------------------------
