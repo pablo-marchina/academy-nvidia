@@ -2,6 +2,7 @@
 
 No external calls, no LLM judge.
 Epic 13 adds multi-mode evaluation: lexical, semantic, and hybrid.
+Epic 14 adds: hybrid_reranked, hybrid_reranked_packed modes.
 """
 
 from __future__ import annotations
@@ -18,12 +19,20 @@ from src.evaluation.rag_eval_schemas import (
     RagRetrievalMetrics,
     RetrievalMode,
 )
+from src.rag.context_packing import pack_contexts
 from src.rag.embeddings import EmbeddingProvider, MockEmbeddingProvider
 from src.rag.hybrid_retrieval import hybrid_retrieve
+from src.rag.reranking import rerank_contexts
 from src.rag.retrieval import ChunkIndex, build_default_index
-from src.rag.schemas import RetrievalQuery
+from src.rag.schemas import (
+    PackingConfig,
+    PackingResult,
+    RerankingConfig,
+    RetrievalQuery,
+    RetrievedContext,
+)
 from src.rag.semantic_retrieval import semantic_retrieve
-from src.rag.vector_store import InMemoryVectorStore
+from src.rag.vector_store import VectorStore
 
 _GOLDEN_QUERIES_PATH = Path("examples/rag_eval/golden_queries.json")
 _EXPECTED_CONTEXTS_PATH = Path("examples/rag_eval/expected_contexts.json")
@@ -64,12 +73,22 @@ def _load_expected_contexts(path: Path = _EXPECTED_CONTEXTS_PATH) -> dict[str, l
 def _compute_metrics(
     retrieved: list,
     case: RagEvalCase,
+    packing_result: PackingResult | None = None,
 ) -> RagRetrievalMetrics:
     """Compute retrieval metrics for a single query against golden expectations.
 
-    missing_context_count counts expected source_ids that did NOT appear
-    in the retrieved results. This is top_k-aware: if top_k is smaller than
-    the number of expected sources, some sources will naturally be absent.
+    Parameters
+    ----------
+    retrieved:
+        The retrieved contexts.
+    case:
+        The golden query case.
+    packing_result:
+        Optional PackingResult for Epic 14 metrics.
+
+    Returns
+    -------
+    RagRetrievalMetrics
     """
     total = len(retrieved)
     retrieved_source_ids = {r.source_id for r in retrieved}
@@ -106,6 +125,28 @@ def _compute_metrics(
         relevant = total - irrelevant
         precision = relevant / total
 
+    # Epic 14 metrics
+    dup_count = 0
+    packed_count = 0
+    dropped_count = 0
+    prov_cov = 0.0
+    budget = 0.0
+    gap_cov = 0.0
+    tech_cov = 0.0
+    noise = 0.0
+
+    if packing_result:
+        dup_count = (
+            packing_result.total_raw - packing_result.total_packed - packing_result.total_dropped
+        )
+        packed_count = packing_result.total_packed
+        dropped_count = packing_result.total_dropped
+        prov_cov = packing_result.provenance_coverage
+        budget = packing_result.context_budget_used
+        gap_cov = packing_result.gap_coverage
+        tech_cov = packing_result.technology_coverage
+        noise = packing_result.noise_reduction_score
+
     return RagRetrievalMetrics(
         hit_at_k=hit_at_k,
         expected_source_coverage=round(source_coverage, 4),
@@ -114,6 +155,14 @@ def _compute_metrics(
         missing_context_count=missing,
         top_1_expected_match=top_1_expected,
         context_precision=round(precision, 4),
+        duplicate_context_count=dup_count,
+        packed_context_count=packed_count,
+        dropped_context_count=dropped_count,
+        provenance_coverage=round(prov_cov, 4),
+        context_budget_used=round(budget, 4),
+        gap_coverage=round(gap_cov, 4),
+        technology_coverage=round(tech_cov, 4),
+        noise_reduction_score=round(noise, 4),
     )
 
 
@@ -134,9 +183,10 @@ def _check_provenance(retrieved: list) -> list[str]:
 def _eval_one_case(
     case: RagEvalCase,
     retrieved: list,
+    packing_result: PackingResult | None = None,
 ) -> RagEvalResult:
     """Evaluate a single case given its retrieved contexts."""
-    metrics = _compute_metrics(retrieved, case)
+    metrics = _compute_metrics(retrieved, case, packing_result=packing_result)
     failure_reasons: list[str] = []
 
     if case.is_critical and case.expected_source_ids:
@@ -198,28 +248,92 @@ def run_rag_eval(
     return results
 
 
+def _retrieve_for_mode(
+    mode: RetrievalMode,
+    case: RagEvalCase,
+    idx: ChunkIndex,
+    emb: EmbeddingProvider,
+    vector_store: VectorStore | None,
+    reranking_config: RerankingConfig | None = None,
+    packing_config: PackingConfig | None = None,
+) -> tuple[list, PackingResult | None]:
+    """Retrieve contexts for a single mode and case, returning (contexts, packing_result)."""
+    packing_result = None
+
+    if mode == RetrievalMode.LEXICAL:
+        retrieved = idx.retrieve(case.query, top_k=case.top_k_for_test)
+    elif mode == RetrievalMode.SEMANTIC:
+        if vector_store is None or vector_store.size == 0:
+            retrieved = []
+        else:
+            retrieved = semantic_retrieve(case.query, emb, vector_store, top_k=case.top_k_for_test)
+    elif mode == RetrievalMode.HYBRID:
+        if vector_store is None or vector_store.size == 0:
+            retrieved = idx.retrieve(case.query, top_k=case.top_k_for_test)
+        else:
+            retrieved = hybrid_retrieve(
+                case.query, idx, emb, vector_store, top_k=case.top_k_for_test
+            )
+    elif mode == RetrievalMode.HYBRID_RERANKED:
+        if vector_store is None or vector_store.size == 0:
+            raw = idx.retrieve(case.query, top_k=case.top_k_for_test)
+        else:
+            raw = hybrid_retrieve(case.query, idx, emb, vector_store, top_k=case.top_k_for_test)
+        retrieved = rerank_contexts(raw, case.query, config=reranking_config)
+    elif mode == RetrievalMode.HYBRID_RERANKED_PACKED:
+        if vector_store is None or vector_store.size == 0:
+            raw = idx.retrieve(case.query, top_k=case.top_k_for_test)
+        else:
+            raw = hybrid_retrieve(case.query, idx, emb, vector_store, top_k=case.top_k_for_test)
+        reranked = rerank_contexts(raw, case.query, config=reranking_config)
+        packing_result = pack_contexts(reranked, case.query, config=packing_config)
+        retrieved = [
+            RetrievedContext(
+                chunk_id=pc.chunk_id,
+                source_id=pc.source_id,
+                title=pc.title,
+                content=pc.content,
+                product=pc.product,
+                gap_types=pc.gap_types,
+                url=pc.url,
+                relevance_score=pc.relevance_score,
+            )
+            for pc in packing_result.packed
+        ]
+    else:
+        retrieved = []
+
+    return retrieved, packing_result
+
+
 def run_mode_eval(
     mode: RetrievalMode,
     golden_path: Path = _GOLDEN_QUERIES_PATH,
     *,
     chunk_index: ChunkIndex | None = None,
-    vector_store: InMemoryVectorStore | None = None,
+    vector_store: VectorStore | None = None,
     embedding_model: EmbeddingProvider | None = None,
+    reranking_config: RerankingConfig | None = None,
+    packing_config: PackingConfig | None = None,
 ) -> ModeEvalResult:
     """Evaluate golden queries in a single retrieval mode.
 
     Parameters
     ----------
     mode:
-        One of LEXICAL, SEMANTIC, or HYBRID.
+        One of LEXICAL, SEMANTIC, HYBRID, HYBRID_RERANKED, or HYBRID_RERANKED_PACKED.
     golden_path:
         Path to golden queries JSON.
     chunk_index:
-        Required for LEXICAL and HYBRID. Defaults to ``build_default_index()``.
+        Required for LEXICAL and HYBRID modes. Defaults to ``build_default_index()``.
     vector_store:
-        Required for SEMANTIC and HYBRID. If empty/None, semantic returns [].
+        Required for SEMANTIC and HYBRID modes.
     embedding_model:
-        Required for SEMANTIC and HYBRID. If None, uses MockEmbeddingProvider.
+        Required for SEMANTIC and HYBRID modes.
+    reranking_config:
+        Reranking weights (used for HYBRID_RERANKED and HYBRID_RERANKED_PACKED).
+    packing_config:
+        Packing limits (used for HYBRID_RERANKED_PACKED).
 
     Returns
     -------
@@ -232,25 +346,16 @@ def run_mode_eval(
 
     results: list[RagEvalResult] = []
     for case in cases:
-        if mode == RetrievalMode.LEXICAL:
-            retrieved = idx.retrieve(case.query, top_k=case.top_k_for_test)
-        elif mode == RetrievalMode.SEMANTIC:
-            if vector_store is None or vector_store.size == 0:
-                retrieved = []
-            else:
-                retrieved = semantic_retrieve(
-                    case.query, emb, vector_store, top_k=case.top_k_for_test
-                )
-        elif mode == RetrievalMode.HYBRID:
-            if vector_store is None or vector_store.size == 0:
-                retrieved = idx.retrieve(case.query, top_k=case.top_k_for_test)
-            else:
-                retrieved = hybrid_retrieve(
-                    case.query, idx, emb, vector_store, top_k=case.top_k_for_test
-                )
-        else:
-            retrieved = []
-        results.append(_eval_one_case(case, retrieved))
+        retrieved, packing_result = _retrieve_for_mode(
+            mode,
+            case,
+            idx,
+            emb,
+            vector_store,
+            reranking_config=reranking_config,
+            packing_config=packing_config,
+        )
+        results.append(_eval_one_case(case, retrieved, packing_result=packing_result))
 
     gates = run_quality_gates(results)
     passed = sum(1 for r in results if r.passed)
@@ -266,14 +371,15 @@ def run_mode_eval(
 
 def run_comparison_eval(
     chunk_index: ChunkIndex | None = None,
-    vector_store: InMemoryVectorStore | None = None,
+    vector_store: VectorStore | None = None,
     embedding_model: EmbeddingProvider | None = None,
     golden_path: Path = _GOLDEN_QUERIES_PATH,
 ) -> RagEvalComparison:
-    """Run evaluation in all three modes and compare results.
+    """Run evaluation in all five modes and compare results.
 
-    Detects critical regressions: cases where semantic or hybrid
-    fails a critical query that lexical passes.
+    Detects critical regressions: cases where a later mode (semantic, hybrid,
+    hybrid_reranked, hybrid_reranked_packed) fails a critical query that
+    lexical passes.
 
     Returns
     -------
@@ -284,8 +390,6 @@ def run_comparison_eval(
         RetrievalMode.LEXICAL,
         golden_path,
         chunk_index=chunk_index,
-        vector_store=vector_store,
-        embedding_model=embedding_model,
     )
     semantic = run_mode_eval(
         RetrievalMode.SEMANTIC,
@@ -301,20 +405,39 @@ def run_comparison_eval(
         vector_store=vector_store,
         embedding_model=embedding_model,
     )
+    hybrid_reranked = run_mode_eval(
+        RetrievalMode.HYBRID_RERANKED,
+        golden_path,
+        chunk_index=chunk_index,
+        vector_store=vector_store,
+        embedding_model=embedding_model,
+    )
+    hybrid_packed = run_mode_eval(
+        RetrievalMode.HYBRID_RERANKED_PACKED,
+        golden_path,
+        chunk_index=chunk_index,
+        vector_store=vector_store,
+        embedding_model=embedding_model,
+    )
 
     lex_pass = {r.case_id for r in lexical.results if r.passed and r.is_critical}
     regressions: list[str] = []
-    for r in semantic.results:
-        if r.is_critical and r.case_id in lex_pass and not r.passed:
-            regressions.append(f"semantic/{r.case_id}")
-    for r in hybrid.results:
-        if r.is_critical and r.case_id in lex_pass and not r.passed:
-            regressions.append(f"hybrid/{r.case_id}")
+    for label, mode_result in [
+        ("semantic", semantic),
+        ("hybrid", hybrid),
+        ("hybrid_reranked", hybrid_reranked),
+        ("hybrid_reranked_packed", hybrid_packed),
+    ]:
+        for r in mode_result.results:
+            if r.is_critical and r.case_id in lex_pass and not r.passed:
+                regressions.append(f"{label}/{r.case_id}")
 
     return RagEvalComparison(
         lexical=lexical,
         semantic=semantic,
         hybrid=hybrid,
+        hybrid_reranked=hybrid_reranked,
+        hybrid_reranked_packed=hybrid_packed,
         critical_regressions=regressions,
     )
 
@@ -448,7 +571,13 @@ def format_eval_summary(
 def format_comparison_summary(comparison: RagEvalComparison) -> str:
     """Format a multi-mode evaluation comparison as human-readable text."""
     lines: list[str] = []
-    for mode_result in [comparison.lexical, comparison.semantic, comparison.hybrid]:
+    for mode_result in [
+        comparison.lexical,
+        comparison.semantic,
+        comparison.hybrid,
+        comparison.hybrid_reranked,
+        comparison.hybrid_reranked_packed,
+    ]:
         lines.append(f"=== {mode_result.mode.value.upper()} ===")
         lines.append(format_eval_summary(mode_result.results, mode_result.gates))
         lines.append("")

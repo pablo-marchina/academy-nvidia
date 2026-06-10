@@ -1,4 +1,8 @@
-"""Schemas for Product RAG module."""
+"""Schemas for Product RAG module.
+
+Epic 14 adds: RerankingConfig, PackedContext, DroppedContext, PackingResult,
+SupportingNvidiaContext.
+"""
 
 from __future__ import annotations
 
@@ -52,3 +56,71 @@ class PlaybookRetrievalResult(BaseModel):
     total_found: int = 0
     missing_context: bool = False
     reasoning: str = ""
+
+
+# ------------------------------------------------------------------
+# Epic 14 — Reranking + Context Packing schemas
+# ------------------------------------------------------------------
+
+
+class RerankingConfig(BaseModel):
+    boost_gap_match: float = 0.3
+    boost_technology_match: float = 0.2
+    penalty_no_provenance: float = -0.5
+    penalty_duplicate: float = -0.3
+    penalty_irrelevant: float = -0.2
+    boost_known_source: float = 0.1
+
+
+class PackedContext(BaseModel):
+    chunk_id: str
+    source_id: str
+    title: str
+    content: str
+    product: str
+    gap_types: list[str] = Field(default_factory=list)
+    url: str | None = None
+    relevance_score: float = 0.0
+    rerank_score: float = 0.0
+    matched_gap: str | None = None
+    matched_technology: str | None = None
+
+
+class DroppedContext(BaseModel):
+    chunk_id: str
+    reason: str
+    rerank_score: float = 0.0
+
+
+class PackingConfig(BaseModel):
+    max_total: int = 5
+    max_per_technology: int = 2
+    max_per_gap: int = 3
+
+
+class PackingResult(BaseModel):
+    packed: list[PackedContext] = Field(default_factory=list)
+    dropped: list[DroppedContext] = Field(default_factory=list)
+    total_raw: int = 0
+    total_packed: int = 0
+    total_dropped: int = 0
+    provenance_coverage: float = 0.0
+    gap_coverage: float = 0.0
+    technology_coverage: float = 0.0
+    context_budget_used: float = 0.0
+    noise_reduction_score: float = 0.0
+
+
+class SupportingNvidiaContext(BaseModel):
+    gap_type: str
+    technology: str
+    contexts: list[PackedContext] = Field(default_factory=list)
+    total_available: int = 0
+    total_dropped: int = 0
+
+
+class RagPipelineOutput(BaseModel):
+    packing_result: PackingResult | None = None
+    retrieval_mode: str = "lexical"
+    missing_context: bool = True
+    rag_quality_summary: str = ""

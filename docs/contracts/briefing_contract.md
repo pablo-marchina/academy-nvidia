@@ -5,7 +5,7 @@
 
 ## What It Promises
 
-- Accepts a `PipelineResult` (from `run_full_pipeline()`)
+- Accepts a `PipelineResult` (from `run_full_pipeline()`) with optional `PackingResult`
 - Returns a `StartupActionBrief` with:
   - `startup_name`, `website`, `sector`, `one_line_summary`
   - `verdict` (high_priority, promising, early_stage, needs_validation, not_recommended)
@@ -18,7 +18,11 @@
   - `uncertainties: list[BriefUncertainty]`
   - `next_action_for_nvidia_team: str`
   - `reasoning: str`
-- Renders a Markdown string via `render_action_brief_markdown(brief)`
+  - `packed_rag_contexts: list[PackedContext]` (Epic 14 — optional, auto-extracted from PipelineResult.rag_output)
+  - `supporting_nvidia_context: list[SupportingNvidiaContext]` (Epic 14 — grouped by gap/tech)
+  - `dropped_contexts_debug: list[DroppedContext]` (Epic 14 — debug only, not in executive sections)
+- Auto-extracts `packing_result` from `PipelineResult.rag_output` when no explicit packing_result is passed
+- Renders a Markdown string via `render_action_brief_markdown(brief)` — includes "Supporting NVIDIA Context" section when contexts present
 - Serializes to JSON via `brief.model_dump_json(indent=2)`
 
 ## Verdict Logic
@@ -41,7 +45,7 @@
 - Does **not** produce PDF exports
 - Does **not** add new dependencies
 
-## Brief Sections (13)
+## Brief Sections (14)
 
 1. Executive Summary
 2. Why This Startup Matters
@@ -53,9 +57,10 @@
 8. Suggested Technical Experiment (conditional: only if APPROACH_NOW)
 9. Recommended Motion
 10. Evidence
-11. Missing Evidence (conditional: only if non-empty)
-12. Uncertainties / Limitations (conditional: only if non-empty)
-13. Next Action
+11. **Supporting NVIDIA Context** (conditional: only when packed RAG contexts exist)
+12. Missing Evidence (conditional: only if non-empty)
+13. Uncertainties / Limitations (conditional: only if non-empty)
+14. Next Action
 
 ## Validation Rules
 
@@ -65,6 +70,9 @@
 - `uncertainties` includes every gap tagged INFERRED or HYPOTHESIS
 - Low confidence never maps to HIGH_PRIORITY verdict
 - Brief is always JSON-serializable
+- `packed_rag_contexts` and `supporting_nvidia_context` are auto-populated from `PipelineResult.rag_output` when available
+- `dropped_contexts_debug` exists in the schema but does NOT appear in executive sections
+- RAG does NOT alter `recommended_motion`, scores, or evidence_used
 
 ## Contract Version
-1.0 — June 2026 (Epic 10)
+2.0 — June 2026 (Epic 10 + 14.1 RAG integration)

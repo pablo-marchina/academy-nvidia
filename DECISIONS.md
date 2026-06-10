@@ -221,6 +221,36 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 - **Validation:** 52 novos testes (11 embeddings, 15 semantic retrieval, 12 hybrid retrieval, 14 multi-mode eval). Todos passam sem chamadas externas. semantic_retrieve com store vazio retorna []. hybrid_retrieve com store vazio cai para lexical. Filtros por product/gap_type/source_id funcionam. Provenance preservada. RAG Evaluation compara os 3 modos sem regressão.
 - **Status:** Implementado no Epic 13.
 
+### Decision 021 — Reranking determinístico e context packing sem LLM
+
+- **Context:** O Epic 14 requeria adicionar reranking e context packing ao pipeline de RAG para melhorar a qualidade dos contextos fornecidos ao Action Brief, sem dependências externas, sem LLM, sem LangGraph e sem alterar scoring, diagnosis ou recommendation.
+- **Decision:** Implementar reranking determinístico em `src/rag/reranking.py` usando score composto: `relevance × 0.3 + gap_match × 0.3 + tech_match × 0.2 - provenance_penalty - duplicate_penalty - irrelevant_penalty + known_source_boost`. Context packing em `src/rag/context_packing.py` com dedup, classificação por gap/tech, limites configuráveis (per-tech=2, per-gap=3, global=5) e métricas de qualidade. A avaliação RAG foi estendida com 2 novos modos (HYBRID_RERANKED e HYBRID_RERANKED_PACKED) e 8 novos campos métricos. O Action Brief é opcionalmente enriquecido com seção "Supporting NVIDIA Context" quando packing_result é fornecido.
+- **Alternatives considered:** Cross-encoder reranking (rejeitado por exigir modelo carregado em memória), LLM judge para reranking (rejeitado por não-determinismo e custo), LangGraph para orquestração de packing (rejeitado por zero novas dependências), manter RAG sem reranking/packing (rejeitado porque contextos brutos têm ruído e duplicatas).
+- **Rationale:** Score composto determinístico é auditável, testável e não requer GPU ou API. Limites de packing evitam que o Action Brief receba contextos irrelevantes ou duplicados. A conversão PackedContext para RetrievedContext na camada de avaliação preserva a compatibilidade com schemas existentes.
+- **Risks:** Pesos fixos podem não ser ótimos para todos os gaps/tecnologias — mitigado por RerankingConfig configurável. Limites de packing podem descartar contextos relevantes em casos de borda — métricas de noise_reduction_score e provenance_coverage expõem trade-offs.
+- **Validation:** 38 novos testes (9 reranking, 13 packing, 11 eval, 5 brief). Reranking sem gap/tech boost preserva ordem original. Packing respeita limites configurados. Eval 5-modes sem regressões não-críticas. Action Brief funciona sem packing_result.
+- **Status:** Implementado no Epic 14.
+
+### Decision 022 — Pipeline RAG Integration (Step 11)
+
+- **Context:** Epic 14 delivered reranking and context packing as standalone modules. Epic 14.1 needed to integrate them into the main pipeline so that `StartupActionBrief` receives packed RAG context from the production flow — without external calls, LLM, LangGraph, or changes to scoring/diagnosis/recommendation.
+- **Decision:** `run_rag_pipeline()` lives in `src/rag/rag_pipeline.py` — keeps RAG logic isolated. Called as Step 11 inside `run_full_pipeline()` with 5 optional parameters. `build_action_brief()` auto-extracts `packing_result` from `result.rag_output` — backward compatible.
+- **Alternatives considered:** RAG as standalone function called externally (adds complexity for callers). Always-run RAG (violates optional constraint).
+- **Rationale:** Single entry point; RAG optional via default None parameters; zero change to existing callers.
+- **Risks:** RAG does NOT alter `recommended_motion`, scores, or `evidence_used`.
+- **Validation:** 10 new tests (286 total). All legacy tests unchanged.
+- **Status:** Implementado no Epic 14.1.
+
+### Decision 023 — Qdrant Persistent Vector Store (Adapter Pattern)
+
+- **Context:** O `InMemoryVectorStore` era funcional para desenvolvimento e testes, mas não persistia dados entre sessões. Qdrant já estava no `pyproject.toml` e no `docker-compose.yml`, mas não havia código de integração. As funções de retrieval tipavam `InMemoryVectorStore` diretamente, impedindo substituição por outro backend.
+- **Decision:** Extrair interface `VectorStore(ABC)` de `InMemoryVectorStore`, criar `QdrantStore(VectorStore)` com lazy connection, payload rico (11 campos), e filtros server-side. Todas as funções de retrieval passam a aceitar `VectorStore` (polimórficas).
+- **Alternatives considered:** Manter `InMemoryVectorStore` como tipo concreto e adicionar conversão ad-hoc (acoplamento maior). Usar composição (mais complexo, sem ganho).
+- **Rationale:** Adapter pattern com ABC permite que o restante do código ignore o backend. Lazy connection evita dependência de Qdrant em import time. Payload rico prepara para ingestão futura.
+- **Risks:** QdrantStore não faz fallback automático — caller precisa capturar `QdrantConnectionError`. Testes de integração requerem `QDRANT_TEST_URL`.
+- **Validation:** 20 testes unitários (mock). 9 testes integração (skippable). 306 testes legados passam sem alteração.
+- **Status:** Implementado no Epic 15.
+
 ---
 
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

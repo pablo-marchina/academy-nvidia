@@ -20,10 +20,24 @@ def render_action_brief_markdown(brief: StartupActionBrief) -> str:
         if section.items:
             for item in section.items:
                 lines.append(
-                    f"- **[{item.tag}]** {item.claim} " f"({item.confidence}, {item.source_type})"
+                    f"- **[{item.tag}]** {item.claim} ({item.confidence}, {item.source_type})"
                 )
         if section.content:
             lines.append(section.content)
+        lines.append("")
+
+    # Supporting NVIDIA Context section (from packed_rag_contexts)
+    if brief.supporting_nvidia_context:
+        lines.append("## Supporting NVIDIA Context")
+        lines.append("")
+        for sc in brief.supporting_nvidia_context:
+            lines.append(f"### {sc.technology} — *{sc.gap_type}*")
+            lines.append("")
+            for pc in sc.contexts:
+                provenance = f"[source]({pc.url})" if pc.url else "*no url*"
+                lines.append(f"- **{pc.title}** (score: {pc.relevance_score}, {provenance})")
+                lines.append(f"  {pc.content[:200]}" + ("..." if len(pc.content) > 200 else ""))
+                lines.append("")
         lines.append("")
 
     lines.append("---")

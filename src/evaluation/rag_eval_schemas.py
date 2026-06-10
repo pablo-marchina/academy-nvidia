@@ -1,6 +1,7 @@
 """Schemas for RAG Evaluation — retrieval metrics and quality gates.
 
 Epic 13 adds: RetrievalMode, ModeEvalResult, RagEvalComparison.
+Epic 14 adds: HYBRID_RERANKED, HYBRID_RERANKED_PACKED modes + 8 new metrics.
 """
 
 from __future__ import annotations
@@ -18,6 +19,8 @@ class RetrievalMode(str, Enum):
     LEXICAL = "lexical"
     SEMANTIC = "semantic"
     HYBRID = "hybrid"
+    HYBRID_RERANKED = "hybrid_reranked"
+    HYBRID_RERANKED_PACKED = "hybrid_reranked_packed"
 
 
 class RagEvalCase(BaseModel):
@@ -33,7 +36,11 @@ class RagEvalCase(BaseModel):
 
 
 class RagRetrievalMetrics(BaseModel):
-    """Metrics computed from a single retrieval result against golden expectations."""
+    """Metrics computed from a single retrieval result against golden expectations.
+
+    Epic 12: 7 metrics (hit_at_k through context_precision).
+    Epic 14: +8 metrics (duplicate_context_count through noise_reduction_score).
+    """
 
     hit_at_k: bool = False
     expected_source_coverage: float = 0.0
@@ -42,6 +49,15 @@ class RagRetrievalMetrics(BaseModel):
     missing_context_count: int = 0
     top_1_expected_match: bool = False
     context_precision: float = 0.0
+    # Epic 14 metrics
+    duplicate_context_count: int = 0
+    packed_context_count: int = 0
+    dropped_context_count: int = 0
+    provenance_coverage: float = 0.0
+    context_budget_used: float = 0.0
+    gap_coverage: float = 0.0
+    technology_coverage: float = 0.0
+    noise_reduction_score: float = 0.0
 
 
 class RagEvalResult(BaseModel):
@@ -78,10 +94,24 @@ class ModeEvalResult(BaseModel):
 
 
 class RagEvalComparison(BaseModel):
-    """Side-by-side comparison of all retrieval modes."""
+    """Side-by-side comparison of all retrieval modes.
+
+    Epic 13: 3 modes (lexical, semantic, hybrid).
+    Epic 14: 5 modes (+ hybrid_reranked, hybrid_reranked_packed).
+    """
 
     lexical: ModeEvalResult
     semantic: ModeEvalResult
     hybrid: ModeEvalResult
+    hybrid_reranked: ModeEvalResult = Field(
+        default_factory=lambda: ModeEvalResult(
+            mode=RetrievalMode.HYBRID_RERANKED, results=[], gates=[]
+        )
+    )
+    hybrid_reranked_packed: ModeEvalResult = Field(
+        default_factory=lambda: ModeEvalResult(
+            mode=RetrievalMode.HYBRID_RERANKED_PACKED, results=[], gates=[]
+        )
+    )
     critical_regressions: list[str] = Field(default_factory=list)
     """Case IDs where semantic or hybrid regressed vs lexical on a critical query."""

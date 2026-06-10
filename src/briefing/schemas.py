@@ -5,6 +5,7 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 
 from src.extraction.schemas import ConfidenceLevel
+from src.rag.schemas import DroppedContext, PackedContext, SupportingNvidiaContext
 
 
 class BriefVerdict(StrEnum):
@@ -58,3 +59,7 @@ class StartupActionBrief(BaseModel):
     uncertainties: list[BriefUncertainty]
     next_action_for_nvidia_team: str
     reasoning: str
+    # Epic 14 — optional RAG context
+    packed_rag_contexts: list[PackedContext] = Field(default_factory=list)
+    supporting_nvidia_context: list[SupportingNvidiaContext] = Field(default_factory=list)
+    dropped_contexts_debug: list[DroppedContext] = Field(default_factory=list)

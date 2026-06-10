@@ -1,12 +1,14 @@
-"""Local in-memory vector store with cosine similarity search.
+"""Vector store abstraction with in-memory implementation.
 
-No external dependencies. Supports filters by product, gap_type, and source_id.
-Designed for development and testing — swap for Qdrant in production.
+Defines a ``VectorStore`` ABC that both ``InMemoryVectorStore`` and
+``QdrantStore`` implement.  Swap backends via config without changing
+retrieval code.
 """
 
 from __future__ import annotations
 
 import math
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 
@@ -24,8 +26,84 @@ class VectorEntry:
     embedding: list[float] = field(default_factory=list)
 
 
-class InMemoryVectorStore:
-    """Dict-backed vector store with cosine similarity search."""
+class VectorStore(ABC):
+    """Abstract vector store — supports add, remove, clear, search."""
+
+    @abstractmethod
+    def add_entry(self, entry: VectorEntry) -> None:
+        """Add or replace a single entry by chunk_id."""
+
+    @abstractmethod
+    def add_entries(self, entries: list[VectorEntry]) -> None:
+        """Add multiple entries in one call."""
+
+    @abstractmethod
+    def remove_entry(self, chunk_id: str) -> None:
+        """Remove a single entry by chunk_id."""
+
+    @abstractmethod
+    def clear(self) -> None:
+        """Remove all entries."""
+
+    @abstractmethod
+    def get_entry(self, chunk_id: str) -> VectorEntry | None:
+        """Look up a single entry by chunk_id."""
+
+    @property
+    @abstractmethod
+    def size(self) -> int:
+        """Number of entries currently stored."""
+
+    @property
+    @abstractmethod
+    def entries(self) -> list[VectorEntry]:
+        """Return all entries."""
+
+    @abstractmethod
+    def search(
+        self,
+        query_embedding: list[float],
+        top_k: int = 3,
+        *,
+        product: str | None = None,
+        gap_type: str | None = None,
+        source_id: str | None = None,
+        version: str | None = None,
+        document_type: str | None = None,
+    ) -> list[VectorEntry]:
+        """Cosine-similarity search with optional metadata filters.
+
+        Parameters
+        ----------
+        query_embedding:
+            The embedding vector to search for.
+        top_k:
+            Maximum number of results to return.
+        product:
+            If set, only return entries whose ``product`` matches (case-insensitive).
+        gap_type:
+            If set, only return entries whose ``gap_types`` contains this value.
+        source_id:
+            If set, only return entries whose ``source_id`` matches.
+        version:
+            If set, only return entries whose ``version`` matches.
+        document_type:
+            If set, only return entries whose ``document_type`` matches.
+
+        Returns
+        -------
+        list[VectorEntry]
+            Up to ``top_k`` entries sorted by descending similarity.
+        """
+
+
+class InMemoryVectorStore(VectorStore):
+    """Dict-backed vector store with cosine similarity search.
+
+    No external dependencies.  Supports filters by product, gap_type,
+    source_id, version, and document_type.
+    Designed for development and testing — swap for Qdrant in production.
+    """
 
     def __init__(self) -> None:
         self._entries: dict[str, VectorEntry] = {}
@@ -71,31 +149,21 @@ class InMemoryVectorStore:
         self,
         query_embedding: list[float],
         top_k: int = 3,
+        *,
         product: str | None = None,
         gap_type: str | None = None,
         source_id: str | None = None,
+        version: str | None = None,
+        document_type: str | None = None,
     ) -> list[VectorEntry]:
-        """Cosine-similarity search with optional metadata filters.
-
-        Parameters
-        ----------
-        query_embedding:
-            The embedding vector to search for.
-        top_k:
-            Maximum number of results to return.
-        product:
-            If set, only return entries whose ``product`` matches (case-insensitive).
-        gap_type:
-            If set, only return entries whose ``gap_types`` contains this value.
-        source_id:
-            If set, only return entries whose ``source_id`` matches.
-
-        Returns
-        -------
-        list[VectorEntry]
-            Up to ``top_k`` entries sorted by descending similarity.
-        """
-        candidates = self._filter(product=product, gap_type=gap_type, source_id=source_id)
+        """Cosine-similarity search with optional metadata filters."""
+        candidates = self._filter(
+            product=product,
+            gap_type=gap_type,
+            source_id=source_id,
+            version=version,
+            document_type=document_type,
+        )
         if not candidates:
             return []
 
@@ -116,6 +184,8 @@ class InMemoryVectorStore:
         product: str | None = None,
         gap_type: str | None = None,
         source_id: str | None = None,
+        version: str | None = None,
+        document_type: str | None = None,
     ) -> list[VectorEntry]:
         """Return all entries matching the given filters."""
         result = self.entries
@@ -126,6 +196,10 @@ class InMemoryVectorStore:
             result = [e for e in result if gap_type in e.gap_types]
         if source_id:
             result = [e for e in result if e.source_id == source_id]
+        if version:
+            result = [e for e in result if _getattr(e, "version", None) == version]
+        if document_type:
+            result = [e for e in result if _getattr(e, "document_type", None) == document_type]
         return result
 
 
@@ -137,7 +211,7 @@ class InMemoryVectorStore:
 def _cosine_similarity(a: list[float], b: list[float]) -> float:
     """Compute cosine similarity between two vectors.
 
-    Returns a value in [-1, 1]. Returns 0.0 for zero vectors.
+    Returns a value in [-1, 1].  Returns 0.0 for zero vectors.
     """
     dot = sum(x * y for x, y in zip(a, b, strict=False))
     norm_a = math.sqrt(sum(x * x for x in a))
@@ -145,3 +219,8 @@ def _cosine_similarity(a: list[float], b: list[float]) -> float:
     if norm_a == 0.0 or norm_b == 0.0:
         return 0.0
     return dot / (norm_a * norm_b)
+
+
+def _getattr(obj: object, name: str, default: object = None) -> object:
+    """Safe getattr that returns *default* instead of raising."""
+    return getattr(obj, name, default)

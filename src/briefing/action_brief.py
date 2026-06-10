@@ -10,6 +10,8 @@ from src.briefing.schemas import (
 from src.diagnosis.schemas import EvidenceTag
 from src.extraction.schemas import ConfidenceLevel
 from src.pipeline.run_pipeline import PipelineResult
+from src.rag.context_packing import build_supporting_contexts
+from src.rag.schemas import PackingResult
 from src.recommendation.schemas import RecommendedNextAction
 
 
@@ -90,9 +92,16 @@ def _gather_approach_now_count(
     return count
 
 
-def build_action_brief(result: PipelineResult) -> StartupActionBrief:
+def build_action_brief(
+    result: PipelineResult,
+    packing_result: PackingResult | None = None,
+) -> StartupActionBrief:
     profile = result.startup_profile
     classification = result.ai_native_classification
+
+    # Auto-extract packing_result from pipeline RAG output if available
+    if packing_result is None and result.rag_output is not None:
+        packing_result = result.rag_output.packing_result
 
     recs = result.recommendation
     rec_dicts = [r.model_dump() for r in recs.recommendations] if recs else []
@@ -267,6 +276,26 @@ def build_action_brief(result: PipelineResult) -> StartupActionBrief:
         )
     )
 
+    packed_rag_contexts_list: list = []
+    supporting_nvidia_context_list: list = []
+    dropped_contexts_debug_list: list = []
+
+    if packing_result and packing_result.packed:
+        packed_rag_contexts_list = packing_result.packed
+        supporting_nvidia_context_list = build_supporting_contexts(packing_result)
+        dropped_contexts_debug_list = packing_result.dropped
+        ctx_lines: list[str] = []
+        for sc in supporting_nvidia_context_list:
+            ctx_lines.append(f"- **{sc.technology}** for *{sc.gap_type}*:")
+            for pc in sc.contexts:
+                ctx_lines.append(
+                    f"  - {pc.title}: {pc.content[:120]}... "
+                    f"(score: {pc.relevance_score}, "
+                    f"[source]({pc.url or '#'}))"
+                )
+        if ctx_lines:
+            sections.append(_build_section("Supporting NVIDIA Context", ctx_lines))
+
     if result.missing_evidence:
         sections.append(
             _build_section(
@@ -330,4 +359,7 @@ def build_action_brief(result: PipelineResult) -> StartupActionBrief:
         uncertainties=uncertainties,
         next_action_for_nvidia_team=next_action,
         reasoning=result.reasoning,
+        packed_rag_contexts=packed_rag_contexts_list,
+        supporting_nvidia_context=supporting_nvidia_context_list,
+        dropped_contexts_debug=dropped_contexts_debug_list,
     )

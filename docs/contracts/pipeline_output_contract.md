@@ -21,8 +21,9 @@
   - `recommendation: RecommendationResult | None` — per-gap recommendations with actions and experiments
   - `evidence_used: list[ValidatedEvidence]` — aggregated from all modules
   - `missing_evidence: list[str]` — aggregated from all modules
+  - `rag_output: RagPipelineOutput | None` — RAG retrieval/packing result (Epic 14.1)
 
-## Pipeline Steps (11)
+## Pipeline Steps (11 → 12 com RAG opcional)
 
 1. Extraction
 2. AI-native classification
@@ -35,13 +36,14 @@
 9. NVIDIA Technology Mapping (deterministic matrix)
 10. Deterministic Recommendation Engine
 11. Output consolidation
+**12. Product RAG (optional)** — hybrid retrieval (lexical/semantic), deterministic reranking, context packing, provenance tracking
 
 ## What It Does NOT Promise
 
-- Does **not** produce a final brief or report (deferred to Epic 9)
+- Does **not** produce a final brief or report (deferred to Briefing module)
 - Does **not** write to any database
 - Does **not** call external APIs
-- Does **not** execute Product RAG
+- Does **not** require RAG — `rag_output` is `None` when RAG is not configured
 
 ## Validation Rules
 
@@ -50,6 +52,9 @@
 - `composite_score` must be present (not None)
 - `gap_diagnosis` and `recommendation` are optional (None when pipeline errors, but never None in normal operation)
 - No NVIDIA technology is recommended without a diagnosed gap
+- `rag_output.packing_result.packed` contexts carry source_id and url (provenance)
+- `rag_output.missing_context` is `True` when corpus is empty or no gaps detected
+- RAG does NOT alter `recommended_motion`, scores, or evidence_used
 
 ## Example
 
@@ -61,4 +66,4 @@ assert len(result.recommendation.recommendations) >= 1
 ```
 
 ## Contract Version
-2.0 — June 2026 (integration of diagnosis + recommendation)
+3.0 — June 2026 (integration of RAG reranking + context packing)

@@ -1,12 +1,12 @@
 # RAG Module Contract
 
 **Module**: `src/rag/`
-**Last updated**: 2026-06-09
-**Epic**: 11 — Product RAG / Playbook Retrieval; 13 — Embeddings + Vector Store Retrieval
+**Last updated**: 2026-06-10
+**Epic**: 11 — Product RAG / Playbook Retrieval; 13 — Embeddings + Vector Store Retrieval; 14 — Reranking + Context Packing; 14.1 — Pipeline Integration; 15 — Persistent Vector Store with Qdrant
 
 ## Scope
 
-Provide deterministic lexical retrieval and **optional semantic/hybrid retrieval** of NVIDIA documentation snippets to enrich Startup Action Briefs. The module defines ingestion (Markdown → chunks), indexing (in-memory by gap_type and product), lexical retrieval (scoring), **semantic retrieval (embedding + vector store)**, hybrid retrieval (RRF fusion), and playbook orchestration.
+Provide deterministic lexical retrieval and **optional semantic/hybrid retrieval** of NVIDIA documentation snippets to enrich Startup Action Briefs. The module defines ingestion (Markdown → chunks), indexing (in-memory by gap_type and product), lexical retrieval (scoring), **semantic retrieval (embedding + vector store)**, hybrid retrieval (RRF fusion), **deterministic reranking**, **context packing** (dedup, gap/tech limits, provenance filtering), playbook orchestration, and **optional Qdrant persistent vector store**.
 
 ## Public API
 
@@ -45,6 +45,18 @@ Provide deterministic lexical retrieval and **optional semantic/hybrid retrieval
 | `.add_entry(entry)` | `(VectorEntry)` | None |
 | `.search(query_embedding, top_k, product, gap_type, source_id)` | `(list[float], int, ...)` | `list[VectorEntry]` |
 | `VectorEntry` | Dataclass with chunk_id, source_id, title, content, product, gap_types, url, embedding | — |
+| `VectorStore` | Abstract base class inherited by `InMemoryVectorStore` and `QdrantStore` | — |
+
+### `src.rag.qdrant_store` (Epic 15)
+
+| Class / Function | Signature | Returns |
+|---|---|---|
+| `QdrantStore(config)` | `(QdrantConfig\|None)` | Persistent vector store via qdrant-client |
+| `.add_entry(entry)` | `(VectorEntry)` | Upserts a Qdrant point with full payload |
+| `.search(query_embedding, top_k, product, gap_type, source_id, version, document_type)` | `(list[float], int, ...)` | `list[VectorEntry]` with server-side filtering |
+| `QdrantConfig(url, api_key, collection_name, vector_size, timeout)` | Dataclass | Connection and collection settings |
+| `build_qdrant_store(url, collection_name, vector_size, api_key, timeout)` | Factory | Returns a `QdrantStore` from explicit params or env defaults |
+| `QdrantConnectionError` | Exception | Raised when Qdrant is unreachable |
 
 ### `src.rag.semantic_retrieval`
 
@@ -66,6 +78,25 @@ Provide deterministic lexical retrieval and **optional semantic/hybrid retrieval
 | `.retrieve_for_gaps(...)` | `(diagnosed_gaps, nvidia_technology_candidates, recommendations, top_k_per_query=3) -> list[PlaybookRetrievalResult]` | One result per gap+tech combination |
 | `.retrieve_for_brief(...)` | `(diagnosed_gaps, nvidia_technology_candidates, recommendations) -> list[dict]` | Simplified dicts for Brief template |
 
+### `src.rag.reranking` (Epic 14)
+
+| Function | Signature | Returns |
+|---|---|---|
+| `rerank_contexts(contexts, query, config)` | `(list[RetrievedContext], RetrievalQuery, RerankingConfig\|None) -> list[RetrievedContext]` | Deterministic composite score (gap/tech boost + provenance penalty + duplicate penalty) |
+
+### `src.rag.context_packing` (Epic 14)
+
+| Function | Signature | Returns |
+|---|---|---|
+| `pack_contexts(contexts, query, config)` | `(list[RetrievedContext], RetrievalQuery, PackingConfig\|None) -> PackingResult` | Dedup, classify by gap/tech, apply per-gap/per-tech/global limits, compute metrics |
+| `build_supporting_contexts(packing_result)` | `(PackingResult) -> list[SupportingNvidiaContext]` | Group PackedContext by (gap, tech) for Action Brief |
+
+### `src.rag.rag_pipeline` (Epic 14.1)
+
+| Function | Signature | Returns |
+|---|---|---|
+| `run_rag_pipeline(gap_diagnosis, ...)` | `(GapDiagnosisResult, ChunkIndex\|None, EmbeddingProvider\|None, InMemoryVectorStore\|None, RerankingConfig\|None, PackingConfig\|None) -> RagPipelineOutput` | Orchestrates hybrid retrieval → reranking → context packing for the main pipeline |
+
 ## Schemas
 
 All defined in `src/rag/schemas.py` using Pydantic v2.
@@ -76,6 +107,13 @@ All defined in `src/rag/schemas.py` using Pydantic v2.
 - `RetrievalQuery`: query parameters (technology, gap_type, keywords)
 - `RetrievedContext`: scored result (chunk_id, source_id, title, content, product, gap_types, url, relevance_score)
 - `PlaybookRetrievalResult`: grouped result per gap+tech combination (query, gap_type, technology, contexts, missing_context)
+- `RerankingConfig`: reranking weights (boost_gap_match=0.3, boost_technology_match=0.2, penalty_no_provenance=-0.5, penalty_duplicate=-0.3, penalty_irrelevant=-0.2, boost_known_source=0.1)
+- `PackedContext`: retrieved context with rerank_score, matched_gap, matched_technology
+- `DroppedContext`: chunk_id + reason for dropped contexts
+- `PackingConfig`: packing limits (max_total=5, max_per_technology=2, max_per_gap=3)
+- `PackingResult`: packed + dropped contexts + metrics (provenance_coverage, gap_coverage, technology_coverage, context_budget_used, noise_reduction_score)
+- `SupportingNvidiaContext`: grouped by gap_type + technology for Action Brief consumption
+- `RagPipelineOutput`: pipeline-level RAG output with packing_result, retrieval_mode, missing_context, rag_quality_summary
 
 ## Invariants
 
@@ -87,6 +125,16 @@ All defined in `src/rag/schemas.py` using Pydantic v2.
 6. Semantic retrieval falls back to empty list when vector store is empty.
 7. Hybrid retrieval falls back to pure lexical when vector store is empty.
 8. Metadata filters (product, gap_type, source_id) are supported in semantic and hybrid retrieval.
+9. Reranking is deterministic — no LLM, no external calls. Score is clamped to [0,1].
+10. Context packing deduplicates by chunk_id, applies per-gap (max 3), per-tech (max 2), and global (max 5) limits. All limits configurable via `PackingConfig`.
+11. Packed contexts carry provenance: `source_id` and `url` are preserved. Dropped contexts record the reason.
+12. Action Brief remains optional w.r.t. RAG — `build_action_brief()` accepts `packing_result=None` and works without packed contexts.
+13. RAG is integrated as Step 11 in `run_full_pipeline()` — receives `gap_diagnosis`, returns `RagPipelineOutput` with packing_result or missing_context.
+14. `run_rag_pipeline()` handles all failure modes gracefully: empty index, no diagnosed gaps, empty retrieval, missing vector_store.
+15. QdrantStore is optional — all retrieval functions accept `VectorStore` (ABC) so `InMemoryVectorStore` and `QdrantStore` are interchangeable.
+16. QdrantStore connects lazily — `__init__` does not connect to Qdrant.
+17. QdrantStore payload preserves provenance: `source_url`, `source_title`, `chunk_id`, `source_id`, `product`, `gap_types`, `version`, `content_hash`, `collected_at`, `document_type`.
+18. QdrantStore supports server-side filters: `product`, `gap_type`, `source_id`, `version`, `document_type`.
 
 ## Error Handling
 
@@ -100,12 +148,13 @@ All defined in `src/rag/schemas.py` using Pydantic v2.
 ## Dependencies
 
 - **Internal**: `src.rag` (no other internal module depends on RAG)
-- **External**: `PyYAML` (already present, 6.0.3); `sentence-transformers` (optional, for real embeddings)
+- **External**: `PyYAML` (already present, 6.0.3); `sentence-transformers` (optional, for real embeddings); `qdrant-client` (already in `pyproject.toml`, optional for Qdrant)
 
 ## RAG Evaluation
 
 Added in Epic 12 — offline evaluation of retrieval quality via golden queries.
 Extended in Epic 13 — multi-mode comparison (lexical, semantic, hybrid).
+Extended in Epic 14 — HYBRID_RERANKED and HYBRID_RERANKED_PACKED modes with 8 new metrics.
 
 - `src/evaluation/rag_eval_schemas.py` — schemas for evaluation (RagEvalCase, RagRetrievalMetrics, RagEvalResult, RagQualityGateResult, **RetrievalMode, ModeEvalResult, RagEvalComparison**)
 - `src/evaluation/rag_eval.py` — `run_rag_eval()`, `run_mode_eval()`, `run_comparison_eval()`, `run_quality_gates()`, `format_eval_summary()`, **`format_comparison_summary()`**
@@ -124,3 +173,10 @@ Evaluation is deterministic when using `MockEmbeddingProvider`. No LLM judge, no
 - `tests/unit/test_semantic_retrieval.py` — 15 tests (Epic 13)
 - `tests/unit/test_hybrid_retrieval.py` — 12 tests (Epic 13)
 - `tests/unit/test_rag_eval_semantic.py` — 14 tests (Epic 13)
+- `tests/unit/test_rag_reranking.py` — 9 tests (Epic 14)
+- `tests/unit/test_context_packing.py` — 13 tests (Epic 14)
+- `tests/unit/test_rag_eval_reranking.py` — 11 tests (Epic 14)
+- `tests/unit/test_action_brief_rag_context.py` — 5 tests (Epic 14)
+- `tests/unit/test_pipeline_rag.py` — 10 tests (Epic 14.1)
+- `tests/unit/test_qdrant_store.py` — 20 tests (Epic 15)
+- `tests/integration/test_qdrant_rag_pipeline.py` — 9 tests (Epic 15, skippable)

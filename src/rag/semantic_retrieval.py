@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from src.rag.embeddings import EmbeddingProvider
 from src.rag.schemas import RetrievalQuery, RetrievedContext
-from src.rag.vector_store import InMemoryVectorStore
+from src.rag.vector_store import VectorStore
 
 
 def semantic_retrieve(
     query: RetrievalQuery,
     embedding_model: EmbeddingProvider,
-    vector_store: InMemoryVectorStore,
+    vector_store: VectorStore,
     top_k: int = 3,
     *,
     product: str | None = None,

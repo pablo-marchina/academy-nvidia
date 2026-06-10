@@ -29,7 +29,14 @@
 | Semantic Retrieval | `tests/unit/test_semantic_retrieval.py` | 15 | ✅ |
 | Hybrid Retrieval | `tests/unit/test_hybrid_retrieval.py` | 12 | ✅ |
 | RAG Evaluation Semantic | `tests/unit/test_rag_eval_semantic.py` | 14 | ✅ |
-| **Total** | **25 arquivos** | **236** | **100% pass** |
+| RAG Reranking | `tests/unit/test_rag_reranking.py` | 9 | ✅ |
+| Context Packing | `tests/unit/test_context_packing.py` | 13 | ✅ |
+| RAG Eval Reranking | `tests/unit/test_rag_eval_reranking.py` | 11 | ✅ |
+| Action Brief RAG Context | `tests/unit/test_action_brief_rag_context.py` | 5 | ✅ |
+| Pipeline RAG Integration | `tests/unit/test_pipeline_rag.py` | 10 | ✅ |
+| Qdrant Store Unit | `tests/unit/test_qdrant_store.py` | 20 | ✅ |
+| Qdrant Pipeline Integration | `tests/integration/test_qdrant_rag_pipeline.py` | 9 | ⏭️ (skippable) |
+| **Total** | **32 arquivos** | **315** | **306 pass, 9 skip** |
 
 ## Cobertura por módulo
 
@@ -55,14 +62,14 @@
 | `diagnosis/nvidia_mapping.py` | ✅ REAL | ✅ | 6 |
 | `config/settings.py` | ✅ REAL | ❌ | 0 |
 | `agents/` (9 files) | ❌ STUB | ❌ | 0 |
-| `rag/` (8 files) | ✅ REAL | ✅ | 15 + 38 (Epic 13) |
+| `rag/` (10 files) | ✅ REAL | ✅ | 15 + 52 (Epic 13) + 22 (Epic 14) + 10 (Epic 14.1) + 20 (Epic 15) |
 | `database/` (2 files) | ❌ STUB | ❌ | 0 |
-| `evaluation/` (4 files) | ✅ REAL | ✅ | 20 + 14 (Epic 13) |
+| `evaluation/` (4 files) | ✅ REAL | ✅ | 20 + 14 (Epic 13) + 11 (Epic 14) |
 | `interface/` (1 file) | ❌ STUB | ❌ | 0 |
 
 ## Lacunas de cobertura
 
-- **Integração:** `tests/integration/` vazio — zero testes de integração
+- **Integração:** `tests/integration/` tem 9 testes Qdrant (skippable via QDRANT_TEST_URL)
 - **Config:** `src/config/settings.py` sem testes
 
 ## Critérios de aceite por módulo
@@ -91,6 +98,13 @@
 | Semantic Retrieval | 15 testes (contextos, proveniência, store vazio, filtros por product/gap/source_id, top_k, score range, query text building) | ✅ |
 | Hybrid Retrieval | 12 testes (fallback lexical, fusão RRF, proveniência, top_k, score range, filtros, fusão vazia/dedup) | ✅ |
 | RAG Evaluation Semantic | 14 testes (mode eval lexical/semantic/hybrid, comparison, regressions, format, backward compat) | ✅ |
+| RAG Reranking | 9 testes (gap/tech boost, provenance/duplicate/irrelevant penalties, empty, config, score range, order) | ✅ |
+| Context Packing | 13 testes (dedup, per-tech/per-gap/global limits, provenance, empty, dropped reasons, metrics, build_supporting) | ✅ |
+| RAG Eval Reranking | 11 testes (5 modos, packed metrics, regression detection, backward compat) | ✅ |
+| Action Brief RAG Context | 5 testes (RAG-optional, context injection, empty default, motion unchanged) | ✅ |
+| Pipeline RAG Integration | 10 testes (pipeline com packed contexts, sem RAG, empty index, brief section, dropped not in brief, motion unchanged, provenance, quality summary, backward compat, lexical mode) | ✅ |
+| Qdrant Store Unit | 20 tests (lazy conn, error, add, remove, clear, get, size, search, filters, provenance, factory) | ✅ |
+| Qdrant Pipeline Integration | 9 tests (upsert, filters, remove, clear, get, provenance, error) | ⏭️ skippable |
 
 ## Critérios de Qualidade do Desenvolvimento
 

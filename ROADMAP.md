@@ -160,10 +160,52 @@
 - [x] RAG Evaluation compares lexical/semantic/hybrid with regression detection
 - [x] Action Brief unchanged — works without vector store
 
+### Epic 14 — Reranking e Context Packing Determinísticos (concluído)
+- [x] `src/rag/reranking.py` — deterministic composite score (gap/tech boost + provenance/duplicate/irrelevant penalties), clamped to [0,1]
+- [x] `src/rag/context_packing.py` — dedup, classify by gap/tech, apply per-gap/per-tech/global limits, compute metrics
+- [x] `src/rag/schemas.py` — RerankingConfig, PackedContext, DroppedContext, PackingConfig, PackingResult, SupportingNvidiaContext
+- [x] `src/evaluation/rag_eval_schemas.py` — 2 new modes (HYBRID_RERANKED, HYBRID_RERANKED_PACKED), 8 new metric fields
+- [x] `src/evaluation/rag_eval.py` — 5-mode support, regression detection for all later modes
+- [x] `src/briefing/schemas.py` — 3 optional packed-context fields
+- [x] `src/briefing/action_brief.py` — accepts optional PackingResult, injects Supporting NVIDIA Context section
+- [x] `src/briefing/markdown_renderer.py` — renders Supporting NVIDIA Context section with score and provenance
+- [x] 38 new tests (reranking 9, packing 13, eval 11, brief 5)
+- [x] `docs/38_rag_reranking_context_packing.md` created
+- [x] `docs/contracts/rag_contract.md` updated
+- [x] Total: 276 tests, 29 arquivos
+
+### Epic 14.1 — Integrate RAG Reranking + Context Packing into Main Pipeline (concluído)
+- [x] `src/rag/rag_pipeline.py` — `run_rag_pipeline()` orchestration (hybrid retrieval → rerank → pack)
+- [x] `src/rag/schemas.py` — `RagPipelineOutput` schema
+- [x] `src/pipeline/run_pipeline.py` — Step 11 (RAG), `rag_output` field, optional RAG parameters
+- [x] `src/briefing/action_brief.py` — auto-extract packing_result from PipelineResult.rag_output
+- [x] 10 new tests (pipeline with RAG, without RAG, empty index, brief section, dropped not in brief, motion unchanged, provenance, quality summary, backward compat, lexical mode)
+- [x] `docs/contracts/pipeline_output_contract.md` updated (v3.0)
+- [x] `docs/contracts/rag_contract.md` updated
+- [x] `docs/contracts/briefing_contract.md` updated (v2.0)
+- [x] Total: 286 tests, 30 arquivos
+- [x] RAG integrated as optional Step 11 — no impact on scoring, diagnosis, or recommendation
+
+### Epic 15 — Persistent Vector Store with Qdrant (concluído)
+- [x] `src/rag/vector_store.py` — VectorStore ABC extraída, InMemoryVectorStore herda dela
+- [x] `src/rag/qdrant_store.py` — QdrantStore(VectorStore) com lazy connection, payload rico, filtros server-side
+- [x] `src/rag/semantic_retrieval.py`, `hybrid_retrieval.py`, `rag_pipeline.py` — tipagem alterada para VectorStore (polimórfico)
+- [x] `src/evaluation/rag_eval.py` — tipagem alterada para VectorStore
+- [x] `tests/unit/test_qdrant_store.py` — 20 testes (sem Qdrant)
+- [x] `tests/integration/test_qdrant_rag_pipeline.py` — 9 testes (skippable)
+- [x] `.env.example` — +RAG_VECTOR_BACKEND, QDRANT_COLLECTION, QDRANT_VECTOR_SIZE
+- [x] `docker-compose.yml` — healthcheck no Qdrant
+- [x] `docs/39_qdrant_persistent_vector_store.md`
+- [x] `docs/contracts/rag_contract.md` — + QdrantStore API + payload schema + invariants
+- [x] Payload schema: chunk_id, source_id, source_title, source_url, product, gap_types, version, content_hash, collected_at, document_type, provenance
+- [x] Filtros obrigatórios: product, gap_type, source_id, version, document_type
+- [x] Total: 315 testes (306 unit + 9 integration skippable), 31 test files
+- [x] Qdrant opcional — RAG continua funcionando sem Qdrant
+
 ### Product RAG (V3 — futuro / backlog)
-- Reranking cross-encoder
+- Reranking cross-encoder (alternativa ao reranking determinístico)
 - Ingestão automatizada de documentação NVIDIA via crawler respeitando robots.txt
-- Persistência do vector store (Qdrant server)
+- Script de ingestão para popular Qdrant a partir do corpus manual
 
 ---
 

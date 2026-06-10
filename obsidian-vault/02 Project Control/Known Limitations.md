@@ -13,11 +13,13 @@
 
 - Product RAG Epic 13: semantic/hybrid retrieval usa MockEmbeddingProvider nos testes (nao captura relacoes semanticas reais)
 - SentenceTransformerProvider requer sentence-transformers (~500MB) — nao instalado por padrao
-- Sem cross-encoder reranking (deferred para backlog)
-- Vector store e in-memory (sem persistencia entre sessoes — Qdrant-ready)
-- Recommendation Engine implementado (Epic 8) mas nao integrado ao pipeline
-
-## Qualidade
+- Reranking deterministico usa pesos fixos (RerankingConfig) — pode nao ser otimo para todos os gaps/tecnologias
+- Context packing tem limites configurados (per-tech=2, per-gap=3, global=5) — pode descartar contextos relevantes em casos de borda
+- Sem cross-encoder reranking (backlog)
+- Vector store e in-memory (sem persistencia entre sessoes — Qdrant-ready via QdrantStore adapter opcional no Epic 15)
+- Recommendation Engine implementado e integrado ao pipeline (Epic 9.1)
+- RAG pipeline integrado como Step 11 opcional — sem suporte a contextos multi-turno ou consultas interativas
+- QdrantStore nao faz fallback automatico para in-memory em caso de erro de conexao (caller deve capturar QdrantConnectionError)
 
 - Scores dependem da qualidade e cobertura das evidencias publicas disponiveis
 - Confianca das evidencias e atribuida heuristicamente, nao por modelo aprendido

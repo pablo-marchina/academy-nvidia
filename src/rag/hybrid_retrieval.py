@@ -6,7 +6,7 @@ from src.rag.embeddings import EmbeddingProvider
 from src.rag.retrieval import ChunkIndex
 from src.rag.schemas import RetrievalQuery, RetrievedContext
 from src.rag.semantic_retrieval import semantic_retrieve
-from src.rag.vector_store import InMemoryVectorStore
+from src.rag.vector_store import VectorStore
 
 _RRF_K = 60
 
@@ -15,7 +15,7 @@ def hybrid_retrieve(
     query: RetrievalQuery,
     chunk_index: ChunkIndex,
     embedding_model: EmbeddingProvider,
-    vector_store: InMemoryVectorStore,
+    vector_store: VectorStore,
     top_k: int = 3,
     *,
     product: str | None = None,

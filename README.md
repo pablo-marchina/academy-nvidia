@@ -28,12 +28,14 @@ How can NVIDIA identify, attract, and nurture Brazilian AI-native startups in a 
 10. **Startup Action Brief** produces executive-ready outputs with traceability.
 11. **Product RAG** retrieves NVIDIA documentation snippets (lexical + semantic + hybrid) to enrich briefs with grounded, provenance-tracked context.
 12. **RAG Evaluation** offline evaluation layer with golden queries, 7 retrieval metrics, and 6 quality gates for the Product RAG module.
+13. **Reranking + Context Packing** deterministic reranking (composite score: gap/tech boost + provenance/duplicate/irrelevant penalties) and context packing (dedup, gap/tech limits, provenance filtering) for enriched, clean NVIDIA context in briefs.
+14. **Persistent Vector Store (Qdrant)** optional Qdrant-backed vector store with lazy connection, full payload provenance, and server-side filtering — falls back to in-memory.
 
 See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [docs/02_architecture.md](docs/02_architecture.md) for the architectural flow.
 
 ## Current Capabilities
 
-### Pipeline (11-step deterministic flow)
+### Pipeline (12-step deterministic flow, RAG optional)
 1. **Extraction** — structured startup profile from raw text (sector, signals, tech stack, customers, funding)
 2. **AI-native Classification** — 5-level heuristic classification (NON_AI → AI_NATIVE_SERVICE) with confidence
 3. **Evidence Validation** — FACT/INFERENCE/HYPOTHESIS tagging with confidence recalibration
@@ -45,6 +47,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 9. **NVIDIA Technology Mapping** — deterministic matrix mapping each gap to relevant technologies
 10. **Recommendation Engine** — per-gap recommendations with action, priority, and suggested experiment
 11. **Output Consolidation** — aggregated evidence_used, missing_evidence, reasoning
+12. **Product RAG (optional)** — hybrid retrieval (lexical/semantic), deterministic reranking, context packing, provenance tracking
 
 ### Modules implemented
 - `src/scraping/` — fetcher, parser, source policy
@@ -56,12 +59,12 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `src/diagnosis/` — gap diagnosis (15 detectors) + NVIDIA technology mapping
 - `src/recommendation/` — deterministic recommendation engine (schemas, engine)
 - `src/briefing/` — Startup Action Brief consolidation and Markdown rendering
-- `src/rag/` — Product RAG ingestion, lexical + semantic + hybrid retrieval, embeddings, vector store, playbook retriever
-- `src/evaluation/` — Offline RAG evaluation (golden queries, metrics, quality gates, multi-mode comparison)
+- `src/rag/` — Product RAG ingestion, lexical + semantic + hybrid retrieval, embeddings, vector store, playbook retriever, **deterministic reranking, context packing, Qdrant persistent vector store**
+- `src/evaluation/` — Offline RAG evaluation (golden queries, metrics, quality gates, multi-mode comparison, **reranking/packed**)
 - `src/config/` — settings via pydantic-settings
 
 ### Testing
-- 236 unit tests across 25 test files
+- 306 unit tests across 31 test files (+ 9 skippable integration tests)
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -75,6 +78,13 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - Semantic Retrieval: 15 tests (contexts, provenance, filters, query text)
 - Hybrid Retrieval: 12 tests (fallback, RRF fusion, filters, dedup)
 - Multi-Mode Eval: 14 tests (lexical/semantic/hybrid comparison, regressions)
+- RAG Reranking: 9 tests (deterministic composite score, gap/tech boost, provenance penalty)
+- Context Packing: 13 tests (dedup, limits, metrics, build_supporting_contexts)
+- RAG Eval Reranking: 11 tests (HYBRID_RERANKED and HYBRID_RERANKED_PACKED modes, packed metrics, regression detection)
+- Action Brief RAG Context: 5 tests (optional packing, empty defaults, motion unchanged)
+- Pipeline RAG Integration: 10 tests (packed contexts, no RAG, empty index, brief section, dropped not in brief, motion unchanged, provenance, quality summary, backward compat, lexical mode)
+- Qdrant Store: 20 tests (lazy connection, error, add, remove, clear, get, size, search, filters, provenance, factory)
+- Qdrant Pipeline Integration: 9 tests (skippable — requires QDRANT_TEST_URL)
 
 ## Stack
 
@@ -187,16 +197,21 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - RAG semantic/hybrid retrieval requires `sentence-transformers` for real embeddings (mock provider used in tests).
 - RAG evaluation multi-mode comparison uses `MockEmbeddingProvider` by default — real semantic quality requires `sentence-transformers`.
 - Corpus is manually curated in `data/nvidia_corpus/` (10 documents — no automated ingestion).
-- Relevance scoring in lexical mode is keyword-match-based; semantic mode uses cosine similarity.
-- Vector store is in-memory only (no persistence across sessions — Qdrant-ready for production).
-- Recommendation Engine is deterministic (no LLM) and not yet integrated into the pipeline — deferred to Epic 10 (Briefing/CLI).
+- Relevance scoring in lexical mode is keyword-match-based; semantic mode uses cosine similarity; reranking uses a deterministic composite formula (no cross-encoder).
+- Vector store is in-memory only (no persistence across sessions — Qdrant-ready for production; optional QdrantStore adapter available in Epic 15).
+- Context packing uses configurable limits (per-tech=2, per-gap=3, global=5) — may drop relevant contexts in edge cases.
+- RAG pipeline integrated as optional Step 11 — no support for multi-turn or interactive context queries.
+- QdrantStore does not auto-fallback to in-memory on connection error (caller must catch `QdrantConnectionError`).
+- No automated ingestion script for populating Qdrant from the corpus.
+- Recommendation Engine is deterministic (no LLM) — now fully integrated in the pipeline.
 - Gap Diagnosis module (`src/diagnosis/gap_diagnosis.py`) exists but is not yet called by the pipeline — scores are available but not part of the output.
 - Scores depend on the quality and coverage of public evidence available for the startup.
 - Evidence confidence is assigned heuristically by rule-based validation, not by a learned model.
 - The system does not prove real internal usage of AI — it only structures publicly available signals.
 - `recommended_motion` is a preliminary suggestion based on deterministic rules, not a final business decision.
 - No human-in-the-loop technically implemented (only documented in architecture plan).
-- No integration tests exist — all 236 tests are unit tests.
+- No integration tests exist — all 306 tests are unit tests (9 integration tests skippable).
 - No eval harness exists — `tests/evals/` is empty.
 - Agents (`src/agents/`), database (`src/database/`), and interface (`src/interface/`) are stubs.
+- Obsidian vault has structure but no populated content beyond templates.
 - Obsidian vault has structure but no populated content beyond templates.
