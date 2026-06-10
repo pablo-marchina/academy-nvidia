@@ -263,6 +263,16 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 - **Validation:** 20 testes unitários (mock). 9 testes integração (skippable). 306 testes legados passam sem alteração.
 - **Status:** Implementado no Epic 15.
 
+### Decision 025 — Golden Eval Harness (End-to-End Pipeline Regression Detection)
+
+- **Context:** The project had 329 tests but zero end-to-end golden evaluations. Pipeline-level regressions (wrong motion, missing gaps, broken contracts) were only detectable by manual review. Changes to scoring, diagnosis, or recommendation logic had no automated guard against silent behavior change.
+- **Decision:** Create a golden eval harness at `tests/evals/` with 7 versioned JSON golden cases covering the full output spectrum (high-fit, weak-evidence, non-AI, no-RAG-context, RAG-supported, validate-manually, monitor-or-discard). Each case stores expected `motion_in`, `min_score`/`max_score`, `expected_gaps`, `brief_min_sections`, and `has_approach_now`. Eleven assert helpers enforce pipeline contract, gap detection, motion range, missing-evidence propagation, confidence coherence, brief sections, no-tech-without-gap, no-strong-rec-without-evidence, and three RAG-specific invariants (motion stability, context-in-brief, context-not-in-evidence).
+- **Alternatives considered:** Inline golden dicts in tests (not versioned, hard to review). Snapshot testing with `pytest-regtest` (external dependency, not needed for deterministic pipeline). Property-based testing with Hypothesis (overkill — pipeline outputs are deterministic, not random).
+- **Rationale:** JSON golden cases are version-controllable, human-reviewable, language-agnostic, and loadable without Python. Offline execution uses `MockEmbeddingProvider` + `InMemoryVectorStore` so all 38 tests run in CI with no external dependencies. The `expected_outputs.json` cross-check ensures every golden case file has an expectation entry.
+- **Risks:** Golden expectations must be updated when pipeline logic intentionally changes. Failing to update expectations on feature changes causes false CI failures. Mitigated by: per-case `motion_in` ranges (not single values) and `min_score`/`max_score` tolerances.
+- **Validation:** 38 golden tests pass. 358 total tests (320 pre-existing + 38 new + 0 regression). Full CI passes offline. All 7 cases produce correct pipeline contract, motion, gaps, brief sections, and RAG invariants.
+- **Status:** Implementado no Epic 17.
+
 ---
 
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

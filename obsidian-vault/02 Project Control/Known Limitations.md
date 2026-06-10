@@ -28,8 +28,8 @@
 
 ## Testes
 
-- Zero testes de integracao
-- Zero evals automatizados
+- Zero testes de integracao (9 skippable no Epic 15)
+- 38 golden evals automatizados (Epic 17) — cobrem pipeline completa offline
 - `config/settings.py` sem testes
 
 ## Infraestrutura

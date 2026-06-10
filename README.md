@@ -70,7 +70,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate)
 
 ### Testing
-- 329 tests (320 unit + 9 skippable integration) across 34 test files
+- 358 tests (320 unit + 38 golden evals + 9 skippable integration) across 35 test files
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -254,8 +254,7 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - The system does not prove real internal usage of AI — it only structures publicly available signals.
 - `recommended_motion` is a preliminary suggestion based on deterministic rules, not a final business decision.
 - No human-in-the-loop technically implemented (only documented in architecture plan).
-- No integration tests exist — all 306 tests are unit tests (9 integration tests skippable).
-- No eval harness exists — `tests/evals/` is empty.
+- Golden eval harness at `tests/evals/` with 38 tests across 7 golden cases.
 - Agents (`src/agents/`), database (`src/database/`), and interface (`src/interface/`) are stubs.
 - Obsidian vault has structure but no populated content beyond templates.
 - CI only tests on Ubuntu — no Windows/macOS matrix in CI.

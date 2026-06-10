@@ -217,6 +217,22 @@
 - [x] Total: 329 tests (315 existing + 14 new), 34 test files
 - [x] No changes to src/ or product tests
 
+### Epic 17 — Golden Eval Harness (End-to-End Pipeline Regression Detection) (concluído)
+- [x] 7 JSON golden cases in `examples/golden/` (high_fit, weak_evidence, non_ai, no_rag_context, rag_supported, validate_manually, monitor_or_discard)
+- [x] `expected_outputs.json` — cross-check matching every case
+- [x] `examples/golden/README.md` — golden case documentation
+- [x] `tests/evals/helpers.py` — GoldenCase, load_golden_case, run_pipeline_on_case, run_pipeline_with_rag, 11 assert helpers
+- [x] `tests/evals/test_pipeline_golden.py` — 38 tests across 6 test classes + 3 cross-cutting checks
+- [x] All golden evals run offline (MockEmbeddingProvider + InMemoryVectorStore — no Qdrant, no sentence-transformers)
+- [x] RAG golden cases verify motion stability, context-in-brief, context-not-in-evidence
+- [x] `docs/41_end_to_end_eval_harness.md`
+- [x] DECISIONS.md — Decision 025
+- [x] EVALS.md — golden eval section
+- [x] README.md — updated test count, removed "no eval harness" limitation
+- [x] Obsidian vault backfill
+- [x] Total: 358 tests (329 pre-existing + 38 golden evals), 36 test files
+- [x] No changes to src/ — pure test infrastructure
+
 ### Product RAG (V3 — futuro / backlog)
 - Reranking cross-encoder (alternativa ao reranking determinístico)
 - Ingestão automatizada de documentação NVIDIA via crawler respeitando robots.txt

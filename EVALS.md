@@ -153,6 +153,48 @@ Estes critérios avaliam a **qualidade do processo de desenvolvimento assistido 
 - **Antes do commit (agente IA):** `make validate` + `python scripts/check_scope.py`
 - **Antes de fechar épico:** `python scripts/check_docs_closure.py`
 
+## Golden Evals (Epic 17)
+
+### Casos Golden
+
+| Case | Motion | Score | Gaps Detectados | Testes |
+|------|--------|-------|-----------------|--------|
+| startup_high_fit | `lack_evidence_more_research` | 17.6 | 7 (healthcare, latency, vision, etc.) | 10 |
+| startup_weak_evidence | `not_recommended` | 1.2 | 0 | 4 |
+| startup_non_ai | `not_recommended` | 2.8 | 0 | 4 |
+| startup_no_rag_context | `lack_evidence_more_research` | 29.4 | 8 | 4 |
+| startup_rag_supported | `lack_evidence_more_research` | 9.7 | 1 | 4 |
+| startup_validate_manually | `lack_evidence_more_research` | 3.9 | 0 | 5 |
+| startup_monitor_or_discard | `lack_evidence_more_research` | 4.8 | 7 | 4 |
+
+### Invariantes Verificados (por golden case)
+1. Pipeline Contract — todos os campos obrigatórios presentes e válidos
+2. Expected Motion — `recommended_motion` dentro da faixa esperada
+3. Score Range — `final_priority_score` entre min_score e max_score
+4. Expected Gaps — gaps detectados incluem os esperados
+5. No Tech Without Gap — recomendações sem gap detectado não têm tecnologias
+6. Missing Evidence Propagation — `missing_evidence` propaga de diagnosis → pipeline result
+7. Confidence Coherence — high confidence sem evidência high não produz composite high
+8. Action Brief Sections — mínimo de seções + Executive Summary + Evidence
+9. Action Brief Markdown — renderização markdown válida
+10. No Strong Rec Without Evidence — `approach_now` só com HIGH confidence evidence
+11. RAG: Motion Stability — RAG não altera `recommended_motion`
+12. RAG: Context in Brief — `supporting_nvidia_context` e `packed_rag_contexts` presentes
+13. RAG: Context Not in Evidence — conteúdo RAG não aparece em `evidence_used`
+
+### Execução
+```bash
+pytest tests/evals/ -v          # golden evals apenas
+pytest tests/evals/ --tb=short  # com saída enxuta
+```
+
+### Regressão
+Se um golden case falhar:
+1. Verificar se a mudança no pipeline foi intencional
+2. Rodar pipeline no golden case para ver novo output
+3. Atualizar `expected_outputs.json` e o campo `expected` no JSON do caso
+4. Re-executar `pytest tests/evals/` para confirmar
+
 ## Métricas aspiracionais (futuras)
 
 - Precision@k para ranking de startups
