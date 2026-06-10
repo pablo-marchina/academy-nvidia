@@ -11,7 +11,10 @@
 
 ## RAG e Recomendacao
 
-- NVIDIA RAG nao implementado (playbooks estaticos ou mocked)
+- Product RAG Epic 13: semantic/hybrid retrieval usa MockEmbeddingProvider nos testes (nao captura relacoes semanticas reais)
+- SentenceTransformerProvider requer sentence-transformers (~500MB) — nao instalado por padrao
+- Sem cross-encoder reranking (deferred para backlog)
+- Vector store e in-memory (sem persistencia entre sessoes — Qdrant-ready)
 - Recommendation Engine implementado (Epic 8) mas nao integrado ao pipeline
 
 ## Qualidade

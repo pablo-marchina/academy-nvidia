@@ -1,10 +1,23 @@
-"""Schemas for RAG Evaluation — retrieval metrics and quality gates."""
+"""Schemas for RAG Evaluation — retrieval metrics and quality gates.
+
+Epic 13 adds: RetrievalMode, ModeEvalResult, RagEvalComparison.
+"""
 
 from __future__ import annotations
+
+from enum import Enum
 
 from pydantic import BaseModel, Field
 
 from src.rag.schemas import RetrievalQuery, RetrievedContext
+
+
+class RetrievalMode(str, Enum):
+    """Retrieval mode identifier for multi-mode evaluation."""
+
+    LEXICAL = "lexical"
+    SEMANTIC = "semantic"
+    HYBRID = "hybrid"
 
 
 class RagEvalCase(BaseModel):
@@ -52,3 +65,23 @@ class RagQualityGateResult(BaseModel):
     passed: bool
     details: str
     failed_cases: list[str] = Field(default_factory=list)
+
+
+class ModeEvalResult(BaseModel):
+    """Evaluation results for a single retrieval mode."""
+
+    mode: RetrievalMode
+    results: list[RagEvalResult]
+    gates: list[RagQualityGateResult]
+    passed_cases: int = 0
+    total_cases: int = 0
+
+
+class RagEvalComparison(BaseModel):
+    """Side-by-side comparison of all retrieval modes."""
+
+    lexical: ModeEvalResult
+    semantic: ModeEvalResult
+    hybrid: ModeEvalResult
+    critical_regressions: list[str] = Field(default_factory=list)
+    """Case IDs where semantic or hybrid regressed vs lexical on a critical query."""

@@ -209,7 +209,17 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 - **Rationale:** Golden queries e métricas determinísticas garantem que a qualidade do retrieval é medida de forma reproduzível e testável. Quality gates fornecem um ponto de falha explícito se o RAG degradar. A separação em módulo próprio mantém o RAG evaluation independente.
 - **Risks:** Golden queries podem desatualizar se o corpus mudar. Métricas puramente lexicais não detectam degradação semântica. Quality gates podem ser muito rigorosos ou muito laxos.
 - **Validation:** 20 testes unitários (golden queries, métricas, gates, provenance, brief compatibilidade). Todas as 16 golden queries passam com o corpus atual. Quality gates falham com índice vazio ou sem proveniência.
-- **Status:** Implementado no Epic 12.
+- **Status:** Implementado no Epic 12. Estendido no Epic 13 com comparação multi-modo.
+
+### Decision 020 — Embeddings + Vector Store com in-memory store e mock embeddings
+
+- **Context:** O Product RAG (Epic 11) usava apenas retrieval lexical. Para suportar matching semântico era necessário adicionar embeddings e vector store sem aumentar a complexidade de setup (sem exigir servidor Qdrant, Docker, ou API keys).
+- **Decision:** Criar `EmbeddingProvider` abstrato com duas implementações: `MockEmbeddingProvider` (determinístico, hash-based, sem dependências) para testes, e `SentenceTransformerProvider` (modelo `all-MiniLM-L6-v2`) para uso real. O vector store é `InMemoryVectorStore` (dict + cosine similarity em pure Python). O retrieval híbrido usa RRF (Reciprocal Rank Fusion) para combinar resultados léxicos e semânticos. A avaliação RAG foi estendida com `run_comparison_eval()` que executa golden queries nos 3 modos (lexical, semantic, hybrid) e detecta regressões críticas.
+- **Alternatives considered:** Qdrant server-side (rejeitado por exigir Docker/setup), Chroma/FAISS (rejeitado por dependência extra), cross-encoder reranking (muito pesado para MVP), API-based embeddings OpenaAI/NVIDIA (exigiria API key).
+- **Rationale:** In-memory store + mock embeddings permitem testes determinísticos sem dependências externas. A abstração `EmbeddingProvider` permite trocar o provider sem alterar o código de retrieval. RRF é simples, robusta e não requer calibração. A arquitetura está pronta para substituir o in-memory store por Qdrant em produção.
+- **Risks:** Mock embeddings não capturam relações semânticas reais — testes com mock não garantem qualidade semântica em produção. Sentence-transformers (~500MB) pode ser pesado para CI/CD. Corpus pequeno (~50 chunks) pode não beneficiar muito de retrieval semântico.
+- **Validation:** 52 novos testes (11 embeddings, 15 semantic retrieval, 12 hybrid retrieval, 14 multi-mode eval). Todos passam sem chamadas externas. semantic_retrieve com store vazio retorna []. hybrid_retrieve com store vazio cai para lexical. Filtros por product/gap_type/source_id funcionam. Provenance preservada. RAG Evaluation compara os 3 modos sem regressão.
+- **Status:** Implementado no Epic 13.
 
 ---
 

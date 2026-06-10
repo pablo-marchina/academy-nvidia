@@ -12,16 +12,18 @@
 - recommended_motion pode ser "lack_evidence_more_research" mesmo para startups com sinais fortes se o perfil tiver confidence_score baixo.
 
 ## RAG
-- Retrieval puramente lexical — sem embeddings, sem matching semântico.
 - Corpus manual em `data/nvidia_corpus/` — sem ingestão automatizada.
-- Relevance scoring simples (keyword match) — sem reranking.
-- Sem cross-chunk ranking ou query expansion.
+- Semantic/hybrid retrieval usa `MockEmbeddingProvider` nos testes (não captura relações semânticas reais).
+- `SentenceTransformerProvider` requer `sentence-transformers` (~500MB) — não instalado por padrão.
+- Sem cross-encoder reranking (deferred para backlog).
+- Sem query expansion ou sinônimos.
 - Nenhum teste com corpus real da documentação NVIDIA.
+- Vector store é in-memory (sem persistência entre sessões — Qdrant-ready).
 
 ## RAG Evaluation
-- Métricas não medem relevância semântica (apenas lexical).
 - Golden queries manuais — mudanças no corpus podem exigir atualização.
 - Sem métricas agregadas entre queries (ex: mean average precision).
+- Comparação multi-modo usa mock embeddings — não valida qualidade semântica real.
 
 ## Geral
 - Nenhum teste de integração com dados reais.

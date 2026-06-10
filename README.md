@@ -26,7 +26,7 @@ How can NVIDIA identify, attract, and nurture Brazilian AI-native startups in a 
 8. **NVIDIA Technology Mapping** maps each gap to relevant NVIDIA technologies.
 9. **Recommendation Engine** generates deterministic per-gap recommendations with action, priority, experiment, and next step.
 10. **Startup Action Brief** produces executive-ready outputs with traceability.
-11. **Product RAG** retrieves NVIDIA documentation snippets (lexical, in-memory) to enrich briefs with grounded, provenance-tracked context.
+11. **Product RAG** retrieves NVIDIA documentation snippets (lexical + semantic + hybrid) to enrich briefs with grounded, provenance-tracked context.
 12. **RAG Evaluation** offline evaluation layer with golden queries, 7 retrieval metrics, and 6 quality gates for the Product RAG module.
 
 See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [docs/02_architecture.md](docs/02_architecture.md) for the architectural flow.
@@ -56,12 +56,12 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `src/diagnosis/` — gap diagnosis (15 detectors) + NVIDIA technology mapping
 - `src/recommendation/` — deterministic recommendation engine (schemas, engine)
 - `src/briefing/` — Startup Action Brief consolidation and Markdown rendering
-- `src/rag/` — Product RAG ingestion, lexical retrieval, playbook retriever
-- `src/evaluation/` — Offline RAG evaluation (golden queries, metrics, quality gates)
+- `src/rag/` — Product RAG ingestion, lexical + semantic + hybrid retrieval, embeddings, vector store, playbook retriever
+- `src/evaluation/` — Offline RAG evaluation (golden queries, metrics, quality gates, multi-mode comparison)
 - `src/config/` — settings via pydantic-settings
 
 ### Testing
-- 188 unit tests across 21 test files
+- 236 unit tests across 25 test files
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -71,6 +71,10 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - RAG retrieval: 6 tests (index, gap, tech, empty, keywords, scores)
 - Playbook retriever: 5 tests (inference gap, agent gap, missing, brief dicts, no-rag crash)
 - RAG Evaluation: 20 tests (golden queries, metrics, quality gates, provenance, brief compatibility)
+- RAG Embeddings: 11 tests (mock provider, determinism, normalization, batch)
+- Semantic Retrieval: 15 tests (contexts, provenance, filters, query text)
+- Hybrid Retrieval: 12 tests (fallback, RRF fusion, filters, dedup)
+- Multi-Mode Eval: 14 tests (lexical/semantic/hybrid comparison, regressions)
 
 ## Stack
 
@@ -180,10 +184,11 @@ No startup recommendation is valid without evidence and an explicit technical ga
 
 - The pipeline uses deterministic heuristics, not an LLM, for all scoring and diagnosis steps.
 - Scraping collects from a single public URL — no crawling in scale.
-- RAG retrieval is purely lexical (no embeddings, no vector DB, no reranking).
-- RAG evaluation uses golden queries and deterministic metrics — no LLM judge, no semantic understanding.
+- RAG semantic/hybrid retrieval requires `sentence-transformers` for real embeddings (mock provider used in tests).
+- RAG evaluation multi-mode comparison uses `MockEmbeddingProvider` by default — real semantic quality requires `sentence-transformers`.
 - Corpus is manually curated in `data/nvidia_corpus/` (10 documents — no automated ingestion).
-- Relevance scoring is simple keyword-match-based, no semantic understanding.
+- Relevance scoring in lexical mode is keyword-match-based; semantic mode uses cosine similarity.
+- Vector store is in-memory only (no persistence across sessions — Qdrant-ready for production).
 - Recommendation Engine is deterministic (no LLM) and not yet integrated into the pipeline — deferred to Epic 10 (Briefing/CLI).
 - Gap Diagnosis module (`src/diagnosis/gap_diagnosis.py`) exists but is not yet called by the pipeline — scores are available but not part of the output.
 - Scores depend on the quality and coverage of public evidence available for the startup.
@@ -191,7 +196,7 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - The system does not prove real internal usage of AI — it only structures publicly available signals.
 - `recommended_motion` is a preliminary suggestion based on deterministic rules, not a final business decision.
 - No human-in-the-loop technically implemented (only documented in architecture plan).
-- No integration tests exist — all 188 tests are unit tests.
+- No integration tests exist — all 236 tests are unit tests.
 - No eval harness exists — `tests/evals/` is empty.
 - Agents (`src/agents/`), database (`src/database/`), and interface (`src/interface/`) are stubs.
 - Obsidian vault has structure but no populated content beyond templates.

@@ -1,7 +1,7 @@
 """Offline RAG Evaluation — retrieval metrics and quality gates.
 
-No external calls, no embeddings, no LLM judge.
-All computation is deterministic over a ChunkIndex and golden query dataset.
+No external calls, no LLM judge.
+Epic 13 adds multi-mode evaluation: lexical, semantic, and hybrid.
 """
 
 from __future__ import annotations
@@ -10,13 +10,20 @@ import json
 from pathlib import Path
 
 from src.evaluation.rag_eval_schemas import (
+    ModeEvalResult,
     RagEvalCase,
+    RagEvalComparison,
     RagEvalResult,
     RagQualityGateResult,
     RagRetrievalMetrics,
+    RetrievalMode,
 )
+from src.rag.embeddings import EmbeddingProvider, MockEmbeddingProvider
+from src.rag.hybrid_retrieval import hybrid_retrieve
 from src.rag.retrieval import ChunkIndex, build_default_index
 from src.rag.schemas import RetrievalQuery
+from src.rag.semantic_retrieval import semantic_retrieve
+from src.rag.vector_store import InMemoryVectorStore
 
 _GOLDEN_QUERIES_PATH = Path("examples/rag_eval/golden_queries.json")
 _EXPECTED_CONTEXTS_PATH = Path("examples/rag_eval/expected_contexts.json")
@@ -124,14 +131,61 @@ def _check_provenance(retrieved: list) -> list[str]:
     return failures
 
 
+def _eval_one_case(
+    case: RagEvalCase,
+    retrieved: list,
+) -> RagEvalResult:
+    """Evaluate a single case given its retrieved contexts."""
+    metrics = _compute_metrics(retrieved, case)
+    failure_reasons: list[str] = []
+
+    if case.is_critical and case.expected_source_ids:
+        if not metrics.hit_at_k:
+            failure_reasons.append(
+                f"critical case '{case.case_id}': hit_at_k=False " f"(top_{case.top_k_for_test})"
+            )
+        if not metrics.top_1_expected_match:
+            failure_reasons.append(f"critical case '{case.case_id}': top_1_expected_match=False")
+    if case.expected_source_ids and metrics.missing_context_count > 0:
+        failure_reasons.append(
+            f"case '{case.case_id}': missing_context_count="
+            f"{metrics.missing_context_count} "
+            f"(found {len({r.source_id for r in retrieved})}/"
+            f"{len(case.expected_source_ids)} expected sources)"
+        )
+    provenance_issues = _check_provenance(retrieved)
+    if provenance_issues:
+        failure_reasons.extend(f"provenance: {issue}" for issue in provenance_issues)
+
+    passed = len(failure_reasons) == 0
+    if not case.expected_source_ids and len(retrieved) > 0:
+        passed = False
+        failure_reasons.append(
+            f"case '{case.case_id}': expected empty but got {len(retrieved)} results"
+        )
+
+    return RagEvalResult(
+        case_id=case.case_id,
+        case_description=case.description,
+        passed=passed,
+        is_critical=case.is_critical,
+        metrics=metrics,
+        retrieved_contexts=retrieved,
+        expected_source_ids=case.expected_source_ids,
+        expected_products=case.expected_products,
+        failure_reasons=failure_reasons,
+    )
+
+
 def run_rag_eval(
     index: ChunkIndex | None = None,
     golden_path: Path = _GOLDEN_QUERIES_PATH,
     expected_path: Path = _EXPECTED_CONTEXTS_PATH,
 ) -> list[RagEvalResult]:
-    """Evaluate all golden queries against a ChunkIndex.
+    """Evaluate all golden queries against a ChunkIndex (lexical mode).
 
     Returns a list of RagEvalResult, one per query.
+    This function is unchanged from Epic 12 for backward compatibility.
     """
     idx = index if index is not None else build_default_index()
     cases = _load_golden_queries(golden_path)
@@ -139,52 +193,130 @@ def run_rag_eval(
     results: list[RagEvalResult] = []
     for case in cases:
         retrieved = idx.retrieve(case.query, top_k=case.top_k_for_test)
-        metrics = _compute_metrics(retrieved, case)
-        failure_reasons: list[str] = []
-
-        if case.is_critical and case.expected_source_ids:
-            if not metrics.hit_at_k:
-                failure_reasons.append(
-                    f"critical case '{case.case_id}': hit_at_k=False "
-                    f"(top_{case.top_k_for_test})"
-                )
-            if not metrics.top_1_expected_match:
-                failure_reasons.append(
-                    f"critical case '{case.case_id}': " f"top_1_expected_match=False"
-                )
-        if case.expected_source_ids and metrics.missing_context_count > 0:
-            failure_reasons.append(
-                f"case '{case.case_id}': missing_context_count="
-                f"{metrics.missing_context_count} "
-                f"(found {len({r.source_id for r in retrieved})}/"
-                f"{len(case.expected_source_ids)} expected sources)"
-            )
-        provenance_issues = _check_provenance(retrieved)
-        if provenance_issues:
-            failure_reasons.extend(f"provenance: {issue}" for issue in provenance_issues)
-
-        passed = len(failure_reasons) == 0
-        if not case.expected_source_ids and len(retrieved) > 0:
-            passed = False
-            failure_reasons.append(
-                f"case '{case.case_id}': expected empty but got " f"{len(retrieved)} results"
-            )
-
-        results.append(
-            RagEvalResult(
-                case_id=case.case_id,
-                case_description=case.description,
-                passed=passed,
-                is_critical=case.is_critical,
-                metrics=metrics,
-                retrieved_contexts=retrieved,
-                expected_source_ids=case.expected_source_ids,
-                expected_products=case.expected_products,
-                failure_reasons=failure_reasons,
-            )
-        )
+        results.append(_eval_one_case(case, retrieved))
 
     return results
+
+
+def run_mode_eval(
+    mode: RetrievalMode,
+    golden_path: Path = _GOLDEN_QUERIES_PATH,
+    *,
+    chunk_index: ChunkIndex | None = None,
+    vector_store: InMemoryVectorStore | None = None,
+    embedding_model: EmbeddingProvider | None = None,
+) -> ModeEvalResult:
+    """Evaluate golden queries in a single retrieval mode.
+
+    Parameters
+    ----------
+    mode:
+        One of LEXICAL, SEMANTIC, or HYBRID.
+    golden_path:
+        Path to golden queries JSON.
+    chunk_index:
+        Required for LEXICAL and HYBRID. Defaults to ``build_default_index()``.
+    vector_store:
+        Required for SEMANTIC and HYBRID. If empty/None, semantic returns [].
+    embedding_model:
+        Required for SEMANTIC and HYBRID. If None, uses MockEmbeddingProvider.
+
+    Returns
+    -------
+    ModeEvalResult
+        Evaluation results + quality gates for this mode.
+    """
+    idx = chunk_index if chunk_index is not None else build_default_index()
+    emb = embedding_model if embedding_model is not None else MockEmbeddingProvider()
+    cases = _load_golden_queries(golden_path)
+
+    results: list[RagEvalResult] = []
+    for case in cases:
+        if mode == RetrievalMode.LEXICAL:
+            retrieved = idx.retrieve(case.query, top_k=case.top_k_for_test)
+        elif mode == RetrievalMode.SEMANTIC:
+            if vector_store is None or vector_store.size == 0:
+                retrieved = []
+            else:
+                retrieved = semantic_retrieve(
+                    case.query, emb, vector_store, top_k=case.top_k_for_test
+                )
+        elif mode == RetrievalMode.HYBRID:
+            if vector_store is None or vector_store.size == 0:
+                retrieved = idx.retrieve(case.query, top_k=case.top_k_for_test)
+            else:
+                retrieved = hybrid_retrieve(
+                    case.query, idx, emb, vector_store, top_k=case.top_k_for_test
+                )
+        else:
+            retrieved = []
+        results.append(_eval_one_case(case, retrieved))
+
+    gates = run_quality_gates(results)
+    passed = sum(1 for r in results if r.passed)
+
+    return ModeEvalResult(
+        mode=mode,
+        results=results,
+        gates=gates,
+        passed_cases=passed,
+        total_cases=len(results),
+    )
+
+
+def run_comparison_eval(
+    chunk_index: ChunkIndex | None = None,
+    vector_store: InMemoryVectorStore | None = None,
+    embedding_model: EmbeddingProvider | None = None,
+    golden_path: Path = _GOLDEN_QUERIES_PATH,
+) -> RagEvalComparison:
+    """Run evaluation in all three modes and compare results.
+
+    Detects critical regressions: cases where semantic or hybrid
+    fails a critical query that lexical passes.
+
+    Returns
+    -------
+    RagEvalComparison
+        Side-by-side results with regression list.
+    """
+    lexical = run_mode_eval(
+        RetrievalMode.LEXICAL,
+        golden_path,
+        chunk_index=chunk_index,
+        vector_store=vector_store,
+        embedding_model=embedding_model,
+    )
+    semantic = run_mode_eval(
+        RetrievalMode.SEMANTIC,
+        golden_path,
+        chunk_index=chunk_index,
+        vector_store=vector_store,
+        embedding_model=embedding_model,
+    )
+    hybrid = run_mode_eval(
+        RetrievalMode.HYBRID,
+        golden_path,
+        chunk_index=chunk_index,
+        vector_store=vector_store,
+        embedding_model=embedding_model,
+    )
+
+    lex_pass = {r.case_id for r in lexical.results if r.passed and r.is_critical}
+    regressions: list[str] = []
+    for r in semantic.results:
+        if r.is_critical and r.case_id in lex_pass and not r.passed:
+            regressions.append(f"semantic/{r.case_id}")
+    for r in hybrid.results:
+        if r.is_critical and r.case_id in lex_pass and not r.passed:
+            regressions.append(f"hybrid/{r.case_id}")
+
+    return RagEvalComparison(
+        lexical=lexical,
+        semantic=semantic,
+        hybrid=hybrid,
+        critical_regressions=regressions,
+    )
 
 
 def run_quality_gates(
@@ -309,5 +441,24 @@ def format_eval_summary(
     for g in gates:
         status = "PASS" if g.passed else "FAIL"
         lines.append(f"  [{status}] {g.gate_name}: {g.details}")
+
+    return "\n".join(lines)
+
+
+def format_comparison_summary(comparison: RagEvalComparison) -> str:
+    """Format a multi-mode evaluation comparison as human-readable text."""
+    lines: list[str] = []
+    for mode_result in [comparison.lexical, comparison.semantic, comparison.hybrid]:
+        lines.append(f"=== {mode_result.mode.value.upper()} ===")
+        lines.append(format_eval_summary(mode_result.results, mode_result.gates))
+        lines.append("")
+
+    lines.append("=== REGRESSION CHECK ===")
+    if comparison.critical_regressions:
+        lines.append(f"REGRESSIONS ({len(comparison.critical_regressions)}):")
+        for reg in comparison.critical_regressions:
+            lines.append(f"  - {reg}")
+    else:
+        lines.append("No critical regressions detected.")
 
     return "\n".join(lines)

@@ -144,19 +144,30 @@
 - [x] Nenhuma alteração em RAG, Briefing, Pipeline, Recommendation, Diagnosis
 - [x] Nenhuma dependência nova, embedding, Qdrant, LangGraph, LLM judge
 
-### Epic 13 — End-to-End CLI
-- [ ] `radar analyze <startup-name> <url1> <url2> ...`
-- [ ] Batch mode for multiple startups
-- [ ] Report generation (markdown, JSON)
+### Epic 13 — Embeddings + Vector Store Retrieval (concluído)
+- [x] `src/rag/embeddings.py` — EmbeddingProvider (abstract), MockEmbeddingProvider, SentenceTransformerProvider
+- [x] `src/rag/vector_store.py` — InMemoryVectorStore with cosine similarity + metadata filters
+- [x] `src/rag/semantic_retrieval.py` — semantic_retrieve() with metadata filters
+- [x] `src/rag/hybrid_retrieval.py` — hybrid_retrieve() with RRF fusion and lexical fallback
+- [x] `src/evaluation/rag_eval_schemas.py` — + RetrievalMode, ModeEvalResult, RagEvalComparison
+- [x] `src/evaluation/rag_eval.py` — + run_mode_eval(), run_comparison_eval(), format_comparison_summary()
+- [x] 52 new tests (embeddings 11, semantic 15, hybrid 12, eval 14)
+- [x] `docs/37_embeddings_vector_store.md` created
+- [x] `docs/contracts/rag_contract.md` updated
+- [x] Total: 236 tests, 25 arquivos
+- [x] In-memory vector store (no external deps for tests)
+- [x] Mock embedding provider (deterministic, no model download)
+- [x] RAG Evaluation compares lexical/semantic/hybrid with regression detection
+- [x] Action Brief unchanged — works without vector store
+
+### Product RAG (V3 — futuro / backlog)
+- Reranking cross-encoder
+- Ingestão automatizada de documentação NVIDIA via crawler respeitando robots.txt
+- Persistência do vector store (Qdrant server)
 
 ---
 
 ## 📋 Backlog (não iniciado)
-
-### Product RAG (V2 — futuro)
-- Embeddings e retrieval semântico
-- Reranking cross-encoder
-- Ingestão automatizada de documentação NVIDIA via crawler respeitando robots.txt
 
 ### Agents (LangGraph)
 - Multi-agent orchestration graph

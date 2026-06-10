@@ -25,7 +25,11 @@
 | RAG Retrieval | `tests/unit/test_rag_retrieval.py` | 6 | ✅ |
 | Playbook Retriever | `tests/unit/test_playbook_retriever.py` | 5 | ✅ |
 | RAG Evaluation | `tests/unit/test_rag_eval.py` | 20 | ✅ |
-| **Total** | **21 arquivos** | **188** | **100% pass** |
+| RAG Embeddings | `tests/unit/test_rag_embeddings.py` | 11 | ✅ |
+| Semantic Retrieval | `tests/unit/test_semantic_retrieval.py` | 15 | ✅ |
+| Hybrid Retrieval | `tests/unit/test_hybrid_retrieval.py` | 12 | ✅ |
+| RAG Evaluation Semantic | `tests/unit/test_rag_eval_semantic.py` | 14 | ✅ |
+| **Total** | **25 arquivos** | **236** | **100% pass** |
 
 ## Cobertura por módulo
 
@@ -51,9 +55,9 @@
 | `diagnosis/nvidia_mapping.py` | ✅ REAL | ✅ | 6 |
 | `config/settings.py` | ✅ REAL | ❌ | 0 |
 | `agents/` (9 files) | ❌ STUB | ❌ | 0 |
-| `rag/` (5 files) | ✅ REAL | ✅ | 15 |
+| `rag/` (8 files) | ✅ REAL | ✅ | 15 + 38 (Epic 13) |
 | `database/` (2 files) | ❌ STUB | ❌ | 0 |
-| `evaluation/` (4 files) | ✅ REAL | ✅ | 20 |
+| `evaluation/` (4 files) | ✅ REAL | ✅ | 20 + 14 (Epic 13) |
 | `interface/` (1 file) | ❌ STUB | ❌ | 0 |
 
 ## Lacunas de cobertura
@@ -83,6 +87,10 @@
 | RAG Retrieval | 6 testes (index, gap, tech, empty, keywords, scores) | ✅ |
 | Playbook Retriever | 5 testes (inference gap, agent gap, missing, brief dicts, no-rag) | ✅ |
 | RAG Evaluation | 20 testes (golden queries, metrics, quality gates, provenance, compatibility) | ✅ |
+| RAG Embeddings | 11 testes (mock provider, determinismo, normalização, batch, custom size) | ✅ |
+| Semantic Retrieval | 15 testes (contextos, proveniência, store vazio, filtros por product/gap/source_id, top_k, score range, query text building) | ✅ |
+| Hybrid Retrieval | 12 testes (fallback lexical, fusão RRF, proveniência, top_k, score range, filtros, fusão vazia/dedup) | ✅ |
+| RAG Evaluation Semantic | 14 testes (mode eval lexical/semantic/hybrid, comparison, regressions, format, backward compat) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
 
