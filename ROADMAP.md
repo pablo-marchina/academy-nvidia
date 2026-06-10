@@ -117,7 +117,21 @@
 - [x] `docs/contracts/briefing_contract.md` criado
 - [x] Total: 153 tests, 17 arquivos
 
-### Epic 10 — End-to-End CLI
+### Epic 11 — Product RAG / Playbook Retrieval (concluído)
+- [x] `data/nvidia_corpus/` com 10 documentos Markdown mapeados para 15 gaps e 14 experimentos
+- [x] `src/rag/schemas.py` — RagSource, RagDocument, RagChunk, RetrievalQuery, RetrievedContext, PlaybookRetrievalResult
+- [x] `src/rag/ingestion.py` — load_sources(), load_markdown_document(), chunk_document(), load_and_chunk_corpus()
+- [x] `src/rag/retrieval.py` — ChunkIndex in-memory, retrieve(), retrieve_by_gap_type(), retrieve_by_technology()
+- [x] `src/rag/playbook_retriever.py` — PlaybookRetriever.retrieve_for_gaps(), retrieve_for_brief()
+- [x] Chunking determinístico por headings `##`, metadados preservados
+- [x] Retrieval lexical sem embeddings, sem Qdrant, sem novas dependências
+- [x] Provenance obrigatória: cada chunk carrega source_id, url, product
+- [x] RAG enriquece mas nunca decide (brief funciona sem RAG)
+- [x] `docs/35_product_rag_design.md` criado
+- [x] `docs/contracts/rag_contract.md` criado
+- [x] Total: 168 tests, 20 arquivos
+
+### Epic 12 — End-to-End CLI
 - [ ] `radar analyze <startup-name> <url1> <url2> ...`
 - [ ] Batch mode for multiple startups
 - [ ] Report generation (markdown, JSON)
@@ -126,10 +140,10 @@
 
 ## 📋 Backlog (não iniciado)
 
-### RAG Pipeline
-- Ingestion + chunking + Qdrant
-- Hybrid retrieval + reranking
-- NVIDIA playbook retrieval
+### Product RAG (V2 — futuro)
+- Embeddings e retrieval semântico
+- Reranking cross-encoder
+- Ingestão automatizada de documentação NVIDIA via crawler respeitando robots.txt
 
 ### Agents (LangGraph)
 - Multi-agent orchestration graph

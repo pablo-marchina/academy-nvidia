@@ -191,6 +191,16 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 - **Validation:** 10 testes unitários cobrem high-fit, weak evidence, no gaps, missing evidence, tech blocking, uncertainties, markdown, schema, JSON.
 - **Status:** Implementado no Epic 10.
 
+### Decision 018 — Product RAG minimalista e determinístico
+
+- **Context:** O Epic 11 requeria um módulo de RAG para recuperar snippets de documentação NVIDIA para enriquecer Startup Action Briefs. Havia restrições de zero novas dependências, zero embeddings, zero chamadas externas, zero alterações nos módulos existentes.
+- **Decision:** Criar `src/rag/` como módulo independente com chunking determinístico por headings `##`, índice in-memory lexical por gap_type e technology name, scoring baseado em keyword match ratio, e orquestração via PlaybookRetriever. Corpus manual de 10 documentos Markdown em `data/nvidia_corpus/`. RAG enriquece mas nunca decide — o Action Brief funciona normalmente sem contexto RAG.
+- **Alternatives considered:** Qdrant com embeddings (rejeitado por excesso de complexidade), LangGraph para orquestração (rejeitado por zero novas dependências), scraping automatizado da docs.nvidia.com (rejeitado por risco de violação de robots.txt), integração no pipeline principal (rejeitado para preservar separação de responsabilidades).
+- **Rationale:** Abordagem minimalista permite testar o valor do RAG antes de investir em embeddings, vector DB e scraping. O corpus é versionado e testável. A separação em módulo próprio garante que pipeline, scoring, diagnosis, recommendation e briefing permanecem inalterados.
+- **Risks:** Corpus manual pode desatualizar. Retrieval lexical perde contexto semântico. Sem embeddings, não há matching difuso (sinônimos, paráfrases).
+- **Validation:** 15 testes unitários (4 ingestion + 6 retrieval + 5 playbook). Corpus verificado contra `_TECH_MATRIX` e `_EXPERIMENT_TEMPLATES`. Brief funciona sem RAG (testado).
+- **Status:** Implementado no Epic 11.
+
 ---
 
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

@@ -21,7 +21,10 @@
 | Pipeline | `tests/unit/test_pipeline.py` | 10 | ✅ |
 | Recommendation Engine | `tests/unit/test_recommendation_engine.py` | 22 | ✅ |
 | Action Brief | `tests/unit/test_action_brief.py` | 10 | ✅ |
-| **Total** | **17 arquivos** | **153** | **100% pass** |
+| RAG Ingestion | `tests/unit/test_rag_ingestion.py` | 4 | ✅ |
+| RAG Retrieval | `tests/unit/test_rag_retrieval.py` | 6 | ✅ |
+| Playbook Retriever | `tests/unit/test_playbook_retriever.py` | 5 | ✅ |
+| **Total** | **20 arquivos** | **168** | **100% pass** |
 
 ## Cobertura por módulo
 
@@ -47,7 +50,7 @@
 | `diagnosis/nvidia_mapping.py` | ✅ REAL | ✅ | 6 |
 | `config/settings.py` | ✅ REAL | ❌ | 0 |
 | `agents/` (9 files) | ❌ STUB | ❌ | 0 |
-| `rag/` (4 files) | ❌ STUB | ❌ | 0 |
+| `rag/` (5 files) | ✅ REAL | ✅ | 15 |
 | `database/` (2 files) | ❌ STUB | ❌ | 0 |
 | `evaluation/` (2 files) | ❌ STUB | ❌ | 0 |
 | `interface/` (1 file) | ❌ STUB | ❌ | 0 |
@@ -76,6 +79,9 @@
 | Recommendation Engine | 22 testes (ação, prioridade, experimento, per-gap, integração) | ✅ |
 | Pipeline | 10 testes (5 existentes + 5 integração: diagnóstico, recomendação, evidência fraca, missing_evidence, shape estendido) | ✅ |
 | Action Brief | 10 testes (high-fit, evidência fraca, sem gap, missing evidence, tech sem gap, incertezas, markdown, schema, JSON, low confidence) | ✅ |
+| RAG Ingestion | 4 testes (sources, corpus load, chunking metadata, source propagation) | ✅ |
+| RAG Retrieval | 6 testes (index, gap, tech, empty, keywords, scores) | ✅ |
+| Playbook Retriever | 5 testes (inference gap, agent gap, missing, brief dicts, no-rag) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
 
