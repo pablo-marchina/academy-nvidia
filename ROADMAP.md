@@ -371,6 +371,18 @@
 - [x] README, ROADMAP, EVALS, DECISIONS, Obsidian atualizados
 - [x] Nenhuma alteração em scoring, diagnosis, recommendation, retrieval, Qdrant ingestion ou eval metrics
 
+### Epic 26 — Minimal Demo UI (concluído)
+- [x] `frontend/` — Vite + React + TypeScript local demo UI
+- [x] `frontend/src/api/client.ts` — helpers para GET /health, GET /rag/status, POST /brief, POST /brief/evaluate e GET /demo/artifacts
+- [x] Componentes: StartupInputForm, BriefViewer, ScoreCards, GapTechnologyTable, EvidencePanel, RagStatusBadge e EvalStatusPanel
+- [x] Botao `Load example` com startup ficticia local
+- [x] UI gera Startup Action Brief via API e exibe Markdown, scorecards, gaps, tecnologias NVIDIA, evidencias, warnings e incertezas
+- [x] UI mostra status RAG/Qdrant e trata Qdrant offline como warning/status
+- [x] UI permite avaliacao opcional do brief
+- [x] `Makefile` — targets: ui-install, ui-dev, ui-build, demo-full
+- [x] `docs/51_minimal_demo_ui.md`, README, ROADMAP e Obsidian atualizados
+- [x] Nenhuma alteracao em API, scoring, diagnosis, recommendation, recommended_motion, RAG retrieval, Qdrant ingestion ou answer quality metrics
+
 ### Epic 26.1 — Workspace Clarification Gate (concluído)
 - [x] AGENTS.md — seção Workspace Clarification Gate adicionada
 - [x] When to ask: 10 situações definidas + 9 operações de alto risco
@@ -397,6 +409,16 @@
 - [x] README, EVALS, ROADMAP e Obsidian atualizados
 - [x] Nenhuma alteração em scoring, retrieval, recommendation, Action Brief generation, API/UI behavior ou dependências
 
+### Epic 27 — Demo Acceptance & E2E Smoke Tests (concluído)
+- [x] `tests/integration/test_demo_acceptance.py` — 5 acceptance tests para health, RAG status sem Qdrant, sample brief, evaluate e path traversal
+- [x] `tests/e2e/test_demo_ui.spec.ts` — smoke Playwright para UI happy path e erro legível de API offline
+- [x] `frontend/playwright.config.ts` — sobe API + Vite localmente e guarda trace/screenshot/video apenas em falha
+- [x] `Makefile` — targets: demo-acceptance, api-test, ui-build, ui-e2e, demo-full-check
+- [x] `docs/52_demo_acceptance.md` — cobertura automatizada e checklist manual fallback
+- [x] README, EVALS, ROADMAP e Obsidian atualizados
+- [x] Smoke offline não exige Qdrant e não chama LLM externo
+- [x] Nenhuma alteração em scoring, diagnosis, recommendation, recommended_motion, RAG retrieval, Qdrant ingestion ou Action Brief logic
+
 ## 📋 Backlog (não iniciado)
 
 ### Agents (LangGraph)
@@ -404,8 +426,7 @@
 - Human-in-the-loop review
 
 ### Interface
-- Streamlit MVP
-- Export paths
+- Demo UI polish and export paths
 
 ### Production Readiness
 - Docker Compose

@@ -76,7 +76,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit, corpus maintenance orchestration, regression dashboard generation
 
 ### Testing
-- 506 tests (494 passing + 12 skippable integration) across 45 test files
+- 511 Python tests (499 passing + 12 skippable integration) across 46 Python test files, plus 2 Playwright UI smoke tests
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -123,7 +123,9 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - mypy
 - pre-commit
 - GitHub Actions
-- Streamlit for a future MVP interface
+- Vite
+- React
+- TypeScript
 
 ## Installation
 
@@ -259,6 +261,12 @@ make corpus-maintenance-dry-run  # sync dry-run + freshness audit + ingest dry-r
 make corpus-maintenance-evals    # safe maintenance + RAG/golden evals
 make corpus-maintenance-ingest   # explicit real Qdrant ingestion path
 make regression-dashboard  # build local Markdown/JSON regression dashboard
+make ui-install  # install frontend dependencies
+make ui-dev      # run the local demo UI
+make ui-build    # build the local demo UI
+make ui-e2e      # run Playwright smoke tests for the local demo UI
+make demo-acceptance  # API acceptance + UI build + UI E2E smoke
+make demo-full-check  # alias for demo-acceptance
 ```
 
 ## CI/CD
@@ -351,6 +359,79 @@ make api-test
 pytest tests/integration/test_api_demo.py -v
 ```
 
+## Running the Minimal Demo UI
+
+The project includes a local Vite + React demo UI under `frontend/`. It consumes
+the FastAPI demo API and does not duplicate scoring, diagnosis, recommendation,
+RAG retrieval, Qdrant ingestion, or answer quality logic.
+
+### Configure UI
+
+```bash
+cd frontend
+cp .env.example .env
+```
+
+Default API URL:
+
+```bash
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+### Start API and UI
+
+Terminal 1:
+
+```bash
+make api-dev
+```
+
+Terminal 2:
+
+```bash
+make ui-install
+make ui-dev
+```
+
+Open the Vite URL, usually http://127.0.0.1:5173.
+
+### UI demo flow
+
+1. Click `Load example`.
+2. Keep `Offline mode` enabled for the simplest local demo.
+3. Click `Generate Startup Action Brief`.
+4. Review scorecards, gaps, NVIDIA technologies, evidence, warnings,
+   uncertainties, RAG status, and Markdown output.
+5. Click `Evaluate brief` to run optional answer quality evaluation.
+
+### UI build
+
+```bash
+make ui-build
+```
+
+### Demo acceptance
+
+Run the repeatable API + UI smoke suite:
+
+```bash
+make demo-acceptance
+```
+
+This runs API acceptance tests, the frontend build, and Playwright smoke tests.
+The default path is offline and does not require Qdrant or LLM calls. Qdrant
+offline must appear as status/warning, not as a demo crash.
+
+If Playwright browsers are not installed locally, run:
+
+```bash
+cd frontend
+npx playwright install chromium
+```
+
+See [docs/52_demo_acceptance.md](docs/52_demo_acceptance.md) for the automated
+coverage and manual fallback checklist.
+
 ## Using the Obsidian Vault
 
 The project includes an Obsidian knowledge-capture workspace in [obsidian-vault](/C:/Users/Inteli/Documents/Projetos/academy-nvidia/obsidian-vault). Use it for research capture, evidence notes, daily logs, and draft decisions.
@@ -405,6 +486,7 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - Answer quality evaluation is deterministic and pattern-based; it checks required structure, provenance, motion stability, and known unsupported-claim patterns, but it is not a semantic LLM judge.
 - Output validation is structural and contract-focused; it does not replace human review or semantic judgment, and unknown output types return controlled warnings rather than hard failures.
 - Optional LLM judge reports are experimental and informational; Epic 23.2 implements only an offline null provider, no real provider integration, no API calls, and no CI gate.
+- Minimal Demo UI is local/dev only, has no authentication or deploy workflow, and now has a narrow Playwright smoke suite rather than broad frontend unit coverage.
 - Relevance scoring in lexical mode is keyword-match-based; semantic mode uses cosine similarity; reranking uses a deterministic composite formula (no cross-encoder).
 - Vector store is in-memory only (no persistence across sessions — Qdrant-ready for production; optional QdrantStore adapter available in Epic 15).
 - Context packing uses configurable limits (per-tech=2, per-gap=3, global=5) — may drop relevant contexts in edge cases.

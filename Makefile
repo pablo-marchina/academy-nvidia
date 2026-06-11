@@ -1,4 +1,4 @@
-.PHONY: test lint format-check typecheck validate validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test
+.PHONY: test lint format-check typecheck validate validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e demo-acceptance demo-full-check demo-full
 
 test:
 	python -m pytest -m "not integration" --tb=short
@@ -67,7 +67,28 @@ api-dev:
 	uvicorn src.api.main:app --reload
 
 api-test:
-	python -m pytest tests/integration/test_api_demo.py -v
+	python -m pytest tests/integration/test_api_demo.py tests/integration/test_demo_acceptance.py -v
+
+ui-install:
+	cd frontend && npm install --no-package-lock
+
+ui-dev:
+	cd frontend && npm run dev
+
+ui-build:
+	cd frontend && npm run build
+
+ui-e2e:
+	cd frontend && npm run test:e2e
+
+demo-acceptance: api-test ui-install ui-build ui-e2e
+
+demo-full-check: demo-acceptance
+
+demo-full:
+	@echo "Run the local demo in two terminals:"
+	@echo "  make api-dev"
+	@echo "  make ui-dev"
 
 demo-cli:
 	python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json

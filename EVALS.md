@@ -43,9 +43,11 @@
 | Answer Quality Eval | `tests/evals/test_answer_quality_golden.py` | 9 | ✅ |
 | Optional LLM Judge | `tests/unit/test_llm_judge_adapter.py` | 4 | ✅ |
 | Output Validation Gate (Epic 26.2) | `tests/unit/test_output_validation.py` | 12 | ✅ |
+| Demo Acceptance Integration (Epic 27) | `tests/integration/test_demo_acceptance.py` | 5 | ⏭️ (integration) |
+| Demo UI E2E Smoke (Epic 27) | `tests/e2e/test_demo_ui.spec.ts` | 2 | Playwright |
 | CLI Demo Integration (Epic 24) | `tests/integration/test_cli_demo.py` | 6 | ⏭️ (integration) |
 | API Demo Integration (Epic 25) | `tests/integration/test_api_demo.py` | 9 | ⏭️ (integration) |
-| **Total** | **45 arquivos** | **506** | **494 pass, 12 skip** |
+| **Total** | **46 Python test files + 1 Playwright spec** | **511 Python + 2 E2E** | **499 pass, 12 skip + UI smoke** |
 
 ## Cobertura por módulo
 
@@ -125,6 +127,7 @@
 | Regression Dashboard | 14 tests (clean PASS, stale WARN, validation_errors FAIL, missing reports WARN, JUnit missing context parsing, Answer Quality JUnit pass/failure/error/skipped/missing, Optional LLM Judge present/absent, Markdown sections, JSON fields) | ✅ |
 | Answer Quality Eval | 9 tests (golden answer quality pass, missing required section, missing evidence omitted, uncertainty omitted, technology without gap, motion change, unsupported claims, low citation coverage, absolute language warning) | ✅ |
 | Output Validation Gate | 12 tests (valid brief, missing section, invalid motion, invalid gap, invalid NVIDIA technology, missing evidence, recommendation without evidence, dashboard required metrics, Markdown TODO warning, empty critical section, API warnings, low-confidence uncertainty) | ✅ |
+| Demo Acceptance | 5 integration tests (health, RAG status without Qdrant, sample brief output shape, answer quality evaluate, path traversal protection) + 2 Playwright smoke tests (UI happy path and API offline error) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
 
@@ -416,3 +419,26 @@ python -m pytest tests/unit/test_output_validation.py --tb=short
 - Dashboard precisa expor status `PASS/WARN/FAIL` e metricas obrigatorias.
 - API responses sao validadas por schemas Pydantic existentes; response type desconhecido gera `WARN`.
 - A gate nao altera scoring, retrieval, recommendation, Action Brief generation, API/UI behavior ou dependencias.
+
+## Demo Acceptance (Epic 27)
+
+### Execucao
+
+```bash
+make api-test
+make ui-build
+make ui-e2e
+make demo-acceptance
+```
+
+### Testes
+
+- 5 integration tests em `tests/integration/test_demo_acceptance.py` cobrindo health, RAG status sem Qdrant, sample brief output shape, answer quality evaluate e path traversal.
+- 2 Playwright smoke tests em `tests/e2e/test_demo_ui.spec.ts` cobrindo UI happy path e erro legivel de API offline.
+
+### Invariantes
+
+- Smoke offline nao exige Qdrant.
+- Qdrant offline deve aparecer como warning/status, nao crash.
+- `POST /brief` deve preservar `brief_json`, `brief_markdown`, scores, `recommended_motion`, gaps, evidence, warnings e `run_report`.
+- E2E valida wiring da demo; nao altera scoring, diagnosis, recommendation, RAG retrieval, Qdrant ingestion ou Action Brief logic.

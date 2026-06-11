@@ -43,6 +43,10 @@ include = ["src*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--strict-markers"
+markers = [
+  "integration: marks tests that exercise integration paths across components or local services",
+]
 
 [tool.black]
 line-length = 100
