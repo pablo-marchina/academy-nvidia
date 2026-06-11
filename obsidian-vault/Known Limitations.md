@@ -31,3 +31,6 @@
 - Existing Qdrant collections need reingestion to receive Epic 20 lifecycle payload fields.
 - Stale corpus content is reported by audit but not yet surfaced as an Action Brief warning.
 - Regression dashboard consolidates existing reports only; missing required reports become `WARN`, optional answer quality reports are read when present, and JUnit eval reports expose pass/fail plus failed cases rather than full semantic metrics.
+- Optional LLM judge reports are experimental and informational only. Epic 23.2
+  implements a deterministic offline null provider, not a semantic model or real
+  provider integration.

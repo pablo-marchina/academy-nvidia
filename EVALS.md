@@ -39,9 +39,10 @@
 | Corpus Freshness Audit | `tests/unit/test_corpus_freshness_audit.py` | 11 | ✅ |
 | Check Scope | `tests/unit/test_check_scope.py` | 7 | ✅ |
 | Check Docs Closure | `tests/unit/test_check_docs_closure.py` | 7 | ✅ |
-| Regression Dashboard | `tests/unit/test_regression_dashboard.py` | 12 | ✅ |
+| Regression Dashboard | `tests/unit/test_regression_dashboard.py` | 14 | ✅ |
 | Answer Quality Eval | `tests/evals/test_answer_quality_golden.py` | 9 | ✅ |
-| **Total** | **41 arquivos** | **472** | **460 pass, 12 skip** |
+| Optional LLM Judge | `tests/unit/test_llm_judge_adapter.py` | 4 | ✅ |
+| **Total** | **42 arquivos** | **478** | **466 pass, 12 skip** |
 
 ## Cobertura por módulo
 
@@ -69,11 +70,11 @@
 | `agents/` (9 files) | ❌ STUB | ❌ | 0 |
 | `rag/` (10 files) | ✅ REAL | ✅ | 15 + 56 (Epic 13) + 22 (Epic 14) + 10 (Epic 14.1) + 20 (Epic 15) |
 | `database/` (2 files) | ❌ STUB | ❌ | 0 |
-| `evaluation/` (6 files) | ✅ REAL | ✅ | 20 + 14 (Epic 13) + 11 (Epic 14) + 9 (Epic 23 answer quality) |
+| `evaluation/` (9 files) | ✅ REAL | ✅ | 20 + 14 (Epic 13) + 11 (Epic 14) + 9 (Epic 23 answer quality) + 4 (Epic 23.2 optional judge) |
 | `interface/` (1 file) | ❌ STUB | ❌ | 0 |
 | `scripts/check_scope.py` | ✅ REAL | ✅ | 7 |
 | `scripts/check_docs_closure.py` | ✅ REAL | ✅ | 7 |
-| `scripts/build_regression_dashboard.py` | ✅ REAL | ✅ | 12 |
+| `scripts/build_regression_dashboard.py` | ✅ REAL | ✅ | 14 |
 
 ## Lacunas de cobertura
 
@@ -117,7 +118,7 @@
 | Ingest NVIDIA Corpus | 17 tests (hash, CLI, dry-run, ingest in-memory, payload, report) | ✅ |
 | Qdrant Corpus Ingestion | 3 tests (ingest, recreate, idempotence) | ⏭️ skippable |
 | Corpus Freshness Audit | 11 tests (stale, expired, deprecated, superseded, missing metadata, duplicate active versions, fail flags, version promotion, retrieval/vector filters) | ✅ |
-| Regression Dashboard | 12 tests (clean PASS, stale WARN, validation_errors FAIL, missing reports WARN, JUnit missing context parsing, Answer Quality JUnit pass/failure/error/skipped/missing, Markdown sections, JSON fields) | ✅ |
+| Regression Dashboard | 14 tests (clean PASS, stale WARN, validation_errors FAIL, missing reports WARN, JUnit missing context parsing, Answer Quality JUnit pass/failure/error/skipped/missing, Optional LLM Judge present/absent, Markdown sections, JSON fields) | ✅ |
 | Answer Quality Eval | 9 tests (golden answer quality pass, missing required section, missing evidence omitted, uncertainty omitted, technology without gap, motion change, unsupported claims, low citation coverage, absolute language warning) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
@@ -239,6 +240,31 @@ make answer-quality-junit
 
 Sem chamadas externas, sem LLM judge, sem Qdrant obrigatório.
 
+## Optional LLM Judge (Epic 23.2)
+
+### Execução
+
+```bash
+make answer-quality-llm-judge
+python scripts/run_answer_quality_llm_judge.py --max-cases 1
+```
+
+### Reports
+
+- `data/regression_reports/answer_quality_llm_judge_report.json`
+- `data/regression_reports/answer_quality_llm_judge_report.md`
+
+### Testes
+
+- 4 unitarios cobrindo provider nulo offline, agregacao de report, prompt com contexto/resposta/evidencias/rubrica e script manual gerando JSON/Markdown.
+
+### Invariantes
+
+- Provider real nao implementado.
+- Sem chamadas externas, sem chave de API e sem dependencia nova.
+- Report ausente no dashboard e `INFO`, nao `WARN` ou `FAIL`.
+- O judge opcional nao altera JUnit, quality gates deterministicas, scoring, diagnosis, recommendation, retrieval ou Action Brief.
+
 ## Ingestion (Epic 18)
 
 ### Script
@@ -352,10 +378,11 @@ make regression-dashboard
 - `data/regression_reports/latest_dashboard.json`
 
 ### Testes
-- 6 unitarios cobrindo PASS, WARN, FAIL, reports ausentes, secoes Markdown e campos JSON.
+- 14 unitarios cobrindo PASS, WARN, FAIL, reports ausentes, JUnit, Optional LLM Judge, secoes Markdown e campos JSON.
 
 ### Invariantes
 - `FAIL` para `validation_errors`, `sources_failed`, `expired_sources`, RAG eval failure, golden eval failure ou answer quality eval failure quando `answer_quality_eval_junit.xml` existir.
 - `WARN` para `stale_sources`, `missing_context_count`, `missing_evidence_count`, reports ausentes ou Answer Quality JUnit ausente.
+- Optional LLM Judge e informativo: report ausente ou presente nao altera status global do dashboard.
 - GitHub Actions publica summary/artifact antes de falhar por `FAIL`.
 - `WARN` nao falha workflow.

@@ -36,6 +36,19 @@ REQUIRED_METRICS = [
     "answer_quality_passed",
     "answer_quality_failed_cases",
     "answer_quality_status",
+    "llm_judge_report_present",
+    "llm_judge_status",
+    "llm_judge_provider",
+    "llm_judge_total_cases",
+    "llm_judge_completed_cases",
+    "llm_judge_error_cases",
+    "llm_judge_mean_score",
+    "llm_judge_mean_faithfulness_score",
+    "llm_judge_mean_answer_relevancy_score",
+    "llm_judge_mean_groundedness_score",
+    "llm_judge_mean_completeness_score",
+    "llm_judge_mean_uncertainty_honesty_score",
+    "llm_judge_mean_executive_usefulness_score",
     "action_brief_required_sections_passed",
     "missing_context_count",
     "missing_evidence_count",
@@ -168,6 +181,51 @@ def test_answer_quality_junit_pass_is_consolidated(tmp_path: Path) -> None:
     assert dashboard.metrics["answer_quality_skipped"] == 0
     assert dashboard.metrics["answer_quality_passed"] is True
     assert dashboard.metrics["answer_quality_status"] == STATUS_PASS
+
+
+def test_optional_llm_judge_absent_is_info_and_non_blocking(tmp_path: Path) -> None:
+    _write_clean_reports(tmp_path)
+
+    dashboard = build_dashboard(tmp_path)
+
+    assert dashboard.status == STATUS_PASS
+    assert dashboard.metrics["llm_judge_report_present"] is False
+    assert dashboard.metrics["llm_judge_status"] == "INFO"
+    assert "answer_quality_llm_judge_report.json not found." not in dashboard.warnings
+
+
+def test_optional_llm_judge_report_is_rendered_when_present(tmp_path: Path) -> None:
+    _write_clean_reports(tmp_path)
+    _write_json(
+        tmp_path / "answer_quality_llm_judge_report.json",
+        {
+            "provider": {"provider_name": "null"},
+            "total_cases": 2,
+            "completed_cases": 2,
+            "error_cases": 0,
+            "is_ci_gate": False,
+            "summary": {
+                "mean_score": 0.81,
+                "mean_faithfulness_score": 0.85,
+                "mean_answer_relevancy_score": 0.82,
+                "mean_groundedness_score": 0.84,
+                "mean_completeness_score": 0.8,
+                "mean_uncertainty_honesty_score": 0.88,
+                "mean_executive_usefulness_score": 0.81,
+            },
+        },
+    )
+
+    dashboard = build_dashboard(tmp_path)
+    markdown = render_markdown(dashboard)
+
+    assert dashboard.status == STATUS_PASS
+    assert dashboard.metrics["llm_judge_report_present"] is True
+    assert dashboard.metrics["llm_judge_provider"] == "null"
+    assert dashboard.metrics["llm_judge_total_cases"] == 2
+    assert dashboard.metrics["llm_judge_mean_faithfulness_score"] == 0.85
+    assert "## Optional LLM Judge" in markdown
+    assert "Informational only" in markdown
 
 
 def test_answer_quality_junit_failure_generates_fail(tmp_path: Path) -> None:

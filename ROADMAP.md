@@ -323,6 +323,15 @@
 - [x] `tests/unit/test_regression_dashboard.py` cobre JUnit PASS, failure, error, skipped e ausente
 - [x] Nenhuma mudanca em metricas de Answer Quality, eval cases, RAG retrieval, Action Brief, scoring, diagnosis ou recommendation
 
+### Epic 23.2 - Optional LLM Judge Adapter for Answer Quality (concluido)
+- [x] `src/evaluation/llm_judge_schemas.py` - schemas para input, score, result, run report e provider config
+- [x] `src/evaluation/llm_judge_adapter.py` - provider base, `NullLLMJudgeProvider` offline e runner agregador
+- [x] `src/evaluation/llm_judge_prompts.py` - prompts/rubricas para faithfulness, relevancy, groundedness, completeness, uncertainty honesty e executive usefulness
+- [x] `scripts/run_answer_quality_llm_judge.py` - runner manual que gera JSON/Markdown em `data/regression_reports/`
+- [x] Dashboard mostra secao Optional LLM Judge quando report existir e mantem ausencia como INFO
+- [x] `tests/unit/test_llm_judge_adapter.py` e dashboard cobrem provider offline, prompts, script e integracao opcional
+- [x] Nenhuma chamada externa, chave de API, provider real, dependencia nova ou mudanca nos gates deterministas
+
 ### Product RAG (V3 — futuro / backlog)
 - Reranking cross-encoder (alternativa ao reranking determinístico)
 - Ingestão automatizada de documentação NVIDIA via crawler respeitando robots.txt

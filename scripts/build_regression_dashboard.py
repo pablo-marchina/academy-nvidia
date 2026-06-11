@@ -17,6 +17,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MAINTENANCE_ROOT = PROJECT_ROOT / "reports" / "corpus-maintenance"
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "regression_reports"
 DEFAULT_ANSWER_QUALITY_JUNIT = DEFAULT_OUTPUT_DIR / "answer_quality_eval_junit.xml"
+DEFAULT_LLM_JUDGE_REPORT = DEFAULT_OUTPUT_DIR / "answer_quality_llm_judge_report.json"
 
 STATUS_PASS = "PASS"
 STATUS_WARN = "WARN"
@@ -48,6 +49,19 @@ METRIC_DEFAULTS: dict[str, int | float | bool | str | None] = {
     "required_sections_missing": 0,
     "citation_coverage": 0.0,
     "answer_quality_status": "not run",
+    "llm_judge_report_present": False,
+    "llm_judge_status": "INFO",
+    "llm_judge_provider": "not run",
+    "llm_judge_total_cases": 0,
+    "llm_judge_completed_cases": 0,
+    "llm_judge_error_cases": 0,
+    "llm_judge_mean_score": 0.0,
+    "llm_judge_mean_faithfulness_score": 0.0,
+    "llm_judge_mean_answer_relevancy_score": 0.0,
+    "llm_judge_mean_groundedness_score": 0.0,
+    "llm_judge_mean_completeness_score": 0.0,
+    "llm_judge_mean_uncertainty_honesty_score": 0.0,
+    "llm_judge_mean_executive_usefulness_score": 0.0,
     "action_brief_required_sections_passed": None,
     "missing_context_count": 0,
     "missing_evidence_count": 0,
@@ -60,6 +74,7 @@ REQUIRED_MARKDOWN_SECTIONS = [
     "RAG Evals",
     "Golden Evals & Action Brief Checks",
     "Answer Quality",
+    "Optional LLM Judge",
     "Warnings",
     "Failures",
 ]
@@ -142,6 +157,8 @@ def build_dashboard(reports_dir: Path | None = None) -> Dashboard:
         "answer_quality",
         fallback_path=answer_quality_fallback,
     )
+    llm_judge_fallback = DEFAULT_LLM_JUDGE_REPORT if reports_dir is None else None
+    _read_optional_llm_judge_report(dashboard, resolved_reports_dir, llm_judge_fallback)
     _derive_action_brief_checks(dashboard)
     _evaluate_status(dashboard)
     return dashboard
@@ -232,6 +249,35 @@ def render_markdown(dashboard: Dashboard) -> str:
         f"| required_sections_missing | {metrics['required_sections_missing']} |",
         f"| citation_coverage | {metrics['citation_coverage']} |",
         f"| answer_quality_status | {metrics['answer_quality_status']} |",
+        "",
+        "## Optional LLM Judge",
+        "",
+        "Informational only. This optional judge is not a CI gate.",
+        "",
+        "| Metric | Value |",
+        "|---|---:|",
+        f"| llm_judge_status | {metrics['llm_judge_status']} |",
+        f"| llm_judge_report_present | {_format_value(metrics['llm_judge_report_present'])} |",
+        f"| llm_judge_provider | {metrics['llm_judge_provider']} |",
+        f"| llm_judge_total_cases | {metrics['llm_judge_total_cases']} |",
+        f"| llm_judge_completed_cases | {metrics['llm_judge_completed_cases']} |",
+        f"| llm_judge_error_cases | {metrics['llm_judge_error_cases']} |",
+        f"| llm_judge_mean_score | {metrics['llm_judge_mean_score']} |",
+        f"| llm_judge_mean_faithfulness_score | {metrics['llm_judge_mean_faithfulness_score']} |",
+        (
+            "| llm_judge_mean_answer_relevancy_score | "
+            f"{metrics['llm_judge_mean_answer_relevancy_score']} |"
+        ),
+        f"| llm_judge_mean_groundedness_score | {metrics['llm_judge_mean_groundedness_score']} |",
+        f"| llm_judge_mean_completeness_score | {metrics['llm_judge_mean_completeness_score']} |",
+        (
+            "| llm_judge_mean_uncertainty_honesty_score | "
+            f"{metrics['llm_judge_mean_uncertainty_honesty_score']} |"
+        ),
+        (
+            "| llm_judge_mean_executive_usefulness_score | "
+            f"{metrics['llm_judge_mean_executive_usefulness_score']} |"
+        ),
         "",
         "## Warnings",
         "",
@@ -443,6 +489,55 @@ def _derive_action_brief_checks(dashboard: Dashboard) -> None:
     dashboard.metrics["action_brief_required_sections_passed"] = (
         golden_passed is True and not action_brief_failures
     )
+
+
+def _read_optional_llm_judge_report(
+    dashboard: Dashboard,
+    reports_dir: Path | None,
+    fallback_path: Path | None,
+) -> None:
+    path = reports_dir / "answer_quality_llm_judge_report.json" if reports_dir else None
+    if (path is None or not path.is_file()) and fallback_path is not None:
+        path = fallback_path if fallback_path.is_file() else path
+    if path is None or not path.is_file():
+        dashboard.inputs.append(
+            DashboardInput(
+                "answer_quality_llm_judge",
+                str(path) if path else None,
+                "info",
+                "optional report not run",
+            )
+        )
+        dashboard.metrics["llm_judge_status"] = "INFO"
+        dashboard.metrics["llm_judge_report_present"] = False
+        return
+
+    data = _load_json_file(path)
+    dashboard.inputs.append(
+        DashboardInput("answer_quality_llm_judge", str(path), "found", "optional report")
+    )
+    dashboard.metrics["llm_judge_report_present"] = True
+    dashboard.metrics["llm_judge_status"] = "INFO"
+    if data is None:
+        dashboard.metrics["llm_judge_provider"] = "malformed"
+        return
+
+    provider = data.get("provider", {})
+    summary = data.get("summary", {})
+    dashboard.metrics["llm_judge_provider"] = str(provider.get("provider_name", "unknown"))
+    dashboard.metrics["llm_judge_total_cases"] = int(data.get("total_cases", 0) or 0)
+    dashboard.metrics["llm_judge_completed_cases"] = int(data.get("completed_cases", 0) or 0)
+    dashboard.metrics["llm_judge_error_cases"] = int(data.get("error_cases", 0) or 0)
+    dashboard.metrics["llm_judge_mean_score"] = float(summary.get("mean_score", 0.0) or 0.0)
+    for source_key, metric_key in (
+        ("mean_faithfulness_score", "llm_judge_mean_faithfulness_score"),
+        ("mean_answer_relevancy_score", "llm_judge_mean_answer_relevancy_score"),
+        ("mean_groundedness_score", "llm_judge_mean_groundedness_score"),
+        ("mean_completeness_score", "llm_judge_mean_completeness_score"),
+        ("mean_uncertainty_honesty_score", "llm_judge_mean_uncertainty_honesty_score"),
+        ("mean_executive_usefulness_score", "llm_judge_mean_executive_usefulness_score"),
+    ):
+        dashboard.metrics[metric_key] = float(summary.get(source_key, 0.0) or 0.0)
 
 
 def _evaluate_status(dashboard: Dashboard) -> None:

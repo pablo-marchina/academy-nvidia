@@ -38,6 +38,7 @@ How can NVIDIA identify, attract, and nurture Brazilian AI-native startups in a 
 18. **Scheduled Corpus Maintenance** Manual and scheduled-safe workflow that runs source sync dry-run, freshness audit, Qdrant ingest dry-run, optional real ingestion, RAG evals, golden evals, and artifact reports.
 19. **Regression Dashboard** Local Markdown/JSON dashboard consolidating ingestion, freshness, RAG evals, golden evals, Action Brief checks, warnings, and regressions for GitHub Actions summaries.
 20. **Answer Quality Evaluation** Offline deterministic harness for final RAG/Action Brief quality: required sections, missing evidence, uncertainty, motion stability, unsupported claims, and citation coverage.
+21. **Optional LLM Judge Adapter** Experimental/manual answer quality judge interface with offline null provider and informational JSON/Markdown reports.
 
 See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [docs/02_architecture.md](docs/02_architecture.md) for the architectural flow.
 
@@ -70,12 +71,12 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `src/recommendation/` — deterministic recommendation engine (schemas, engine)
 - `src/briefing/` — Startup Action Brief consolidation and Markdown rendering
 - `src/rag/` — Product RAG ingestion, lexical + semantic + hybrid retrieval, embeddings, vector store, playbook retriever, **deterministic reranking, context packing, Qdrant persistent vector store**
-- `src/evaluation/` — Offline RAG evaluation (golden queries, metrics, quality gates, multi-mode comparison, **reranking/packed**) and deterministic Answer Quality evaluation for final Action Brief outputs
+- `src/evaluation/` — Offline RAG evaluation (golden queries, metrics, quality gates, multi-mode comparison, **reranking/packed**), deterministic Answer Quality evaluation, and optional experimental LLM judge adapter with offline null provider
 - `src/config/` — settings via pydantic-settings
 - `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit, corpus maintenance orchestration, regression dashboard generation
 
 ### Testing
-- 472 tests (460 passing + 12 skippable integration) across 41 test files
+- 478 tests (466 passing + 12 skippable integration) across 42 test files
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -99,8 +100,9 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - Corpus Freshness Audit: 11 tests (stale, expired, deprecated, superseded, missing metadata, duplicate active versions, fail flags, version promotion, retrieval/vector filters)
 - Check Scope: 7 tests (sensitive changes require docs, override flag, contract detection)
 - Check Docs Closure: 6 tests (plan, ROADMAP, EVALS, Obsidian checks)
-- Regression Dashboard: 12 tests (PASS/WARN/FAIL, missing reports, JUnit missing context, Answer Quality JUnit pass/failure/error/skipped/missing, Markdown sections, JSON fields)
+- Regression Dashboard: 14 tests (PASS/WARN/FAIL, missing reports, JUnit missing context, Answer Quality JUnit pass/failure/error/skipped/missing, optional LLM judge present/absent, Markdown sections, JSON fields)
 - Answer Quality Eval: 9 tests (offline golden cases, missing sections/evidence/uncertainty, motion stability, unsupported claims, citation coverage, absolute language)
+- Optional LLM Judge: 4 tests (offline null provider, report aggregation, prompt contents, manual script output)
 
 ## Stack
 
@@ -201,6 +203,7 @@ make test        # pytest (unit only)
 make validate    # all of the above
 make rag-eval    # RAG evaluation tests
 make answer-quality-junit  # generate data/regression_reports/answer_quality_eval_junit.xml
+make answer-quality-llm-judge  # optional/experimental offline null judge report
 pytest tests/evals/test_answer_quality_golden.py -q  # answer quality evals
 make corpus-maintenance-dry-run  # sync dry-run + freshness audit + ingest dry-run
 make corpus-maintenance-evals    # safe maintenance + RAG/golden evals
@@ -289,6 +292,7 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - Corpus is local and allowlist-backed in `data/nvidia_corpus/`; scheduled maintenance is safe by default and does not promote sources or run real ingestion unless explicitly requested in a manual workflow run.
 - Regression dashboard quality is limited by the reports available in the run; missing reports are surfaced as `WARN`, and JUnit-based eval reports expose pass/fail and failed cases rather than full retrieval metrics.
 - Answer quality evaluation is deterministic and pattern-based; it checks required structure, provenance, motion stability, and known unsupported-claim patterns, but it is not a semantic LLM judge.
+- Optional LLM judge reports are experimental and informational; Epic 23.2 implements only an offline null provider, no real provider integration, no API calls, and no CI gate.
 - Relevance scoring in lexical mode is keyword-match-based; semantic mode uses cosine similarity; reranking uses a deterministic composite formula (no cross-encoder).
 - Vector store is in-memory only (no persistence across sessions — Qdrant-ready for production; optional QdrantStore adapter available in Epic 15).
 - Context packing uses configurable limits (per-tech=2, per-gap=3, global=5) — may drop relevant contexts in edge cases.

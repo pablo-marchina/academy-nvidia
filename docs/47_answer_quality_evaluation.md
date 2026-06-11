@@ -138,18 +138,22 @@ This is a deterministic local analogue of common RAG quality dimensions:
 
 It does not provide semantic entailment, hosted traces, or judge-model scoring.
 
-## Future LLM Judge
+## Optional LLM Judge
 
-Future optional fields can track:
+Epic 23.2 adds an optional experimental judge adapter documented in
+`docs/48_optional_llm_judge.md`. It can track:
 
-- `faithfulness`
-- `answer_relevancy`
-- `groundedness`
-- `completeness`
-- `honesty`
+- `faithfulness_score`
+- `answer_relevancy_score`
+- `groundedness_score`
+- `completeness_score`
+- `uncertainty_honesty_score`
+- `executive_usefulness_score`
 
-They must remain optional and must not block CI unless a later plan explicitly
-approves a deterministic or mocked judge pathway.
+The only implemented provider is `NullLLMJudgeProvider`, which is offline and
+deterministic. The judge is manual, informational, and not a CI gate. It does not
+alter deterministic metrics, quality gates, JUnit XML, scoring, diagnosis,
+recommendation, retrieval, or Action Brief logic.
 
 ## Limitations
 
@@ -158,3 +162,5 @@ approves a deterministic or mocked judge pathway.
 - Citation coverage confirms presence of source/provenance, not full semantic
   entailment.
 - The harness evaluates final answer quality; it does not improve generation logic.
+- Optional LLM judge reports are experimental and informational; the null provider
+  does not provide semantic model judgment.
