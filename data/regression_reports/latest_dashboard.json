@@ -1,6 +1,6 @@
 {
   "dashboard_version": "1.0",
-  "generated_at": "2026-06-10T23:58:50.622508+00:00",
+  "generated_at": "2026-06-11T12:49:59.898871+00:00",
   "status": "WARN",
   "metrics": {
     "documents_seen": 10,
@@ -17,6 +17,17 @@
     "rag_eval_failed_cases": 0,
     "golden_eval_passed": null,
     "golden_eval_failed_cases": 0,
+    "answer_quality_junit_present": true,
+    "answer_quality_tests": 9,
+    "answer_quality_failures": 0,
+    "answer_quality_errors": 0,
+    "answer_quality_skipped": 0,
+    "answer_quality_passed": true,
+    "answer_quality_failed_cases": 0,
+    "unsupported_claim_count": 0,
+    "required_sections_missing": 0,
+    "citation_coverage": 0.0,
+    "answer_quality_status": "PASS",
     "action_brief_required_sections_passed": null,
     "missing_context_count": 0,
     "missing_evidence_count": 0
@@ -58,11 +69,23 @@
       "path": null,
       "status": "missing",
       "message": ""
+    },
+    {
+      "name": "answer_quality",
+      "path": "C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\data\\regression_reports\\answer_quality_eval_junit.xml",
+      "status": "found",
+      "message": ""
     }
   ],
   "failed_cases": {
     "rag_eval": [],
-    "golden_eval": []
+    "golden_eval": [],
+    "answer_quality": []
+  },
+  "failure_details": {
+    "rag_eval": [],
+    "golden_eval": [],
+    "answer_quality": []
   },
   "reports_dir": null
 }

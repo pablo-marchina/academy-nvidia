@@ -39,8 +39,9 @@
 | Corpus Freshness Audit | `tests/unit/test_corpus_freshness_audit.py` | 11 | ✅ |
 | Check Scope | `tests/unit/test_check_scope.py` | 7 | ✅ |
 | Check Docs Closure | `tests/unit/test_check_docs_closure.py` | 7 | ✅ |
-| Regression Dashboard | `tests/unit/test_regression_dashboard.py` | 7 | ✅ |
-| **Total** | **40 arquivos** | **458** | **446 pass, 12 skip** |
+| Regression Dashboard | `tests/unit/test_regression_dashboard.py` | 12 | ✅ |
+| Answer Quality Eval | `tests/evals/test_answer_quality_golden.py` | 9 | ✅ |
+| **Total** | **41 arquivos** | **472** | **460 pass, 12 skip** |
 
 ## Cobertura por módulo
 
@@ -68,11 +69,11 @@
 | `agents/` (9 files) | ❌ STUB | ❌ | 0 |
 | `rag/` (10 files) | ✅ REAL | ✅ | 15 + 56 (Epic 13) + 22 (Epic 14) + 10 (Epic 14.1) + 20 (Epic 15) |
 | `database/` (2 files) | ❌ STUB | ❌ | 0 |
-| `evaluation/` (4 files) | ✅ REAL | ✅ | 20 + 14 (Epic 13) + 11 (Epic 14) |
+| `evaluation/` (6 files) | ✅ REAL | ✅ | 20 + 14 (Epic 13) + 11 (Epic 14) + 9 (Epic 23 answer quality) |
 | `interface/` (1 file) | ❌ STUB | ❌ | 0 |
 | `scripts/check_scope.py` | ✅ REAL | ✅ | 7 |
 | `scripts/check_docs_closure.py` | ✅ REAL | ✅ | 7 |
-| `scripts/build_regression_dashboard.py` | ✅ REAL | ✅ | 6 |
+| `scripts/build_regression_dashboard.py` | ✅ REAL | ✅ | 12 |
 
 ## Lacunas de cobertura
 
@@ -116,7 +117,8 @@
 | Ingest NVIDIA Corpus | 17 tests (hash, CLI, dry-run, ingest in-memory, payload, report) | ✅ |
 | Qdrant Corpus Ingestion | 3 tests (ingest, recreate, idempotence) | ⏭️ skippable |
 | Corpus Freshness Audit | 11 tests (stale, expired, deprecated, superseded, missing metadata, duplicate active versions, fail flags, version promotion, retrieval/vector filters) | ✅ |
-| Regression Dashboard | 7 tests (clean PASS, stale WARN, validation_errors FAIL, missing reports WARN, JUnit missing context parsing, Markdown sections, JSON fields) | ✅ |
+| Regression Dashboard | 12 tests (clean PASS, stale WARN, validation_errors FAIL, missing reports WARN, JUnit missing context parsing, Answer Quality JUnit pass/failure/error/skipped/missing, Markdown sections, JSON fields) | ✅ |
+| Answer Quality Eval | 9 tests (golden answer quality pass, missing required section, missing evidence omitted, uncertainty omitted, technology without gap, motion change, unsupported claims, low citation coverage, absolute language warning) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
 
@@ -202,6 +204,40 @@ Se um golden case falhar:
 2. Rodar pipeline no golden case para ver novo output
 3. Atualizar `expected_outputs.json` e o campo `expected` no JSON do caso
 4. Re-executar `pytest tests/evals/` para confirmar
+
+## Answer Quality Evals (Epic 23)
+
+### Casos Golden
+
+| Case | Pipeline case | Foco |
+|------|---------------|------|
+| high_fit_supported_answer | startup_high_fit | evidence, gaps, techs, RAG citations |
+| weak_evidence_preserved | startup_weak_evidence | missing_evidence and low-confidence honesty |
+| non_ai_no_nvidia_push | startup_non_ai | no NVIDIA push without gaps |
+| rag_context_good_gap | startup_rag_supported | RAG context citation coverage |
+| gap_without_rag_context | startup_no_rag_context | gap honesty without required RAG source |
+| low_confidence_validate_manually | startup_validate_manually | uncertainty preservation |
+| irrelevant_or_conflicting_rag_context | startup_rag_supported | unsupported-claim detection |
+| required_missing_evidence | startup_monitor_or_discard | missing evidence as a gate |
+
+### Métricas
+
+`required_sections_present`, `missing_evidence_preserved`,
+`uncertainty_preserved`, `recommended_motion_consistent`,
+`required_evidence_ids_present`, `required_gap_ids_present`,
+`required_technology_ids_present`, `unsupported_claim_count`,
+`rag_context_citation_coverage`, `startup_evidence_citation_coverage`,
+`forbidden_absolute_language_count`, `answer_quality_status`.
+
+### Execução
+
+```bash
+pytest tests/evals/test_answer_quality_golden.py -q
+pytest tests/evals/test_answer_quality_golden.py --junit-xml=data/regression_reports/answer_quality_eval_junit.xml
+make answer-quality-junit
+```
+
+Sem chamadas externas, sem LLM judge, sem Qdrant obrigatório.
 
 ## Ingestion (Epic 18)
 
@@ -289,6 +325,7 @@ python scripts/run_corpus_maintenance.py --run-ingestion
 - `qdrant_ingestion.json`, se `run_ingestion=true`
 - `rag_eval_junit.xml`, se `run_evals=true`
 - `golden_eval_junit.xml`, se `run_evals=true`
+- `answer_quality_eval_junit.xml`, quando `run_evals=true`
 - stdout/stderr logs por etapa
 
 ### Validacao
@@ -318,7 +355,7 @@ make regression-dashboard
 - 6 unitarios cobrindo PASS, WARN, FAIL, reports ausentes, secoes Markdown e campos JSON.
 
 ### Invariantes
-- `FAIL` para `validation_errors`, `sources_failed`, `expired_sources`, RAG eval failure ou golden eval failure.
-- `WARN` para `stale_sources`, `missing_context_count`, `missing_evidence_count` ou reports ausentes.
+- `FAIL` para `validation_errors`, `sources_failed`, `expired_sources`, RAG eval failure, golden eval failure ou answer quality eval failure quando `answer_quality_eval_junit.xml` existir.
+- `WARN` para `stale_sources`, `missing_context_count`, `missing_evidence_count`, reports ausentes ou Answer Quality JUnit ausente.
 - GitHub Actions publica summary/artifact antes de falhar por `FAIL`.
 - `WARN` nao falha workflow.

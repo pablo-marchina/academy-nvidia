@@ -3,8 +3,8 @@
 ## Overview
 
 - Status: **FAIL**
-- Generated at: `2026-06-11T00:20:28.242808+00:00`
-- Reports dir: `/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315035918`
+- Generated at: `2026-06-11T00:40:44.039967+00:00`
+- Reports dir: `/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315820125`
 
 ## Ingestion
 
@@ -32,7 +32,7 @@
 |---|---:|
 | rag_eval_passed | false |
 | rag_eval_failed_cases | 7 |
-| missing_context_count | 0 |
+| missing_context_count | 20 |
 
 ## Golden Evals & Action Brief Checks
 
@@ -46,6 +46,7 @@
 ## Warnings
 
 - golden_eval_junit.xml not found.
+- missing_context_count > 0
 
 ## Failures
 
@@ -65,8 +66,8 @@
 
 ## Inputs
 
-- `source_sync`: found (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315035918/source_sync_dry_run.json`)
-- `freshness`: found (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315035918/freshness_audit.json`)
-- `ingestion`: found (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315035918/qdrant_ingestion.json`)
-- `rag_eval`: found (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315035918/rag_eval_junit.xml`)
-- `golden_eval`: missing (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315035918/golden_eval_junit.xml`)
+- `source_sync`: found (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315820125/source_sync_dry_run.json`)
+- `freshness`: found (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315820125/freshness_audit.json`)
+- `ingestion`: found (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315820125/qdrant_ingestion.json`)
+- `rag_eval`: found (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315820125/rag_eval_junit.xml`)
+- `golden_eval`: missing (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315820125/golden_eval_junit.xml`)

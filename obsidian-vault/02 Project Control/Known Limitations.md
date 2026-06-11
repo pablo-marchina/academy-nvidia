@@ -12,6 +12,8 @@
 ## RAG e Recomendacao
 
 - Product RAG Epic 13: semantic/hybrid retrieval usa MockEmbeddingProvider nos testes (nao captura relacoes semanticas reais)
+- Answer Quality Eval Epic 23 e deterministico e baseado em padroes/cobertura; nao e LLM judge semantico e nao prova entailment completo
+- Answer Quality JUnit Epic 23.1 expoe contadores operacionais do pytest; nao adiciona novas metricas semanticas
 - SentenceTransformerProvider requer o extra opcional `rag` (`pip install -e ".[rag]"`) para instalar sentence-transformers
 - Qdrant ingestion com `sentence-transformers/all-MiniLM-L6-v2` requer `QDRANT_VECTOR_SIZE=384`
 - Reranking deterministico usa pesos fixos (RerankingConfig) — pode nao ser otimo para todos os gaps/tecnologias
@@ -32,6 +34,7 @@
 
 - Zero testes de integracao (9 skippable no Epic 15)
 - 38 golden evals automatizados (Epic 17) — cobrem pipeline completa offline
+- 9 answer quality evals automatizados (Epic 23) — cobrem qualidade final do Action Brief/RAG offline
 - `config/settings.py` sem testes
 
 ## Infraestrutura

@@ -17,16 +17,17 @@
 - RAG semantic/hybrid retrieval requires the optional `rag` extra for real embeddings: `pip install -e ".[rag]"` (mock provider used in tests).
 - Qdrant ingestion with `sentence-transformers/all-MiniLM-L6-v2` requires `QDRANT_VECTOR_SIZE=384`.
 - RAG evaluation multi-mode comparison uses `MockEmbeddingProvider` by default.
-- Corpus is manually curated in `data/nvidia_corpus/` (10 documents — no automated ingestion).
-- Vector store is in-memory only (no persistence across sessions).
+- Answer quality evaluation is deterministic and pattern-based; it is not a semantic LLM judge and does not prove entailment.
+- Answer Quality JUnit reports expose pytest operational counters; they do not add new semantic quality metrics beyond the deterministic harness.
+- Corpus is allowlist-backed in `data/nvidia_corpus/`; sync/promotion and ingestion remain explicit controlled steps.
+- Vector store is in-memory by default, with optional QdrantStore for persistence.
 - Context packing uses configurable limits (per-tech=2, per-gap=3, global=5).
-- No automated ingestion script for populating Qdrant from the corpus.
 - Recommendation Engine is deterministic (no LLM).
 - No human-in-the-loop technically implemented.
 - No integration tests exist — all tests are unit tests (9 integration tests skippable).
-- No eval harness exists — `tests/evals/` is empty.
+- Golden eval and answer quality harnesses exist under `tests/evals/`, but they use curated offline fixtures.
 - Agents (`src/agents/`), database (`src/database/`), and interface (`src/interface/`) are stubs.
 - Corpus maintenance has a safe scheduled workflow, but it does not promote sources or run real Qdrant ingestion automatically.
 - Existing Qdrant collections need reingestion to receive Epic 20 lifecycle payload fields.
 - Stale corpus content is reported by audit but not yet surfaced as an Action Brief warning.
-- Regression dashboard consolidates existing reports only; missing reports become `WARN`, and JUnit eval reports expose pass/fail plus failed cases rather than detailed retrieval metrics.
+- Regression dashboard consolidates existing reports only; missing required reports become `WARN`, optional answer quality reports are read when present, and JUnit eval reports expose pass/fail plus failed cases rather than full semantic metrics.

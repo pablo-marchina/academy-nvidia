@@ -258,6 +258,21 @@ def main(argv: list[str] | None = None) -> int:
                 reports_dir,
                 report_path=reports_dir / "golden_eval_junit.xml",
             )
+            run_required_step(
+                summary,
+                "answer_quality_evals",
+                [
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    "tests/evals/test_answer_quality_golden.py",
+                    "--tb=short",
+                    "--junitxml",
+                    str(reports_dir / "answer_quality_eval_junit.xml"),
+                ],
+                reports_dir,
+                report_path=reports_dir / "answer_quality_eval_junit.xml",
+            )
     finally:
         summary.finished_at = datetime.now(UTC).isoformat()
         write_summary(summary, reports_dir / "maintenance_summary.json")

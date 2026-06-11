@@ -1,4 +1,4 @@
-.PHONY: test lint format-check typecheck validate rag-eval ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard
+.PHONY: test lint format-check typecheck validate rag-eval answer-quality-junit ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard
 
 test:
 	python -m pytest -m "not integration" --tb=short
@@ -16,6 +16,10 @@ validate: lint format-check typecheck test
 
 rag-eval:
 	python -m pytest tests/unit/test_rag_eval.py tests/unit/test_rag_eval_semantic.py tests/unit/test_rag_eval_reranking.py --tb=short
+
+answer-quality-junit:
+	python -c "from pathlib import Path; Path('data/regression_reports').mkdir(parents=True, exist_ok=True)"
+	python -m pytest tests/evals/test_answer_quality_golden.py --junit-xml=data/regression_reports/answer_quality_eval_junit.xml
 
 ci: validate
 

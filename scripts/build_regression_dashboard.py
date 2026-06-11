@@ -16,12 +16,13 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MAINTENANCE_ROOT = PROJECT_ROOT / "reports" / "corpus-maintenance"
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "regression_reports"
+DEFAULT_ANSWER_QUALITY_JUNIT = DEFAULT_OUTPUT_DIR / "answer_quality_eval_junit.xml"
 
 STATUS_PASS = "PASS"
 STATUS_WARN = "WARN"
 STATUS_FAIL = "FAIL"
 
-METRIC_DEFAULTS: dict[str, int | bool | None] = {
+METRIC_DEFAULTS: dict[str, int | float | bool | str | None] = {
     "documents_seen": 0,
     "documents_valid": 0,
     "documents_skipped": 0,
@@ -36,6 +37,17 @@ METRIC_DEFAULTS: dict[str, int | bool | None] = {
     "rag_eval_failed_cases": 0,
     "golden_eval_passed": None,
     "golden_eval_failed_cases": 0,
+    "answer_quality_junit_present": False,
+    "answer_quality_tests": 0,
+    "answer_quality_failures": 0,
+    "answer_quality_errors": 0,
+    "answer_quality_skipped": 0,
+    "answer_quality_passed": None,
+    "answer_quality_failed_cases": 0,
+    "unsupported_claim_count": 0,
+    "required_sections_missing": 0,
+    "citation_coverage": 0.0,
+    "answer_quality_status": "not run",
     "action_brief_required_sections_passed": None,
     "missing_context_count": 0,
     "missing_evidence_count": 0,
@@ -47,6 +59,7 @@ REQUIRED_MARKDOWN_SECTIONS = [
     "Freshness",
     "RAG Evals",
     "Golden Evals & Action Brief Checks",
+    "Answer Quality",
     "Warnings",
     "Failures",
 ]
@@ -65,12 +78,15 @@ class Dashboard:
     dashboard_version: str
     generated_at: str
     status: str
-    metrics: dict[str, int | bool | None]
+    metrics: dict[str, int | float | bool | str | None]
     warnings: list[str] = field(default_factory=list)
     failures: list[str] = field(default_factory=list)
     inputs: list[DashboardInput] = field(default_factory=list)
     failed_cases: dict[str, list[str]] = field(
-        default_factory=lambda: {"rag_eval": [], "golden_eval": []}
+        default_factory=lambda: {"rag_eval": [], "golden_eval": [], "answer_quality": []}
+    )
+    failure_details: dict[str, list[str]] = field(
+        default_factory=lambda: {"rag_eval": [], "golden_eval": [], "answer_quality": []}
     )
     reports_dir: str | None = None
 
@@ -118,6 +134,14 @@ def build_dashboard(reports_dir: Path | None = None) -> Dashboard:
     _read_ingestion_report(dashboard, resolved_reports_dir)
     _read_eval_junit(dashboard, resolved_reports_dir, "rag_eval_junit.xml", "rag_eval")
     _read_eval_junit(dashboard, resolved_reports_dir, "golden_eval_junit.xml", "golden_eval")
+    answer_quality_fallback = DEFAULT_ANSWER_QUALITY_JUNIT if reports_dir is None else None
+    _read_eval_junit(
+        dashboard,
+        resolved_reports_dir,
+        "answer_quality_eval_junit.xml",
+        "answer_quality",
+        fallback_path=answer_quality_fallback,
+    )
     _derive_action_brief_checks(dashboard)
     _evaluate_status(dashboard)
     return dashboard
@@ -190,6 +214,25 @@ def render_markdown(dashboard: Dashboard) -> str:
         ),
         f"| missing_evidence_count | {metrics['missing_evidence_count']} |",
         "",
+        "## Answer Quality",
+        "",
+        "| Metric | Value |",
+        "|---|---:|",
+        f"| answer_quality_passed | {_format_value(metrics['answer_quality_passed'])} |",
+        (
+            "| answer_quality_junit_present | "
+            f"{_format_value(metrics['answer_quality_junit_present'])} |"
+        ),
+        f"| answer_quality_tests | {metrics['answer_quality_tests']} |",
+        f"| answer_quality_failures | {metrics['answer_quality_failures']} |",
+        f"| answer_quality_errors | {metrics['answer_quality_errors']} |",
+        f"| answer_quality_skipped | {metrics['answer_quality_skipped']} |",
+        f"| answer_quality_failed_cases | {metrics['answer_quality_failed_cases']} |",
+        f"| unsupported_claim_count | {metrics['unsupported_claim_count']} |",
+        f"| required_sections_missing | {metrics['required_sections_missing']} |",
+        f"| citation_coverage | {metrics['citation_coverage']} |",
+        f"| answer_quality_status | {metrics['answer_quality_status']} |",
+        "",
         "## Warnings",
         "",
     ]
@@ -209,12 +252,22 @@ def render_markdown(dashboard: Dashboard) -> str:
     else:
         lines.append("- None.")
 
-    if dashboard.failed_cases["rag_eval"] or dashboard.failed_cases["golden_eval"]:
+    if any(dashboard.failed_cases.values()):
         lines.extend(["", "## Failed Cases", ""])
         for label, cases in dashboard.failed_cases.items():
             if cases:
                 lines.append(f"### {label}")
                 lines.extend(f"- `{case}`" for case in cases)
+                lines.append("")
+
+    if any(dashboard.failure_details.values()):
+        lines.extend(["", "## Failure Details", ""])
+        for label, details in dashboard.failure_details.items():
+            if details:
+                lines.append(f"### {label}")
+                lines.extend(f"- {detail}" for detail in details[:10])
+                if len(details) > 10:
+                    lines.append(f"- ... and {len(details) - 10} more")
                 lines.append("")
 
     lines.extend(["", "## Inputs", ""])
@@ -322,19 +375,31 @@ def _read_eval_junit(
     reports_dir: Path | None,
     filename: str,
     metric_prefix: str,
+    *,
+    warn_when_missing: bool = True,
+    fallback_path: Path | None = None,
 ) -> None:
     path = reports_dir / filename if reports_dir else None
+    if (path is None or not path.is_file()) and fallback_path is not None:
+        path = fallback_path if fallback_path.is_file() else path
     if path is None or not path.is_file():
         dashboard.inputs.append(
             DashboardInput(metric_prefix, str(path) if path else None, "missing")
         )
-        dashboard.warnings.append(f"{filename} not found.")
+        if warn_when_missing:
+            dashboard.warnings.append(f"{filename} not found.")
+        if metric_prefix == "answer_quality":
+            dashboard.metrics["answer_quality_junit_present"] = False
+            dashboard.metrics["answer_quality_status"] = STATUS_WARN
         return
 
     dashboard.inputs.append(DashboardInput(metric_prefix, str(path), "found"))
     parsed = _parse_junit(path)
     if parsed is None:
         dashboard.warnings.append(f"Could not parse {filename}.")
+        if metric_prefix == "answer_quality":
+            dashboard.metrics["answer_quality_junit_present"] = True
+            dashboard.metrics["answer_quality_status"] = STATUS_WARN
         return
 
     passed_key = f"{metric_prefix}_passed"
@@ -343,6 +408,19 @@ def _read_eval_junit(
     dashboard.metrics[passed_key] = failed_count == 0
     dashboard.metrics[failed_key] = failed_count
     dashboard.failed_cases[metric_prefix] = parsed["failed_cases"]
+    dashboard.failure_details[metric_prefix] = parsed["failure_details"]
+    if metric_prefix == "answer_quality":
+        dashboard.metrics["answer_quality_junit_present"] = True
+        dashboard.metrics["answer_quality_tests"] = int(parsed["tests"])
+        dashboard.metrics["answer_quality_failures"] = int(parsed["failures"])
+        dashboard.metrics["answer_quality_errors"] = int(parsed["errors"])
+        dashboard.metrics["answer_quality_skipped"] = int(parsed["skipped"])
+        dashboard.metrics["unsupported_claim_count"] = int(parsed["unsupported_claim_count"])
+        dashboard.metrics["required_sections_missing"] = int(parsed["required_sections_missing"])
+        dashboard.metrics["citation_coverage"] = parsed["citation_coverage"]
+        dashboard.metrics["answer_quality_status"] = (
+            STATUS_PASS if failed_count == 0 else STATUS_FAIL
+        )
     dashboard.metrics["missing_context_count"] = max(
         int(dashboard.metrics["missing_context_count"] or 0),
         int(parsed["missing_context_count"]),
@@ -382,6 +460,10 @@ def _evaluate_status(dashboard: Dashboard) -> None:
         dashboard.failures.append("RAG eval failed.")
     if metrics["golden_eval_passed"] is False:
         dashboard.failures.append("Golden eval failed.")
+    if metrics["answer_quality_passed"] is False:
+        dashboard.failures.append("Answer quality eval failed.")
+    if metrics["answer_quality_status"] == STATUS_WARN:
+        dashboard.warnings.append("answer_quality_eval_junit.xml not found.")
 
     warn_rules = [
         ("stale_sources", "stale_sources > 0"),
@@ -456,21 +538,37 @@ def _parse_junit(path: Path) -> dict[str, Any] | None:
         return None
 
     testcases = list(root.iter("testcase"))
-    failures = 0
-    errors = 0
+    tests_total = _junit_int_attr(root, "tests", len(testcases))
+    failures = _junit_int_attr(root, "failures", 0)
+    errors = _junit_int_attr(root, "errors", 0)
+    skipped = _junit_int_attr(root, "skipped", 0)
+    failures_are_aggregated = _junit_has_attr(root, "failures")
+    errors_are_aggregated = _junit_has_attr(root, "errors")
+    skipped_is_aggregated = _junit_has_attr(root, "skipped")
     failed_cases: list[str] = []
+    failure_details: list[str] = []
     missing_context_count = 0
     missing_evidence_count = 0
+    unsupported_claim_count = 0
+    required_sections_missing = 0
+    citation_coverage = 0.0
     for case in testcases:
         failure_nodes = list(case.findall("failure"))
         error_nodes = list(case.findall("error"))
+        skipped_nodes = list(case.findall("skipped"))
+        if skipped_nodes and not skipped_is_aggregated:
+            skipped += len(skipped_nodes)
         if failure_nodes or error_nodes:
-            failures += len(failure_nodes)
-            errors += len(error_nodes)
+            if not failures_are_aggregated:
+                failures += len(failure_nodes)
+            if not errors_are_aggregated:
+                errors += len(error_nodes)
             classname = case.attrib.get("classname", "")
             name = case.attrib.get("name", "unknown")
-            failed_cases.append(f"{classname}.{name}".strip("."))
+            case_name = f"{classname}.{name}".strip(".")
+            failed_cases.append(case_name)
             node_text = "\n".join(_junit_node_text(node) for node in [*failure_nodes, *error_nodes])
+            failure_details.extend(_summarize_junit_failure(case_name, node_text))
             missing_context_count = max(
                 missing_context_count,
                 _sum_regex_counts(node_text, r"missing_context_count=(\d+)"),
@@ -479,18 +577,31 @@ def _parse_junit(path: Path) -> dict[str, Any] | None:
                 missing_evidence_count,
                 _sum_regex_counts(node_text, r"missing_evidence_count=(\d+)"),
             )
-
-    if not testcases and root.tag in {"testsuite", "testsuites"}:
-        failures = int(root.attrib.get("failures", "0") or 0)
-        errors = int(root.attrib.get("errors", "0") or 0)
+            unsupported_claim_count = max(
+                unsupported_claim_count,
+                _sum_regex_counts(node_text, r"unsupported_claim_count=(\d+)"),
+            )
+            required_sections_missing = max(
+                required_sections_missing,
+                _sum_regex_counts(node_text, r"required_sections_missing=(\d+)"),
+            )
+            citation_coverage = max(
+                citation_coverage,
+                _max_regex_float(node_text, r"citation_coverage=([0-9.]+)"),
+            )
 
     return {
-        "tests": len(testcases),
+        "tests": tests_total,
         "failures": failures,
         "errors": errors,
+        "skipped": skipped,
         "failed_cases": failed_cases,
+        "failure_details": failure_details,
         "missing_context_count": missing_context_count,
         "missing_evidence_count": missing_evidence_count,
+        "unsupported_claim_count": unsupported_claim_count,
+        "required_sections_missing": required_sections_missing,
+        "citation_coverage": round(citation_coverage, 4),
     }
 
 
@@ -504,8 +615,59 @@ def _junit_node_text(node: ET.Element) -> str:
     return "\n".join(part for part in [node.attrib.get("message", ""), node.text or ""] if part)
 
 
+def _junit_int_attr(root: ET.Element, attr: str, default: int) -> int:
+    if attr in root.attrib:
+        return int(root.attrib.get(attr, "0") or 0)
+    if root.tag == "testsuites":
+        total = 0
+        found = False
+        for suite in root.findall("testsuite"):
+            if attr in suite.attrib:
+                found = True
+                total += int(suite.attrib.get(attr, "0") or 0)
+        if found:
+            return total
+    return default
+
+
+def _junit_has_attr(root: ET.Element, attr: str) -> bool:
+    if attr in root.attrib:
+        return True
+    if root.tag == "testsuites":
+        return any(attr in suite.attrib for suite in root.findall("testsuite"))
+    return False
+
+
 def _sum_regex_counts(text: str, pattern: str) -> int:
     return sum(int(match) for match in re.findall(pattern, text))
+
+
+def _max_regex_float(text: str, pattern: str) -> float:
+    values = [float(match) for match in re.findall(pattern, text)]
+    return max(values) if values else 0.0
+
+
+def _summarize_junit_failure(case_name: str, text: str) -> list[str]:
+    details: list[str] = []
+    patterns = [
+        r"failed cases: \[(.*?)\]",
+        r"failed gates: \[(.*?)\]",
+        r"unsupported_claim_count=\d+",
+        r"required_sections_missing=\d+",
+        r"citation_coverage=[0-9.]+",
+        r"critical case [^:\n]+:[^\n]+",
+        r"case '[^']+': missing_context_count=\d+ [^\n]+",
+        r"case [^:\n]+: [^\n]+",
+    ]
+    for pattern in patterns:
+        for match in re.findall(pattern, text, flags=re.DOTALL):
+            cleaned = " ".join(str(match).split())
+            if cleaned:
+                details.append(f"`{case_name}`: {cleaned[:500]}")
+    if not details and text.strip():
+        cleaned = " ".join(text.strip().split())
+        details.append(f"`{case_name}`: {cleaned[:500]}")
+    return details
 
 
 def _count_value(value: Any) -> int:
@@ -522,7 +684,7 @@ def _count_value(value: Any) -> int:
     return 0
 
 
-def _format_value(value: int | bool | None) -> str:
+def _format_value(value: int | float | bool | str | None) -> str:
     if value is None:
         return "not run"
     if isinstance(value, bool):

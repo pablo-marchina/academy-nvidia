@@ -105,6 +105,23 @@ jobs:
           else
             echo "Regression dashboard was not generated." >> "$GITHUB_STEP_SUMMARY"
           fi
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          import pathlib
+
+          path = pathlib.Path("data/regression_reports/latest_dashboard.json")
+          if path.is_file():
+              data = json.loads(path.read_text(encoding="utf-8"))
+              metrics = data.get("metrics", {})
+              print("")
+              print("## Answer Quality JUnit")
+              print(f"- Present: `{metrics.get('answer_quality_junit_present')}`")
+              print(f"- Status: `{metrics.get('answer_quality_status')}`")
+              print(f"- Tests: `{metrics.get('answer_quality_tests')}`")
+              print(f"- Failures: `{metrics.get('answer_quality_failures')}`")
+              print(f"- Errors: `{metrics.get('answer_quality_errors')}`")
+              print(f"- Skipped: `{metrics.get('answer_quality_skipped')}`")
+          PY
 
       - name: Upload corpus maintenance reports
         if: always()
@@ -113,6 +130,7 @@ jobs:
           name: corpus-maintenance-reports
           path: |
             ${{ env.REPORTS_DIR }}
+            ${{ env.REPORTS_DIR }}/answer_quality_eval_junit.xml
             data/regression_reports/latest_dashboard.md
             data/regression_reports/latest_dashboard.json
           if-no-files-found: warn
@@ -120,4 +138,22 @@ jobs:
       - name: Fail on regression dashboard FAIL status
         if: always()
         run: |
-          python -c "import json, pathlib, sys; path = pathlib.Path('data/regression_reports/latest_dashboard.json'); data = json.loads(path.read_text(encoding='utf-8')) if path.is_file() else {'status': 'FAIL'}; status = data.get('status'); print(f'Regression dashboard status: {status}'); sys.exit(1 if status == 'FAIL' else 0)"
+          python - <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          path = pathlib.Path("data/regression_reports/latest_dashboard.json")
+          data = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {"status": "FAIL"}
+          status = data.get("status")
+          print(f"Regression dashboard status: {status}")
+          for failure in data.get("failures", []):
+              print(f"Failure: {failure}")
+          for label, cases in data.get("failed_cases", {}).items():
+              for case in cases:
+                  print(f"Failed case ({label}): {case}")
+          for label, details in data.get("failure_details", {}).items():
+              for detail in details[:10]:
+                  print(f"Failure detail ({label}): {detail}")
+          sys.exit(1 if status == "FAIL" else 0)
+          PY

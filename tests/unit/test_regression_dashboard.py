@@ -28,6 +28,14 @@ REQUIRED_METRICS = [
     "rag_eval_failed_cases",
     "golden_eval_passed",
     "golden_eval_failed_cases",
+    "answer_quality_junit_present",
+    "answer_quality_tests",
+    "answer_quality_failures",
+    "answer_quality_errors",
+    "answer_quality_skipped",
+    "answer_quality_passed",
+    "answer_quality_failed_cases",
+    "answer_quality_status",
     "action_brief_required_sections_passed",
     "missing_context_count",
     "missing_evidence_count",
@@ -44,6 +52,8 @@ def test_clean_reports_generate_pass(tmp_path: Path) -> None:
     assert dashboard.metrics["chunks_created"] == 50
     assert dashboard.metrics["rag_eval_passed"] is True
     assert dashboard.metrics["golden_eval_passed"] is True
+    assert dashboard.metrics["answer_quality_junit_present"] is True
+    assert dashboard.metrics["answer_quality_status"] == STATUS_PASS
     assert dashboard.metrics["action_brief_required_sections_passed"] is True
 
 
@@ -141,6 +151,110 @@ def test_junit_missing_context_is_consolidated(tmp_path: Path) -> None:
     assert dashboard.status == STATUS_FAIL
     assert dashboard.metrics["rag_eval_passed"] is False
     assert dashboard.metrics["missing_context_count"] == 3
+    assert dashboard.failure_details["rag_eval"]
+    assert "missing_context_count" in dashboard.failure_details["rag_eval"][0]
+
+
+def test_answer_quality_junit_pass_is_consolidated(tmp_path: Path) -> None:
+    _write_clean_reports(tmp_path)
+
+    dashboard = build_dashboard(tmp_path)
+
+    assert dashboard.status == STATUS_PASS
+    assert dashboard.metrics["answer_quality_junit_present"] is True
+    assert dashboard.metrics["answer_quality_tests"] == 2
+    assert dashboard.metrics["answer_quality_failures"] == 0
+    assert dashboard.metrics["answer_quality_errors"] == 0
+    assert dashboard.metrics["answer_quality_skipped"] == 0
+    assert dashboard.metrics["answer_quality_passed"] is True
+    assert dashboard.metrics["answer_quality_status"] == STATUS_PASS
+
+
+def test_answer_quality_junit_failure_generates_fail(tmp_path: Path) -> None:
+    _write_clean_reports(tmp_path)
+    (tmp_path / "answer_quality_eval_junit.xml").write_text(
+        """<?xml version="1.0" encoding="utf-8"?>
+<testsuite name="pytest" tests="2" failures="1" errors="0" skipped="0">
+  <testcase classname="tests.evals.test_answer_quality_golden" name="test_ok" />
+  <testcase classname="tests.evals.test_answer_quality_golden" name="test_failure">
+    <failure message="unsupported_claim_count=1&#10;required_sections_missing=0" />
+  </testcase>
+</testsuite>
+""",
+        encoding="utf-8",
+    )
+
+    dashboard = build_dashboard(tmp_path)
+
+    assert dashboard.status == STATUS_FAIL
+    assert dashboard.metrics["answer_quality_passed"] is False
+    assert dashboard.metrics["answer_quality_failures"] == 1
+    assert dashboard.metrics["answer_quality_errors"] == 0
+    assert dashboard.metrics["answer_quality_failed_cases"] == 1
+    assert dashboard.metrics["answer_quality_status"] == STATUS_FAIL
+    assert dashboard.failed_cases["answer_quality"] == [
+        "tests.evals.test_answer_quality_golden.test_failure"
+    ]
+    assert "unsupported_claim_count=1" in dashboard.failure_details["answer_quality"][0]
+
+
+def test_answer_quality_junit_error_generates_fail(tmp_path: Path) -> None:
+    _write_clean_reports(tmp_path)
+    (tmp_path / "answer_quality_eval_junit.xml").write_text(
+        """<?xml version="1.0" encoding="utf-8"?>
+<testsuite name="pytest" tests="1" failures="0" errors="1" skipped="0">
+  <testcase classname="tests.evals.test_answer_quality_golden" name="test_error">
+    <error message="RuntimeError: answer quality fixture failed" />
+  </testcase>
+</testsuite>
+""",
+        encoding="utf-8",
+    )
+
+    dashboard = build_dashboard(tmp_path)
+
+    assert dashboard.status == STATUS_FAIL
+    assert dashboard.metrics["answer_quality_passed"] is False
+    assert dashboard.metrics["answer_quality_failures"] == 0
+    assert dashboard.metrics["answer_quality_errors"] == 1
+    assert dashboard.failed_cases["answer_quality"] == [
+        "tests.evals.test_answer_quality_golden.test_error"
+    ]
+    assert "RuntimeError" in dashboard.failure_details["answer_quality"][0]
+
+
+def test_answer_quality_junit_skipped_does_not_fail(tmp_path: Path) -> None:
+    _write_clean_reports(tmp_path)
+    (tmp_path / "answer_quality_eval_junit.xml").write_text(
+        """<?xml version="1.0" encoding="utf-8"?>
+<testsuite name="pytest" tests="2" failures="0" errors="0" skipped="1">
+  <testcase classname="tests.evals.test_answer_quality_golden" name="test_ok" />
+  <testcase classname="tests.evals.test_answer_quality_golden" name="test_skipped">
+    <skipped message="optional" />
+  </testcase>
+</testsuite>
+""",
+        encoding="utf-8",
+    )
+
+    dashboard = build_dashboard(tmp_path)
+
+    assert dashboard.status == STATUS_PASS
+    assert dashboard.metrics["answer_quality_tests"] == 2
+    assert dashboard.metrics["answer_quality_skipped"] == 1
+    assert dashboard.metrics["answer_quality_status"] == STATUS_PASS
+
+
+def test_missing_answer_quality_junit_is_controlled_warning(tmp_path: Path) -> None:
+    _write_clean_reports(tmp_path)
+    (tmp_path / "answer_quality_eval_junit.xml").unlink()
+
+    dashboard = build_dashboard(tmp_path)
+
+    assert dashboard.status == STATUS_WARN
+    assert dashboard.metrics["answer_quality_junit_present"] is False
+    assert dashboard.metrics["answer_quality_status"] == STATUS_WARN
+    assert "answer_quality_eval_junit.xml not found." in dashboard.warnings
 
 
 def _write_clean_reports(path: Path) -> None:
@@ -175,6 +289,7 @@ def _write_clean_reports(path: Path) -> None:
     )
     _write_junit(path / "rag_eval_junit.xml")
     _write_junit(path / "golden_eval_junit.xml")
+    _write_answer_quality_junit(path / "answer_quality_eval_junit.xml")
 
 
 def _write_json(path: Path, data: dict) -> None:
@@ -188,6 +303,24 @@ def _write_junit(path: Path) -> None:
   <testcase
     classname="tests.evals.test_pipeline_golden.TestGoldenHighFit"
     name="test_action_brief_sections"
+  />
+</testsuite>
+""",
+        encoding="utf-8",
+    )
+
+
+def _write_answer_quality_junit(path: Path) -> None:
+    path.write_text(
+        """<?xml version="1.0" encoding="utf-8"?>
+<testsuite name="pytest" tests="2" failures="0" errors="0" skipped="0">
+  <testcase
+    classname="tests.evals.test_answer_quality_golden"
+    name="test_answer_quality_golden_cases_run_offline"
+  />
+  <testcase
+    classname="tests.evals.test_answer_quality_golden"
+    name="test_detects_unsupported_claims"
   />
 </testsuite>
 """,

@@ -3,7 +3,7 @@
 ## Overview
 
 - Status: **WARN**
-- Generated at: `2026-06-10T23:58:50.622508+00:00`
+- Generated at: `2026-06-11T12:49:59.898871+00:00`
 - Reports dir: `not found`
 
 ## Ingestion
@@ -43,6 +43,22 @@
 | action_brief_required_sections_passed | not run |
 | missing_evidence_count | 0 |
 
+## Answer Quality
+
+| Metric | Value |
+|---|---:|
+| answer_quality_passed | true |
+| answer_quality_junit_present | true |
+| answer_quality_tests | 9 |
+| answer_quality_failures | 0 |
+| answer_quality_errors | 0 |
+| answer_quality_skipped | 0 |
+| answer_quality_failed_cases | 0 |
+| unsupported_claim_count | 0 |
+| required_sections_missing | 0 |
+| citation_coverage | 0.0 |
+| answer_quality_status | PASS |
+
 ## Warnings
 
 - No corpus maintenance reports directory found.
@@ -61,3 +77,4 @@
 - `ingestion`: found (`C:\Users\Inteli\Documents\Projetos\academy-nvidia\data\ingestion_reports\qdrant_384_reingestion.json`)
 - `rag_eval`: missing (`not found`)
 - `golden_eval`: missing (`not found`)
+- `answer_quality`: found (`C:\Users\Inteli\Documents\Projetos\academy-nvidia\data\regression_reports\answer_quality_eval_junit.xml`)

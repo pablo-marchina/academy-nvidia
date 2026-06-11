@@ -7,6 +7,7 @@
 Consolidar os reports de manutencao do corpus NVIDIA em um dashboard local simples
 em Markdown e JSON. O dashboard compara, em uma unica visao, ingestao, freshness,
 RAG evals, golden evals e checks de Action Brief.
+Tambem incorpora Answer Quality JUnit quando disponivel.
 
 Este epico nao altera retrieval, Qdrant ingestion, scoring, diagnosis,
 recommendation ou Action Brief logic.
@@ -44,10 +45,14 @@ O script le, quando existirem:
 - `qdrant_ingestion.json`
 - `rag_eval_junit.xml`
 - `golden_eval_junit.xml`
+- `answer_quality_eval_junit.xml`
 
 Se `--reports-dir` nao for informado, o script tenta localizar o ultimo diretorio
 em `reports/corpus-maintenance/`. Se nao houver reports, ainda gera dashboard com
 status `WARN` e warnings explicitos.
+Para Answer Quality, tambem existe fallback local para
+`data/regression_reports/answer_quality_eval_junit.xml`, gerado por
+`make answer-quality-junit`.
 
 ## Outputs
 
@@ -63,6 +68,7 @@ O JSON contem:
 - `warnings`: motivos nao bloqueantes
 - `failures`: motivos bloqueantes
 - `failed_cases`: casos falhos de RAG/golden evals quando extraidos de JUnit
+- `failure_details`: mensagens resumidas de falhas/erros de JUnit
 - `inputs`: reports encontrados ou ausentes
 
 ## Metricas
@@ -83,6 +89,13 @@ O JSON contem:
 | `rag_eval_failed_cases` | `rag_eval_junit.xml` |
 | `golden_eval_passed` | `golden_eval_junit.xml` |
 | `golden_eval_failed_cases` | `golden_eval_junit.xml` |
+| `answer_quality_junit_present` | `answer_quality_eval_junit.xml` |
+| `answer_quality_tests` | `answer_quality_eval_junit.xml` |
+| `answer_quality_failures` | `answer_quality_eval_junit.xml` |
+| `answer_quality_errors` | `answer_quality_eval_junit.xml` |
+| `answer_quality_skipped` | `answer_quality_eval_junit.xml` |
+| `answer_quality_failed_cases` | `answer_quality_eval_junit.xml` |
+| `answer_quality_status` | `answer_quality_eval_junit.xml` |
 | `action_brief_required_sections_passed` | golden evals de Action Brief |
 | `missing_context_count` | reports que exponham `missing_context` |
 | `missing_evidence_count` | reports que exponham `missing_evidence` |
@@ -96,6 +109,7 @@ O JSON contem:
 - `expired_sources > 0`
 - RAG eval falhar
 - Golden eval falhar
+- Answer Quality eval falhar (`failures > 0` ou `errors > 0`)
 
 `WARN` se nao houver falhas, mas houver:
 
@@ -103,13 +117,15 @@ O JSON contem:
 - `missing_context_count > 0`
 - `missing_evidence_count > 0`
 - reports ausentes ou malformados
+- `answer_quality_eval_junit.xml` ausente quando o dashboard espera reports locais
 
 `PASS` quando nao houver failures nem warnings.
 
 ## CI Behavior
 
 O workflow usa `--no-fail-on-status` ao construir o dashboard para garantir que
-Job Summary e artifact sejam publicados. Depois disso, uma etapa final le
+Job Summary e artifact sejam publicados. A secao Answer Quality do Job Summary
+mostra presenca do XML, status, testes, failures, errors e skipped. Depois disso, uma etapa final le
 `latest_dashboard.json` e falha somente se `status == "FAIL"`.
 
 Consequencias:
@@ -117,11 +133,15 @@ Consequencias:
 - `PASS`: workflow passa.
 - `WARN`: workflow passa, mas o resumo mostra warnings.
 - `FAIL`: workflow falha apos publicar summary e artifact.
+- O XML `answer_quality_eval_junit.xml` e publicado dentro do artifact
+  `corpus-maintenance-reports`.
 
 ## Limitacoes
 
 - JUnit de pytest nao contem metricas detalhadas de RAG; o dashboard extrai apenas
   pass/fail e nomes de casos falhos.
+- Answer Quality JUnit cobre status operacional dos testes; metricas semanticas
+  detalhadas continuam no harness deterministico, nao no XML puro do pytest.
 - Os checks de Action Brief sao derivados dos golden evals existentes; nao ha um
   runner separado de Action Brief.
 - Reports ausentes viram `WARN`, nao `FAIL`, para preservar diagnostico em runs

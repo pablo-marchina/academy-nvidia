@@ -304,6 +304,25 @@
 - [x] `docs/46_regression_dashboard.md`, README, EVALS, ROADMAP e Obsidian atualizados
 - [x] Nenhuma mudanca em retrieval, Qdrant ingestion, scoring, diagnosis, recommendation ou Action Brief logic
 
+### Epic 23 - LLM/RAG Answer Quality Evaluation (concluido)
+- [x] `src/evaluation/answer_quality_schemas.py` - schemas para casos, metricas, gates, claims e coverage checks
+- [x] `src/evaluation/answer_quality_eval.py` - avaliador deterministico offline para `StartupActionBrief`
+- [x] `examples/answer_quality/golden_answer_quality_cases.json` - 8 golden cases versionados
+- [x] `tests/evals/test_answer_quality_golden.py` - 9 testes offline
+- [x] Metricas: required sections, missing evidence, uncertainty, motion consistency, evidence/gap/technology IDs, unsupported claims, citation coverage, absolute language e PASS/WARN/FAIL
+- [x] Quality gates bloqueantes para secoes, missing_evidence, uncertainty, technology sem gap, motion alterado, unsupported claims e IDs obrigatorios
+- [x] Dashboard le `answer_quality_eval_junit.xml` opcional e expoe answer_quality_passed, failed cases, unsupported_claim_count, required_sections_missing, citation_coverage e status
+- [x] `docs/47_answer_quality_evaluation.md`, README, EVALS, ROADMAP e Obsidian atualizados
+- [x] Nenhuma chamada externa, nenhum LLM judge, nenhuma mudanca em scoring/diagnosis/recommendation/retrieval/Qdrant/recommended_motion
+
+### Epic 23.1 - Answer Quality JUnit Report Integration (concluido)
+- [x] `make answer-quality-junit` gera `data/regression_reports/answer_quality_eval_junit.xml`
+- [x] `scripts/run_corpus_maintenance.py` executa Answer Quality JUnit quando `run_evals=true`
+- [x] Dashboard extrai tests, failures, errors, skipped, failed cases, failure details e PASS/WARN/FAIL do XML
+- [x] GitHub Actions publica o XML como artifact e mostra status/counters no Job Summary
+- [x] `tests/unit/test_regression_dashboard.py` cobre JUnit PASS, failure, error, skipped e ausente
+- [x] Nenhuma mudanca em metricas de Answer Quality, eval cases, RAG retrieval, Action Brief, scoring, diagnosis ou recommendation
+
 ### Product RAG (V3 — futuro / backlog)
 - Reranking cross-encoder (alternativa ao reranking determinístico)
 - Ingestão automatizada de documentação NVIDIA via crawler respeitando robots.txt
