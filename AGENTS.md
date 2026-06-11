@@ -66,6 +66,225 @@ Construir uma plataforma multiagente para identificar startups brasileiras AI-na
 8. Atualizar Obsidian (decisoes, resumos, limitações).
 9. Sugerir proximo passo.
 
+## Workspace Clarification Gate
+
+Antes de gerar código, arquitetura, documentação grande (>50 linhas), workflow,
+frontend, API ou prompt extenso, verifique se há ambiguidade crítica que pode
+levar a retrabalho ou decisão incorreta.
+
+### When to ask questions
+
+Pergunte antes quando faltar definição clara sobre:
+
+- **Stack** — linguagem, framework, bibliotecas específicas
+- **Escopo** — o que está dentro e o que está fora
+- **Contrato de API** — entrada, saída, erros esperados
+- **Formato de output** — JSON, Markdown, schema específico
+- **Comportamento esperado** — casos de borda, defaults, nulabilidade
+- **Política de erro** — lançar exceção, retornar default, logar silenciosamente
+- **Dependências permitidas** — apenas as existentes ou pode adicionar
+- **Alvo de ambiente** — dev, test, prod, CI, container
+- **Dados de exemplo** — formato, valores representativos
+- **Prioridade** — simplicidade, robustez ou demonstrabilidade primeiro
+
+Atenção especial para estas operações de alto risco de ambiguidade:
+
+- Criar ou alterar **frontend/UI**
+- Criar ou alterar **API endpoints**
+- Alterar **arquitetura** (modular, acoplamento, camadas)
+- Alterar **contratos** em `docs/contracts/`
+- Adicionar **dependência** nova
+- Alterar **workflow/CI** (`.github/workflows/`)
+- Gerar **documentação grande** (>50 linhas)
+- Criar **novo épico grande** (>3 steps)
+- Mexer em **pipeline** ou **RAG**
+
+### When not to ask questions
+
+Não pergunte quando:
+
+- A tarefa for **hotfix pequeno** (1-5 linhas, sem efeito colateral)
+- A decisão já estiver **explícita no contexto** (AGENTS.md, contrato, plano
+  aprovado, conversa anterior)
+- Houver **padrão claro no projeto** (ex: todos os módulos usam Pydantic,
+  testes com pytest, schemas em `src/*/schemas.py`)
+- A pergunta **só atrasaria sem mudar a solução** (ex: cor de botão em hotfix
+  de backend, nome de variável local)
+- O **menor escopo seguro** for evidente (o que causa menos dano se estiver
+  errado é óbvio)
+
+### Maximum number of questions
+
+- **No máximo 3 perguntas por rodada**
+- Perguntas curtas e objetivas (1 frase cada)
+- Se houver muitas dúvidas, pergunte **apenas as bloqueantes**
+- **Sempre inclua um default recomendado** em cada pergunta
+
+### Default behavior if user does not answer
+
+Se o usuário não responder, seguir estas regras em ordem:
+
+1. **Menor escopo seguro** — a escolha que causa menos dano se estiver errada
+2. **Registre a suposição** — ex: "Assumi stack TypeScript porque não houve resposta"
+3. **Evite mudança irreversível** — não altere schema público, não migre banco,
+   não refatore amplamente
+4. **Evite dependência nova** — use apenas bibliotecas já no projeto
+5. **Evite refatoração ampla** — prefira mudança localizada
+
+### Format
+
+As perguntas devem começar com:
+
+```
+Perguntas bloqueantes antes de gerar:
+```
+
+Cada pergunta no formato:
+
+```
+1. <pergunta curta> Recomendado: <default>.
+```
+
+Exemplo:
+
+```
+Perguntas bloqueantes antes de gerar:
+1. Stack da UI: React + Vite + TypeScript ou JS puro? Recomendado: TypeScript.
+2. Estilo: CSS puro ou biblioteca? Recomendado: CSS puro (sem dependência nova).
+3. Estado global: Context API ou useState local? Recomendado: useState local.
+```
+
+Quando seguir sem perguntar, registre ao final da resposta:
+
+```
+Não há ambiguidade bloqueante. Segui com o menor escopo seguro.
+```
+
+### Examples
+
+**Exemplo 1 — UI stack (perguntar):**
+Usuário: "Cria uma página de login."
+IA:
+```
+Perguntas bloqueantes antes de gerar:
+1. Stack da UI: React + Vite + TypeScript ou JS puro? Recomendado: TypeScript.
+2. Estilo: CSS puro ou Tailwind? Recomendado: CSS puro (sem dependência nova).
+3. Autenticação: endpoint existente ou criar mock? Recomendado: mock local.
+```
+
+**Exemplo 2 — API endpoint contract (perguntar):**
+Usuário: "Adiciona um endpoint para listar startups."
+IA:
+```
+Perguntas bloqueantes antes de gerar:
+1. Formato de resposta: lista de IDs ou objetos completos? Recomendado: objetos completos com paginação.
+2. Filtros: por setor e score mínimo? Recomendado: sim, ambos opcionais.
+3. Erro: 404 se vazio ou 200 com lista vazia? Recomendado: 200 com lista vazia.
+```
+
+**Exemplo 3 — Qdrant destructive recreate (perguntar):**
+Usuário: "Precisa dropar a collection do Qdrant e recriar."
+IA:
+```
+Perguntas bloqueantes antes de gerar:
+1. Collection name: a mesma ou nova? Recomendado: mesma (evita dangling references).
+2. Backup: precisa salvar dados atuais antes? Recomendado: sim, exportar antes.
+3. Impacto: há consumers rodando agora? Recomendado: verificar antes de dropar.
+```
+
+**Exemplo 4 — Dependency addition (perguntar):**
+Usuário: "Adiciona suporte a PDF parsing."
+IA:
+```
+Perguntas bloqueantes antes de gerar:
+1. Biblioteca: PyMuPDF, pdfminer.six ou pdfplumber? Recomendado: PyMuPDF (mais rápida).
+2. Escopo: parse de texto apenas ou também tabelas/imagens? Recomendado: apenas texto por enquanto.
+3. Instalação: adicionar ao pyproject.toml como extra opcional? Recomendado: sim, extra opcional.
+```
+
+**Exemplo 5 — Docs large generation (perguntar):**
+Usuário: "Gera documentação completa da arquitetura de agents."
+IA:
+```
+Perguntas bloqueantes antes de gerar:
+1. Formato: Markdown ou diagrama Mermaid? Recomendado: Markdown + Mermaid.
+2. Público: time interno ou stakeholders NVIDIA? Recomendado: interno (menos glossário).
+3. Escopo: todos os 9 agentes ou apenas os implementados? Recomendado: apenas os implementados (stubs ignorados).
+```
+
+**Exemplo 6 — Hotfix (não perguntar):**
+Usuário: "Corrige o typo no arquivo de configuração."
+IA: "Não há ambiguidade bloqueante. Segui com o menor escopo seguro."
+[Aplica correção de 2 linhas]
+
+**Exemplo 7 — Passo óbvio (não perguntar):**
+Usuário: "Roda os testes para ver se está tudo verde."
+IA: "Não há ambiguidade bloqueante. Segui com o menor escopo seguro."
+[Executa pytest]
+
+## Workspace Output Validation Gate
+
+Antes de marcar uma tarefa como concluida, valide os outputs gerados ou alterados
+na proporcao do risco da tarefa.
+
+### Quando validar
+
+Valide obrigatoriamente quando a tarefa gerar ou alterar:
+
+- JSON estruturado
+- Markdown/documentacao grande (>50 linhas)
+- planos ou epicos
+- prompts extensos
+- API request/response
+- UI output relevante
+- Startup Action Brief
+- Answer Quality Eval
+- regression dashboard
+- codigo em `src/` ou `tests/`
+
+Hotfix pequeno (1-5 linhas, sem efeito colateral e sem output estruturado) nao
+deve ser bloqueado por processo pesado. Ainda assim, registre a validacao minima
+aplicavel.
+
+### Checklist antes de concluir
+
+Antes de dizer que a tarefa esta pronta, verificar:
+
+1. **Contrato** - output respeita schema, contrato ou template aplicavel?
+2. **Formato** - JSON, Markdown, API response ou report estao bem formados?
+3. **Escopo** - output nao inclui feature, arquivo ou promessa fora do plano?
+4. **Evidencia/incerteza** - evidencias, gaps, missing_evidence e incertezas foram preservados?
+5. **Checks operacionais** - testes/checks relevantes foram rodados ou a impossibilidade foi explicada?
+
+### JSON
+
+- Validar contra Pydantic/JSON Schema quando existir.
+- Se nao houver schema, reportar `WARN` controlado e registrar a limitacao.
+- Para Action Brief, validar secoes obrigatorias, `recommended_motion`, scores,
+  gaps, tecnologias NVIDIA, evidencias, `missing_evidence` e incerteza quando
+  confidence for baixa.
+
+### Markdown
+
+- Validar headings obrigatorios.
+- Validar que secoes criticas nao estao vazias.
+- Procurar placeholders nao resolvidos (`TODO`, `TBD`, `{placeholder}`).
+- Conferir links/paths quando forem parte do criterio de pronto.
+
+### API/UI
+
+- Validar contrato request/response quando houver schema.
+- Preservar `warnings`.
+- Estados esperados de erro devem ser controlados; por exemplo, Qdrant offline
+  deve virar warning/status explicito, nao crash silencioso.
+
+### Falhas
+
+- Se a falha estiver no escopo, corrija antes de concluir.
+- Se estiver fora do escopo, reporte como pendencia explicita.
+- Se a validacao for incerta, reporte a incerteza e sugira o proximo menor passo.
+- Nunca esconda falha de contrato, formato, escopo ou evidencia.
+
 ## End-of-Epic Autonomous Closure
 
 Ao finalizar um épico (antes de marcar como concluído), executar obrigatoriamente:

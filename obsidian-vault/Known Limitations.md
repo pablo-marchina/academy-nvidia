@@ -1,5 +1,10 @@
 # Known Limitations
 
+- Output Validation Gate is structural and contract-focused. It catches missing
+  fields, invalid enums, empty critical sections, placeholder text, and mapping
+  inconsistencies, but it does not provide semantic entailment or replace human
+  review.
+
 ## CI/CD & Quality Gates
 
 - CI only tests on Ubuntu — no Windows/macOS matrix.

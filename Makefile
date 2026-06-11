@@ -1,4 +1,4 @@
-.PHONY: test lint format-check typecheck validate rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test
+.PHONY: test lint format-check typecheck validate validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test
 
 test:
 	python -m pytest -m "not integration" --tb=short
@@ -13,6 +13,15 @@ typecheck:
 	mypy src
 
 validate: lint format-check typecheck test
+
+validate-output:
+	python -m pytest tests/unit/test_output_validation.py --tb=short
+
+validate-brief-output:
+	python -m pytest tests/unit/test_output_validation.py -k "brief" --tb=short
+
+validate-dashboard-output:
+	python -m pytest tests/unit/test_output_validation.py -k "dashboard" --tb=short
 
 rag-eval:
 	python -m pytest tests/unit/test_rag_eval.py tests/unit/test_rag_eval_semantic.py tests/unit/test_rag_eval_reranking.py --tb=short

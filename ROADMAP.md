@@ -371,6 +371,32 @@
 - [x] README, ROADMAP, EVALS, DECISIONS, Obsidian atualizados
 - [x] Nenhuma alteração em scoring, diagnosis, recommendation, retrieval, Qdrant ingestion ou eval metrics
 
+### Epic 26.1 — Workspace Clarification Gate (concluído)
+- [x] AGENTS.md — seção Workspace Clarification Gate adicionada
+- [x] When to ask: 10 situações definidas + 9 operações de alto risco
+- [x] When not to ask: 5 situações (hotfix, padrão claro, já respondido, etc.)
+- [x] Limite de 3 perguntas por rodada com defaults recomendados
+- [x] Fallback seguro se usuário não responder (menor escopo, registrar suposição)
+- [x] Formato padronizado com prefixo "Perguntas bloqueantes antes de gerar:"
+- [x] 7 exemplos (UI, API, Qdrant, dependency, docs, hotfix, passo óbvio)
+- [x] docs/52_workspace_clarification_gate.md criado
+- [x] DECISIONS.md — WSD-006
+- [x] EVALS.md — critério de qualidade adicionado
+- [x] README.md — Clarification Gate mencionado nas regras de workspace
+- [x] Obsidian vault backfill
+- [x] Nenhum src/ ou tests/ alterado
+
+### Epic 26.2 — Workspace Output Validation Gate (concluído)
+- [x] AGENTS.md — seção Workspace Output Validation Gate adicionada
+- [x] docs/53_workspace_output_validation_gate.md criado
+- [x] src/validation/output_validation.py — validadores para Action Brief, Markdown, dashboard e API responses
+- [x] src/validation/output_validation_schemas.py — resultado padrão PASS/WARN/FAIL
+- [x] tests/unit/test_output_validation.py — testes de brief válido, seções faltantes, motion inválido, gap inválido, evidence/missing_evidence, dashboard e Markdown TODO
+- [x] examples/validation/ — fixtures pequenas para validação manual
+- [x] Makefile — targets validate-output, validate-brief-output, validate-dashboard-output
+- [x] README, EVALS, ROADMAP e Obsidian atualizados
+- [x] Nenhuma alteração em scoring, retrieval, recommendation, Action Brief generation, API/UI behavior ou dependências
+
 ## 📋 Backlog (não iniciado)
 
 ### Agents (LangGraph)

@@ -170,6 +170,13 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 - **Consequences:** Contratos reduzem ambiguidade. Precisam ser mantidos atualizados conforme os módulos evoluem.
 - **Status:** Implementado no Epic 7.2.
 
+### WSD-006 — Workspace Clarification Gate
+
+- **Context:** O AGENTS.md já regulava planos, contratos, revisão e validação, mas a IA podia gerar código, arquitetura, docs grandes, frontend, API ou prompts baseados em suposição sem verificar ambiguidade com o usuário.
+- **Decision:** Adicionar a seção "Workspace Clarification Gate" no AGENTS.md que instrui a IA a fazer perguntas de esclarecimento antes de gerar algo quando houver ambiguidade relevante. Define when to ask (10 situações), when not to ask (5 situações), limite de 3 perguntas, defaults recomendados, fallback seguro se o usuário não responder, e 7 exemplos.
+- **Consequences:** IA pergunta antes de gerar frontend, API, arquitetura, contratos, dependências, workflows, docs grandes, épicos grandes, pipeline ou RAG. IA não pergunta para hotfixes, passos óbvios, padrões claros ou decisões já explícitas. Se o usuário não responder, assume menor escopo seguro.
+- **Status:** Implementado no Epic 26.1.
+
 ### WSD-005 — Separação Workspace vs Produto
 
 - **Context:** Havia confusão entre melhorias na área de trabalho de desenvolvimento vs funcionalidades do produto. Épicos misturavam docs e código.

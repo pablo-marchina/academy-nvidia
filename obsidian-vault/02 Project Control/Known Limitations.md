@@ -55,6 +55,7 @@
 - Prompts de workflow criados no Epic 7.2 mas ainda nao testados em uso real
 - Plan artifacts obrigatorios a partir do Epic 7.2 — epicos anteriores nao tem planos versionados
 - Contratos de desenvolvimento criados no Epic 7.2 — precisam ser mantidos atualizados com o codigo
+- Output Validation Gate e estrutural/contratual; nao substitui revisao humana, entailment semantico ou Answer Quality Eval
 
 - Source sync script (Epic 19) only downloads from allowlisted URLs — no automatic discovery of new NVIDIA documentation pages
 - Source sync depends on URL stability in source_allowlist.yaml — 404s are detected but not auto-resolved

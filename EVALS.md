@@ -42,9 +42,10 @@
 | Regression Dashboard | `tests/unit/test_regression_dashboard.py` | 14 | ✅ |
 | Answer Quality Eval | `tests/evals/test_answer_quality_golden.py` | 9 | ✅ |
 | Optional LLM Judge | `tests/unit/test_llm_judge_adapter.py` | 4 | ✅ |
+| Output Validation Gate (Epic 26.2) | `tests/unit/test_output_validation.py` | 12 | ✅ |
 | CLI Demo Integration (Epic 24) | `tests/integration/test_cli_demo.py` | 6 | ⏭️ (integration) |
 | API Demo Integration (Epic 25) | `tests/integration/test_api_demo.py` | 9 | ⏭️ (integration) |
-| **Total** | **44 arquivos** | **493** | **466 pass, 27 skip** |
+| **Total** | **45 arquivos** | **506** | **494 pass, 12 skip** |
 
 ## Cobertura por módulo
 
@@ -77,6 +78,7 @@
 | `scripts/check_scope.py` | ✅ REAL | ✅ | 7 |
 | `scripts/check_docs_closure.py` | ✅ REAL | ✅ | 7 |
 | `scripts/build_regression_dashboard.py` | ✅ REAL | ✅ | 14 |
+| `validation/output_validation.py` | ✅ REAL | ✅ | 12 |
 
 ## Lacunas de cobertura
 
@@ -122,6 +124,7 @@
 | Corpus Freshness Audit | 11 tests (stale, expired, deprecated, superseded, missing metadata, duplicate active versions, fail flags, version promotion, retrieval/vector filters) | ✅ |
 | Regression Dashboard | 14 tests (clean PASS, stale WARN, validation_errors FAIL, missing reports WARN, JUnit missing context parsing, Answer Quality JUnit pass/failure/error/skipped/missing, Optional LLM Judge present/absent, Markdown sections, JSON fields) | ✅ |
 | Answer Quality Eval | 9 tests (golden answer quality pass, missing required section, missing evidence omitted, uncertainty omitted, technology without gap, motion change, unsupported claims, low citation coverage, absolute language warning) | ✅ |
+| Output Validation Gate | 12 tests (valid brief, missing section, invalid motion, invalid gap, invalid NVIDIA technology, missing evidence, recommendation without evidence, dashboard required metrics, Markdown TODO warning, empty critical section, API warnings, low-confidence uncertainty) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
 
@@ -132,6 +135,8 @@ Estes critérios avaliam a **qualidade do processo de desenvolvimento assistido 
 | Plano salvo | Plano foi versionado em `docs/plans/` antes do build | Verificar se existe arquivo .md para o épico/tarefa |
 | Escopo respeitado | Mudanças estão dentro do escopo aprovado | Review Diff: nenhum arquivo fora do escopo |
 | Contratos consultados | Contratos foram lidos antes de alterar módulos | Agente declara quais contratos leu (ou justifica por que não) |
+| Clarification Gate respeitado | IA perguntou antes de gerar quando havia ambiguidade (ou registrou menor escopo seguro) | Verificar log da conversa: perguntas com formato correto, ≤3, com defaults |
+| Output Validation Gate respeitado | Outputs estruturados foram validados antes de concluir tarefa | Verificar validators/Makefile aplicáveis, warnings/failures reportados e hotfix trivial justificado |
 | Review Diff executado | Diff foi revisado antes do commit | Log da execução do review_diff.md |
 | Obsidian atualizado | Notas de decisão, resumo e limitações foram criadas/atualizadas | Verificar existência de notas em 03 Research/, 04 Decisions/, 02 Project Control/ |
 | Decisões registradas | Decisões arquiteturais ou de processo foram registradas | DECISIONS.md ou ADR em docs/adr/ |
@@ -388,3 +393,26 @@ make regression-dashboard
 - Optional LLM Judge e informativo: report ausente ou presente nao altera status global do dashboard.
 - GitHub Actions publica summary/artifact antes de falhar por `FAIL`.
 - `WARN` nao falha workflow.
+
+## Output Validation Gate (Epic 26.2)
+
+### Execução
+
+```bash
+make validate-output
+make validate-brief-output
+make validate-dashboard-output
+python -m pytest tests/unit/test_output_validation.py --tb=short
+```
+
+### Testes
+
+- 12 unitarios cobrindo Action Brief valido, secao obrigatoria ausente, motion invalido, gap invalido, tecnologia NVIDIA invalida, `missing_evidence` ausente, recomendacao sem evidencia, dashboard sem metrica obrigatoria, Markdown com TODO, secao critica vazia, API warnings preservados e baixa confianca sem incerteza.
+
+### Invariantes
+
+- Action Brief deve preservar contrato, secoes criticas, gaps validos, tecnologias NVIDIA mapeadas, evidencia, `missing_evidence` e incerteza quando confidence for baixa.
+- Markdown com placeholder gera `WARN` controlado; secao critica vazia gera `FAIL`.
+- Dashboard precisa expor status `PASS/WARN/FAIL` e metricas obrigatorias.
+- API responses sao validadas por schemas Pydantic existentes; response type desconhecido gera `WARN`.
+- A gate nao altera scoring, retrieval, recommendation, Action Brief generation, API/UI behavior ou dependencias.

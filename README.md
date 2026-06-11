@@ -76,7 +76,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit, corpus maintenance orchestration, regression dashboard generation
 
 ### Testing
-- 478 tests (466 passing + 12 skippable integration) across 42 test files
+- 506 tests (494 passing + 12 skippable integration) across 45 test files
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -103,6 +103,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - Regression Dashboard: 14 tests (PASS/WARN/FAIL, missing reports, JUnit missing context, Answer Quality JUnit pass/failure/error/skipped/missing, optional LLM judge present/absent, Markdown sections, JSON fields)
 - Answer Quality Eval: 9 tests (offline golden cases, missing sections/evidence/uncertainty, motion stability, unsupported claims, citation coverage, absolute language)
 - Optional LLM Judge: 4 tests (offline null provider, report aggregation, prompt contents, manual script output)
+- Output Validation Gate: 12 tests (Action Brief, Markdown, dashboard, and API output validators)
 
 ## Stack
 
@@ -250,6 +251,9 @@ make validate    # all of the above
 make rag-eval    # RAG evaluation tests
 make answer-quality-junit  # generate data/regression_reports/answer_quality_eval_junit.xml
 make answer-quality-llm-judge  # optional/experimental offline null judge report
+make validate-output  # run Workspace Output Validation Gate tests
+make validate-brief-output  # run Action Brief output validation tests
+make validate-dashboard-output  # run regression dashboard output validation tests
 pytest tests/evals/test_answer_quality_golden.py -q  # answer quality evals
 make corpus-maintenance-dry-run  # sync dry-run + freshness audit + ingest dry-run
 make corpus-maintenance-evals    # safe maintenance + RAG/golden evals
@@ -356,6 +360,18 @@ Rule of thumb:
 - Obsidian is the lab.
 - The repository is production.
 
+## Workspace Clarification Gate
+
+The project includes a Workspace Clarification Gate rule in `AGENTS.md` that instructs the AI to ask clarifying questions before generating code, architecture, large docs, workflows, frontend, API, or long prompts when critical ambiguity exists. The rule limits questions to 3 per turn, requires recommended defaults, and defines safe fallback behavior when the user does not respond.
+
+This prevents the AI from generating large artifacts based on unchecked assumptions — especially for UI, API, architecture, contracts, dependencies, CI/CD, pipeline, and RAG changes.
+
+## Workspace Output Validation Gate
+
+The project includes a Workspace Output Validation Gate rule in `AGENTS.md` and focused validators in `src/validation/output_validation.py`. Before closing non-trivial tasks that generate structured outputs, the AI must validate contract/schema, format, scope, evidence/uncertainty preservation, and relevant operational checks.
+
+Current validators cover Startup Action Brief JSON, generated Markdown, regression dashboard JSON, and API response JSON using existing Pydantic schemas and the NVIDIA gap-to-technology mapping. The gate stays lightweight for small hotfixes: trivial localized fixes should record only the minimal relevant check.
+
 ## Using Skills
 
 Reusable AI skills live in [skills](/C:/Users/Inteli/Documents/Projetos/academy-nvidia/skills). Each skill defines:
@@ -387,6 +403,7 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - Corpus is local and allowlist-backed in `data/nvidia_corpus/`; scheduled maintenance is safe by default and does not promote sources or run real ingestion unless explicitly requested in a manual workflow run.
 - Regression dashboard quality is limited by the reports available in the run; missing reports are surfaced as `WARN`, and JUnit-based eval reports expose pass/fail and failed cases rather than full retrieval metrics.
 - Answer quality evaluation is deterministic and pattern-based; it checks required structure, provenance, motion stability, and known unsupported-claim patterns, but it is not a semantic LLM judge.
+- Output validation is structural and contract-focused; it does not replace human review or semantic judgment, and unknown output types return controlled warnings rather than hard failures.
 - Optional LLM judge reports are experimental and informational; Epic 23.2 implements only an offline null provider, no real provider integration, no API calls, and no CI gate.
 - Relevance scoring in lexical mode is keyword-match-based; semantic mode uses cosine similarity; reranking uses a deterministic composite formula (no cross-encoder).
 - Vector store is in-memory only (no persistence across sessions — Qdrant-ready for production; optional QdrantStore adapter available in Epic 15).
