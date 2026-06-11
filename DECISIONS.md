@@ -295,4 +295,26 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 
 ---
 
+## Decision 026 - CLI demo with argparse, no new dependencies
+
+- **Context:** O projeto precisava de um modo simples de demonstrar o produto de ponta a ponta sem frontend. A pipeline, o briefing e o RAG já estavam prontos, mas não havia entry point unificado.
+- **Decision:** Criar `scripts/run_startup_radar_demo.py` usando `argparse` (biblioteca padrão), sem Typer/Click ou qualquer dependência nova. A CLI é um orquestrador fino que reusa todas as funções existentes (`run_full_pipeline`, `build_action_brief`, `render_action_brief_markdown`, `evaluate_answer_quality`).
+- **Alternatives considered:** Typer/Click (rejeitado para manter zero dependências novas), criar um endpoint FastAPI (fora do escopo — sem frontend), adicionar ao Makefile sem script (inviável para flags complexas).
+- **Rationale:** `argparse` é o padrão já usado em todos os scripts do projeto (`ingest_nvidia_corpus.py`, `sync_nvidia_sources.py`, etc.). Zero dependência nova significa zero risco de conflito, zero tempo de instalação extra.
+- **Risks:** CLI pode ficar frágil se a pipeline mudar a assinatura de `run_full_pipeline()`. Mitigado: os testes de integração detectam regressões.
+- **Validation:** `make demo-cli`, `make demo-cli-offline`, `make demo-cli-rag` rodam sem erro. 6 testes de integração passam.
+- **Status:** Implementado no Epic 24.
+
+## Decision 026 — Minimal FastAPI Demo API (API Layer, Not Subprocess)
+
+- **Context:** O CLI demo (Epic 24) demonstra o sistema localmente, mas stakeholders e integradores precisam de uma interface HTTP programática. O projeto já tinha FastAPI/Uvicorn declarados em `pyproject.toml` e um `src/main.py` mínimo com apenas `GET /health`.
+- **Decision:** Criar `src/api/` com FastAPI, reaproveitando a lógica da CLI/pipeline via chamadas diretas (não subprocess). Endpoints mínimos (6) sem autenticação, sem frontend, sem deploy cloud. A API é local/dev apenas.
+- **Alternatives considered:** Subprocess chamando o script CLI (rejeitado — overhead, perda de tipos, erros opacos), Typer/Click CLI → HTTP bridge (desnecessário com FastAPI já instalado), adicionar autenticação/rate-limit (fora de escopo — apenas demo local).
+- **Rationale:** Chamar `run_full_pipeline()`, `build_action_brief()` e `evaluate_answer_quality()` diretamente é a abordagem mais segura, testável e de manutenção simples. FastAPI já estava declarado como dependência. `src/main.py` existente foi convertido para re-exportar o app do novo pacote.
+- **Risks:** Pipeline síncrona pode bloquear por vários segundos (aceitável para demo local — sem async). Qdrant offline poderia crashar a API — mitigado com `QdrantConnectionError` capturado e fallback gracioso.
+- **Validation:** `make api` sobe. `make api-test` passa. Swagger em `/docs` funciona. Nenhuma lógica central foi duplicada.
+- **Status:** Implementado no Epic 25.
+
+---
+
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

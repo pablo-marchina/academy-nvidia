@@ -338,6 +338,39 @@
 
 ---
 
+### Epic 24 — CLI Demo End-to-End (concluído)
+- [x] `scripts/run_startup_radar_demo.py` — CLI com argparse (6 flags: input, output-dir, use-rag, rag-backend, run-answer-quality-eval, offline, format)
+- [x] `examples/demo/sample_startup_input.json` — startup fictícia Nexus AI Labs (HealthTech, 5 evidências)
+- [x] `examples/demo/README.md` — documentação do sample
+- [x] `docs/49_cli_demo_end_to_end.md` — design doc
+- [x] `Makefile` — 3 targets (demo-cli, demo-cli-offline, demo-cli-rag)
+- [x] CLI reusa pipeline, briefing, RAG e eval existentes — zero lógica duplicada
+- [x] Modo offline: MockEmbeddingProvider + InMemoryVectorStore, sem Qdrant
+- [x] Modo RAG local: InMemoryVectorStore + MockEmbeddingProvider
+- [x] Modo RAG Qdrant: QdrantStore com mensagem clara de erro se indisponível
+- [x] Answer quality eval opcional com caso genérico (seções, linguagem absoluta, tech-gap)
+- [x] `tests/integration/test_cli_demo.py` — 6 testes de integração
+- [x] README, ROADMAP, EVALS, DECISIONS e Obsidian atualizados
+- [x] Nenhuma alteração em scoring, diagnosis, recommendation, RAG retrieval, Qdrant ingestion ou eval metrics
+- [x] Total: +6 testes (484 tests, 42 test files)
+
+### Epic 25 — Minimal FastAPI Demo API (concluído)
+- [x] `src/api/main.py` — FastAPI app with CORS, lifespan, router
+- [x] `src/api/schemas.py` — Pydantic request/response models
+- [x] `src/api/routes.py` — 6 endpoint handlers (thin, delegate to service)
+- [x] `src/api/service.py` — business logic reusing pipeline/briefing/eval
+- [x] `src/api/__init__.py` — package marker
+- [x] `src/main.py` — re-exports app from `src/api/main.py` (backward compat)
+- [x] `tests/integration/test_api_demo.py` — 9 integration tests
+- [x] `docs/50_minimal_fastapi_demo_api.md` — design doc
+- [x] Endpoints: GET /health, GET /version, GET /rag/status, POST /brief, POST /brief/evaluate, GET /demo/artifacts
+- [x] `POST /brief` reuses CLI/pipeline logic (zero duplication)
+- [x] `GET /rag/status` resilient to Qdrant being offline
+- [x] `GET /demo/artifacts` blocks path traversal
+- [x] `Makefile` — targets: api, api-dev, api-test
+- [x] README, ROADMAP, EVALS, DECISIONS, Obsidian atualizados
+- [x] Nenhuma alteração em scoring, diagnosis, recommendation, retrieval, Qdrant ingestion ou eval metrics
+
 ## 📋 Backlog (não iniciado)
 
 ### Agents (LangGraph)
@@ -345,7 +378,6 @@
 - Human-in-the-loop review
 
 ### Interface
-- FastAPI endpoints
 - Streamlit MVP
 - Export paths
 

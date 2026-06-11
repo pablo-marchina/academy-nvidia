@@ -1,4 +1,4 @@
-.PHONY: test lint format-check typecheck validate rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard
+.PHONY: test lint format-check typecheck validate rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test
 
 test:
 	python -m pytest -m "not integration" --tb=short
@@ -50,3 +50,21 @@ corpus-maintenance-ingest:
 
 regression-dashboard:
 	python scripts/build_regression_dashboard.py
+
+api:
+	uvicorn src.api.main:app
+
+api-dev:
+	uvicorn src.api.main:app --reload
+
+api-test:
+	python -m pytest tests/integration/test_api_demo.py -v
+
+demo-cli:
+	python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json
+
+demo-cli-offline:
+	python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json --offline
+
+demo-cli-rag:
+	python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json --use-rag --rag-backend local

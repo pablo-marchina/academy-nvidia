@@ -1,0 +1,1562 @@
+{
+  "startup_name": "Nexus AI Labs",
+  "website": "https://example.com/nexus-ai-labs",
+  "sector": "HealthTech",
+  "one_line_summary": "Nexus AI Labs — AI-native healthcare platform using deep learning for real-time medical image analysis in production",
+  "verdict": "early_stage",
+  "final_priority_score": 44.4,
+  "recommended_motion": "monitor_and_nurture",
+  "confidence": "medium",
+  "sections": [
+    {
+      "title": "Executive Summary",
+      "content": "Nexus AI Labs (HealthTech) — AI signals found (4). product mentions AI features but AI is not the core value driver. core pattern(s) matched: ai-powered,...\n\nVerdict: **early_stage** | Priority Score: 44.4/100 | Motion: monitor_and_nurture | Confidence: medium\n\nGaps detected: 11 | Evidence items: 21 | Next action: Monitor startup — current motion: monitor_and_nurture",
+      "items": []
+    },
+    {
+      "title": "Why This Startup Matters",
+      "content": "Sector: **HealthTech**\n\nDescription: AI-native healthcare platform using deep learning for real-time medical image analysis in production across multiple hospital networks.\n\nProduct: Real-time AI-powered medical imaging diagnostics deployed in hospitals.\n\nClassification: **ai_enabled** (confidence: medium)",
+      "items": []
+    },
+    {
+      "title": "AI-Native Maturity",
+      "content": "Level: **ai_enabled**\n\nConfidence: medium\n\nReasoning: AI signals found (4). product mentions AI features but AI is not the core value driver. core pattern(s) matched: ai-powered, ai-native, deep learning for.",
+      "items": []
+    },
+    {
+      "title": "Scores Overview",
+      "content": "| Dimension | Score | Confidence |\n\n|---|---|---|\n\n| AI-Native Defensibility | 20/100 | medium |\n\n| NVIDIA Inception Fit | 55/100 | high |\n\n| Production AI Readiness | 56/100 | medium |\n\n| Composite Score | 44/100 | medium |",
+      "items": []
+    },
+    {
+      "title": "Production AI Gaps",
+      "content": "- **high_latency** — fact (confidence: high)\n  keyword matches (1); supporting evidence (2). Gap: high_latency.\n\n- **observability_gap** — inferred (confidence: medium)\n  observability: kw=0, has=False. Gap: observability_gap.\n\n- **model_evaluation_gap** — inferred (confidence: low)\n  AI-native startup with no evaluation signals (0). Gap: model_evaluation_gap.\n\n- **privacy_or_controlled_deployment_gap** — inferred (confidence: medium)\n  regulated sector: HealthTech; has deployment tech (mitigating). Gap: privacy_or_controlled_deployment_gap.\n\n- **heavy_tabular_processing** — hypothesis (confidence: low)\n  supporting evidence (1). Gap: heavy_tabular_processing.\n\n- **voice_need** — hypothesis (confidence: low)\n  supporting evidence (1). Gap: voice_need.\n\n- **simulation_need** — hypothesis (confidence: low)\n  supporting evidence (1). Gap: simulation_need.\n\n- **computer_vision_need** — fact (confidence: high)\n  keyword matches (2); supporting evidence (2). Gap: computer_vision_need.\n\n- **robotics_need** — fact (confidence: high)\n  keyword matches (1); supporting evidence (1). Gap: robotics_need.\n\n- **healthcare_compliance_need** — fact (confidence: high)\n  HealthTech sector; keyword matches (3). Gap: healthcare_compliance_need.\n\n- **ai_cybersecurity_need** — hypothesis (confidence: low)\n  supporting evidence (1). Gap: ai_cybersecurity_need.",
+      "items": []
+    },
+    {
+      "title": "NVIDIA Fit",
+      "content": "- **TensorRT-LLM** addresses **high_latency**\n  TensorRT-LLM reduces latency through kernel fusion and quantization.\n\n- **Triton Inference Server** addresses **high_latency**\n  Triton enables concurrent model execution and dynamic batching for low latency.\n\n- **NVIDIA NIM** addresses **high_latency**\n  NIM offers pre-optimized inference endpoints with minimal overhead.\n\n- **NVIDIA AI Enterprise** addresses **observability_gap**\n  AI Enterprise includes model monitoring and observability tooling for production.\n\n- **NVIDIA NeMo** addresses **model_evaluation_gap**\n  NeMo provides evaluation harnesses for LLM benchmarking and testing.\n\n- **NVIDIA AI Enterprise** addresses **privacy_or_controlled_deployment_gap**\n  AI Enterprise supports secure, on-premise deployments for regulated industries.\n\n- **NVIDIA NIM** addresses **privacy_or_controlled_deployment_gap**\n  NIM can be deployed on-prem with full data sovereignty.\n\n- **NVIDIA RAPIDS** addresses **heavy_tabular_processing**\n  RAPIDS accelerates tabular data processing and ML on GPU.\n\n- **cuML** addresses **heavy_tabular_processing**\n  cuML provides GPU-accelerated implementations of common ML algorithms.\n\n- **NVIDIA Riva** addresses **voice_need**\n  Riva provides GPU-accelerated speech-to-text and text-to-speech.\n\n- **NVIDIA NIM** addresses **voice_need**\n  NIM includes optimized voice AI microservices for production.\n\n- **NVIDIA Omniverse** addresses **simulation_need**\n  Omniverse enables physics-accurate simulation and digital twin creation.\n\n- **NVIDIA AI Enterprise** addresses **computer_vision_need**\n  AI Enterprise includes TensorRT-optimized computer vision pipelines.\n\n- **NVIDIA TensorRT** addresses **computer_vision_need**\n  TensorRT optimizes CV model inference for real-time applications.\n\n- **NVIDIA NIM** addresses **computer_vision_need**\n  NIM provides pre-built CV inference microservices.\n\n- **NVIDIA Isaac** addresses **robotics_need**\n  Isaac platform provides robotics simulation, training, and deployment.\n\n- **NVIDIA Omniverse** addresses **robotics_need**\n  Omniverse enables photorealistic simulation for robotics training.\n\n- **NVIDIA Clara** addresses **healthcare_compliance_need**\n  Clara provides healthcare-specific AI frameworks and compliance tooling.\n\n- **MONAI** addresses **healthcare_compliance_need**\n  MONAI offers medical imaging AI with built-in compliance support.\n\n- **NVIDIA AI Enterprise** addresses **healthcare_compliance_need**\n  AI Enterprise ensures HIPAA-compliant deployments for healthcare AI.\n\n- **NVIDIA Morpheus** addresses **ai_cybersecurity_need**\n  Morpheus provides GPU-accelerated cybersecurity AI pipeline.",
+      "items": []
+    },
+    {
+      "title": "Recommended NVIDIA Technologies",
+      "content": "- **TensorRT-LLM** addresses **high_latency**\n  TensorRT-LLM reduces latency through kernel fusion and quantization.\n\n- **Triton Inference Server** addresses **high_latency**\n  Triton enables concurrent model execution and dynamic batching for low latency.\n\n- **NVIDIA NIM** addresses **high_latency**\n  NIM offers pre-optimized inference endpoints with minimal overhead.\n\n- **NVIDIA AI Enterprise** addresses **observability_gap**\n  AI Enterprise includes model monitoring and observability tooling for production.\n\n- **NVIDIA NeMo** addresses **model_evaluation_gap**\n  NeMo provides evaluation harnesses for LLM benchmarking and testing.\n\n- **NVIDIA AI Enterprise** addresses **privacy_or_controlled_deployment_gap**\n  AI Enterprise supports secure, on-premise deployments for regulated industries.\n\n- **NVIDIA NIM** addresses **privacy_or_controlled_deployment_gap**\n  NIM can be deployed on-prem with full data sovereignty.\n\n- **NVIDIA RAPIDS** addresses **heavy_tabular_processing**\n  RAPIDS accelerates tabular data processing and ML on GPU.\n\n- **cuML** addresses **heavy_tabular_processing**\n  cuML provides GPU-accelerated implementations of common ML algorithms.\n\n- **NVIDIA Riva** addresses **voice_need**\n  Riva provides GPU-accelerated speech-to-text and text-to-speech.\n\n- **NVIDIA NIM** addresses **voice_need**\n  NIM includes optimized voice AI microservices for production.\n\n- **NVIDIA Omniverse** addresses **simulation_need**\n  Omniverse enables physics-accurate simulation and digital twin creation.\n\n- **NVIDIA AI Enterprise** addresses **computer_vision_need**\n  AI Enterprise includes TensorRT-optimized computer vision pipelines.\n\n- **NVIDIA TensorRT** addresses **computer_vision_need**\n  TensorRT optimizes CV model inference for real-time applications.\n\n- **NVIDIA NIM** addresses **computer_vision_need**\n  NIM provides pre-built CV inference microservices.\n\n- **NVIDIA Isaac** addresses **robotics_need**\n  Isaac platform provides robotics simulation, training, and deployment.\n\n- **NVIDIA Omniverse** addresses **robotics_need**\n  Omniverse enables photorealistic simulation for robotics training.\n\n- **NVIDIA Clara** addresses **healthcare_compliance_need**\n  Clara provides healthcare-specific AI frameworks and compliance tooling.\n\n- **MONAI** addresses **healthcare_compliance_need**\n  MONAI offers medical imaging AI with built-in compliance support.\n\n- **NVIDIA AI Enterprise** addresses **healthcare_compliance_need**\n  AI Enterprise ensures HIPAA-compliant deployments for healthcare AI.\n\n- **NVIDIA Morpheus** addresses **ai_cybersecurity_need**\n  Morpheus provides GPU-accelerated cybersecurity AI pipeline.",
+      "items": []
+    },
+    {
+      "title": "Recommended Motion",
+      "content": "Motion: **monitor_and_nurture**\n\nPriority Score: 44.4/100\n\n- [monitor] external_api_dependency: Monitor startup for signals related to 'external_api_dependency'\n\n- [monitor] high_inference_cost: Monitor startup for signals related to 'high_inference_cost'\n\n- [validate_manually] high_latency: Manually validate gap 'high_latency' — current evidence is fact with high confidence\n\n- [monitor] agent_governance_gap: Monitor startup for signals related to 'agent_governance_gap'\n\n- [monitor] observability_gap: Monitor startup for signals related to 'observability_gap'\n\n- [validate_manually] model_evaluation_gap: Manually validate gap 'model_evaluation_gap' — current evidence is inferred with low confidence\n\n- [monitor] privacy_or_controlled_deployment_gap: Monitor startup for signals related to 'privacy_or_controlled_deployment_gap'\n\n- [monitor] slow_data_pipeline: Monitor startup for signals related to 'slow_data_pipeline'\n\n- [validate_manually] heavy_tabular_processing: Manually validate gap 'heavy_tabular_processing' — current evidence is hypothesis with low confidence\n\n- [validate_manually] voice_need: Manually validate gap 'voice_need' — current evidence is hypothesis with low confidence\n\n- [validate_manually] simulation_need: Manually validate gap 'simulation_need' — current evidence is hypothesis with low confidence\n\n- [validate_manually] computer_vision_need: Manually validate gap 'computer_vision_need' — current evidence is fact with high confidence\n\n- [validate_manually] robotics_need: Manually validate gap 'robotics_need' — current evidence is fact with high confidence\n\n- [validate_manually] healthcare_compliance_need: Manually validate gap 'healthcare_compliance_need' — current evidence is fact with high confidence\n\n- [validate_manually] ai_cybersecurity_need: Manually validate gap 'ai_cybersecurity_need' — current evidence is hypothesis with low confidence",
+      "items": []
+    },
+    {
+      "title": "Evidence",
+      "content": "Total evidence items: 5\n\n- **[fact]** Seed funding of $2M for AI infrastructure (high, official_site)\n\n- **[fact]** Computer vision models for real-time diagnostics (high, official_site)\n\n- **[fact]** Deep learning medical imaging platform in production (high, official_site)\n\n- **[fact]** Production deployment in major hospital networks (high, official_site)\n\n- **[fact]** PyTorch and GPU inference pipeline deployed (high, official_site)",
+      "items": []
+    },
+    {
+      "title": "Supporting NVIDIA Context",
+      "content": "- **_unknown** for *_unknown*:\n\n  - NVIDIA NIM: ## Product\nNVIDIA NIM... (score: 0.11, [source](https://docs.nvidia.com/nim/latest/))\n\n  - NVIDIA NIM: ## Gaps Addressed\n- external_api_dependency\n- high_inference_cost\n- high_latency... (score: 0.11, [source](https://docs.nvidia.com/nim/latest/))",
+      "items": []
+    },
+    {
+      "title": "Missing Evidence",
+      "content": "- No evidence for dimension: ai_core_dependency\n\n- No evidence for dimension: proprietary_data\n\n- No evidence for dimension: workflow_integration\n\n- No evidence for dimension: replication_complexity\n\n- No evidence for dimension: nvidia_fit_potential\n\n- No evidence for dimension: explicit_gap_taxonomy\n\n- No evidence for dimension: privacy_and_governance\n\n- No evidence for dimension: data_infrastructure\n\n- Gap 'observability_gap' detected by inference only — collect direct evidence to confirm.\n\n- Gap 'model_evaluation_gap' detected by inference only — collect direct evidence to confirm.\n\n- Gap 'privacy_or_controlled_deployment_gap' detected by inference only — collect direct evidence to confirm.\n\n- Gap 'observability_gap' detected by inference only — collect direct evidence to confirm.\n\n- Gap 'model_evaluation_gap' detected by inference only — collect direct evidence to confirm.\n\n- Gap 'privacy_or_controlled_deployment_gap' detected by inference only — collect direct evidence to confirm.\n\n- Gap 'observability_gap' detected by inference only — collect direct evidence to confirm.\n\n- Gap 'model_evaluation_gap' detected by inference only — collect direct evidence to confirm.\n\n- Gap 'privacy_or_controlled_deployment_gap' detected by inference only — collect direct evidence to confirm.",
+      "items": []
+    },
+    {
+      "title": "Uncertainties / Limitations",
+      "content": "- **Gap 'external_api_dependency' detected as hypothesis**\n  Source: gap_diagnosis\n  Impact: Recommendation reliability is reduced; collect direct evidence to confirm.\n\n- **Gap 'high_inference_cost' detected as hypothesis**\n  Source: gap_diagnosis\n  Impact: Recommendation reliability is reduced; collect direct evidence to confirm.\n\n- **Gap 'agent_governance_gap' detected as hypothesis**\n  Source: gap_diagnosis\n  Impact: Recommendation reliability is reduced; collect direct evidence to confirm.\n\n- **Gap 'observability_gap' detected as inferred**\n  Source: gap_diagnosis\n  Impact: Recommendation reliability is reduced; collect direct evidence to confirm.\n\n- **Gap 'model_evaluation_gap' detected as inferred**\n  Source: gap_diagnosis\n  Impact: Recommendation reliability is reduced; collect direct evidence to confirm.\n\n- **Gap 'privacy_or_controlled_deployment_gap' detected as inferred**\n  Source: gap_diagnosis\n  Impact: Recommendation reliability is reduced; collect direct evidence to confirm.\n\n- **Gap 'slow_data_pipeline' detected as hypothesis**\n  Source: gap_diagnosis\n  Impact: Recommendation reliability is reduced; collect direct evidence to confirm.\n\n- **Gap 'heavy_tabular_processing' detected as hypothesis**\n  Source: gap_diagnosis\n  Impact: Recommendation reliability is reduced; collect direct evidence to confirm.\n\n- **Gap 'voice_need' detected as hypothesis**\n  Source: gap_diagnosis\n  Impact: Recommendation reliability is reduced; collect direct evidence to confirm.\n\n- **Gap 'simulation_need' detected as hypothesis**\n  Source: gap_diagnosis\n  Impact: Recommendation reliability is reduced; collect direct evidence to confirm.\n\n- **Gap 'ai_cybersecurity_need' detected as hypothesis**\n  Source: gap_diagnosis\n  Impact: Recommendation reliability is reduced; collect direct evidence to confirm.",
+      "items": []
+    },
+    {
+      "title": "Next Action",
+      "content": "**Monitor startup — current motion: monitor_and_nurture**",
+      "items": []
+    }
+  ],
+  "ai_native_classification": {
+    "startup_name": "Nexus AI Labs",
+    "classification": "ai_enabled",
+    "confidence": "medium",
+    "reasoning": "AI signals found (4). product mentions AI features but AI is not the core value driver. core pattern(s) matched: ai-powered, ai-native, deep learning for.",
+    "evidence_used": [],
+    "missing_evidence": [
+      "Evidence that the product depends on AI for core value",
+      "Evidence of proprietary data or workflow integration (required for AI-native service)"
+    ]
+  },
+  "defensibility_score": {
+    "total_score": 20.4,
+    "score_breakdown": {
+      "ai_core_dependency": {
+        "dimension_name": "ai_core_dependency",
+        "weight": 0.25,
+        "raw_score": 52.0,
+        "adjusted_score": 15.6,
+        "confidence": "low",
+        "reasoning": "Classification: ai_enabled (base 40). AI signals: 4, tech stack: 4. Raw: 52, adjusted: 15.6 (factor 0.30).",
+        "evidence_used": []
+      },
+      "proprietary_data": {
+        "dimension_name": "proprietary_data",
+        "weight": 0.2,
+        "raw_score": 0.0,
+        "adjusted_score": 0.0,
+        "confidence": "low",
+        "reasoning": "no proprietary signals found Raw: 0, adjusted: 0.0 (factor 0.30).",
+        "evidence_used": []
+      },
+      "workflow_integration": {
+        "dimension_name": "workflow_integration",
+        "weight": 0.15,
+        "raw_score": 25.0,
+        "adjusted_score": 7.5,
+        "confidence": "low",
+        "reasoning": "customers found (2, +25) Raw: 25, adjusted: 7.5 (factor 0.30).",
+        "evidence_used": []
+      },
+      "real_usage_learning": {
+        "dimension_name": "real_usage_learning",
+        "weight": 0.15,
+        "raw_score": 70.0,
+        "adjusted_score": 70.0,
+        "confidence": "high",
+        "reasoning": "customer found (2, +30); funding signals (1, +20); production/feedback signals (2, +20) Raw: 70, adjusted: 70.0 (factor 1.00).",
+        "evidence_used": [
+          {
+            "claim": "Seed funding of $2M for AI infrastructure",
+            "source_url": "https://example.com/",
+            "source_type": "official_site",
+            "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+            "confidence": "high",
+            "evidence_kind": "fact",
+            "collected_at": "2026-06-11T13:49:56.546689Z"
+          }
+        ]
+      },
+      "replication_complexity": {
+        "dimension_name": "replication_complexity",
+        "weight": 0.15,
+        "raw_score": 55.0,
+        "adjusted_score": 16.5,
+        "confidence": "low",
+        "reasoning": "base (10); verticalized sector 'HealthTech' (+25); diverse tech stack (+10); funding (+10) Raw: 55, adjusted: 16.5 (factor 0.30).",
+        "evidence_used": []
+      },
+      "nvidia_fit_potential": {
+        "dimension_name": "nvidia_fit_potential",
+        "weight": 0.1,
+        "raw_score": 80.0,
+        "adjusted_score": 24.0,
+        "confidence": "low",
+        "reasoning": "priority sector 'HealthTech' (+25); NVIDIA-compatible tech (2, +30); inference optimization signals (2, +15); computer vision signal (+10) Raw: 80, adjusted: 24.0 (factor 0.30).",
+        "evidence_used": []
+      }
+    },
+    "confidence": "medium",
+    "classification_boost": "AI-enabled: moderate defensibility potential",
+    "reasoning": "Total Score: 20.4/100 (confidence: medium)\nAI-enabled: moderate defensibility potential\n\nBreakdown:\n  ai_core_dependency: raw=52.0, adjusted=15.6, weight=0.25, conf=low\n    reasoning: Classification: ai_enabled (base 40). AI signals: 4, tech stack: 4. Raw: 52, adjusted: 15.6 (factor 0.30).\n  proprietary_data: raw=0.0, adjusted=0.0, weight=0.2, conf=low\n    reasoning: no proprietary signals found Raw: 0, adjusted: 0.0 (factor 0.30).\n  workflow_integration: raw=25.0, adjusted=7.5, weight=0.15, conf=low\n    reasoning: customers found (2, +25) Raw: 25, adjusted: 7.5 (factor 0.30).\n  real_usage_learning: raw=70.0, adjusted=70.0, weight=0.15, conf=high\n    reasoning: customer found (2, +30); funding signals (1, +20); production/feedback signals (2, +20) Raw: 70, adjusted: 70.0 (factor 1.00).\n  replication_complexity: raw=55.0, adjusted=16.5, weight=0.15, conf=low\n    reasoning: base (10); verticalized sector 'HealthTech' (+25); diverse tech stack (+10); funding (+10) Raw: 55, adjusted: 16.5 (factor 0.30).\n  nvidia_fit_potential: raw=80.0, adjusted=24.0, weight=0.1, conf=low\n    reasoning: priority sector 'HealthTech' (+25); NVIDIA-compatible tech (2, +30); inference optimization signals (2, +15); computer vision signal (+10) Raw: 80, adjusted: 24.0 (factor 0.30).\n\nMissing evidence:\n  - No evidence for dimension: ai_core_dependency\n  - No evidence for dimension: proprietary_data\n  - No evidence for dimension: workflow_integration\n  - No evidence for dimension: replication_complexity\n  - No evidence for dimension: nvidia_fit_potential",
+    "evidence_used": [
+      {
+        "claim": "Seed funding of $2M for AI infrastructure",
+        "source_url": "https://example.com/",
+        "source_type": "official_site",
+        "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+        "confidence": "high",
+        "evidence_kind": "fact",
+        "collected_at": "2026-06-11T13:49:56.546689Z"
+      }
+    ],
+    "missing_evidence": [
+      "No evidence for dimension: ai_core_dependency",
+      "No evidence for dimension: proprietary_data",
+      "No evidence for dimension: workflow_integration",
+      "No evidence for dimension: replication_complexity",
+      "No evidence for dimension: nvidia_fit_potential"
+    ]
+  },
+  "inception_fit_score": {
+    "total_score": 55.4,
+    "score_breakdown": {
+      "explicit_gap_taxonomy": {
+        "dimension_name": "explicit_gap_taxonomy",
+        "weight": 0.35,
+        "raw_score": 80.0,
+        "adjusted_score": 24.0,
+        "confidence": "low",
+        "reasoning": "Gaps detected: 3 (high_latency, computer_vision_need, healthcare_compliance_need). Raw: 80, adjusted: 24.0 (factor 0.30).",
+        "evidence_used": []
+      },
+      "vertical_alignment": {
+        "dimension_name": "vertical_alignment",
+        "weight": 0.25,
+        "raw_score": 100.0,
+        "adjusted_score": 100.0,
+        "confidence": "high",
+        "reasoning": "priority sector 'HealthTech' (+60); funding signals (1, +20); customers (2, +20) Raw: 100, adjusted: 100.0 (factor 1.00).",
+        "evidence_used": [
+          {
+            "claim": "Seed funding of $2M for AI infrastructure",
+            "source_url": "https://example.com/",
+            "source_type": "official_site",
+            "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+            "confidence": "high",
+            "evidence_kind": "fact",
+            "collected_at": "2026-06-11T13:49:56.546689Z"
+          }
+        ]
+      },
+      "technical_maturity": {
+        "dimension_name": "technical_maturity",
+        "weight": 0.2,
+        "raw_score": 35.0,
+        "adjusted_score": 35.0,
+        "confidence": "high",
+        "reasoning": "defensibility base (20 → 15); tech stack signals (4, +10); funding (+10) Raw: 35, adjusted: 35.0 (factor 1.00).",
+        "evidence_used": [
+          {
+            "claim": "Seed funding of $2M for AI infrastructure",
+            "source_url": "https://example.com/",
+            "source_type": "official_site",
+            "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+            "confidence": "high",
+            "evidence_kind": "fact",
+            "collected_at": "2026-06-11T13:49:56.546689Z"
+          }
+        ]
+      },
+      "revenue_potential": {
+        "dimension_name": "revenue_potential",
+        "weight": 0.2,
+        "raw_score": 75.0,
+        "adjusted_score": 75.0,
+        "confidence": "high",
+        "reasoning": "funding (1, +30); customer (2, +25); priority sector (+20) Raw: 75, adjusted: 75.0 (factor 1.00).",
+        "evidence_used": [
+          {
+            "claim": "Seed funding of $2M for AI infrastructure",
+            "source_url": "https://example.com/",
+            "source_type": "official_site",
+            "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+            "confidence": "high",
+            "evidence_kind": "fact",
+            "collected_at": "2026-06-11T13:49:56.546689Z"
+          }
+        ]
+      }
+    },
+    "confidence": "high",
+    "detected_gaps": [
+      "high_latency",
+      "computer_vision_need",
+      "healthcare_compliance_need"
+    ],
+    "recommended_motion_hint": "validate_manually",
+    "reasoning": "Total Score: 55.4/100 (confidence: high)\nRecommended motion: validate_manually\nDetected gaps: high_latency, computer_vision_need, healthcare_compliance_need\n\nBreakdown:\n  explicit_gap_taxonomy: raw=80.0, adjusted=24.0, weight=0.35, conf=low\n    reasoning: Gaps detected: 3 (high_latency, computer_vision_need, healthcare_compliance_need). Raw: 80, adjusted: 24.0 (factor 0.30).\n  vertical_alignment: raw=100.0, adjusted=100.0, weight=0.25, conf=high\n    reasoning: priority sector 'HealthTech' (+60); funding signals (1, +20); customers (2, +20) Raw: 100, adjusted: 100.0 (factor 1.00).\n  technical_maturity: raw=35.0, adjusted=35.0, weight=0.2, conf=high\n    reasoning: defensibility base (20 → 15); tech stack signals (4, +10); funding (+10) Raw: 35, adjusted: 35.0 (factor 1.00).\n  revenue_potential: raw=75.0, adjusted=75.0, weight=0.2, conf=high\n    reasoning: funding (1, +30); customer (2, +25); priority sector (+20) Raw: 75, adjusted: 75.0 (factor 1.00).\n\nMissing evidence:\n  - No evidence for dimension: explicit_gap_taxonomy",
+    "evidence_used": [
+      {
+        "claim": "Seed funding of $2M for AI infrastructure",
+        "source_url": "https://example.com/",
+        "source_type": "official_site",
+        "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+        "confidence": "high",
+        "evidence_kind": "fact",
+        "collected_at": "2026-06-11T13:49:56.546689Z"
+      },
+      {
+        "claim": "Seed funding of $2M for AI infrastructure",
+        "source_url": "https://example.com/",
+        "source_type": "official_site",
+        "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+        "confidence": "high",
+        "evidence_kind": "fact",
+        "collected_at": "2026-06-11T13:49:56.546689Z"
+      },
+      {
+        "claim": "Seed funding of $2M for AI infrastructure",
+        "source_url": "https://example.com/",
+        "source_type": "official_site",
+        "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+        "confidence": "high",
+        "evidence_kind": "fact",
+        "collected_at": "2026-06-11T13:49:56.546689Z"
+      }
+    ],
+    "missing_evidence": [
+      "No evidence for dimension: explicit_gap_taxonomy"
+    ]
+  },
+  "production_readiness_score": {
+    "production_readiness_score": 55.5,
+    "score_breakdown": {
+      "real_users_and_deployment": {
+        "dimension_name": "real_users_and_deployment",
+        "weight": 0.3,
+        "raw_score": 85.0,
+        "adjusted_score": 85.0,
+        "confidence": "high",
+        "reasoning": "customer (2, +25); funding (1, +20); ai_enabled (+15); production keywords (2, +15); diverse tech stack (+10) Raw: 85, adjusted: 85.0 (factor 1.00).",
+        "evidence_used": [
+          {
+            "claim": "Seed funding of $2M for AI infrastructure",
+            "source_url": "https://example.com/",
+            "source_type": "official_site",
+            "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+            "confidence": "high",
+            "evidence_kind": "fact",
+            "collected_at": "2026-06-11T13:49:56.546689Z"
+          }
+        ]
+      },
+      "scale_and_inference": {
+        "dimension_name": "scale_and_inference",
+        "weight": 0.3,
+        "raw_score": 90.0,
+        "adjusted_score": 90.0,
+        "confidence": "high",
+        "reasoning": "customer (2, +15); funding (1, +20); inference signals (2, +25); NVIDIA-compatible tech (2, +15); scale tech (2, +15) Raw: 90, adjusted: 90.0 (factor 1.00).",
+        "evidence_used": [
+          {
+            "claim": "Seed funding of $2M for AI infrastructure",
+            "source_url": "https://example.com/",
+            "source_type": "official_site",
+            "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+            "confidence": "high",
+            "evidence_kind": "fact",
+            "collected_at": "2026-06-11T13:49:56.546689Z"
+          }
+        ]
+      },
+      "privacy_and_governance": {
+        "dimension_name": "privacy_and_governance",
+        "weight": 0.2,
+        "raw_score": 50.0,
+        "adjusted_score": 15.0,
+        "confidence": "low",
+        "reasoning": "regulated sector 'HealthTech' (+35); containerization tech (+15) Raw: 50, adjusted: 15.0 (factor 0.30).",
+        "evidence_used": []
+      },
+      "data_infrastructure": {
+        "dimension_name": "data_infrastructure",
+        "weight": 0.2,
+        "raw_score": 0.0,
+        "adjusted_score": 0.0,
+        "confidence": "low",
+        "reasoning": " Raw: 0, adjusted: 0.0 (factor 0.30).",
+        "evidence_used": []
+      }
+    },
+    "confidence": "medium",
+    "reasoning": "Production AI Readiness: 55.5/100 (confidence: medium)\n\nBreakdown:\n  real_users_and_deployment: raw=85.0, adjusted=85.0, weight=0.3, conf=high\n    reasoning: customer (2, +25); funding (1, +20); ai_enabled (+15); production keywords (2, +15); diverse tech stack (+10) Raw: 85, adjusted: 85.0 (factor 1.00).\n  scale_and_inference: raw=90.0, adjusted=90.0, weight=0.3, conf=high\n    reasoning: customer (2, +15); funding (1, +20); inference signals (2, +25); NVIDIA-compatible tech (2, +15); scale tech (2, +15) Raw: 90, adjusted: 90.0 (factor 1.00).\n  privacy_and_governance: raw=50.0, adjusted=15.0, weight=0.2, conf=low\n    reasoning: regulated sector 'HealthTech' (+35); containerization tech (+15) Raw: 50, adjusted: 15.0 (factor 0.30).\n  data_infrastructure: raw=0.0, adjusted=0.0, weight=0.2, conf=low\n    reasoning:  Raw: 0, adjusted: 0.0 (factor 0.30).\n\nMissing evidence:\n  - No evidence for dimension: privacy_and_governance\n  - No evidence for dimension: data_infrastructure",
+    "evidence_used": [
+      {
+        "claim": "Seed funding of $2M for AI infrastructure",
+        "source_url": "https://example.com/",
+        "source_type": "official_site",
+        "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+        "confidence": "high",
+        "evidence_kind": "fact",
+        "collected_at": "2026-06-11T13:49:56.546689Z"
+      },
+      {
+        "claim": "Seed funding of $2M for AI infrastructure",
+        "source_url": "https://example.com/",
+        "source_type": "official_site",
+        "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+        "confidence": "high",
+        "evidence_kind": "fact",
+        "collected_at": "2026-06-11T13:49:56.546689Z"
+      }
+    ],
+    "missing_evidence": [
+      "No evidence for dimension: privacy_and_governance",
+      "No evidence for dimension: data_infrastructure"
+    ]
+  },
+  "composite_score": {
+    "startup_id": "Nexus AI Labs",
+    "composite_score": 44.4,
+    "defensibility_score": 20.4,
+    "inception_fit_score": 55.4,
+    "production_readiness_score": 55.5,
+    "classification_score": 50.0,
+    "confidence": "medium",
+    "confidence_penalty_applied": 0.0,
+    "missing_components": [],
+    "reasoning": "Composite score: 44.4/100 (confidence: medium)\n  defensibility (0.3): 20.4\n  inception_fit (0.25): 55.4\n  production_readiness (0.35): 55.5\n  classification (0.1): 50\n  confidence_penalty: 0.00"
+  },
+  "diagnosed_gaps": [
+    {
+      "gap": "external_api_dependency",
+      "detected": false,
+      "confidence": "low",
+      "evidence_tag": "hypothesis",
+      "reasoning": "No external API dependency signals.",
+      "evidence_used": []
+    },
+    {
+      "gap": "high_inference_cost",
+      "detected": false,
+      "confidence": "low",
+      "evidence_tag": "hypothesis",
+      "reasoning": "No inference cost signals.",
+      "evidence_used": []
+    },
+    {
+      "gap": "high_latency",
+      "detected": true,
+      "confidence": "high",
+      "evidence_tag": "fact",
+      "reasoning": "keyword matches (1); supporting evidence (2). Gap: high_latency.",
+      "evidence_used": [
+        {
+          "claim": "Computer vision models for real-time diagnostics",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Computer vision models for real-time diagnostics",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546683Z"
+        },
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ]
+    },
+    {
+      "gap": "agent_governance_gap",
+      "detected": false,
+      "confidence": "low",
+      "evidence_tag": "hypothesis",
+      "reasoning": "No agent governance gap detected.",
+      "evidence_used": []
+    },
+    {
+      "gap": "observability_gap",
+      "detected": true,
+      "confidence": "medium",
+      "evidence_tag": "inferred",
+      "reasoning": "observability: kw=0, has=False. Gap: observability_gap.",
+      "evidence_used": []
+    },
+    {
+      "gap": "model_evaluation_gap",
+      "detected": true,
+      "confidence": "low",
+      "evidence_tag": "inferred",
+      "reasoning": "AI-native startup with no evaluation signals (0). Gap: model_evaluation_gap.",
+      "evidence_used": []
+    },
+    {
+      "gap": "privacy_or_controlled_deployment_gap",
+      "detected": true,
+      "confidence": "medium",
+      "evidence_tag": "inferred",
+      "reasoning": "regulated sector: HealthTech; has deployment tech (mitigating). Gap: privacy_or_controlled_deployment_gap.",
+      "evidence_used": []
+    },
+    {
+      "gap": "slow_data_pipeline",
+      "detected": false,
+      "confidence": "low",
+      "evidence_tag": "hypothesis",
+      "reasoning": "No data pipeline signals.",
+      "evidence_used": []
+    },
+    {
+      "gap": "heavy_tabular_processing",
+      "detected": true,
+      "confidence": "low",
+      "evidence_tag": "hypothesis",
+      "reasoning": "supporting evidence (1). Gap: heavy_tabular_processing.",
+      "evidence_used": [
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ]
+    },
+    {
+      "gap": "voice_need",
+      "detected": true,
+      "confidence": "low",
+      "evidence_tag": "hypothesis",
+      "reasoning": "supporting evidence (1). Gap: voice_need.",
+      "evidence_used": [
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ]
+    },
+    {
+      "gap": "simulation_need",
+      "detected": true,
+      "confidence": "low",
+      "evidence_tag": "hypothesis",
+      "reasoning": "supporting evidence (1). Gap: simulation_need.",
+      "evidence_used": [
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ]
+    },
+    {
+      "gap": "computer_vision_need",
+      "detected": true,
+      "confidence": "high",
+      "evidence_tag": "fact",
+      "reasoning": "keyword matches (2); supporting evidence (2). Gap: computer_vision_need.",
+      "evidence_used": [
+        {
+          "claim": "Computer vision models for real-time diagnostics",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Computer vision models for real-time diagnostics",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546683Z"
+        },
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ]
+    },
+    {
+      "gap": "robotics_need",
+      "detected": true,
+      "confidence": "high",
+      "evidence_tag": "fact",
+      "reasoning": "keyword matches (1); supporting evidence (1). Gap: robotics_need.",
+      "evidence_used": [
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ]
+    },
+    {
+      "gap": "healthcare_compliance_need",
+      "detected": true,
+      "confidence": "high",
+      "evidence_tag": "fact",
+      "reasoning": "HealthTech sector; keyword matches (3). Gap: healthcare_compliance_need.",
+      "evidence_used": [
+        {
+          "claim": "Deep learning medical imaging platform in production",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Deep learning medical imaging platform in production",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546658Z"
+        }
+      ]
+    },
+    {
+      "gap": "ai_cybersecurity_need",
+      "detected": true,
+      "confidence": "low",
+      "evidence_tag": "hypothesis",
+      "reasoning": "supporting evidence (1). Gap: ai_cybersecurity_need.",
+      "evidence_used": [
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ]
+    }
+  ],
+  "nvidia_technology_candidates": [
+    {
+      "technology_name": "TensorRT-LLM",
+      "addresses_gap": "high_latency",
+      "justification": "TensorRT-LLM reduces latency through kernel fusion and quantization."
+    },
+    {
+      "technology_name": "Triton Inference Server",
+      "addresses_gap": "high_latency",
+      "justification": "Triton enables concurrent model execution and dynamic batching for low latency."
+    },
+    {
+      "technology_name": "NVIDIA NIM",
+      "addresses_gap": "high_latency",
+      "justification": "NIM offers pre-optimized inference endpoints with minimal overhead."
+    },
+    {
+      "technology_name": "NVIDIA AI Enterprise",
+      "addresses_gap": "observability_gap",
+      "justification": "AI Enterprise includes model monitoring and observability tooling for production."
+    },
+    {
+      "technology_name": "NVIDIA NeMo",
+      "addresses_gap": "model_evaluation_gap",
+      "justification": "NeMo provides evaluation harnesses for LLM benchmarking and testing."
+    },
+    {
+      "technology_name": "NVIDIA AI Enterprise",
+      "addresses_gap": "privacy_or_controlled_deployment_gap",
+      "justification": "AI Enterprise supports secure, on-premise deployments for regulated industries."
+    },
+    {
+      "technology_name": "NVIDIA NIM",
+      "addresses_gap": "privacy_or_controlled_deployment_gap",
+      "justification": "NIM can be deployed on-prem with full data sovereignty."
+    },
+    {
+      "technology_name": "NVIDIA RAPIDS",
+      "addresses_gap": "heavy_tabular_processing",
+      "justification": "RAPIDS accelerates tabular data processing and ML on GPU."
+    },
+    {
+      "technology_name": "cuML",
+      "addresses_gap": "heavy_tabular_processing",
+      "justification": "cuML provides GPU-accelerated implementations of common ML algorithms."
+    },
+    {
+      "technology_name": "NVIDIA Riva",
+      "addresses_gap": "voice_need",
+      "justification": "Riva provides GPU-accelerated speech-to-text and text-to-speech."
+    },
+    {
+      "technology_name": "NVIDIA NIM",
+      "addresses_gap": "voice_need",
+      "justification": "NIM includes optimized voice AI microservices for production."
+    },
+    {
+      "technology_name": "NVIDIA Omniverse",
+      "addresses_gap": "simulation_need",
+      "justification": "Omniverse enables physics-accurate simulation and digital twin creation."
+    },
+    {
+      "technology_name": "NVIDIA AI Enterprise",
+      "addresses_gap": "computer_vision_need",
+      "justification": "AI Enterprise includes TensorRT-optimized computer vision pipelines."
+    },
+    {
+      "technology_name": "NVIDIA TensorRT",
+      "addresses_gap": "computer_vision_need",
+      "justification": "TensorRT optimizes CV model inference for real-time applications."
+    },
+    {
+      "technology_name": "NVIDIA NIM",
+      "addresses_gap": "computer_vision_need",
+      "justification": "NIM provides pre-built CV inference microservices."
+    },
+    {
+      "technology_name": "NVIDIA Isaac",
+      "addresses_gap": "robotics_need",
+      "justification": "Isaac platform provides robotics simulation, training, and deployment."
+    },
+    {
+      "technology_name": "NVIDIA Omniverse",
+      "addresses_gap": "robotics_need",
+      "justification": "Omniverse enables photorealistic simulation for robotics training."
+    },
+    {
+      "technology_name": "NVIDIA Clara",
+      "addresses_gap": "healthcare_compliance_need",
+      "justification": "Clara provides healthcare-specific AI frameworks and compliance tooling."
+    },
+    {
+      "technology_name": "MONAI",
+      "addresses_gap": "healthcare_compliance_need",
+      "justification": "MONAI offers medical imaging AI with built-in compliance support."
+    },
+    {
+      "technology_name": "NVIDIA AI Enterprise",
+      "addresses_gap": "healthcare_compliance_need",
+      "justification": "AI Enterprise ensures HIPAA-compliant deployments for healthcare AI."
+    },
+    {
+      "technology_name": "NVIDIA Morpheus",
+      "addresses_gap": "ai_cybersecurity_need",
+      "justification": "Morpheus provides GPU-accelerated cybersecurity AI pipeline."
+    }
+  ],
+  "recommendations": [
+    {
+      "diagnosed_gap": "external_api_dependency",
+      "detected": false,
+      "recommended_nvidia_technologies": [],
+      "technical_justification": "",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a low-confidence hypothesis gap in 'external_api_dependency'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "low",
+      "implementation_complexity": "low",
+      "suggested_experiment": null,
+      "action": "monitor",
+      "next_action_for_nvidia_team": "Monitor startup for signals related to 'external_api_dependency'",
+      "evidence_used": [],
+      "missing_evidence": [],
+      "confidence": "low"
+    },
+    {
+      "diagnosed_gap": "high_inference_cost",
+      "detected": false,
+      "recommended_nvidia_technologies": [],
+      "technical_justification": "",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a low-confidence hypothesis gap in 'high_inference_cost'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "low",
+      "implementation_complexity": "low",
+      "suggested_experiment": null,
+      "action": "monitor",
+      "next_action_for_nvidia_team": "Monitor startup for signals related to 'high_inference_cost'",
+      "evidence_used": [],
+      "missing_evidence": [],
+      "confidence": "low"
+    },
+    {
+      "diagnosed_gap": "high_latency",
+      "detected": true,
+      "recommended_nvidia_technologies": [
+        "TensorRT-LLM",
+        "Triton Inference Server",
+        "NVIDIA NIM"
+      ],
+      "technical_justification": "Gap 'high_latency' was fact (confidence: high). Recommended technologies: TensorRT-LLM, Triton Inference Server, NVIDIA NIM. keyword matches (1); supporting evidence (2). Gap: high_latency.",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a high-confidence fact gap in 'high_latency'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "medium",
+      "implementation_complexity": "medium",
+      "suggested_experiment": null,
+      "action": "validate_manually",
+      "next_action_for_nvidia_team": "Manually validate gap 'high_latency' — current evidence is fact with high confidence",
+      "evidence_used": [
+        {
+          "claim": "Computer vision models for real-time diagnostics",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Computer vision models for real-time diagnostics",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546683Z"
+        },
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ],
+      "missing_evidence": [],
+      "confidence": "high"
+    },
+    {
+      "diagnosed_gap": "agent_governance_gap",
+      "detected": false,
+      "recommended_nvidia_technologies": [],
+      "technical_justification": "",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a low-confidence hypothesis gap in 'agent_governance_gap'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "low",
+      "implementation_complexity": "low",
+      "suggested_experiment": null,
+      "action": "monitor",
+      "next_action_for_nvidia_team": "Monitor startup for signals related to 'agent_governance_gap'",
+      "evidence_used": [],
+      "missing_evidence": [],
+      "confidence": "low"
+    },
+    {
+      "diagnosed_gap": "observability_gap",
+      "detected": true,
+      "recommended_nvidia_technologies": [
+        "NVIDIA AI Enterprise"
+      ],
+      "technical_justification": "Gap 'observability_gap' was inferred (confidence: medium). Recommended technologies: NVIDIA AI Enterprise. observability: kw=0, has=False. Gap: observability_gap.",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a medium-confidence inferred gap in 'observability_gap'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "low",
+      "implementation_complexity": "low",
+      "suggested_experiment": null,
+      "action": "monitor",
+      "next_action_for_nvidia_team": "Monitor startup for signals related to 'observability_gap'",
+      "evidence_used": [],
+      "missing_evidence": [
+        "Gap 'observability_gap' detected by inference only — collect direct evidence to confirm."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "diagnosed_gap": "model_evaluation_gap",
+      "detected": true,
+      "recommended_nvidia_technologies": [
+        "NVIDIA NeMo"
+      ],
+      "technical_justification": "Gap 'model_evaluation_gap' was inferred (confidence: low). Recommended technologies: NVIDIA NeMo. AI-native startup with no evaluation signals (0). Gap: model_evaluation_gap.",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a low-confidence inferred gap in 'model_evaluation_gap'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "low",
+      "implementation_complexity": "medium",
+      "suggested_experiment": null,
+      "action": "validate_manually",
+      "next_action_for_nvidia_team": "Manually validate gap 'model_evaluation_gap' — current evidence is inferred with low confidence",
+      "evidence_used": [],
+      "missing_evidence": [
+        "Gap 'model_evaluation_gap' detected by inference only — collect direct evidence to confirm."
+      ],
+      "confidence": "low"
+    },
+    {
+      "diagnosed_gap": "privacy_or_controlled_deployment_gap",
+      "detected": true,
+      "recommended_nvidia_technologies": [
+        "NVIDIA AI Enterprise",
+        "NVIDIA NIM"
+      ],
+      "technical_justification": "Gap 'privacy_or_controlled_deployment_gap' was inferred (confidence: medium). Recommended technologies: NVIDIA AI Enterprise, NVIDIA NIM. regulated sector: HealthTech; has deployment tech (mitigating). Gap: privacy_or_controlled_deployment_gap.",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a medium-confidence inferred gap in 'privacy_or_controlled_deployment_gap'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "low",
+      "implementation_complexity": "low",
+      "suggested_experiment": null,
+      "action": "monitor",
+      "next_action_for_nvidia_team": "Monitor startup for signals related to 'privacy_or_controlled_deployment_gap'",
+      "evidence_used": [],
+      "missing_evidence": [
+        "Gap 'privacy_or_controlled_deployment_gap' detected by inference only — collect direct evidence to confirm."
+      ],
+      "confidence": "medium"
+    },
+    {
+      "diagnosed_gap": "slow_data_pipeline",
+      "detected": false,
+      "recommended_nvidia_technologies": [],
+      "technical_justification": "",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a low-confidence hypothesis gap in 'slow_data_pipeline'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "low",
+      "implementation_complexity": "low",
+      "suggested_experiment": null,
+      "action": "monitor",
+      "next_action_for_nvidia_team": "Monitor startup for signals related to 'slow_data_pipeline'",
+      "evidence_used": [],
+      "missing_evidence": [],
+      "confidence": "low"
+    },
+    {
+      "diagnosed_gap": "heavy_tabular_processing",
+      "detected": true,
+      "recommended_nvidia_technologies": [
+        "NVIDIA RAPIDS",
+        "cuML"
+      ],
+      "technical_justification": "Gap 'heavy_tabular_processing' was hypothesis (confidence: low). Recommended technologies: NVIDIA RAPIDS, cuML. supporting evidence (1). Gap: heavy_tabular_processing.",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a low-confidence hypothesis gap in 'heavy_tabular_processing'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "low",
+      "implementation_complexity": "medium",
+      "suggested_experiment": null,
+      "action": "validate_manually",
+      "next_action_for_nvidia_team": "Manually validate gap 'heavy_tabular_processing' — current evidence is hypothesis with low confidence",
+      "evidence_used": [
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ],
+      "missing_evidence": [],
+      "confidence": "low"
+    },
+    {
+      "diagnosed_gap": "voice_need",
+      "detected": true,
+      "recommended_nvidia_technologies": [
+        "NVIDIA Riva",
+        "NVIDIA NIM"
+      ],
+      "technical_justification": "Gap 'voice_need' was hypothesis (confidence: low). Recommended technologies: NVIDIA Riva, NVIDIA NIM. supporting evidence (1). Gap: voice_need.",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a low-confidence hypothesis gap in 'voice_need'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "low",
+      "implementation_complexity": "medium",
+      "suggested_experiment": null,
+      "action": "validate_manually",
+      "next_action_for_nvidia_team": "Manually validate gap 'voice_need' — current evidence is hypothesis with low confidence",
+      "evidence_used": [
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ],
+      "missing_evidence": [],
+      "confidence": "low"
+    },
+    {
+      "diagnosed_gap": "simulation_need",
+      "detected": true,
+      "recommended_nvidia_technologies": [
+        "NVIDIA Omniverse"
+      ],
+      "technical_justification": "Gap 'simulation_need' was hypothesis (confidence: low). Recommended technologies: NVIDIA Omniverse. supporting evidence (1). Gap: simulation_need.",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a low-confidence hypothesis gap in 'simulation_need'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "low",
+      "implementation_complexity": "low",
+      "suggested_experiment": null,
+      "action": "validate_manually",
+      "next_action_for_nvidia_team": "Manually validate gap 'simulation_need' — current evidence is hypothesis with low confidence",
+      "evidence_used": [
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ],
+      "missing_evidence": [],
+      "confidence": "low"
+    },
+    {
+      "diagnosed_gap": "computer_vision_need",
+      "detected": true,
+      "recommended_nvidia_technologies": [
+        "NVIDIA AI Enterprise",
+        "NVIDIA TensorRT",
+        "NVIDIA NIM"
+      ],
+      "technical_justification": "Gap 'computer_vision_need' was fact (confidence: high). Recommended technologies: NVIDIA AI Enterprise, NVIDIA TensorRT, NVIDIA NIM. keyword matches (2); supporting evidence (2). Gap: computer_vision_need.",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a high-confidence fact gap in 'computer_vision_need'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "medium",
+      "implementation_complexity": "medium",
+      "suggested_experiment": null,
+      "action": "validate_manually",
+      "next_action_for_nvidia_team": "Manually validate gap 'computer_vision_need' — current evidence is fact with high confidence",
+      "evidence_used": [
+        {
+          "claim": "Computer vision models for real-time diagnostics",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Computer vision models for real-time diagnostics",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546683Z"
+        },
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ],
+      "missing_evidence": [],
+      "confidence": "high"
+    },
+    {
+      "diagnosed_gap": "robotics_need",
+      "detected": true,
+      "recommended_nvidia_technologies": [
+        "NVIDIA Isaac",
+        "NVIDIA Omniverse"
+      ],
+      "technical_justification": "Gap 'robotics_need' was fact (confidence: high). Recommended technologies: NVIDIA Isaac, NVIDIA Omniverse. keyword matches (1); supporting evidence (1). Gap: robotics_need.",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a high-confidence fact gap in 'robotics_need'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "medium",
+      "implementation_complexity": "low",
+      "suggested_experiment": null,
+      "action": "validate_manually",
+      "next_action_for_nvidia_team": "Manually validate gap 'robotics_need' — current evidence is fact with high confidence",
+      "evidence_used": [
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ],
+      "missing_evidence": [],
+      "confidence": "high"
+    },
+    {
+      "diagnosed_gap": "healthcare_compliance_need",
+      "detected": true,
+      "recommended_nvidia_technologies": [
+        "NVIDIA Clara",
+        "MONAI",
+        "NVIDIA AI Enterprise"
+      ],
+      "technical_justification": "Gap 'healthcare_compliance_need' was fact (confidence: high). Recommended technologies: NVIDIA Clara, MONAI, NVIDIA AI Enterprise. HealthTech sector; keyword matches (3). Gap: healthcare_compliance_need.",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a high-confidence fact gap in 'healthcare_compliance_need'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "medium",
+      "implementation_complexity": "medium",
+      "suggested_experiment": null,
+      "action": "validate_manually",
+      "next_action_for_nvidia_team": "Manually validate gap 'healthcare_compliance_need' — current evidence is fact with high confidence",
+      "evidence_used": [
+        {
+          "claim": "Deep learning medical imaging platform in production",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Deep learning medical imaging platform in production",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546658Z"
+        }
+      ],
+      "missing_evidence": [],
+      "confidence": "high"
+    },
+    {
+      "diagnosed_gap": "ai_cybersecurity_need",
+      "detected": true,
+      "recommended_nvidia_technologies": [
+        "NVIDIA Morpheus"
+      ],
+      "technical_justification": "Gap 'ai_cybersecurity_need' was hypothesis (confidence: low). Recommended technologies: NVIDIA Morpheus. supporting evidence (1). Gap: ai_cybersecurity_need.",
+      "business_justification": "Startup Nexus AI Labs (HealthTech, ai_enabled) presents a low-confidence hypothesis gap in 'ai_cybersecurity_need'. NVIDIA recommended motion: monitor_and_nurture. Addressing this gap creates opportunity for NVIDIA technology adoption.",
+      "priority": "low",
+      "implementation_complexity": "low",
+      "suggested_experiment": null,
+      "action": "validate_manually",
+      "next_action_for_nvidia_team": "Manually validate gap 'ai_cybersecurity_need' — current evidence is hypothesis with low confidence",
+      "evidence_used": [
+        {
+          "claim": "Seed funding of $2M for AI infrastructure",
+          "source_url": "https://example.com/",
+          "source_type": "official_site",
+          "quote_or_evidence": "Seed funding of $2M for AI infrastructure",
+          "confidence": "high",
+          "evidence_kind": "fact",
+          "collected_at": "2026-06-11T13:49:56.546689Z"
+        }
+      ],
+      "missing_evidence": [],
+      "confidence": "low"
+    }
+  ],
+  "evidence_used": [
+    {
+      "claim": "Seed funding of $2M for AI infrastructure",
+      "tag": "fact",
+      "confidence": "high",
+      "source_url": "https://example.com/",
+      "source_type": "official_site"
+    },
+    {
+      "claim": "Computer vision models for real-time diagnostics",
+      "tag": "fact",
+      "confidence": "high",
+      "source_url": "https://example.com/",
+      "source_type": "official_site"
+    },
+    {
+      "claim": "Deep learning medical imaging platform in production",
+      "tag": "fact",
+      "confidence": "high",
+      "source_url": "https://example.com/",
+      "source_type": "official_site"
+    },
+    {
+      "claim": "Production deployment in major hospital networks",
+      "tag": "fact",
+      "confidence": "high",
+      "source_url": "https://example.com/",
+      "source_type": "official_site"
+    },
+    {
+      "claim": "PyTorch and GPU inference pipeline deployed",
+      "tag": "fact",
+      "confidence": "high",
+      "source_url": "https://example.com/",
+      "source_type": "official_site"
+    }
+  ],
+  "missing_evidence": [
+    "No evidence for dimension: ai_core_dependency",
+    "No evidence for dimension: proprietary_data",
+    "No evidence for dimension: workflow_integration",
+    "No evidence for dimension: replication_complexity",
+    "No evidence for dimension: nvidia_fit_potential",
+    "No evidence for dimension: explicit_gap_taxonomy",
+    "No evidence for dimension: privacy_and_governance",
+    "No evidence for dimension: data_infrastructure",
+    "Gap 'observability_gap' detected by inference only — collect direct evidence to confirm.",
+    "Gap 'model_evaluation_gap' detected by inference only — collect direct evidence to confirm.",
+    "Gap 'privacy_or_controlled_deployment_gap' detected by inference only — collect direct evidence to confirm.",
+    "Gap 'observability_gap' detected by inference only — collect direct evidence to confirm.",
+    "Gap 'model_evaluation_gap' detected by inference only — collect direct evidence to confirm.",
+    "Gap 'privacy_or_controlled_deployment_gap' detected by inference only — collect direct evidence to confirm.",
+    "Gap 'observability_gap' detected by inference only — collect direct evidence to confirm.",
+    "Gap 'model_evaluation_gap' detected by inference only — collect direct evidence to confirm.",
+    "Gap 'privacy_or_controlled_deployment_gap' detected by inference only — collect direct evidence to confirm."
+  ],
+  "uncertainties": [
+    {
+      "description": "Gap 'external_api_dependency' detected as hypothesis",
+      "source": "gap_diagnosis",
+      "impact": "Recommendation reliability is reduced; collect direct evidence to confirm."
+    },
+    {
+      "description": "Gap 'high_inference_cost' detected as hypothesis",
+      "source": "gap_diagnosis",
+      "impact": "Recommendation reliability is reduced; collect direct evidence to confirm."
+    },
+    {
+      "description": "Gap 'agent_governance_gap' detected as hypothesis",
+      "source": "gap_diagnosis",
+      "impact": "Recommendation reliability is reduced; collect direct evidence to confirm."
+    },
+    {
+      "description": "Gap 'observability_gap' detected as inferred",
+      "source": "gap_diagnosis",
+      "impact": "Recommendation reliability is reduced; collect direct evidence to confirm."
+    },
+    {
+      "description": "Gap 'model_evaluation_gap' detected as inferred",
+      "source": "gap_diagnosis",
+      "impact": "Recommendation reliability is reduced; collect direct evidence to confirm."
+    },
+    {
+      "description": "Gap 'privacy_or_controlled_deployment_gap' detected as inferred",
+      "source": "gap_diagnosis",
+      "impact": "Recommendation reliability is reduced; collect direct evidence to confirm."
+    },
+    {
+      "description": "Gap 'slow_data_pipeline' detected as hypothesis",
+      "source": "gap_diagnosis",
+      "impact": "Recommendation reliability is reduced; collect direct evidence to confirm."
+    },
+    {
+      "description": "Gap 'heavy_tabular_processing' detected as hypothesis",
+      "source": "gap_diagnosis",
+      "impact": "Recommendation reliability is reduced; collect direct evidence to confirm."
+    },
+    {
+      "description": "Gap 'voice_need' detected as hypothesis",
+      "source": "gap_diagnosis",
+      "impact": "Recommendation reliability is reduced; collect direct evidence to confirm."
+    },
+    {
+      "description": "Gap 'simulation_need' detected as hypothesis",
+      "source": "gap_diagnosis",
+      "impact": "Recommendation reliability is reduced; collect direct evidence to confirm."
+    },
+    {
+      "description": "Gap 'ai_cybersecurity_need' detected as hypothesis",
+      "source": "gap_diagnosis",
+      "impact": "Recommendation reliability is reduced; collect direct evidence to confirm."
+    }
+  ],
+  "next_action_for_nvidia_team": "Monitor startup — current motion: monitor_and_nurture",
+  "reasoning": "Pipeline complete for Nexus AI Labs\n  Defensibility: 20.4/100 (medium)\n  Inception Fit: 55.4/100 (high)\n  Production Readiness: 55.5/100 (medium)\n  Composite: 44.4/100 (medium)\n  Motion: monitor_and_nurture\n  Gaps detected: 11\n  Recommendations: 15\n  Missing evidence items: 17",
+  "packed_rag_contexts": [
+    {
+      "chunk_id": "nim_000",
+      "source_id": "nim",
+      "title": "NVIDIA NIM",
+      "content": "## Product\nNVIDIA NIM",
+      "product": "NVIDIA NIM",
+      "gap_types": [
+        "external_api_dependency",
+        "high_inference_cost",
+        "high_latency"
+      ],
+      "url": "https://docs.nvidia.com/nim/latest/",
+      "relevance_score": 0.11,
+      "rerank_score": 0.11,
+      "matched_gap": null,
+      "matched_technology": null,
+      "version": "1.0",
+      "valid_from": "2026-06-10T00:00:00Z",
+      "valid_until": null,
+      "freshness_policy": "weekly",
+      "stale_after_days": 7,
+      "is_active": true,
+      "deprecated_at": null,
+      "superseded_by": null
+    },
+    {
+      "chunk_id": "nim_001",
+      "source_id": "nim",
+      "title": "NVIDIA NIM",
+      "content": "## Gaps Addressed\n- external_api_dependency\n- high_inference_cost\n- high_latency",
+      "product": "NVIDIA NIM",
+      "gap_types": [
+        "external_api_dependency",
+        "high_inference_cost",
+        "high_latency"
+      ],
+      "url": "https://docs.nvidia.com/nim/latest/",
+      "relevance_score": 0.11,
+      "rerank_score": 0.11,
+      "matched_gap": null,
+      "matched_technology": null,
+      "version": "1.0",
+      "valid_from": "2026-06-10T00:00:00Z",
+      "valid_until": null,
+      "freshness_policy": "weekly",
+      "stale_after_days": 7,
+      "is_active": true,
+      "deprecated_at": null,
+      "superseded_by": null
+    }
+  ],
+  "supporting_nvidia_context": [
+    {
+      "gap_type": "_unknown",
+      "technology": "_unknown",
+      "contexts": [
+        {
+          "chunk_id": "nim_000",
+          "source_id": "nim",
+          "title": "NVIDIA NIM",
+          "content": "## Product\nNVIDIA NIM",
+          "product": "NVIDIA NIM",
+          "gap_types": [
+            "external_api_dependency",
+            "high_inference_cost",
+            "high_latency"
+          ],
+          "url": "https://docs.nvidia.com/nim/latest/",
+          "relevance_score": 0.11,
+          "rerank_score": 0.11,
+          "matched_gap": null,
+          "matched_technology": null,
+          "version": "1.0",
+          "valid_from": "2026-06-10T00:00:00Z",
+          "valid_until": null,
+          "freshness_policy": "weekly",
+          "stale_after_days": 7,
+          "is_active": true,
+          "deprecated_at": null,
+          "superseded_by": null
+        },
+        {
+          "chunk_id": "nim_001",
+          "source_id": "nim",
+          "title": "NVIDIA NIM",
+          "content": "## Gaps Addressed\n- external_api_dependency\n- high_inference_cost\n- high_latency",
+          "product": "NVIDIA NIM",
+          "gap_types": [
+            "external_api_dependency",
+            "high_inference_cost",
+            "high_latency"
+          ],
+          "url": "https://docs.nvidia.com/nim/latest/",
+          "relevance_score": 0.11,
+          "rerank_score": 0.11,
+          "matched_gap": null,
+          "matched_technology": null,
+          "version": "1.0",
+          "valid_from": "2026-06-10T00:00:00Z",
+          "valid_until": null,
+          "freshness_policy": "weekly",
+          "stale_after_days": 7,
+          "is_active": true,
+          "deprecated_at": null,
+          "superseded_by": null
+        }
+      ],
+      "total_available": 2,
+      "total_dropped": 0
+    }
+  ],
+  "dropped_contexts_debug": [
+    {
+      "chunk_id": "nim_002",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "tensorrt_llm_000",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "tensorrt_llm_001",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "tensorrt_llm_002",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "triton_000",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "triton_001",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "triton_002",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "rapids_000",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "rapids_001",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "rapids_002",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "rapids_003",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "omniverse_000",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "omniverse_001",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "omniverse_002",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "isaac_000",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "isaac_001",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "isaac_002",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "clara_monai_000",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "clara_monai_001",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "clara_monai_002",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "morpheus_000",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "morpheus_001",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "morpheus_002",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "riva_000",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.02
+    },
+    {
+      "chunk_id": "riva_001",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.02
+    },
+    {
+      "chunk_id": "riva_002",
+      "reason": "exceeded_per_technology (max 2)",
+      "rerank_score": 0.02
+    },
+    {
+      "chunk_id": "tensorrt_llm_000",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "tensorrt_llm_001",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "tensorrt_llm_002",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "triton_000",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "triton_001",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "triton_002",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "rapids_000",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "rapids_001",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "rapids_002",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "rapids_003",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "omniverse_000",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "omniverse_001",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "omniverse_002",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "isaac_000",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "isaac_001",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "isaac_002",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "clara_monai_000",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "clara_monai_001",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "clara_monai_002",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "morpheus_000",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "morpheus_001",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "morpheus_002",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.11
+    },
+    {
+      "chunk_id": "riva_000",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.02
+    },
+    {
+      "chunk_id": "riva_001",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.02
+    },
+    {
+      "chunk_id": "riva_002",
+      "reason": "exceeded_per_gap (max 3)",
+      "rerank_score": 0.02
+    }
+  ]
+}

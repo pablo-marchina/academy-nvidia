@@ -180,6 +180,52 @@ Important variables:
 - `LANGSMITH_API_KEY`
 - `LANGSMITH_PROJECT`
 
+## Running the CLI Demo
+
+The project includes an end-to-end CLI demo that runs the full pipeline on a
+sample startup and generates a Startup Action Brief.
+
+### Basic demo
+
+```bash
+python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json
+```
+
+### Offline mode (no Qdrant, no external deps)
+
+```bash
+python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json --offline
+```
+
+### With local RAG (InMemoryVectorStore)
+
+```bash
+python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json --use-rag --rag-backend local
+```
+
+### With answer quality evaluation
+
+```bash
+python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json --run-answer-quality-eval
+```
+
+### Makefile targets
+
+```bash
+make demo-cli           # basic demo
+make demo-cli-offline   # offline mode
+make demo-cli-rag       # with local RAG
+```
+
+### Outputs
+
+All files are written to `data/demo_runs/latest/`:
+
+- `startup_action_brief.md` — Markdown brief
+- `startup_action_brief.json` — JSON brief
+- `demo_run_report.json` — run metadata and timing
+- `answer_quality_eval.json` — optional quality evaluation
+
 ## Running Tests
 
 ```bash
@@ -246,10 +292,59 @@ python scripts/check_docs_closure.py
 
 ## Running the API
 
-The API scaffold is intentionally minimal at this stage. Once dependencies are installed, run:
+The project includes a minimal FastAPI demo API that exposes the pipeline, brief generation, and answer quality evaluation via HTTP endpoints.
+
+### Start the API
 
 ```bash
-uvicorn src.main:app --reload
+# Production mode
+uvicorn src.api.main:app
+
+# Development mode with hot reload
+uvicorn src.api.main:app --reload
+```
+
+Or via Makefile:
+
+```bash
+make api         # production
+make api-dev     # development with reload
+```
+
+### Available endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Health check |
+| `GET` | `/version` | Project version info |
+| `GET` | `/rag/status` | RAG backend configuration and Qdrant availability |
+| `POST` | `/brief` | Generate a Startup Action Brief |
+| `POST` | `/brief/evaluate` | Evaluate brief answer quality (PASS/WARN/FAIL) |
+| `GET` | `/demo/artifacts` | List generated demo artifacts |
+
+### Example request
+
+```bash
+curl -X POST http://localhost:8000/brief \
+  -H "Content-Type: application/json" \
+  -d '{
+    "startup_name": "Nexus AI Labs",
+    "profile": {"sector": "HealthTech", "description": "AI healthcare platform"},
+    "evidence": [{"claim": "Deep learning in production", "confidence": "high"}],
+    "offline": true
+  }'
+```
+
+### Swagger UI
+
+Open http://localhost:8000/docs in your browser.
+
+### API tests
+
+```bash
+make api-test
+# or
+pytest tests/integration/test_api_demo.py -v
 ```
 
 ## Using the Obsidian Vault

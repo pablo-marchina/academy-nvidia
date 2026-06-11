@@ -42,7 +42,9 @@
 | Regression Dashboard | `tests/unit/test_regression_dashboard.py` | 14 | ✅ |
 | Answer Quality Eval | `tests/evals/test_answer_quality_golden.py` | 9 | ✅ |
 | Optional LLM Judge | `tests/unit/test_llm_judge_adapter.py` | 4 | ✅ |
-| **Total** | **42 arquivos** | **478** | **466 pass, 12 skip** |
+| CLI Demo Integration (Epic 24) | `tests/integration/test_cli_demo.py` | 6 | ⏭️ (integration) |
+| API Demo Integration (Epic 25) | `tests/integration/test_api_demo.py` | 9 | ⏭️ (integration) |
+| **Total** | **44 arquivos** | **493** | **466 pass, 27 skip** |
 
 ## Cobertura por módulo
 

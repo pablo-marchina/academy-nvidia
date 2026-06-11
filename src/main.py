@@ -1,12 +1,5 @@
-"""Minimal FastAPI application scaffold."""
+"""Re-export the API app from src/api/main.py for backward compatibility."""
 
-from fastapi import FastAPI
+from src.api.main import app
 
-app = FastAPI(title="NVIDIA Startup AI Radar")
-
-
-@app.get("/health")
-def healthcheck() -> dict[str, str]:
-    """Basic health endpoint for local validation."""
-
-    return {"status": "ok"}
+__all__ = ["app"]

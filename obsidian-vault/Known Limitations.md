@@ -34,3 +34,16 @@
 - Optional LLM judge reports are experimental and informational only. Epic 23.2
   implements a deterministic offline null provider, not a semantic model or real
   provider integration.
+- CLI demo uses a fictional startup sample input — not a real startup.
+- CLI demo answer quality eval uses a generic case, not golden cases.
+- CLI demo requires a local corpus (`data/nvidia_corpus/`) for RAG to provide context.
+- FastAPI API is local/dev only — no authentication, no rate limiting, no cloud deployment.
+- API pipeline runs synchronously (may block for several seconds per request).
+- POST /brief with RAG enabled and no corpus still succeeds but returns `warnings`.
+
+# API (Epic 25)
+
+- No authentication — local/dev only.
+- Pipeline runs synchronously — may block for several seconds per request.
+- Qdrant status checks connectivity but not data freshness.
+- GET /demo/artifacts returns empty list when `data/demo_runs/` does not exist.
