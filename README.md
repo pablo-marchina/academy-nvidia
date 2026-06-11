@@ -36,6 +36,7 @@ How can NVIDIA identify, attract, and nurture Brazilian AI-native startups in a 
 16. **Source Sync** Allowlist-based download of NVIDIA documentation to staging with hash comparison, robots.txt verification, rate limiting, and optional promotion to the local corpus.
 17. **Corpus Freshness & Versioning** Local lifecycle policy with source versions, active/deprecated flags, stale/expired audit, and default retrieval filtering for active non-expired corpus chunks.
 18. **Scheduled Corpus Maintenance** Manual and scheduled-safe workflow that runs source sync dry-run, freshness audit, Qdrant ingest dry-run, optional real ingestion, RAG evals, golden evals, and artifact reports.
+19. **Regression Dashboard** Local Markdown/JSON dashboard consolidating ingestion, freshness, RAG evals, golden evals, Action Brief checks, warnings, and regressions for GitHub Actions summaries.
 
 See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [docs/02_architecture.md](docs/02_architecture.md) for the architectural flow.
 
@@ -70,10 +71,10 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `src/rag/` — Product RAG ingestion, lexical + semantic + hybrid retrieval, embeddings, vector store, playbook retriever, **deterministic reranking, context packing, Qdrant persistent vector store**
 - `src/evaluation/` — Offline RAG evaluation (golden queries, metrics, quality gates, multi-mode comparison, **reranking/packed**)
 - `src/config/` — settings via pydantic-settings
-- `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit, corpus maintenance orchestration
+- `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit, corpus maintenance orchestration, regression dashboard generation
 
 ### Testing
-- 448 tests (436 passing + 12 skippable integration) across 39 test files
+- 457 tests (445 passing + 12 skippable integration) across 40 test files
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -97,6 +98,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - Corpus Freshness Audit: 11 tests (stale, expired, deprecated, superseded, missing metadata, duplicate active versions, fail flags, version promotion, retrieval/vector filters)
 - Check Scope: 7 tests (sensitive changes require docs, override flag, contract detection)
 - Check Docs Closure: 6 tests (plan, ROADMAP, EVALS, Obsidian checks)
+- Regression Dashboard: 6 tests (PASS/WARN/FAIL, missing reports, Markdown sections, JSON fields)
 
 ## Stack
 
@@ -199,6 +201,7 @@ make rag-eval    # RAG evaluation tests
 make corpus-maintenance-dry-run  # sync dry-run + freshness audit + ingest dry-run
 make corpus-maintenance-evals    # safe maintenance + RAG/golden evals
 make corpus-maintenance-ingest   # explicit real Qdrant ingestion path
+make regression-dashboard  # build local Markdown/JSON regression dashboard
 ```
 
 ## CI/CD
@@ -214,7 +217,10 @@ Corpus maintenance has a separate workflow at `.github/workflows/corpus-maintena
 It supports manual `workflow_dispatch` and a safe weekly schedule. Real Qdrant ingestion
 is disabled by default and requires `run_ingestion=true`; source promotion is also
 disabled by default and requires `promote_sources=true`. Reports are uploaded as the
-`corpus-maintenance-reports` artifact.
+`corpus-maintenance-reports` artifact. The workflow also builds the regression dashboard,
+writes `latest_dashboard.md` to the GitHub Actions Job Summary, uploads
+`latest_dashboard.md` and `latest_dashboard.json` as artifacts, and fails only when the
+consolidated dashboard status is `FAIL` (not for `WARN`).
 
 Pre-commit hooks are available (install with `pre-commit install`):
 
@@ -277,6 +283,7 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - RAG evaluation multi-mode comparison uses `MockEmbeddingProvider` by default — real semantic quality requires `sentence-transformers`.
 - Qdrant ingestion with the default `sentence-transformers/all-MiniLM-L6-v2` model uses 384-dimensional vectors, so `QDRANT_VECTOR_SIZE` must remain `384` for that collection.
 - Corpus is local and allowlist-backed in `data/nvidia_corpus/`; scheduled maintenance is safe by default and does not promote sources or run real ingestion unless explicitly requested in a manual workflow run.
+- Regression dashboard quality is limited by the reports available in the run; missing reports are surfaced as `WARN`, and JUnit-based eval reports expose pass/fail and failed cases rather than full retrieval metrics.
 - Relevance scoring in lexical mode is keyword-match-based; semantic mode uses cosine similarity; reranking uses a deterministic composite formula (no cross-encoder).
 - Vector store is in-memory only (no persistence across sessions — Qdrant-ready for production; optional QdrantStore adapter available in Epic 15).
 - Context packing uses configurable limits (per-tech=2, per-gap=3, global=5) — may drop relevant contexts in edge cases.

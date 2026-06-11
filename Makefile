@@ -1,4 +1,4 @@
-.PHONY: test lint format-check typecheck validate rag-eval ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest
+.PHONY: test lint format-check typecheck validate rag-eval ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard
 
 test:
 	python -m pytest -m "not integration" --tb=short
@@ -39,3 +39,6 @@ corpus-maintenance-evals:
 
 corpus-maintenance-ingest:
 	python scripts/run_corpus_maintenance.py --run-sync --run-ingestion --run-evals --no-promote-sources --no-recreate-collection --no-fail-on-stale --fail-on-expired
+
+regression-dashboard:
+	python scripts/build_regression_dashboard.py

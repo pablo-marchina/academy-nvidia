@@ -93,10 +93,30 @@ jobs:
         if: ${{ always() && github.event_name == 'workflow_dispatch' && (inputs.run_ingestion == true || inputs.run_ingestion == 'true') }}
         run: docker compose down
 
+      - name: Build regression dashboard
+        if: always()
+        run: python scripts/build_regression_dashboard.py --reports-dir "${REPORTS_DIR}" --no-fail-on-status
+
+      - name: Write regression dashboard to job summary
+        if: always()
+        run: |
+          if [ -f data/regression_reports/latest_dashboard.md ]; then
+            cat data/regression_reports/latest_dashboard.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Regression dashboard was not generated." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Upload corpus maintenance reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: corpus-maintenance-reports
-          path: ${{ env.REPORTS_DIR }}
+          path: |
+            ${{ env.REPORTS_DIR }}
+            data/regression_reports/latest_dashboard.md
+            data/regression_reports/latest_dashboard.json
           if-no-files-found: warn
+
+      - name: Fail on regression dashboard FAIL status
+        if: always()
+        run: python -c "import json, pathlib, sys; path = pathlib.Path('data/regression_reports/latest_dashboard.json'); data = json.loads(path.read_text(encoding='utf-8')) if path.is_file() else {'status': 'FAIL'}; status = data.get('status'); print(f'Regression dashboard status: {status}'); sys.exit(1 if status == 'FAIL' else 0)"

@@ -39,7 +39,8 @@
 | Corpus Freshness Audit | `tests/unit/test_corpus_freshness_audit.py` | 11 | ✅ |
 | Check Scope | `tests/unit/test_check_scope.py` | 7 | ✅ |
 | Check Docs Closure | `tests/unit/test_check_docs_closure.py` | 7 | ✅ |
-| **Total** | **39 arquivos** | **451** | **439 pass, 12 skip** |
+| Regression Dashboard | `tests/unit/test_regression_dashboard.py` | 6 | ✅ |
+| **Total** | **40 arquivos** | **457** | **445 pass, 12 skip** |
 
 ## Cobertura por módulo
 
@@ -71,6 +72,7 @@
 | `interface/` (1 file) | ❌ STUB | ❌ | 0 |
 | `scripts/check_scope.py` | ✅ REAL | ✅ | 7 |
 | `scripts/check_docs_closure.py` | ✅ REAL | ✅ | 7 |
+| `scripts/build_regression_dashboard.py` | ✅ REAL | ✅ | 6 |
 
 ## Lacunas de cobertura
 
@@ -114,6 +116,7 @@
 | Ingest NVIDIA Corpus | 17 tests (hash, CLI, dry-run, ingest in-memory, payload, report) | ✅ |
 | Qdrant Corpus Ingestion | 3 tests (ingest, recreate, idempotence) | ⏭️ skippable |
 | Corpus Freshness Audit | 11 tests (stale, expired, deprecated, superseded, missing metadata, duplicate active versions, fail flags, version promotion, retrieval/vector filters) | ✅ |
+| Regression Dashboard | 6 tests (clean PASS, stale WARN, validation_errors FAIL, missing reports WARN, Markdown sections, JSON fields) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
 
@@ -150,6 +153,7 @@ Estes critérios avaliam a **qualidade do processo de desenvolvimento assistido 
 | Docs closure | `python scripts/check_docs_closure.py` | Manual (antes de fechar épico) | ⚠️ (overridable) |
 | Pre-commit hooks | `.pre-commit-config.yaml` | `git commit` (se instalado) | ✅ |
 | Full validation | `make validate` / `scripts/validate.sh` | Local (antes do commit) | ✅ |
+| Regression dashboard | `make regression-dashboard` | Local e corpus maintenance workflow | ⚠️ WARN não bloqueia; FAIL bloqueia no workflow |
 
 ### Gatilhos
 - **Push/PR para main:** CI roda automaticamente (ruff, black, mypy, pytest)
@@ -296,3 +300,25 @@ python scripts/run_corpus_maintenance.py --run-ingestion
 - Schedule nao promove fontes.
 - Schedule nao ingere Qdrant real.
 - `fail_on_expired=true` por default.
+
+## Regression Dashboard (Epic 22)
+
+### Script
+```bash
+python scripts/build_regression_dashboard.py
+python scripts/build_regression_dashboard.py --reports-dir reports/corpus-maintenance/<run-id>
+make regression-dashboard
+```
+
+### Reports
+- `data/regression_reports/latest_dashboard.md`
+- `data/regression_reports/latest_dashboard.json`
+
+### Testes
+- 6 unitarios cobrindo PASS, WARN, FAIL, reports ausentes, secoes Markdown e campos JSON.
+
+### Invariantes
+- `FAIL` para `validation_errors`, `sources_failed`, `expired_sources`, RAG eval failure ou golden eval failure.
+- `WARN` para `stale_sources`, `missing_context_count`, `missing_evidence_count` ou reports ausentes.
+- GitHub Actions publica summary/artifact antes de falhar por `FAIL`.
+- `WARN` nao falha workflow.

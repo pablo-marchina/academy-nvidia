@@ -29,3 +29,4 @@
 - Corpus maintenance has a safe scheduled workflow, but it does not promote sources or run real Qdrant ingestion automatically.
 - Existing Qdrant collections need reingestion to receive Epic 20 lifecycle payload fields.
 - Stale corpus content is reported by audit but not yet surfaced as an Action Brief warning.
+- Regression dashboard consolidates existing reports only; missing reports become `WARN`, and JUnit eval reports expose pass/fail plus failed cases rather than detailed retrieval metrics.

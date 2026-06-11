@@ -293,6 +293,17 @@
 - [x] docs/45, README, EVALS, DECISIONS e Obsidian atualizados
 - [x] Nenhum crawler amplo, nenhuma mudanca em retrieval/embeddings/scoring/diagnosis/recommendation/briefing
 
+### Epic 22 - RAG / Action Brief Regression Dashboard (concluido)
+- [x] `scripts/build_regression_dashboard.py` - consolida reports de manutencao em Markdown + JSON
+- [x] `data/regression_reports/latest_dashboard.md` e `.json` gerados pelo comando local
+- [x] Metricas consolidadas para ingestion, freshness, RAG evals, golden evals e Action Brief checks
+- [x] Status `PASS`, `WARN`, `FAIL` com `WARN` nao bloqueante e `FAIL` bloqueante no workflow
+- [x] `.github/workflows/corpus-maintenance.yml` escreve dashboard no Job Summary e publica artifact
+- [x] `Makefile` - alvo `regression-dashboard`
+- [x] `tests/unit/test_regression_dashboard.py` - 6 testes unitarios
+- [x] `docs/46_regression_dashboard.md`, README, EVALS, ROADMAP e Obsidian atualizados
+- [x] Nenhuma mudanca em retrieval, Qdrant ingestion, scoring, diagnosis, recommendation ou Action Brief logic
+
 ### Product RAG (V3 — futuro / backlog)
 - Reranking cross-encoder (alternativa ao reranking determinístico)
 - Ingestão automatizada de documentação NVIDIA via crawler respeitando robots.txt
