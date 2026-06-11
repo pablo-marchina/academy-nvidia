@@ -343,6 +343,14 @@ def _read_eval_junit(
     dashboard.metrics[passed_key] = failed_count == 0
     dashboard.metrics[failed_key] = failed_count
     dashboard.failed_cases[metric_prefix] = parsed["failed_cases"]
+    dashboard.metrics["missing_context_count"] = max(
+        int(dashboard.metrics["missing_context_count"] or 0),
+        int(parsed["missing_context_count"]),
+    )
+    dashboard.metrics["missing_evidence_count"] = max(
+        int(dashboard.metrics["missing_evidence_count"] or 0),
+        int(parsed["missing_evidence_count"]),
+    )
 
 
 def _derive_action_brief_checks(dashboard: Dashboard) -> None:
@@ -451,6 +459,8 @@ def _parse_junit(path: Path) -> dict[str, Any] | None:
     failures = 0
     errors = 0
     failed_cases: list[str] = []
+    missing_context_count = 0
+    missing_evidence_count = 0
     for case in testcases:
         failure_nodes = list(case.findall("failure"))
         error_nodes = list(case.findall("error"))
@@ -460,6 +470,15 @@ def _parse_junit(path: Path) -> dict[str, Any] | None:
             classname = case.attrib.get("classname", "")
             name = case.attrib.get("name", "unknown")
             failed_cases.append(f"{classname}.{name}".strip("."))
+            node_text = "\n".join(_junit_node_text(node) for node in [*failure_nodes, *error_nodes])
+            missing_context_count = max(
+                missing_context_count,
+                _sum_regex_counts(node_text, r"missing_context_count=(\d+)"),
+            )
+            missing_evidence_count = max(
+                missing_evidence_count,
+                _sum_regex_counts(node_text, r"missing_evidence_count=(\d+)"),
+            )
 
     if not testcases and root.tag in {"testsuite", "testsuites"}:
         failures = int(root.attrib.get("failures", "0") or 0)
@@ -470,6 +489,8 @@ def _parse_junit(path: Path) -> dict[str, Any] | None:
         "failures": failures,
         "errors": errors,
         "failed_cases": failed_cases,
+        "missing_context_count": missing_context_count,
+        "missing_evidence_count": missing_evidence_count,
     }
 
 
@@ -477,6 +498,14 @@ def _extract_markdown_counter(text: str, key: str) -> int:
     pattern = re.compile(rf"{re.escape(key)}:\s*`?(\d+)`?", re.IGNORECASE)
     match = pattern.search(text)
     return int(match.group(1)) if match else 0
+
+
+def _junit_node_text(node: ET.Element) -> str:
+    return "\n".join(part for part in [node.attrib.get("message", ""), node.text or ""] if part)
+
+
+def _sum_regex_counts(text: str, pattern: str) -> int:
+    return sum(int(match) for match in re.findall(pattern, text))
 
 
 def _count_value(value: Any) -> int:

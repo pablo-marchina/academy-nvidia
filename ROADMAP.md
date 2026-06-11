@@ -300,7 +300,7 @@
 - [x] Status `PASS`, `WARN`, `FAIL` com `WARN` nao bloqueante e `FAIL` bloqueante no workflow
 - [x] `.github/workflows/corpus-maintenance.yml` escreve dashboard no Job Summary e publica artifact
 - [x] `Makefile` - alvo `regression-dashboard`
-- [x] `tests/unit/test_regression_dashboard.py` - 6 testes unitarios
+- [x] `tests/unit/test_regression_dashboard.py` - 7 testes unitarios
 - [x] `docs/46_regression_dashboard.md`, README, EVALS, ROADMAP e Obsidian atualizados
 - [x] Nenhuma mudanca em retrieval, Qdrant ingestion, scoring, diagnosis, recommendation ou Action Brief logic
 

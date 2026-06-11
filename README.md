@@ -74,7 +74,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit, corpus maintenance orchestration, regression dashboard generation
 
 ### Testing
-- 457 tests (445 passing + 12 skippable integration) across 40 test files
+- 458 tests (446 passing + 12 skippable integration) across 40 test files
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -98,7 +98,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - Corpus Freshness Audit: 11 tests (stale, expired, deprecated, superseded, missing metadata, duplicate active versions, fail flags, version promotion, retrieval/vector filters)
 - Check Scope: 7 tests (sensitive changes require docs, override flag, contract detection)
 - Check Docs Closure: 6 tests (plan, ROADMAP, EVALS, Obsidian checks)
-- Regression Dashboard: 6 tests (PASS/WARN/FAIL, missing reports, Markdown sections, JSON fields)
+- Regression Dashboard: 7 tests (PASS/WARN/FAIL, missing reports, JUnit missing context, Markdown sections, JSON fields)
 
 ## Stack
 

@@ -1,0 +1,72 @@
+# RAG / Action Brief Regression Dashboard
+
+## Overview
+
+- Status: **FAIL**
+- Generated at: `2026-06-11T00:20:28.242808+00:00`
+- Reports dir: `/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315035918`
+
+## Ingestion
+
+| Metric | Value |
+|---|---:|
+| documents_seen | 10 |
+| documents_valid | 10 |
+| documents_skipped | 0 |
+| chunks_created | 20 |
+| chunks_upserted | 20 |
+| sources_failed | 0 |
+| validation_errors | 0 |
+
+## Freshness
+
+| Metric | Value |
+|---|---:|
+| stale_sources | 0 |
+| expired_sources | 0 |
+| deprecated_sources | 6 |
+
+## RAG Evals
+
+| Metric | Value |
+|---|---:|
+| rag_eval_passed | false |
+| rag_eval_failed_cases | 7 |
+| missing_context_count | 0 |
+
+## Golden Evals & Action Brief Checks
+
+| Metric | Value |
+|---|---:|
+| golden_eval_passed | not run |
+| golden_eval_failed_cases | 0 |
+| action_brief_required_sections_passed | not run |
+| missing_evidence_count | 0 |
+
+## Warnings
+
+- golden_eval_junit.xml not found.
+
+## Failures
+
+- RAG eval failed.
+
+## Failed Cases
+
+### rag_eval
+- `tests.unit.test_rag_eval.TestRunRagEval.test_all_golden_queries_pass`
+- `tests.unit.test_rag_eval.TestRunRagEval.test_critical_cases_have_hit_at_3`
+- `tests.unit.test_rag_eval.TestRunRagEval.test_critical_cases_have_top_1_match`
+- `tests.unit.test_rag_eval.TestRunRagEval.test_known_query_zero_missing`
+- `tests.unit.test_rag_eval.TestMetrics.test_context_precision_is_1_for_golden`
+- `tests.unit.test_rag_eval.TestMetrics.test_metrics_coverage_scores`
+- `tests.unit.test_rag_eval.TestQualityGates.test_quality_gates_all_pass_for_golden`
+
+
+## Inputs
+
+- `source_sync`: found (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315035918/source_sync_dry_run.json`)
+- `freshness`: found (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315035918/freshness_audit.json`)
+- `ingestion`: found (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315035918/qdrant_ingestion.json`)
+- `rag_eval`: found (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315035918/rag_eval_junit.xml`)
+- `golden_eval`: missing (`/home/runner/work/academy-nvidia/academy-nvidia/reports/corpus-maintenance/github-27315035918/golden_eval_junit.xml`)

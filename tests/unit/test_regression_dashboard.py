@@ -123,6 +123,26 @@ def test_missing_reports_are_controlled_warning(tmp_path: Path) -> None:
         assert metric in dashboard.metrics
 
 
+def test_junit_missing_context_is_consolidated(tmp_path: Path) -> None:
+    _write_clean_reports(tmp_path)
+    (tmp_path / "rag_eval_junit.xml").write_text(
+        """<?xml version="1.0" encoding="utf-8"?>
+<testsuite name="pytest" tests="1" failures="1" errors="0" skipped="0">
+  <testcase classname="tests.unit.test_rag_eval.TestRunRagEval" name="test_all_golden_queries_pass">
+    <failure message="case a: missing_context_count=1&#10;case b: missing_context_count=2" />
+  </testcase>
+</testsuite>
+""",
+        encoding="utf-8",
+    )
+
+    dashboard = build_dashboard(tmp_path)
+
+    assert dashboard.status == STATUS_FAIL
+    assert dashboard.metrics["rag_eval_passed"] is False
+    assert dashboard.metrics["missing_context_count"] == 3
+
+
 def _write_clean_reports(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
     _write_json(

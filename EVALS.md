@@ -39,8 +39,8 @@
 | Corpus Freshness Audit | `tests/unit/test_corpus_freshness_audit.py` | 11 | ✅ |
 | Check Scope | `tests/unit/test_check_scope.py` | 7 | ✅ |
 | Check Docs Closure | `tests/unit/test_check_docs_closure.py` | 7 | ✅ |
-| Regression Dashboard | `tests/unit/test_regression_dashboard.py` | 6 | ✅ |
-| **Total** | **40 arquivos** | **457** | **445 pass, 12 skip** |
+| Regression Dashboard | `tests/unit/test_regression_dashboard.py` | 7 | ✅ |
+| **Total** | **40 arquivos** | **458** | **446 pass, 12 skip** |
 
 ## Cobertura por módulo
 
@@ -116,7 +116,7 @@
 | Ingest NVIDIA Corpus | 17 tests (hash, CLI, dry-run, ingest in-memory, payload, report) | ✅ |
 | Qdrant Corpus Ingestion | 3 tests (ingest, recreate, idempotence) | ⏭️ skippable |
 | Corpus Freshness Audit | 11 tests (stale, expired, deprecated, superseded, missing metadata, duplicate active versions, fail flags, version promotion, retrieval/vector filters) | ✅ |
-| Regression Dashboard | 6 tests (clean PASS, stale WARN, validation_errors FAIL, missing reports WARN, Markdown sections, JSON fields) | ✅ |
+| Regression Dashboard | 7 tests (clean PASS, stale WARN, validation_errors FAIL, missing reports WARN, JUnit missing context parsing, Markdown sections, JSON fields) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
 
