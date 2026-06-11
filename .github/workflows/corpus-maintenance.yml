@@ -119,4 +119,5 @@ jobs:
 
       - name: Fail on regression dashboard FAIL status
         if: always()
-        run: python -c "import json, pathlib, sys; path = pathlib.Path('data/regression_reports/latest_dashboard.json'); data = json.loads(path.read_text(encoding='utf-8')) if path.is_file() else {'status': 'FAIL'}; status = data.get('status'); print(f'Regression dashboard status: {status}'); sys.exit(1 if status == 'FAIL' else 0)"
+        run: |
+          python -c "import json, pathlib, sys; path = pathlib.Path('data/regression_reports/latest_dashboard.json'); data = json.loads(path.read_text(encoding='utf-8')) if path.is_file() else {'status': 'FAIL'}; status = data.get('status'); print(f'Regression dashboard status: {status}'); sys.exit(1 if status == 'FAIL' else 0)"
