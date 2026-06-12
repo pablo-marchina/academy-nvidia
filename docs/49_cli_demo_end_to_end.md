@@ -1,5 +1,7 @@
 # CLI Demo End-to-End
 
+> **ARCHIVED:** Historical design doc for Epic 24 (CLI demo). The product flow now uses persisted entities and the product API. This document is preserved for reference only.
+
 **Epic 24** | **Date:** 2026-06-11
 
 ## Objective

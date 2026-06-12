@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Plan: Epic 26 - Minimal Demo UI
 
 ## Objective
@@ -131,3 +133,4 @@ already implemented API endpoints and does not duplicate product logic.
 
 *Generated on: 2026-06-11*
 *Mode: Plan -> Artifact -> Build -> Review -> Commit*
+

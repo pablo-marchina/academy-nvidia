@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Plan: Epic 11 — Product RAG / Playbook Retrieval
 
 ## Objective
@@ -85,3 +87,4 @@ mypy src
 ---
 
 *Gerado em: 2026-06-09*
+

@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Plan: Epic 23 - LLM/RAG Answer Quality Evaluation
 
 ## Objective
@@ -60,3 +62,4 @@ RAG provenance, required sections, gaps, technologies, and `recommended_motion`.
 - Dashboard incorporates answer quality metrics when available.
 - Docs and Obsidian are updated.
 - No central product logic is changed.
+

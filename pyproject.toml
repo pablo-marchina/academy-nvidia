@@ -21,6 +21,7 @@ dependencies = [
   "langgraph",
   "qdrant-client",
   "sqlalchemy",
+  "alembic",
   "psycopg2-binary",
 ]
 

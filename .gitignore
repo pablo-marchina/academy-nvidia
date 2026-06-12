@@ -21,3 +21,9 @@ data/startup_profiles/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/startup_profiles/.gitkeep
+
+# Generated demo and report artifacts (Epic 31)
+data/demo_runs/latest/
+data/regression_reports/*
+!data/regression_reports/.gitkeep
+data/ingestion_reports/

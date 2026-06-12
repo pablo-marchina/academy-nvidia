@@ -1,5 +1,7 @@
 # RAG Design
 
+> **ARCHIVED:** Early RAG design document. Superseded by `docs/35_product_rag_design.md`, `docs/contracts/rag_contract.md`, and Epics 11-15. This document is preserved for historical reference only.
+
 ## Goal
 
 Provide grounded NVIDIA recommendations by retrieving official product and program context before generation.

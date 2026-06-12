@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Epic 25 — Minimal FastAPI Demo API
 
 **Date:** 2026-06-11
@@ -72,3 +74,4 @@ Service layer calls the same functions as the CLI:
 - [ ] README shows how to run
 - [ ] No central logic duplicated
 - [ ] ruff/black/mypy pass
+

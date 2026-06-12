@@ -1,5 +1,7 @@
 # Demo Script
 
+> **ARCHIVED:** Historical demo script. The product flow now uses persisted entities and product API. This document is preserved for reference only and should not guide implementation.
+
 > Duração estimada: 3-5 minutos.
 > Cenário: Startup brasileira AI-native real submetida ao Radar.
 > Formato: CLI (ou API response em terminal).

@@ -1,5 +1,7 @@
 # Architecture Utilization Audit
 
+> **ARCHIVED:** Historical architecture audit. Pipeline now fully integrates gap diagnosis, NVIDIA mapping, and recommendation. This document is preserved for historical reference only and should not guide current implementation.
+
 ## Objetivo
 
 Verificar se todos os módulos implementados estao sendo utilizados em sua melhor capacidade pela pipeline principal e se ha gaps de integracao, cobertura de testes ou documentacao.

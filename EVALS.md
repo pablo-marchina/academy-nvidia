@@ -47,7 +47,20 @@
 | Demo UI E2E Smoke (Epic 27) | `tests/e2e/test_demo_ui.spec.ts` | 2 | Playwright |
 | CLI Demo Integration (Epic 24) | `tests/integration/test_cli_demo.py` | 6 | ⏭️ (integration) |
 | API Demo Integration (Epic 25) | `tests/integration/test_api_demo.py` | 9 | ⏭️ (integration) |
-| **Total** | **46 Python test files + 1 Playwright spec** | **511 Python + 2 E2E** | **499 pass, 12 skip + UI smoke** |
+| Product Database (Epic 29) | `tests/unit/test_product_database.py` | 2 | ✅ |
+| Product Repositories (Epic 29) | `tests/unit/test_product_repositories.py` | 3 | ✅ |
+| Product Service (Epic 29) | `tests/unit/test_product_service.py` | 3 | ✅ |
+| Product API Integration (Epic 29) | `tests/integration/test_product_api.py` | 2 | integration |
+| Alembic Migrations (Epic 30) | `tests/unit/test_alembic_migrations.py` | 2 | ✅ |
+| Review Repository (Epic 30) | `tests/unit/test_review_repository.py` | 3 | ✅ |
+| Opportunity Service (Epic 30) | `tests/unit/test_opportunity_service.py` | 6 | ✅ |
+| Export Service (Epic 30) | `tests/unit/test_export_service.py` | 6 | ✅ |
+| Claim Repository (Epic 32) | `tests/unit/test_claim_repository.py` | 12 | ✅ |
+| Claim Ledger Service (Epic 32) | `tests/unit/test_claim_ledger.py` | 9 | ✅ |
+| Claim API Integration (Epic 32) | `tests/integration/test_claim_api.py` | 9 | integration |
+| Product PATCH/Review/Export API Integration (Epic 30) | `tests/integration/test_product_patch_review_export.py` | 12 | integration |
+| PostgreSQL Migration (Epic 30) | `tests/integration/test_postgres_migration.py` | 3 | skippable |
+| **Total** | **57 Python test files + 1 Playwright spec** | **574 Python + 2 E2E** | **525 pass, 29 skip/desel + UI smoke** |
 
 ## Cobertura por módulo
 
@@ -74,7 +87,11 @@
 | `config/settings.py` | ✅ REAL | ❌ | 0 |
 | `agents/` (9 files) | ❌ STUB | ❌ | 0 |
 | `rag/` (10 files) | ✅ REAL | ✅ | 15 + 56 (Epic 13) + 22 (Epic 14) + 10 (Epic 14.1) + 20 (Epic 15) |
-| `database/` (2 files) | ❌ STUB | ❌ | 0 |
+| `database/` (2 files) | ✅ REAL | ✅ | 8 unit + 2 API integration |
+| `repositories/claim.py` (Epic 32) | ✅ REAL | ✅ | 12 unit |
+| `services/product/claim_ledger.py` (Epic 32) | ✅ REAL | ✅ | 9 unit |
+| `api/product_routes.py` claims (Epic 32) | ✅ REAL | ✅ | 9 integration |
+| `services/product/claim_constants.py` (Epic 32) | ✅ REAL | ✅ | (via test_claim_repository) |
 | `evaluation/` (9 files) | ✅ REAL | ✅ | 20 + 14 (Epic 13) + 11 (Epic 14) + 9 (Epic 23 answer quality) + 4 (Epic 23.2 optional judge) |
 | `interface/` (1 file) | ❌ STUB | ❌ | 0 |
 | `scripts/check_scope.py` | ✅ REAL | ✅ | 7 |
@@ -442,3 +459,46 @@ make demo-acceptance
 - Qdrant offline deve aparecer como warning/status, nao crash.
 - `POST /brief` deve preservar `brief_json`, `brief_markdown`, scores, `recommended_motion`, gaps, evidence, warnings e `run_report`.
 - E2E valida wiring da demo; nao altera scoring, diagnosis, recommendation, RAG retrieval, Qdrant ingestion ou Action Brief logic.
+
+## Documentation Mining Validation (Epic 28)
+
+### Execucao
+
+Epic 28 e documental. A validacao principal e manual/estrutural sobre
+`docs/54_final_product_backlog.md`, com `python scripts/check_scope.py` e
+`make validate` executados quando aplicavel.
+
+### Invariantes
+
+- Nenhuma mudanca funcional em `src/`, `frontend/`, scripts de runtime,
+  pipeline, RAG, scoring, recommendation, Qdrant ingestion ou workflows.
+- O backlog final deve conter todas as secoes obrigatorias, tabela acionavel,
+  politica documental, tabela de poda documental, contradicoes e proximo epic
+  tecnico recomendado.
+- Categorias permitidas: IMPLEMENTED_KEEP, IMPLEMENTED_NEEDS_HARDENING,
+  PRODUCT_BACKLOG, REPLACE, DELETE, ARCHIVE, CONTRACT_OR_TEST.
+- Decisoes permitidas: KEEP, HARDEN, IMPLEMENT, REPLACE, DELETE, ARCHIVE,
+  CONTRACT_OR_TEST.
+- Prioridades permitidas: P0, P1, P2, P3.
+- Todo item consolidado deve ter origem rastreavel.
+
+## Product Backend Foundation (Epic 29)
+
+### Tests
+
+- 2 database tests: SQLite directory/schema initialization and URL sanitization.
+- 3 repository tests: startup CRUD/uniqueness, run/brief/readiness persistence,
+  and Action Brief versioning.
+- 3 product service tests: real pipeline persistence, failed lifecycle without
+  fallback, and no `data/demo_runs` dependency.
+- 2 API integration tests: product happy path, health endpoints, duplicate
+  startup, and missing-resource behavior.
+
+### Invariants
+
+- Product state is persisted in the SQLAlchemy transactional database.
+- Qdrant remains a vector/RAG dependency and does not store product entities.
+- Pipeline exceptions create a persisted `failed` AnalysisRun.
+- Optional dependency or evidence problems are represented as explicit
+  readiness checks and a `degraded` run.
+- Product modules do not read `data/demo_runs`.

@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Declare RAG Optional Extra for Reproducible Qdrant 384 Ingestion
 
 **Date:** 2026-06-10
@@ -43,3 +45,4 @@ pip install -e ".[rag]"
 - `ruff check .`
 - `black --check .`
 - `mypy src`
+

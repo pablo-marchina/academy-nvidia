@@ -324,4 +324,85 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 
 ---
 
+## Decision 029 - SQLite-first transactional product persistence
+
+- **Context:** Epic 28 identified product persistence and a product resource API as the highest-priority gap. PostgreSQL was selected conceptually in Decision 003 and is scaffolded in Docker Compose, but the repository had no implemented relational schema, repositories, or migrations.
+- **Decision:** Epic 29 uses SQLAlchemy with `PRODUCT_DB_URL` and defaults to `sqlite:///data/product/product.db`. SQLite stores transactional product entities. Qdrant remains limited to embeddings, chunks, corpus documents, and retrieval metadata. Models use portable SQLAlchemy types and constraints so PostgreSQL can replace SQLite later without changing repository/service interfaces.
+- **Alternatives considered:** Require PostgreSQL immediately; store product state in Qdrant; keep file artifacts under `data/demo_runs`.
+- **Rationale:** SQLite provides a real persistent product flow with minimal operational setup and isolated tests. Requiring PostgreSQL now would add deployment complexity before the product resource model is stable.
+- **Risks:** SQLite has limited concurrent-write capacity and the build currently uses `create_all` rather than versioned migrations.
+- **Validation:** Product database, repository, service, API, lifecycle, failure, health, and demo-independence tests.
+- **Future path:** Add versioned migrations and validate the same SQLAlchemy models against PostgreSQL before multi-user deployment.
+- **Status:** Implemented in Epic 29.
+
+---
+
+---
+
+## Decision 030 — Versioned Schema Migrations with Alembic
+
+- **Context:** Epic 29 used `Base.metadata.create_all()` for schema creation, which is not versioned, auditable, or safe for iterative schema changes. The product schema needed 2 new tables (ReviewDecision, ExportRecord) and a safe migration path.
+- **Decision:** Adopt Alembic as the migration tool. The initial migration (`0001_create_all_product_entities.py`) creates all 10 product tables. `env.py` reads `PRODUCT_DB_URL` from the environment (or config override) and uses `render_as_batch=True` for SQLite compatibility.
+- **Alternatives considered:** Keep `create_all()` (no versioning), use raw SQL migration scripts (no integration with SQLAlchemy), use SQLAlchemy's `Migrate` (less maintained).
+- **Rationale:** Alembic is the standard migration tool for SQLAlchemy. It supports both SQLite (batch mode) and PostgreSQL from the same `env.py`. Auto-generation reduces manual migration writing.
+- **Risks:** Auto-generated migrations may need manual review for column type changes. Batch mode may produce SQL that looks different from PostgreSQL but achieves the same result.
+- **Validation:** `alembic upgrade head` and `alembic downgrade -1` tested with SQLite. PostgreSQL validation via skippable integration tests.
+- **Status:** Implemented in Epic 30.
+
+---
+
+## Decision 031 — PostgreSQL Validation via Skippable Integration Tests
+
+- **Context:** SQLite is the default local database. PostgreSQL must be validated as a production path without becoming a required dev dependency.
+- **Decision:** PostgreSQL validation is done via tests marked `@pytest.mark.integration` that require `PRODUCT_DB_TEST_URL`. They do not run in CI (`pytest -m "not integration"`). Documentation in `docs/contracts/product_db_migrations.md` explains how to run manually.
+- **Alternatives considered:** Make PostgreSQL required (blocked by local dev simplicity), run PG tests in CI with service containers (too early before production deployment), skip validation entirely (risk of silent incompatibility).
+- **Rationale:** Skippable tests document the expected PG behavior without blocking local development. The same models, SQLAlchemy types, and migration script work for both databases.
+- **Validation:** `test_postgres_migration.py` — alembic upgrade, JSON column roundtrip, repository smoke test.
+- **Status:** Implemented in Epic 30.
+
+---
+
+## Decision 032 — ReviewDecision as Append-Only Audit Log
+
+- **Context:** Human review is needed for startup qualification. The review must not alter the underlying pipeline scores.
+- **Decision:** `ReviewDecision` is an append-only table. Multiple reviews per analysis run are preserved. The latest review (by `created_at`) is the current status. Reviews do not recalculate scores or delete pipeline outputs.
+- **Alternatives considered:** Single review per run (loses audit trail), review updates a score field (mixes human judgment with pipeline determinism), review deletes evidence (violates auditability).
+- **Rationale:** Append-only preserves full decision history. The latest review is available for opportunities ranking.
+- **Status:** Implemented in Epic 30.
+
+---
+
+## Decision 033 — ExportRecord from ActionBriefRecord, Not Demo Artifacts
+
+- **Context:** Exports must come from persisted product records, not from `data/demo_runs` loose files.
+- **Decision:** `ExportRecord` is generated from a persisted `ActionBriefRecord`. The path is stored relative to `PRODUCT_DATA_DIR/exports/`. Content hash (SHA256) enables regeneration detection.
+- **Alternatives considered:** Generate from pipeline output directly (adds complexity), generate from demo artifacts (violates product mode), store full content in DB (bloat).
+- **Rationale:** ActionBriefRecord already contains the validated brief JSON and Markdown. Relative paths keep the database portable. Content hash enables idempotent regeneration.
+- **Status:** Implemented in Epic 30.
+
+---
+
+## Decision 034 — Demo Artifacts Are Not Product Sources
+
+- **Context:** Epics 29-30 implemented a complete product persistence layer. Legacy demo artifacts (data/demo_runs, demo API routes, demo CLI, demo UI) coexisted with the product flow, creating confusion about which path is primary.
+- **Decision:** The product flow uses persisted product entities (startups, analysis runs, Action Brief records, reviews, exports) configured by `PRODUCT_DB_URL`. Demo artifacts are not sources for the product flow. Legacy demo code (CLI script, frontend, demo API routes) is preserved for backward-compatible smoke testing but is deprecated. Generated artifacts (data/demo_runs/latest, data/regression_reports, data/ingestion_reports) are deleted and gitignored.
+- **Alternatives considered:** Keep demo as co-equal path (creates confusion), delete all demo code immediately (breaks integration tests), rewrite demo as product (out of scope).
+- **Rationale:** Product persistence exists and is validated. Removing demo artifacts reduces complexity. Preserving legacy scripts avoids breaking existing workflows until product CLI/UI replacements exist.
+- **Validation:** Product services never read `data/demo_runs` (regression test in `test_product_database.py`). Product API smoke tests pass. All core unit tests pass.
+- **Status:** Implemented in Epic 31.
+
+---
+
+## Decision 035 — Claim Ledger Determinístico sem LLM Extraction (v1)
+
+- **Context:** Epic 32 — Evidence & Claim Ledger. Claims precisam ser auditáveis e rastreáveis até suas evidências de origem. A pipeline produz registros estruturados (StartupEvidence, ScoreRecord, GapDiagnosisRecord, NvidiaMappingRecord) que contêm claims implícitas.
+- **Decision:** A geração de claims na v1 é determinística: o ClaimLedgerService percorre registros persistidos e produz claims com mapping explícito de support level (confidence float → strong/medium/weak/unsupported). `evidence_refs` é armazenado como JSON column (não há tabela separada ClaimEvidenceLink). A idempotência é mantida via delete+regenerate de todas as claims de um AnalysisRun.
+- **Alternatives considered:** LLM extraction de claims de texto livre (rejeitado — custo, não-determinismo, complexidade na v1). Tabela separada ClaimEvidenceLink (adiado para v2 — FK enforcement pesaria setup inicial). Update incremental (rejeitado — delete+regenerate é mais seguro e simples).
+- **Rationale:** Geração determinística é testável, auditável e não depende de LLM. JSON column permite schema flexível sem migration extra. Delete+regenerate garante que claims refletem sempre o estado atual dos registros.
+- **Risks:** JSON column sem FK enforcement permite dados inconsistentes via código mal escrito. Delete+regenerate causa janela de vazio (aceitável — operação rápida em um único AnalysisRun). Claims de uncertainty podem ser prolixas se muitas evidencias estiverem faltando.
+- **Validation:** 12 testes unitários (ClaimRepository), 9 testes unitários (ClaimLedgerService), 9 testes de integração (API). Cobertura de evidencia calculada via confidence_to_float mapping.
+- **Status:** Implementado no Epic 32.
+
+---
+
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

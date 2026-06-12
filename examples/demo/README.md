@@ -1,5 +1,7 @@
 # Demo Input Samples
 
+> **ARCHIVED:** This directory is preserved as a fixture source for integration tests. The product flow uses persisted entities, not demo sample files. The sample input file is kept for backward-compatible test use.
+
 This directory contains sample startup input files for the CLI demo
 (`scripts/run_startup_radar_demo.py`).
 

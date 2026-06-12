@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Plan — Épico 24: CLI Demo End-to-End
 
 **Date:** 2026-06-11
@@ -38,3 +40,4 @@ principal do NVIDIA Startup AI Radar e exporte:
 ## Arquivos
 
 Ver docs/49_cli_demo_end_to_end.md para documentação completa.
+

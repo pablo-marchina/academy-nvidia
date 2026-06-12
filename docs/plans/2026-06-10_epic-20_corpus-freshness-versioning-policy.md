@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Plan: Epic 20 - Corpus Freshness, Versioning & Deprecation Policy
 
 **Data:** 2026-06-10
@@ -61,3 +63,4 @@ Implementar uma politica minima para versionamento, frescor, expiracao, deprecac
 - Sem novas dependencias.
 - O manifest `sources.yaml` continua sendo a fonte autoritativa para lifecycle do corpus.
 - Datas desconhecidas nao devem ser inventadas; quando ausentes, a auditoria deve reportar lacuna.
+

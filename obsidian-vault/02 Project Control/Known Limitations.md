@@ -6,8 +6,7 @@
 
 - Pipeline usa heuristicas deterministicas, nao LLM, para scoring e diagnostico
 - Scraping coleta de uma unica URL publica — sem crawling em escala
-- Gap Diagnosis existe mas nao esta integrado ao pipeline
-- NVIDIA Mapping existe mas nao esta integrado ao pipeline
+- Gap Diagnosis e NVIDIA Mapping estao integrados ao pipeline.
 
 ## RAG e Recomendacao
 
@@ -32,7 +31,7 @@
 
 ## Testes
 
-- Zero testes de integracao (9 skippable no Epic 15)
+- Product API tem testes de integracao isolados com SQLite temporario.
 - 38 golden evals automatizados (Epic 17) — cobrem pipeline completa offline
 - 9 answer quality evals automatizados (Epic 23) — cobrem qualidade final do Action Brief/RAG offline
 - `config/settings.py` sem testes
@@ -40,9 +39,19 @@
 ## Infraestrutura
 
 - Sem human-in-the-loop implementado
-- Sem Docker Compose
-- Sem banco de dados conectado
-- Sem CI/CD
+- Analysis runs executam de forma sincrona; nao ha job queue externa.
+- Migracoes versionadas (Alembic) e validacao PostgreSQL foram implementadas no Epic 30; SQLite e o padrao local
+- CI/CD implementado via GitHub Actions (ruff, black, mypy, pytest), pre-commit hooks e Docker Compose
+- Demo artifacts removidos do fluxo produto (Epic 31); produto usa entidades persistidas
+
+## Claim Ledger (Epic 32)
+
+- `evidence_refs` armazenado como JSON column — sem FK enforcement para tabela de evidencias
+- Idempotencia via delete+regenerate — pode causar janela de vazio durante regeneracao
+- Cobertura de evidencia usa mapping simples (confidence -> float) sem weighted scoring
+- Geracao de claims e deterministica (sem LLM extraction) — pode perder claims implicitas em texto livre
+- Sem notificacao automatica para baixa cobertura de evidencia
+- Sem endpoints para batch review de multiplas claims
 
 ## Documentacao
 

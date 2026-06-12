@@ -1,5 +1,7 @@
 # Demo Acceptance & E2E Smoke Tests
 
+> **ARCHIVED:** Historical design doc for Epic 27 (demo acceptance). Product API smoke tests use product endpoints. This document is preserved for reference only.
+
 **Epic 27** | **Date:** 2026-06-11
 
 ## Objective

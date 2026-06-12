@@ -1,5 +1,7 @@
 # Minimal Demo UI
 
+> **ARCHIVED:** Historical design doc for Epic 26 (demo UI). Product UI is a future epic. This document is preserved for reference only and should not guide product UI implementation.
+
 **Epic 26** | **Date:** 2026-06-11
 
 ## Objective

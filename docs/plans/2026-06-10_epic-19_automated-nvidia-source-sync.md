@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Plan: Epic 19 — Automated NVIDIA Corpus Source Sync
 
 ## Objective
@@ -51,3 +53,4 @@ data/nvidia_corpus/sources.yaml, data/nvidia_corpus/ (directory listing)
 - Alteracao de src/rag/, src/pipeline/, src/scoring/, src/diagnosis/, src/recommendation/, src/briefing/
 - Chamadas externas nos testes
 - Novas dependencias
+

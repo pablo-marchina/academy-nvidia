@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Epic 14 — RAG Reranking + Context Packing
 
 **Data**: 2026-06-09
@@ -34,3 +36,4 @@ src/briefing/
 | Context packing | Dedup + limites por gap/tech + global | Reduz ruído sem perder cobertura |
 | Modo de avaliação | 5 modos (lexical, semantic, hybrid, reranked, packed) | Cobertura completa da pipeline |
 | Brief integration | Campo opcional, default vazio | Brief funciona sem RAG |
+

@@ -1,5 +1,7 @@
 # Case Plan: NVIDIA Startup AI Radar
 
+> **ARCHIVED:** Historical case/MVP plan. The product direction is now documented in `docs/54_final_product_backlog.md`. This document is preserved for historical reference only and should not guide current implementation.
+
 > **Opportunity Intelligence for NVIDIA Inception**
 >
 > Uma plataforma multiagente que transforma sinais públicos de startups brasileiras em um ranking acionável, combinando agentes de coleta, validação de evidências, classificação AI-native, Production AI Readiness, AI-Native Defensibility Score e NVIDIA Inception Fit Score. O sistema diagnostica production AI gaps, recupera playbooks NVIDIA via RAG e gera um Startup Action Brief com prioridade, evidências, tecnologias recomendadas, experimento técnico sugerido e próxima ação para o time de Startups & VCs.

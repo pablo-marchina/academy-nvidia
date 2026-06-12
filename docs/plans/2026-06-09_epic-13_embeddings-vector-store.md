@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Epic 13 — Embeddings + Vector Store Retrieval
 
 **Data**: 2026-06-09
@@ -71,3 +73,4 @@ src/evaluation/
 - [x] ruff check . passa
 - [x] black --check . passa
 - [x] mypy src passa
+

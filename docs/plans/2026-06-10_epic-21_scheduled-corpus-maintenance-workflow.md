@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Plan: Epic 21 Scheduled Corpus Maintenance Workflow
 
 ## Objective
@@ -136,3 +138,4 @@ ingestion or source promotion by default.
 
 *Gerado em: 2026-06-10*
 *Modo: Plan -> Artifact -> Build -> Review -> Commit*
+

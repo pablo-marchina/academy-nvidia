@@ -1,5 +1,7 @@
 # Minimal FastAPI Demo API
 
+> **ARCHIVED:** Historical design doc for Epic 25 (demo API). Product API now exists at `/startups`, `/analysis-runs`, `/opportunities`, `/exports`. Demo endpoints (`/brief`, `/brief/evaluate`, `/demo/artifacts`) are deprecated. This document is preserved for reference only.
+
 **Epic 25** | **Date:** 2026-06-11
 
 ## Objective

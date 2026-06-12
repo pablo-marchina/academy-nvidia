@@ -6,7 +6,9 @@ NVIDIA Startup AI Radar transforma sinais públicos de startups brasileiras em u
 
 ## Objective
 
-Build a reproducible, versioned, AI-oriented workspace that prioritizes traceability, evidence quality, structured outputs, and continuous evaluation before complex product features are implemented. O case completo está em [docs/00_case_plan.md](docs/00_case_plan.md).
+Build a reproducible, versioned, AI-oriented workspace that prioritizes traceability, evidence quality, structured outputs, and continuous evaluation. Productization is guided by the consolidated final backlog in [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md).
+
+Demo paths remain useful for validation, but the primary product flow now uses persisted entities (startups, analysis runs, Action Briefs, exports, reviews) via the product API. Legacy demo artifacts and historical docs are archived; see [docs/57_product_simplification_deletion_pass.md](docs/57_product_simplification_deletion_pass.md).
 
 ## Problem
 
@@ -38,9 +40,10 @@ How can NVIDIA identify, attract, and nurture Brazilian AI-native startups in a 
 18. **Scheduled Corpus Maintenance** Manual and scheduled-safe workflow that runs source sync dry-run, freshness audit, Qdrant ingest dry-run, optional real ingestion, RAG evals, golden evals, and artifact reports.
 19. **Regression Dashboard** Local Markdown/JSON dashboard consolidating ingestion, freshness, RAG evals, golden evals, Action Brief checks, warnings, and regressions for GitHub Actions summaries.
 20. **Answer Quality Evaluation** Offline deterministic harness for final RAG/Action Brief quality: required sections, missing evidence, uncertainty, motion stability, unsupported claims, and citation coverage.
+21. **Evidence & Claim Ledger** Deterministic claim generation from persisted pipeline records, evidence coverage metrics, unsupported claim detection, and human review of claims.
 21. **Optional LLM Judge Adapter** Experimental/manual answer quality judge interface with offline null provider and informational JSON/Markdown reports.
 
-See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [docs/02_architecture.md](docs/02_architecture.md) for the architectural flow.
+See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the consolidated product backlog and [docs/contracts/product_api_contract.md](docs/contracts/product_api_contract.md) for the product API contract.
 
 ## Current Capabilities
 
@@ -60,7 +63,13 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 
 13. **CI/CD & Quality Gates** — GitHub Actions (ruff, black, mypy, pytest), pre-commit hooks, Makefile targets, scope-check and docs-closure verification scripts.
 
+14. **Claim Ledger** — Deterministic claim generation from evidence/gap/mapping records, evidence coverage metrics, unsupported critical claim detection, claim review
+15. **Claim API** — REST endpoints for listing claims, evidence coverage, and human review
+
 ### Modules implemented
+- `src/repositories/claim.py` — claim persistence, coverage, unsupported detection
+- `src/services/product/claim_ledger.py` — deterministic claim generation
+- `src/services/product/claim_constants.py` — enums and types
 - `src/scraping/` — fetcher, parser, source policy
 - `src/extraction/` — extractor, schemas (Pydantic)
 - `src/classification/` — AI-native classifier (heuristic)
@@ -73,10 +82,11 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - `src/rag/` — Product RAG ingestion, lexical + semantic + hybrid retrieval, embeddings, vector store, playbook retriever, **deterministic reranking, context packing, Qdrant persistent vector store**
 - `src/evaluation/` — Offline RAG evaluation (golden queries, metrics, quality gates, multi-mode comparison, **reranking/packed**), deterministic Answer Quality evaluation, and optional experimental LLM judge adapter with offline null provider
 - `src/config/` — settings via pydantic-settings
+- `src/database/`, `src/repositories/`, `src/services/product/` — SQLite-first transactional product persistence, persisted analysis lifecycle, and explicit degraded states
 - `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit, corpus maintenance orchestration, regression dashboard generation
 
 ### Testing
-- 511 Python tests (499 passing + 12 skippable integration) across 46 Python test files, plus 2 Playwright UI smoke tests
+- 521 Python tests (509 passing + 12 skippable integration) across 50 Python test files, plus 2 Playwright UI smoke tests
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -112,6 +122,7 @@ See [docs/00_case_plan.md](docs/00_case_plan.md) for the full case plan and [doc
 - Pydantic
 - LangGraph
 - PostgreSQL
+- SQLite (default transactional product database)
 - Qdrant
 - Playwright
 - BeautifulSoup
@@ -164,6 +175,40 @@ tools and real RAG embeddings. The `rag` extra is optional because
 `sentence-transformers` is specific to embeddings/RAG and pulls heavier model
 runtime dependencies that the core pipeline does not need.
 
+## Database Migrations
+
+The product database uses Alembic for versioned schema migrations:
+
+```bash
+# Apply all pending migrations
+alembic upgrade head
+
+# Roll back one migration
+alembic downgrade -1
+
+# Auto-generate a new migration from model changes
+alembic revision --autogenerate -m "description"
+
+# Show current revision
+alembic current
+
+# Show migration history
+alembic history
+```
+
+Or via Makefile:
+```bash
+make db-upgrade
+make db-downgrade
+make db-migrate msg="description"
+```
+
+The migration reads `PRODUCT_DB_URL` from the environment. Default is
+`sqlite:///data/product/product.db`. PostgreSQL can be validated by setting
+`PRODUCT_DB_TEST_URL` and running `docker compose up postgres -d`.
+
+See `docs/contracts/product_db_migrations.md` for full documentation.
+
 ## Environment Configuration
 
 Copy `.env.example` to `.env` and fill in the keys you actually need for local development.
@@ -174,6 +219,12 @@ Important variables:
 - `NVIDIA_API_KEY`
 - `COHERE_API_KEY`
 - `DATABASE_URL`
+- `PRODUCT_DB_URL` (default `sqlite:///data/product/product.db`)
+- `PRODUCT_DB_TEST_URL` (PostgreSQL test URL, optional)
+- `APP_MODE`
+- `ENABLE_PRODUCT_PERSISTENCE`
+- `RAG_REQUIRED_FOR_PRODUCT`
+- `PRODUCT_DATA_DIR`
 - `QDRANT_URL`
 - `QDRANT_API_KEY`
 - `QDRANT_COLLECTION`
@@ -183,51 +234,18 @@ Important variables:
 - `LANGSMITH_API_KEY`
 - `LANGSMITH_PROJECT`
 
-## Running the CLI Demo
+## Product API
 
-The project includes an end-to-end CLI demo that runs the full pipeline on a
-sample startup and generates a Startup Action Brief.
+The primary flow uses persisted entities via the FastAPI product API. See
+[docs/contracts/product_api_contract.md](docs/contracts/product_api_contract.md)
+for endpoint documentation and usage.
 
-### Basic demo
+## Legacy Demo CLI
 
-```bash
-python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json
-```
-
-### Offline mode (no Qdrant, no external deps)
-
-```bash
-python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json --offline
-```
-
-### With local RAG (InMemoryVectorStore)
-
-```bash
-python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json --use-rag --rag-backend local
-```
-
-### With answer quality evaluation
-
-```bash
-python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json --run-answer-quality-eval
-```
-
-### Makefile targets
-
-```bash
-make demo-cli           # basic demo
-make demo-cli-offline   # offline mode
-make demo-cli-rag       # with local RAG
-```
-
-### Outputs
-
-All files are written to `data/demo_runs/latest/`:
-
-- `startup_action_brief.md` — Markdown brief
-- `startup_action_brief.json` — JSON brief
-- `demo_run_report.json` — run metadata and timing
-- `answer_quality_eval.json` — optional quality evaluation
+A legacy CLI demo script (`scripts/run_startup_radar_demo.py`) is preserved for
+manual smoke testing. It runs the pipeline on a sample input
+(`examples/demo/sample_startup_input.json`). This is not the product flow; use
+the product API for persisted operations.
 
 ## Running Tests
 
@@ -262,11 +280,8 @@ make corpus-maintenance-evals    # safe maintenance + RAG/golden evals
 make corpus-maintenance-ingest   # explicit real Qdrant ingestion path
 make regression-dashboard  # build local Markdown/JSON regression dashboard
 make ui-install  # install frontend dependencies
-make ui-dev      # run the local demo UI
-make ui-build    # build the local demo UI
-make ui-e2e      # run Playwright smoke tests for the local demo UI
-make demo-acceptance  # API acceptance + UI build + UI E2E smoke
-make demo-full-check  # alias for demo-acceptance
+make ui-dev      # run the legacy demo UI
+make ui-build    # build the legacy demo UI
 ```
 
 ## CI/CD
@@ -304,7 +319,7 @@ python scripts/check_docs_closure.py
 
 ## Running the API
 
-The project includes a minimal FastAPI demo API that exposes the pipeline, brief generation, and answer quality evaluation via HTTP endpoints.
+The FastAPI server exposes both product endpoints and legacy demo routes.
 
 ### Start the API
 
@@ -323,114 +338,58 @@ make api         # production
 make api-dev     # development with reload
 ```
 
-### Available endpoints
+### Product endpoints (primary flow)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/startups` | Persist a product startup and initial evidence |
+| `GET` | `/startups` | List persisted startups |
+| `GET` | `/startups/{id}` | Read a persisted startup |
+| `PATCH` | `/startups/{id}` | Update startup fields partially |
+| `POST` | `/startups/{id}/analysis-runs` | Execute and persist an analysis run |
+| `GET` | `/analysis-runs/{id}` | Read persisted lifecycle and outputs |
+| `GET` | `/analysis-runs/{id}/brief` | Read the latest versioned Action Brief |
+| `POST` | `/analysis-runs/{id}/review` | Record human review decision |
+| `GET` | `/analysis-runs/{id}/reviews` | List review decisions for a run |
+| `GET` | `/opportunities` | Ranked opportunities with filters and pagination |
+| `POST` | `/analysis-runs/{id}/exports` | Generate JSON or Markdown export |
+| `GET` | `/exports/{id}` | Retrieve export metadata |
+| `GET` | `/health/product` | Check product database and schema |
+| `GET` | `/health/dependencies` | Check database, Qdrant, and RAG corpus |
+
+### Legacy demo endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/health` | Health check |
 | `GET` | `/version` | Project version info |
 | `GET` | `/rag/status` | RAG backend configuration and Qdrant availability |
-| `POST` | `/brief` | Generate a Startup Action Brief |
-| `POST` | `/brief/evaluate` | Evaluate brief answer quality (PASS/WARN/FAIL) |
-| `GET` | `/demo/artifacts` | List generated demo artifacts |
-
-### Example request
-
-```bash
-curl -X POST http://localhost:8000/brief \
-  -H "Content-Type: application/json" \
-  -d '{
-    "startup_name": "Nexus AI Labs",
-    "profile": {"sector": "HealthTech", "description": "AI healthcare platform"},
-    "evidence": [{"claim": "Deep learning in production", "confidence": "high"}],
-    "offline": true
-  }'
-```
+| `POST` | `/brief` | Generate a Startup Action Brief (deprecated) |
+| `POST` | `/brief/evaluate` | Evaluate brief answer quality (deprecated) |
+| `GET` | `/demo/artifacts` | List generated demo artifacts (deprecated) |
 
 ### Swagger UI
 
 Open http://localhost:8000/docs in your browser.
 
-### API tests
+### Product API tests
 
 ```bash
-make api-test
-# or
-pytest tests/integration/test_api_demo.py -v
+pytest tests/integration/test_product_api.py -v
+pytest tests/integration/test_product_patch_review_export.py -v
 ```
 
-## Running the Minimal Demo UI
+## Legacy Demo UI
 
-The project includes a local Vite + React demo UI under `frontend/`. It consumes
-the FastAPI demo API and does not duplicate scoring, diagnosis, recommendation,
-RAG retrieval, Qdrant ingestion, or answer quality logic.
-
-### Configure UI
+A local Vite + React demo UI exists under `frontend/`. It is a legacy surface
+that consumes the deprecated demo API endpoints. A product UI will replace it
+in a future epic.
 
 ```bash
-cd frontend
-cp .env.example .env
+make ui-install   # install frontend dependencies
+make ui-dev       # run the local demo UI
+make ui-build     # build the local demo UI
 ```
-
-Default API URL:
-
-```bash
-VITE_API_BASE_URL=http://localhost:8000
-```
-
-### Start API and UI
-
-Terminal 1:
-
-```bash
-make api-dev
-```
-
-Terminal 2:
-
-```bash
-make ui-install
-make ui-dev
-```
-
-Open the Vite URL, usually http://127.0.0.1:5173.
-
-### UI demo flow
-
-1. Click `Load example`.
-2. Keep `Offline mode` enabled for the simplest local demo.
-3. Click `Generate Startup Action Brief`.
-4. Review scorecards, gaps, NVIDIA technologies, evidence, warnings,
-   uncertainties, RAG status, and Markdown output.
-5. Click `Evaluate brief` to run optional answer quality evaluation.
-
-### UI build
-
-```bash
-make ui-build
-```
-
-### Demo acceptance
-
-Run the repeatable API + UI smoke suite:
-
-```bash
-make demo-acceptance
-```
-
-This runs API acceptance tests, the frontend build, and Playwright smoke tests.
-The default path is offline and does not require Qdrant or LLM calls. Qdrant
-offline must appear as status/warning, not as a demo crash.
-
-If Playwright browsers are not installed locally, run:
-
-```bash
-cd frontend
-npx playwright install chromium
-```
-
-See [docs/52_demo_acceptance.md](docs/52_demo_acceptance.md) for the automated
-coverage and manual fallback checklist.
 
 ## Using the Obsidian Vault
 
@@ -488,21 +447,22 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - Optional LLM judge reports are experimental and informational; Epic 23.2 implements only an offline null provider, no real provider integration, no API calls, and no CI gate.
 - Minimal Demo UI is local/dev only, has no authentication or deploy workflow, and now has a narrow Playwright smoke suite rather than broad frontend unit coverage.
 - Relevance scoring in lexical mode is keyword-match-based; semantic mode uses cosine similarity; reranking uses a deterministic composite formula (no cross-encoder).
-- Vector store is in-memory only (no persistence across sessions — Qdrant-ready for production; optional QdrantStore adapter available in Epic 15).
+- Vector store defaults to in-memory for local/test paths; optional QdrantStore persistence is available and must be configured explicitly for product use.
 - Context packing uses configurable limits (per-tech=2, per-gap=3, global=5) — may drop relevant contexts in edge cases.
 - RAG pipeline integrated as optional Step 11 — no support for multi-turn or interactive context queries.
 - QdrantStore does not auto-fallback to in-memory on connection error (caller must catch `QdrantConnectionError`).
 - Automated ingestion script at `scripts/ingest_nvidia_corpus.py` handles corpus → Qdrant pipeline with validation, hashing, embeddings, and provenance preservation.
 - Corpus freshness audit at `scripts/audit_nvidia_corpus_freshness.py` runs offline and detects stale, expired, deprecated, superseded, missing metadata, and duplicate active versions.
-- Recommendation Engine is deterministic (no LLM) — now fully integrated in the pipeline.
-- Gap Diagnosis module (`src/diagnosis/gap_diagnosis.py`) exists but is not yet called by the pipeline — scores are available but not part of the output.
+- Recommendation Engine is deterministic (no LLM) and fully integrated in the pipeline.
+- Gap Diagnosis and NVIDIA Technology Mapping are integrated in the pipeline output.
 - Scores depend on the quality and coverage of public evidence available for the startup.
 - Evidence confidence is assigned heuristically by rule-based validation, not by a learned model.
 - The system does not prove real internal usage of AI — it only structures publicly available signals.
 - `recommended_motion` is a preliminary suggestion based on deterministic rules, not a final business decision.
-- No human-in-the-loop technically implemented (only documented in architecture plan).
+- No human review/status workflow yet; Epic 29 implements persistence and lifecycle only.
 - Golden eval harness at `tests/evals/` with 38 tests across 7 golden cases.
-- Agents (`src/agents/`), database (`src/database/`), and interface (`src/interface/`) are stubs.
+- Agents (`src/agents/`) and interface (`src/interface/`) remain stubs; `src/database/` now implements the SQLite-first product persistence foundation.
+- Product analysis execution is synchronous and schema migrations are not versioned yet.
 - Obsidian vault has structure but no populated content beyond templates.
 - CI only tests on Ubuntu — no Windows/macOS matrix in CI.
 - Integration tests excluded from CI (require `QDRANT_TEST_URL`).

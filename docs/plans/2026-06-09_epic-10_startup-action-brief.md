@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Plan: Epic 10 — Startup Action Brief
 
 ## Objective
@@ -84,3 +86,4 @@ Test functions: `test_high_fit_startup`, `test_weak_evidence_brief`, `test_no_ga
 
 *Gerado em: 2026-06-09*
 *Modo: Plan -> Build -> Review -> Commit*
+

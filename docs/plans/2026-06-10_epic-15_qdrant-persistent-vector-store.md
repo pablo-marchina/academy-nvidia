@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Plan — Epic 15: Persistent Vector Store with Qdrant
 
 **Date:** 2026-06-10
@@ -36,3 +38,4 @@ No scraping, crawler, scheduler, LangGraph, interface, scoring, diagnosis, recom
 - ruff: all checks passed
 - black: all files left unchanged
 - mypy: Success: no issues found
+

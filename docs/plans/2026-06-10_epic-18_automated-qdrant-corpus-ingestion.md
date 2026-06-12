@@ -1,3 +1,5 @@
+> **ARCHIVED:** Historical plan artifact. Preserved for reference only. Current product direction is in Epics 28-31 and docs/54_final_product_backlog.md.
+
 # Plan: Epic 18 — Automated Qdrant Corpus Ingestion
 
 **Data:** 2026-06-10
@@ -21,3 +23,4 @@
 - 375 testes passam (17 novos + 358 pre-existentes)
 - 12 testes skippable (9 Qdrant + 3 ingest)
 - ruff, black, mypy passam (pre-existing only)
+

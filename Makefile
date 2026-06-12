@@ -1,7 +1,27 @@
-.PHONY: test lint format-check typecheck validate validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e demo-acceptance demo-full-check demo-full
+.PHONY: test lint format-check typecheck validate validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e demo-acceptance demo-full-check demo-full demo-cli demo-cli-offline demo-cli-rag db-upgrade db-downgrade db-migrate db-current db-history
 
 test:
 	python -m pytest -m "not integration" --tb=short
+
+.PHONY: db-upgrade
+db-upgrade:
+	alembic upgrade head
+
+.PHONY: db-downgrade
+db-downgrade:
+	alembic downgrade -1
+
+.PHONY: db-migrate
+db-migrate:
+	alembic revision --autogenerate -m "$(msg)"
+
+.PHONY: db-current
+db-current:
+	alembic current
+
+.PHONY: db-history
+db-history:
+	alembic history
 
 lint:
 	ruff check .

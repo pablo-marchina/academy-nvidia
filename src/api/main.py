@@ -6,11 +6,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.api.product_routes import router as product_router
 from src.api.routes import router
+from src.database.session import initialize_product_database
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    initialize_product_database()
     yield
 
 
@@ -32,3 +35,4 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(product_router)
