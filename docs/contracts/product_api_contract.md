@@ -1,7 +1,7 @@
 # Product API Contract
 
 **Module:** `src/api/product_routes.py`
-**Version:** 2.0
+**Version:** 2.1
 **Date:** 2026-06-12
 
 ## Purpose
@@ -56,12 +56,25 @@ decision, reviewer, notes, metadata, created_at, updated_at.
 Reviews are append-only: multiple reviews can exist for a run. The latest
 review (by created_at) is the current status. Reviews do not recalculate scores.
 
+### Activation Dossier
+
+`ActivationDossierRead` returns the complete dossier JSON for an analysis run,
+including scores, gaps, NVIDIA mappings, activation recommendations, claims,
+review decisions, readiness checks, uncertainties, and risks.
+
+`ActivationDossierSummaryRead` is a lightweight projection containing
+`created_at`, `version`, `risk_count`, and `unsupported_claim_count`.
+
+Dossier generation is idempotent by default (returns existing latest dossier).
+Use `?force=true` to regenerate with a new version. Dossiers are versioned
+per analysis run (1, 2, 3…) and previous versions are preserved.
+
 ### Export
 
 `ExportCreate` requires `export_type` (`json` or `markdown`).
 
 `ExportRead` returns the export record metadata including id,
-analysis_run_id, action_brief_id, export_type, status, storage_path,
+analysis_run_id, action_brief_id, dossier_id, export_type, status, storage_path,
 content_hash, error_message, and timestamps. Status values: pending,
 completed, failed. Content is generated from the persisted ActionBriefRecord,
 not from demo artifacts.
@@ -69,7 +82,7 @@ not from demo artifacts.
 ### Opportunity
 
 `OpportunityListItem` represents a startup's latest analysis run with key
-scoring, gap, and review information for ranking.
+scoring, gap, review, and dossier information for ranking.
 
 `OpportunityListResponse` wraps items with total, offset, and limit pagination
 metadata.
@@ -77,7 +90,7 @@ metadata.
 ## Endpoints
 
 | Method | Path | Success | Errors |
-|---|---|---|---|
+|---|---|---|---|---|
 | POST | `/startups` | `201 StartupRead` | `409` duplicate name, `422` validation |
 | GET | `/startups` | `200 list[StartupListItem]` | `422` invalid pagination |
 | GET | `/startups/{id}` | `200 StartupRead` | `404` unknown startup |
@@ -85,6 +98,9 @@ metadata.
 | POST | `/startups/{id}/analysis-runs` | `201 AnalysisRunRead` | `404`, `422` |
 | GET | `/analysis-runs/{id}` | `200 AnalysisRunRead` | `404` unknown run |
 | GET | `/analysis-runs/{id}/brief` | `200 ActionBriefRead` | `404` |
+| POST | `/analysis-runs/{id}/dossier` | `201 ActivationDossierRead` | `404`, `409` draft run |
+| GET | `/analysis-runs/{id}/dossier` | `200 ActivationDossierRead` | `404` |
+| GET | `/analysis-runs/{id}/dossier/markdown` | `200 ActivationDossierMarkdownRead` | `404` |
 | POST | `/analysis-runs/{id}/review` | `201 ReviewDecisionRead` | `404`, `422` |
 | GET | `/analysis-runs/{id}/reviews` | `200 list[ReviewDecisionRead]` | `404` |
 | POST | `/analysis-runs/{id}/exports` | `201 ExportRead` | `404`, `422` |

@@ -459,7 +459,7 @@
 - [x] Decision 034 registered: demo artifacts are not product sources
 - [x] Nenhuma mudanca em pipeline, scoring, RAG, recommendation, database
 
-### Epic 32 — Evidence & Claim Ledger (em andamento)
+### Epic 32 — Evidence & Claim Ledger (concluído)
 - [x] ClaimRecord model (FK Startup + AnalysisRun)
 - [x] Enums: ClaimType, SupportLevel, ClaimReviewStatus
 - [x] ClaimRepository (CRUD, bulk, coverage, unsupported detection)
@@ -472,15 +472,45 @@
 - [x] Unit tests (claim_repository 12, claim_ledger 9)
 - [x] Integration tests (claim_api 9)
 - [x] Docs: plan, module doc (58), contract
-- [ ] Run validations (pytest, ruff, black, mypy)
-- [ ] Update ROADMAP, EVALS, DECISIONS, Obsidian vault
+- [x] Validations passed (pytest, ruff, black, mypy)
+- [x] ROADMAP, EVALS, DECISIONS, Obsidian vault updated
 
-### Epic 33 — Product UI Replacement
-- Substituir UI legada baseada em sample fixo por workflow sobre startups, analysis runs, review/status e opportunities
+### Epic 34 — Startup Activation Dossier (concluído)
+- [x] ActivationDossierRecord model (FK AnalysisRun, versioned, JSON + Markdown columns)
+- [x] Alembic migration 0004 (c3d4e5f6a7b8)
+- [x] ActivationDossierRepository (CRUD, versioning, get_latest, next_version, delete)
+- [x] Pydantic schemas: ActivationDossierRead, ActivationDossierGenerateResponse, ActivationDossierMarkdownRead, ActivationDossierSummaryRead
+- [x] ActivationDossierService (build, get, regenerate, markdown, summary)
+- [x] Deterministic JSON dossier projecting: startup, scores, gaps, mappings, activation playbooks, claims, reviews, readiness checks
+- [x] Deterministic Markdown renderer (11 template sections)
+- [x] 3 API endpoints (POST generate, GET dossier, GET markdown)
+- [x] Dossier summary injected into AnalysisRunRead and OpportunityListItem
+- [x] 5 degraded-state codes for dossier readiness
+- [x] Unit tests: repository 7, service 10 (all passing)
+- [x] Integration tests: API 8 (all passing)
+- [x] All 589 non-integration tests passing (no regression)
+- [x] Docs: plan, module doc (60), contract
+- [x] product_api_contract.md updated (v2.1)
+- [x] Validations: pytest, ruff, black, mypy, scope, docs-closure
+- [x] ROADMAP, DECISIONS, EVALS updated
 
-### Epic 34 — Activation Playbooks
-- Technical experiment templates mapped to NVIDIA technologies
-- One-click playbook generation from diagnosed gaps
+### Epic 33 — NVIDIA Activation Playbook Library (concluído)
+- [x] YAML source with 10 playbooks (inference, latency, agent governance, data, CV, voice, simulation, robotics, security, private deployment)
+- [x] Pydantic schemas: ActivationPlaybook, ActivationPlaybookMatch, ActivationRecommendationSchema
+- [x] Playbook loader with validation (unique IDs, required fields, valid motions/complexities)
+- [x] ActivationRecommendationRecord model (FK AnalysisRun, JSON columns, indexes)
+- [x] Alembic migration 0003 (rev a1b2c3d4e5f6 → b2c3d4e5f6a7)
+- [x] ActivationRecommendationRepository (CRUD, replace, list, get_top)
+- [x] ActivationPlaybookService (deterministic matching, confidence scoring, ranking, persist)
+- [x] 4 readiness checks (NO_ACTIVATION_PLAYBOOK_MATCH, PLAYBOOK_LOW_EVIDENCE_SUPPORT, etc.)
+- [x] 3 API endpoints (GET playbooks, GET/POST recommendations)
+- [x] Opportunities endpoint enriched (top_activation_playbook, activation_confidence, activation_next_step)
+- [x] Auto-generate activation in analysis run lifecycle
+- [x] Unit tests (loader 13, matcher 9)
+- [x] Integration tests (activation_api 8)
+- [x] Docs: plan, module doc (59), contract
+- [x] Validations passed (pytest 30/30, ruff, black, mypy, scope, docs-closure)
+- [x] ROADMAP, EVALS, DECISIONS, Obsidian vault updated
 
 ### Later Backlog
 - Documentation Pruning (consolidation of remaining early docs)

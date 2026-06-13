@@ -120,6 +120,7 @@ class AnalysisRunRead(BaseModel):
     readiness_checks: list[ReadinessCheckRead] = Field(default_factory=list)
     action_brief_id: str | None = None
     claim_summary: ClaimSummaryRead | None = None
+    dossier_summary: ActivationDossierSummaryRead | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -192,6 +193,12 @@ class OpportunityListItem(BaseModel):
     review_status: str | None = None
     unsupported_claim_count: int | None = None
     evidence_coverage: float | None = None
+    top_activation_playbook: str | None = None
+    activation_confidence: str | None = None
+    activation_next_step: str | None = None
+    technical_experiment_summary: str | None = None
+    dossier_available: bool = False
+    latest_dossier_id: str | None = None
 
 
 class OpportunityListResponse(BaseModel):
@@ -236,7 +243,11 @@ class DependencyHealthRead(BaseModel):
     dependencies: list[DependencyItemRead]
 
 
-_CLAIM_TYPE_PATTERN = r"^(ai_native_claim|technical_stack_claim|market_claim|production_readiness_claim|defensibility_claim|gap_claim|nvidia_fit_claim|risk_claim|activation_claim|uncertainty_claim)$"
+_CLAIM_TYPE_PATTERN = (
+    r"^(ai_native_claim|technical_stack_claim|market_claim|"
+    r"production_readiness_claim|defensibility_claim|gap_claim|"
+    r"nvidia_fit_claim|risk_claim|activation_claim|uncertainty_claim)$"
+)
 _SUPPORT_LEVEL_PATTERN = r"^(unsupported|weak|medium|strong)$"
 _REVIEW_STATUS_PATTERN = r"^(unreviewed|approved|rejected|needs_more_evidence)$"
 
@@ -290,3 +301,99 @@ class ClaimSummaryRead(BaseModel):
     supported_claims: int
     unsupported_claims: int
     evidence_coverage: float
+
+
+class ActivationPlaybookRead(BaseModel):
+    playbook_id: str
+    name: str
+    description: str = ""
+    target_gap_types: list[str] = Field(default_factory=list)
+    target_claim_types: list[str] = Field(default_factory=list)
+    nvidia_technologies: list[str] = Field(default_factory=list)
+    technical_experiment: dict = Field(default_factory=dict)
+    success_metrics: list[str] = Field(default_factory=list)
+    recommended_motion: str = ""
+    prerequisites: list[str] = Field(default_factory=list)
+    evidence_requirements: list[str] = Field(default_factory=list)
+    risks: list[str] = Field(default_factory=list)
+    expected_value: str = ""
+    implementation_complexity: str = ""
+    version: str = ""
+
+
+class ActivationPlaybookListResponse(BaseModel):
+    playbooks: list[ActivationPlaybookRead]
+    total: int
+
+
+class ActivationRecommendationRead(BaseModel):
+    id: str
+    analysis_run_id: str
+    playbook_id: str
+    playbook_name: str
+    matched_gap_types: list[str] = Field(default_factory=list)
+    matched_claim_ids: list[str] = Field(default_factory=list)
+    nvidia_technologies: list[str] = Field(default_factory=list)
+    technical_experiment: str = ""
+    success_metrics: list[str] = Field(default_factory=list)
+    recommended_motion: str = ""
+    priority: int = 4
+    confidence: str = "low"
+    reasoning: str = ""
+    evidence_refs: list[dict] = Field(default_factory=list)
+    risks: list[str] = Field(default_factory=list)
+    next_step: str = ""
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class ActivationRecommendationListResponse(BaseModel):
+    items: list[ActivationRecommendationRead]
+    total: int
+    offset: int
+    limit: int
+
+
+class GenerateActivationRecommendationsResponse(BaseModel):
+    recommendations: list[ActivationRecommendationRead]
+    total: int
+
+
+class ActivationDossierRead(BaseModel):
+    id: str
+    analysis_run_id: str
+    version: int
+    schema_version: str
+    dossier_json: dict[str, Any]
+    dossier_markdown: str
+    is_latest: bool
+    evidence_coverage: float
+    unsupported_claim_count: int
+    top_activation_playbook_id: str | None = None
+    recommended_motion: str
+    review_status: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ActivationDossierGenerateResponse(BaseModel):
+    dossier: ActivationDossierRead
+    version: int
+    is_new: bool
+
+
+class ActivationDossierMarkdownRead(BaseModel):
+    markdown: str
+    dossier_id: str
+    version: int
+
+
+class ActivationDossierSummaryRead(BaseModel):
+    dossier_id: str | None = None
+    dossier_version: int | None = None
+    dossier_available: bool = False
+    evidence_coverage: float | None = None
+    unsupported_claim_count: int | None = None
+    top_activation_playbook_id: str | None = None
+    recommended_motion: str | None = None
+    review_status: str | None = None

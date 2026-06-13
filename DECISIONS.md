@@ -403,6 +403,58 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 - **Validation:** 12 testes unitários (ClaimRepository), 9 testes unitários (ClaimLedgerService), 9 testes de integração (API). Cobertura de evidencia calculada via confidence_to_float mapping.
 - **Status:** Implementado no Epic 32.
 
+## Decision 036 — Activation Playbook Source em YAML (não DB-first)
+
+- **Context:** Epic 33 — NVIDIA Activation Playbook Library. Precisa-se de uma fonte de verdade para 10 playbooks de ativação. Playbooks mudam com frequência (novas tecnologias NVIDIA, motions, regras de matching).
+- **Decision:** Playbook source é YAML em `src/config/playbooks/nvidia_activation_playbooks.yaml`. Loader com validação Pydantic carrega e valida os playbooks em runtime. Não há persistência DB-first dos playbooks — apenas das recomendações geradas (`ActivationRecommendationRecord`).
+- **Alternatives considered:** DB-first com tabela de playbooks (rejeitado — playbooks mudam via deploy/CI, não via UI; YAML é mais simples de versionar e revisar). SQLite seed data (rejeitado — mistura schema com dados). JSON (rejeitado — YAML é mais legível para humanos).
+- **Rationale:** YAML permite versionamento git, diff claro em PRs, sem migration DB para cada alteração de playbook. PyYAML já é dependência do projeto (usado em outros lugares). Validação no loader garante que YAML malformado não passa.
+- **Risks:** Mudança de playbook requer deploy (não é hot-reload). YAML corrompido quebra o endpoint de listagem (log + fallback silencioso implementado).
+- **Validation:** 13 testes unitários no loader cobrindo YAML válido, vazio, duplicado, campos obrigatórios ausentes, motions inválidos, complexities inválidas.
+- **Status:** Implementado no Epic 33.
+
+## Decision 037 — Matching Determinístico v1 (sem LLM)
+
+- **Context:** Playbooks precisam fazer match com gaps detectados para gerar recomendações. Opção de usar LLM ou embedding similarity para matching mais flexível.
+- **Decision:** Matching v1 é puramente determinístico: um playbook matcha se pelo menos um `target_gap_type` está presente entre os gaps detectados (detected=True) do analysis_run. Gaps não detectados são ignorados.
+- **Alternatives considered:** LLM matching (rejeitado — custo, latência, não-determinismo na v1). Embedding similarity (rejeitado — complexidade, necessidade de sentence-transformers em runtime, overkill para 10 playbooks).
+- **Rationale:** Determinístico é testável, auditável e não depende de LLM. 10 playbooks × ~15 gap types = escopo pequeno o suficiente para matching exato.
+- **Risks:** Matching determinístico não captura gaps semanticamente similares (ex: "voice_need" vs "audio_processing"). Adiado para v2 com LLM/embedding fallback.
+- **Validation:** 9 testes unitários cobrindo matching por gap, sem gap, gap não detectado, confidence boost/penalty, prioridade, idempotência.
+- **Status:** Implementado no Epic 33.
+
+## Decision 038 — Confidence com Fórmula Fixa (sem aprendizado)
+
+- **Context:** Recomendações precisam de confidence score para priorização. Opção de usar ML ou feedback loop para calibrar confidence.
+- **Decision:** Confidence calculado por fórmula fixa: avg(gap_confidences) + mapping_boost + claim_boost - coverage_penalty - unsupported_penalty - degraded_penalty; clamped [0.0, 1.0]. Conversão para string: >= 0.7 high, >= 0.4 medium, < 0.4 low.
+- **Alternatives considered:** ML model (rejeitado — sem dados históricos de feedback na v1). Regressão logística (rejeitado — complexidade desnecessária). Threshold ajustável por playbook (adiado — fórmula única é suficiente para v1).
+- **Rationale:** Fórmula fixa é transparente, testável e não depende de dados históricos. Penalties e boosts são baseados em heurísticas de domínio (mapping NVIDIA aumenta confiança, claims não suportadas diminuem).
+- **Risks:** Fórmula pode não refletir maturidade real da startup (adiado — feedback loop v2). Penalties podem ser muito agressivos para startups early-stage (aceitável — é conservador por design).
+- **Validation:** Testes unitários cobrem boost com mapping, penalty com unsupported claims, prioridade ordenada.
+- **Status:** Implementado no Epic 33.
+
+## Decision 040 — Dossier Versioned and Deterministic (no LLM)
+
+- **Context:** Epic 34 — Startup Activation Dossier. Precisa-se de um artifact consolidado que projete todos os registros persistidos de um AnalysisRun (scores, gaps, mappings, activation, claims, reviews, readiness) em um JSON + Markdown versionado.
+- **Decision:** Dossier é deterministico (sem LLM), idempotente (POST retorna existente por default), versionado (versão 1..N por analysis_run), e honesto sobre dados ausentes (missing → uncertainty explícita). Readiness checks viram risks não-bloqueantes.
+- **Alternatives considered:** LLM-summarized dossier (rejeitado — não-determinismo, custo, latência). Generated-on-read (rejeitado — sem versionamento, sem snapshot). Always-regenerate (rejeitado — sem idempotência, sem preservação de histórico).
+- **Rationale:** Determinismo garante auditabilidade e testabilidade. Versionamento permite rastrear mudanças ao longo do tempo. Honestidade sobre missing data é consistente com evidence-first design do projeto.
+- **Risks:** Dossier pode ficar grande se analysis_run tiver muitos registros (aceitável — JSON + Markdown armazenados em colunas text). idempotência pode mascarar dados desatualizados — mitigado por force_new_version explícito.
+- **Validation:** Repository testa CRUD e versionamento. Service testa build de minimo a completo, incertezas, risks, review conditions, markdown. API testa idempotência, force new version, 404, summary injection.
+- **Status:** Implementado no Epic 34.
+
+---
+
+## Decision 039 — Idempotência via replace_recommendations_for_analysis_run
+
+- **Context:** Geração de recomendações pode ser chamada múltiplas vezes (manual via POST + automática no lifecycle). Precisa ser idempotente.
+- **Decision:** `ActivationRecommendationRepository.replace_recommendations_for_analysis_run` executa delete de todas as recomendações existentes do analysis_run + bulk create das novas. Tudo na mesma transação.
+- **Alternatives considered:** Upsert por playbook_id (rejeitado — playbooks podem ser removidos, upsert deixaria órfãos). Soft-delete + insert (rejeitado — complexidade desnecessária).
+- **Rationale:** Delete+regenerate é o padrão já usado no Claim Ledger (Epic 32). É simples, correto e testado. Transação única garante atomicidade.
+- **Risks:** Janela de vazio entre delete e insert (aceitável — operação rápida em um único analysis_run). Perda de revisões anteriores (aceitável — v1 não tem histórico).
+- **Validation:** Teste de idempotência na integração: duas chamadas POST geram mesmo número de recomendações.
+- **Status:** Implementado no Epic 33.
+
 ---
 
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

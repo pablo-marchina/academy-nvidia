@@ -18,7 +18,11 @@ def test_alembic_metadata_imports() -> None:
     assert len(heads) == 1
     head = script.get_revision(heads[0])
     assert head is not None
-    assert head.doc in ("create all product entities", "create claim_records")
+    assert head.doc in (
+        "create all product entities",
+        "create claim_records",
+        "create activation_dossier_records",
+    )
 
 
 def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
@@ -50,11 +54,12 @@ def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
             "review_decisions",
             "export_records",
             "claim_records",
+            "activation_dossier_records",
         }
         assert required.issubset(tables), f"Missing tables: {required - set(tables)}"
         assert "alembic_version" in tables
 
-        original_tables = {
+        tables_before_our_migration = {
             "startups",
             "startup_evidence",
             "analysis_runs",
@@ -65,14 +70,20 @@ def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
             "product_readiness_checks",
             "review_decisions",
             "export_records",
+            "claim_records",
+            "activation_recommendations",
         }
 
         command.downgrade(config, "-1")
         tables_after = inspect(engine).get_table_names()
         remaining = set(tables_after) - {"alembic_version"}
-        assert "claim_records" not in tables_after, "claim_records should have been removed"
-        missing_tables = original_tables - remaining
-        assert original_tables.issubset(remaining), f"Original tables missing: {missing_tables}"
+        assert (
+            "activation_dossier_records" not in tables_after
+        ), "activation_dossier_records should have been removed"
+        missing_tables = tables_before_our_migration - remaining
+        assert tables_before_our_migration.issubset(
+            remaining
+        ), f"Tables before our migration missing: {missing_tables}"
     finally:
         if engine is not None:
             engine.dispose()

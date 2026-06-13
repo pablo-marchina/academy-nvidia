@@ -60,7 +60,13 @@
 | Claim API Integration (Epic 32) | `tests/integration/test_claim_api.py` | 9 | integration |
 | Product PATCH/Review/Export API Integration (Epic 30) | `tests/integration/test_product_patch_review_export.py` | 12 | integration |
 | PostgreSQL Migration (Epic 30) | `tests/integration/test_postgres_migration.py` | 3 | skippable |
-| **Total** | **57 Python test files + 1 Playwright spec** | **574 Python + 2 E2E** | **525 pass, 29 skip/desel + UI smoke** |
+| Activation Playbook Loader (Epic 33) | `tests/unit/test_activation_playbook_loader.py` | 13 | ✅ |
+| Activation Playbook Matcher (Epic 33) | `tests/unit/test_activation_playbook_matcher.py` | 9 | ✅ |
+| Activation API Integration (Epic 33) | `tests/integration/test_activation_api.py` | 8 | integration |
+| Dossier Repository (Epic 34) | `tests/unit/test_dossier_repository.py` | 7 | ✅ |
+| Dossier Service (Epic 34) | `tests/unit/test_dossier_service.py` | 10 | ✅ |
+| Dossier API Integration (Epic 34) | `tests/integration/test_dossier_api.py` | 8 | integration |
+| **Total** | **63 Python test files + 1 Playwright spec** | **629 Python + 2 E2E** | **597 pass, 32 skip/desel + UI smoke** |
 
 ## Cobertura por módulo
 
@@ -93,6 +99,13 @@
 | `api/product_routes.py` claims (Epic 32) | ✅ REAL | ✅ | 9 integration |
 | `services/product/claim_constants.py` (Epic 32) | ✅ REAL | ✅ | (via test_claim_repository) |
 | `evaluation/` (9 files) | ✅ REAL | ✅ | 20 + 14 (Epic 13) + 11 (Epic 14) + 9 (Epic 23 answer quality) + 4 (Epic 23.2 optional judge) |
+| `playbook/` (3 files) | ✅ REAL | ✅ | 13 (loader) + 9 (matcher) |
+| `repositories/activation.py` (Epic 33) | ✅ REAL | ✅ | (via matcher tests) |
+| `services/product/activation_service.py` (Epic 33) | ✅ REAL | ✅ | 9 (matcher) |
+| `api/product_routes.py` activation (Epic 33) | ✅ REAL | ✅ | 8 integration |
+| `repositories/dossier.py` (Epic 34) | ✅ REAL | ✅ | 7 |
+| `services/product/dossier_service.py` (Epic 34) | ✅ REAL | ✅ | 10 |
+| `api/product_routes.py` dossier (Epic 34) | ✅ REAL | ✅ | 8 integration |
 | `interface/` (1 file) | ❌ STUB | ❌ | 0 |
 | `scripts/check_scope.py` | ✅ REAL | ✅ | 7 |
 | `scripts/check_docs_closure.py` | ✅ REAL | ✅ | 7 |
@@ -104,6 +117,7 @@
 - **Integração:** `tests/integration/` tem 9 testes Qdrant (skippable via QDRANT_TEST_URL)
 - **Config:** `src/config/settings.py` sem testes
 - **Novos scripts:** `scripts/check_scope.py` e `scripts/check_docs_closure.py` testados (14 testes)
+- **Activation Playbook:** Epics 33 coberto por 22 testes unitários (loader + matcher) e 8 testes de integração (API). Sem teste de loader para path inexistente (Path(...).resolve() já cobre).
 
 ## Critérios de aceite por módulo
 

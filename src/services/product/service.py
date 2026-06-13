@@ -191,6 +191,44 @@ class ProductService:
                             metadata={"claim_ids": issue.get("claim_ids", [])},
                         )
 
+            try:
+                from src.services.product.activation_service import ActivationPlaybookService
+
+                act_service = ActivationPlaybookService(self.session)
+                playbook_recs = act_service.generate_recommendations_for_run(run.id)
+                if playbook_recs:
+                    act_service.activation_repo.replace_recommendations_for_analysis_run(
+                        run.id, playbook_recs
+                    )
+                    low_conf = any(r["confidence"] == "low" for r in playbook_recs)
+                    has_unsupported = any(
+                        r["confidence"] == "low" and len(r.get("matched_gap_types", [])) > 0
+                        for r in playbook_recs
+                    )
+                    if low_conf:
+                        degraded_codes.append("PLAYBOOK_LOW_EVIDENCE_SUPPORT")
+                        self._save_degraded_check(
+                            run.id,
+                            "PLAYBOOK_LOW_EVIDENCE_SUPPORT",
+                            "Playbook recommendations have low confidence due to weak evidence.",
+                        )
+                    if has_unsupported:
+                        degraded_codes.append("PLAYBOOK_UNSUPPORTED_CLAIMS")
+                        self._save_degraded_check(
+                            run.id,
+                            "PLAYBOOK_UNSUPPORTED_CLAIMS",
+                            "Playbook matched but critical claims lack evidence support.",
+                        )
+                else:
+                    degraded_codes.append("NO_ACTIVATION_PLAYBOOK_MATCH")
+                    self._save_degraded_check(
+                        run.id,
+                        "NO_ACTIVATION_PLAYBOOK_MATCH",
+                        "No activation playbook matched the diagnosed gaps for this run.",
+                    )
+            except Exception:
+                pass
+
             if result.missing_evidence:
                 degraded_codes.append("MISSING_EVIDENCE")
                 self._save_degraded_check(

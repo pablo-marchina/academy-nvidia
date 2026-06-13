@@ -9,6 +9,13 @@ from sqlalchemy.orm import Session
 
 from src.api.product_schemas import (
     ActionBriefRead,
+    ActivationDossierGenerateResponse,
+    ActivationDossierMarkdownRead,
+    ActivationDossierRead,
+    ActivationPlaybookListResponse,
+    ActivationPlaybookRead,
+    ActivationRecommendationListResponse,
+    ActivationRecommendationRead,
     AnalysisRunCreate,
     AnalysisRunRead,
     ClaimListResponse,
@@ -18,6 +25,7 @@ from src.api.product_schemas import (
     EvidenceCoverageRead,
     ExportCreate,
     ExportRead,
+    GenerateActivationRecommendationsResponse,
     OpportunityListItem,
     OpportunityListResponse,
     ProductHealthRead,
@@ -30,10 +38,18 @@ from src.api.product_schemas import (
     StartupRead,
     StartupUpdate,
 )
-from src.database.models import ActionBriefRecord, AnalysisRun, ClaimRecord, Startup
+from src.database.models import (
+    ActionBriefRecord,
+    ActivationDossierRecord,
+    AnalysisRun,
+    ClaimRecord,
+    Startup,
+)
 from src.database.session import get_db_session
 from src.services.product import ProductService
+from src.services.product.activation_service import ActivationPlaybookService
 from src.services.product.claim_ledger import ClaimLedgerService
+from src.services.product.dossier_service import ActivationDossierService
 
 router = APIRouter(tags=["product"])
 DbSession = Annotated[Session, Depends(get_db_session)]
@@ -158,6 +174,18 @@ def _inject_claim_summary(result: AnalysisRunRead, session: Session) -> None:
         result.claim_summary = None
 
 
+def _inject_dossier_summary(result: AnalysisRunRead, session: Session) -> None:
+    try:
+        from src.api.product_schemas import ActivationDossierSummaryRead
+        from src.services.product.dossier_service import ActivationDossierService
+
+        svc = ActivationDossierService(session)
+        summary = svc.get_dossier_summary(result.id)
+        result.dossier_summary = ActivationDossierSummaryRead(**summary)
+    except Exception:
+        result.dossier_summary = None
+
+
 def _action_brief_read(record: ActionBriefRecord) -> ActionBriefRead:
     return ActionBriefRead(
         id=record.id,
@@ -240,6 +268,7 @@ def create_analysis_run(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     result = _analysis_run_read(run)
     _inject_claim_summary(result, session)
+    _inject_dossier_summary(result, session)
     return result
 
 
@@ -250,6 +279,7 @@ def get_analysis_run(analysis_run_id: str, session: DbSession) -> AnalysisRunRea
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
     result = _analysis_run_read(run)
     _inject_claim_summary(result, session)
+    _inject_dossier_summary(result, session)
     return result
 
 
@@ -375,6 +405,34 @@ def list_opportunities(
         review_decision=review_decision,
         order_by=order_by,
     )
+    run_ids: list[str] = [
+        item["latest_analysis_run_id"] for item in items if item.get("latest_analysis_run_id")
+    ]
+    if run_ids:
+        try:
+            act_service = ActivationPlaybookService(session)
+            top_by_run = act_service.get_top_by_run_ids(run_ids)
+            for item in items:
+                run_id = item.get("latest_analysis_run_id")
+                if run_id and run_id in top_by_run:
+                    top = top_by_run[run_id]
+                    item["top_activation_playbook"] = top.get("playbook_name")
+                    item["activation_confidence"] = top.get("confidence")
+                    item["activation_next_step"] = top.get("next_step")
+                    exp = top.get("technical_experiment", "")
+                    item["technical_experiment_summary"] = exp[:150] if exp else None
+        except Exception:
+            pass
+        try:
+            dossier_svc = ActivationDossierService(session)
+            for item in items:
+                run_id = item.get("latest_analysis_run_id")
+                if run_id:
+                    summary = dossier_svc.get_dossier_summary(run_id)
+                    item["dossier_available"] = summary.get("dossier_available", False)
+                    item["latest_dossier_id"] = summary.get("dossier_id")
+        except Exception:
+            pass
     return OpportunityListResponse(
         items=[OpportunityListItem(**item) for item in items],
         total=total,
@@ -525,3 +583,185 @@ def update_claim_review(
     if record is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Claim not found.")
     return _claim_read(record)
+
+
+@router.get("/activation-playbooks", response_model=ActivationPlaybookListResponse)
+def list_activation_playbooks() -> ActivationPlaybookListResponse:
+    playbooks = ActivationPlaybookService.get_playbooks()
+    items = [
+        ActivationPlaybookRead(
+            playbook_id=pb.playbook_id,
+            name=pb.name,
+            description=pb.description,
+            target_gap_types=pb.target_gap_types,
+            target_claim_types=pb.target_claim_types,
+            nvidia_technologies=pb.nvidia_technologies,
+            technical_experiment=pb.technical_experiment.model_dump(),
+            success_metrics=pb.success_metrics,
+            recommended_motion=pb.recommended_motion,
+            prerequisites=pb.prerequisites,
+            evidence_requirements=pb.evidence_requirements,
+            risks=pb.risks,
+            expected_value=pb.expected_value,
+            implementation_complexity=pb.implementation_complexity,
+            version=pb.version,
+        )
+        for pb in playbooks
+    ]
+    return ActivationPlaybookListResponse(playbooks=items, total=len(items))
+
+
+@router.get(
+    "/analysis-runs/{analysis_run_id}/activation-recommendations",
+    response_model=ActivationRecommendationListResponse,
+)
+def list_activation_recommendations(
+    analysis_run_id: str,
+    session: DbSession,
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+) -> ActivationRecommendationListResponse:
+    service = ProductService(session)
+    if service.get_analysis_run(analysis_run_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
+    act_service = ActivationPlaybookService(session)
+    items_raw = act_service.get_recommendations_for_run(analysis_run_id)
+    items = [_activation_rec_read(r) for r in items_raw]
+    total = len(items)
+    page = items[offset : offset + limit]
+    return ActivationRecommendationListResponse(items=page, total=total, offset=offset, limit=limit)
+
+
+@router.post(
+    "/analysis-runs/{analysis_run_id}/activation-recommendations/generate",
+    response_model=GenerateActivationRecommendationsResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def generate_activation_recommendations(
+    analysis_run_id: str,
+    session: DbSession,
+) -> GenerateActivationRecommendationsResponse:
+    service = ProductService(session)
+    if service.get_analysis_run(analysis_run_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
+    act_service = ActivationPlaybookService(session)
+    raw = act_service.persist_recommendations_for_run(analysis_run_id)
+    items = [_activation_rec_read(r) for r in raw]
+    return GenerateActivationRecommendationsResponse(recommendations=items, total=len(items))
+
+
+def _dossier_read(record: ActivationDossierRecord) -> ActivationDossierRead:
+    return ActivationDossierRead(
+        id=record.id,
+        analysis_run_id=record.analysis_run_id,
+        version=record.version,
+        schema_version=record.schema_version,
+        dossier_json=record.dossier_json,
+        dossier_markdown=record.dossier_markdown,
+        is_latest=record.is_latest,
+        evidence_coverage=record.evidence_coverage,
+        unsupported_claim_count=record.unsupported_claim_count,
+        top_activation_playbook_id=record.top_activation_playbook_id,
+        recommended_motion=record.recommended_motion,
+        review_status=record.review_status,
+        created_at=record.created_at,
+        updated_at=record.updated_at,
+    )
+
+
+@router.post(
+    "/analysis-runs/{analysis_run_id}/dossier",
+    response_model=ActivationDossierGenerateResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_dossier(
+    analysis_run_id: str,
+    session: DbSession,
+    force: bool = Query(default=False, description="Force regeneration of a new version"),
+) -> ActivationDossierGenerateResponse:
+    service = ProductService(session)
+    if service.get_analysis_run(analysis_run_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
+    dossier_svc = ActivationDossierService(session)
+    existing = dossier_svc.get_latest_dossier(analysis_run_id)
+    is_new = force or existing is None
+    if force or existing is None:
+        record = dossier_svc.build_dossier_for_analysis_run(
+            analysis_run_id, force_new_version=force
+        )
+    else:
+        record = existing
+    return ActivationDossierGenerateResponse(
+        dossier=_dossier_read(record),
+        version=record.version,
+        is_new=is_new,
+    )
+
+
+@router.get(
+    "/analysis-runs/{analysis_run_id}/dossier",
+    response_model=ActivationDossierRead,
+)
+def get_dossier(
+    analysis_run_id: str,
+    session: DbSession,
+) -> ActivationDossierRead:
+    service = ProductService(session)
+    if service.get_analysis_run(analysis_run_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
+    dossier_svc = ActivationDossierService(session)
+    record = dossier_svc.get_latest_dossier(analysis_run_id)
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No dossier found for this analysis run. Generate one first with POST.",
+        )
+    return _dossier_read(record)
+
+
+@router.get(
+    "/analysis-runs/{analysis_run_id}/dossier/markdown",
+    response_model=ActivationDossierMarkdownRead,
+)
+def get_dossier_markdown(
+    analysis_run_id: str,
+    session: DbSession,
+) -> ActivationDossierMarkdownRead:
+    service = ProductService(session)
+    if service.get_analysis_run(analysis_run_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
+    dossier_svc = ActivationDossierService(session)
+    record = dossier_svc.get_latest_dossier(analysis_run_id)
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No dossier found for this analysis run. Generate one first with POST.",
+        )
+    return ActivationDossierMarkdownRead(
+        markdown=record.dossier_markdown,
+        dossier_id=record.id,
+        version=record.version,
+    )
+
+
+def _activation_rec_read(rec: dict) -> ActivationRecommendationRead:
+    return ActivationRecommendationRead(
+        id=rec.get("id", ""),
+        analysis_run_id=rec.get("analysis_run_id", ""),
+        playbook_id=rec.get("playbook_id", ""),
+        playbook_name=rec.get("playbook_name", ""),
+        matched_gap_types=rec.get("matched_gap_types", []),
+        matched_claim_ids=rec.get("matched_claim_ids", []),
+        nvidia_technologies=rec.get("nvidia_technologies", []),
+        technical_experiment=rec.get("technical_experiment", ""),
+        success_metrics=rec.get("success_metrics", []),
+        recommended_motion=rec.get("recommended_motion", ""),
+        priority=rec.get("priority", 4),
+        confidence=rec.get("confidence", "low"),
+        reasoning=rec.get("reasoning", ""),
+        evidence_refs=rec.get("evidence_refs", []),
+        risks=rec.get("risks", []),
+        next_step=rec.get("next_step", ""),
+        created_at=rec.get("created_at"),
+        updated_at=rec.get("updated_at"),
+    )

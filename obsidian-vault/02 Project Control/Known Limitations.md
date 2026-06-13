@@ -53,6 +53,28 @@
 - Sem notificacao automatica para baixa cobertura de evidencia
 - Sem endpoints para batch review de multiplas claims
 
+## Activation Playbook Library (Epic 33)
+
+- Matching v1 puramente deterministico — nao captura gaps semanticamente similares (ex: "voice_need" vs "audio_processing")
+- Confidence usa formula fixa — sem aprendizado de feedback
+- Idempotencia via delete+regenerate — possivel janela de vazio
+- Auto-generate no lifecycle silencia erros (catch + log)
+- Evidence_refs nas recomendacoes e JSON column — sem enforced FK
+- Playbooks lidos de YAML (muda apenas via deploy) — sem hot-reload
+- Sem feedback loop para aceitar/rejeitar recomendacao
+- Sem LLM matching (planejado para v2)
+
+## Activation Dossier (Epic 34)
+
+- Dossier generation is deterministic from persisted records — no LLM extraction or summarization
+- Idempotent by default (POST returns existing) — use `?force=true` to regenerate with new version
+- Dossier does NOT auto-update when a review decision is submitted; caller must POST with `force=true`
+- Export integration deferred — `ExportRecord` can reference `dossier_id` in future but not yet implemented
+- No PDF export of dossier Markdown
+- Dossier excludes RAG retrieval context — focuses on structured product records only
+- Readiness checks are non-blocking — they appear as risks in the dossier JSON but never prevent generation
+- Markdown rendering is plain text only — no PDF, no HTML
+
 ## Documentacao
 
 - Scoring docs incompletas (inception fit, production readiness, composite ranking sem docs individuais)

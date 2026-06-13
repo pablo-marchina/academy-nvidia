@@ -127,6 +127,12 @@ class AnalysisRun(TimestampMixin, Base):
     exports: Mapped[list[ExportRecord]] = relationship(
         back_populates="analysis_run", cascade="all, delete-orphan"
     )
+    activation_recommendations: Mapped[list[ActivationRecommendationRecord]] = relationship(
+        back_populates="analysis_run", cascade="all, delete-orphan"
+    )
+    dossiers: Mapped[list[ActivationDossierRecord]] = relationship(
+        back_populates="analysis_run", cascade="all, delete-orphan"
+    )
 
 
 class ScoreRecord(TimestampMixin, Base):
@@ -311,3 +317,62 @@ class ClaimRecord(TimestampMixin, Base):
 
     startup: Mapped[Startup] = relationship()
     analysis_run: Mapped[AnalysisRun] = relationship()
+
+
+class ActivationRecommendationRecord(TimestampMixin, Base):
+    __tablename__ = "activation_recommendations"
+    __table_args__ = (
+        Index("ix_activation_run_id", "analysis_run_id"),
+        Index("ix_activation_playbook_id", "playbook_id"),
+        Index("ix_activation_recommended_motion", "recommended_motion"),
+        Index("ix_activation_priority", "priority"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    analysis_run_id: Mapped[str] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    playbook_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    playbook_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    matched_gap_types_json: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    matched_claim_ids_json: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    nvidia_technologies_json: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    technical_experiment: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    success_metrics_json: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    recommended_motion: Mapped[str] = mapped_column(String(50), nullable=False, default="")
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
+    confidence: Mapped[str] = mapped_column(String(20), nullable=False, default="low")
+    reasoning: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    risks_json: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    next_step: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+    analysis_run: Mapped[AnalysisRun] = relationship(back_populates="activation_recommendations")
+
+
+class ActivationDossierRecord(TimestampMixin, Base):
+    __tablename__ = "activation_dossier_records"
+    __table_args__ = (
+        UniqueConstraint("analysis_run_id", "version", name="uq_run_dossier_version"),
+        Index("ix_dossier_run_latest", "analysis_run_id", "is_latest"),
+        Index("ix_dossier_recommended_motion", "recommended_motion"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    analysis_run_id: Mapped[str] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    schema_version: Mapped[str] = mapped_column(String(50), nullable=False, default="1.0")
+    dossier_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    dossier_markdown: Mapped[str] = mapped_column(Text, nullable=False)
+    is_latest: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    evidence_coverage: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    unsupported_claim_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    top_activation_playbook_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    recommended_motion: Mapped[str] = mapped_column(String(50), nullable=False, default="")
+    review_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    analysis_run: Mapped[AnalysisRun] = relationship(back_populates="dossiers")

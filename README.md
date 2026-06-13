@@ -86,7 +86,7 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 - `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit, corpus maintenance orchestration, regression dashboard generation
 
 ### Testing
-- 521 Python tests (509 passing + 12 skippable integration) across 50 Python test files, plus 2 Playwright UI smoke tests
+- 604 Python tests (555 passing + 29 skippable/desel integration) across 60 Python test files, plus 2 Playwright UI smoke tests
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
