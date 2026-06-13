@@ -599,6 +599,27 @@
 - [x] All validations passing (pytest, ruff, black, mypy, scope, docs-closure)
 - [x] Nenhuma alteração em scoring, RAG, Qdrant, recommendation central
 
+### Epic 40 — Startup Discovery Engine (concluído)
+- [x] `src/config/discovery_sources.json` — 6 source definitions (manual_seed, configured_url_list, distrito, ace, bossa, inovativa)
+- [x] `src/discovery/source_registry.py` — source loader with cache, `is_usable()`, `list_enabled_sources()`
+- [x] `src/database/models.py` — DiscoveryRun + StartupDiscoveryCandidate models with FK, indexes, relationships
+- [x] `migrations/versions/d4e5f6a7b8c9_create_discovery_tables.py` — Alembic migration
+- [x] `src/discovery/signals.py` — 30+ AI-native keyword patterns, `detect_ai_native_signals()`, `calculate_confidence()`
+- [x] `src/discovery/dedup.py` — `normalize_name()`, `extract_domain()`, `is_duplicate_by_name()`, `is_duplicate_by_domain()`
+- [x] `src/repositories/discovery.py` — DiscoveryRepository (DiscoveryRun + Candidate CRUD, promote, dedup, bulk)
+- [x] `src/discovery/service.py` — StartupDiscoveryService (manual seed, URL list, promote, dedup)
+- [x] `src/api/product_schemas.py` — 14 Pydantic schemas for discovery
+- [x] `src/api/product_routes.py` — 9 discovery endpoints (sources, manual-seed, url-list, runs, candidates, promote, dedup)
+- [x] `src/services/product/capability_registry.py` — 4 discovery capabilities registered
+- [x] `tests/unit/test_discovery_signals.py` — 11 tests (signal detection, confidence)
+- [x] `tests/unit/test_discovery_dedup.py` — 15 tests (normalize, domain, dedup)
+- [x] `tests/unit/test_discovery_repository.py` — 15 tests (runs + candidates CRUD)
+- [x] `tests/integration/test_discovery_api.py` — 14 tests (sources, manual seed, runs, candidates, promote, dedup)
+- [x] `docs/contracts/discovery_contract.md` — API contract
+- [x] `ROADMAP.md`, `EVALS.md`, `DECISIONS.md`, `README.md`, `Known Limitations.md` — atualizados
+- [x] `obsidian-vault/04 Decisions/` e `03 Research/` — notas criadas
+- [x] Nenhuma alteração em scoring, RAG, Qdrant, recommendation central, LangGraph
+
 ### Later Backlog
 - Documentation Pruning (consolidation of remaining early docs)
 - Human-in-the-loop review implementation

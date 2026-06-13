@@ -517,4 +517,18 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 
 ---
 
+---
+
+## Decision 046 — Startup Discovery Engine (Epic 40)
+
+- **Context:** The product had no upstream discovery layer. Startups had to be created manually via the API with no automated candidate intake, signal detection, duplicate prevention, or multi-source ingestion.
+- **Decision:** Build a multi-source startup discovery engine with: source registry (JSON), signal detection (keyword-based, no LLM), dedup (normalized_name + domain), DiscoveryRun lifecycle (queued/running/completed/degraded/failed), Candidate management, URL list importer (httpx + BeautifulSoup), and promotion to Startup records with evidence migration.
+- **Alternatives considered:** Scraping-first approach with broad crawler (rejected — "no scraping agressivo" rule). Google Custom Search / SerpAPI (rejected — paid, not allowed by rules). LLM-based classification (rejected — no LLM dependency for discovery). Single monolithic importer (rejected — modularity requirement).
+- **Rationale:** Source-agnostic JSON registry allows adding new sources without code changes. Keyword-based signal detection works offline with zero API cost. Dedup by normalized_name + domain prevents duplicate Startups from any source. DiscoveryRun lifecycle with degraded states ensures partial failures don't block progress. Promotion-to-Startup creates evidence records from detected signals.
+- **Risks:** Signal detection is keyword-only and will miss context-dependent AI usage. No broad crawling means discovery depends on user-provided seeds and curated source lists. URL list importer may hit rate limits or blocked domains.
+- **Validation:** 55 total tests (41 unit + 14 integration) covering signals, dedup, repository CRUD, and API endpoints. All 57 existing tests continue to pass.
+- **Status:** Implementado no Epic 40.
+
+---
+
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

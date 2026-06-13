@@ -77,3 +77,14 @@
 - DossierView auto-generates dossier if GET returns 404 — may produce duplicate if creation fails silently.
 - ReviewForm submits to server but does not refresh reviews list automatically after submit (manual nav reset).
 - No E2E tests run in CI (requires browser + running backend server).
+
+## Startup Discovery Engine (Epic 40)
+
+- Signal detection is keyword-only — may miss AI-native startups that don't use common keywords.
+- No broad crawling — discovery depends on user-provided seeds and curated source lists.
+- URL list importer may fail on domains with strict rate limits or bot protection.
+- Static HTML collection methods (distrito, ace, bossa, inovativa) are defined but not yet implemented as automatic collectors — only manual_seed and configured_url_list work.
+- Dedup by normalized_name + domain only — no fuzzy matching for similar names with different domains.
+- No LLM-based signal enrichment — all signals are deterministic keyword matches.
+- Discovery does not automatically trigger AnalysisRun on promotion — user must run analysis manually.
+- No scheduled/periodic discovery — all discovery runs are manually triggered via API.

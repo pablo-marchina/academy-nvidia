@@ -534,6 +534,33 @@ Epic 28 e documental. A validacao principal e manual/estrutural sobre
 - Prioridades permitidas: P0, P1, P2, P3.
 - Todo item consolidado deve ter origem rastreavel.
 
+## Startup Discovery Engine (Epic 40)
+
+### Execução
+
+```bash
+pytest tests/unit/test_discovery_signals.py -v
+pytest tests/unit/test_discovery_dedup.py -v
+pytest tests/unit/test_discovery_repository.py -v
+pytest tests/integration/test_discovery_api.py -v
+```
+
+### Testes
+
+- 11 unit tests em `tests/unit/test_discovery_signals.py`: LLM, IA, GPU, CUDA, TensorRT, NLP, nvidia_tech, evidence_excerpts, confidence (high/medium/low/bounds, manual_seed, signal-only).
+- 15 unit tests em `tests/unit/test_discovery_dedup.py`: normalize_name (lowercase, whitespace, casefold), extract_domain (URL variants, empty, no_scheme), is_duplicate_by_name (match, case_insensitive, no_match, empty), is_duplicate_by_domain (match, no_match, empty).
+- 15 unit tests em `tests/unit/test_discovery_repository.py`: DiscoveryRun CRUD (create, complete, fail, degrade, filter, not_found) + Candidate CRUD (create, bulk, filter, mark_duplicate, promote, find_duplicate, update_status, update_fields).
+- 14 integration tests em `tests/integration/test_discovery_api.py`: list_sources, manual_seed (happy path, dedup repeat, empty name skipped), runs (list, get, 404), candidates (list, filter, detail, 404), promote (creates startup, twice returns already, nonexistent 404), dedup (no duplicate).
+
+### Invariantes
+
+- Nenhuma alteração em scoring, RAG, Qdrant, recommendation central, LangGraph, pipeline.
+- Discovery alimenta fluxo existente: Startup -> AnalysisRun -> Claims -> Playbook -> Dossier -> Quality -> Opportunities.
+- Duplicatas marcadas como `duplicate`, nunca deletadas.
+- Erros de fonte geram DiscoveryRun `degraded` ou `failed`, nunca crash.
+- Discovery não depende de APIs pagas, LLM, ou dados de demo.
+- URL list discovery respeita `robots.txt` e políticas de scraping.
+
 ## Product Backend Foundation (Epic 29)
 
 ### Tests

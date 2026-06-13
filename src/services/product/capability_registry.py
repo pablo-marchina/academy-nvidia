@@ -413,6 +413,50 @@ _reg(
 )
 
 # ---------------------------------------------------------------------------
+# Discovery
+# ---------------------------------------------------------------------------
+_reg(
+    capability_id="startup_discovery",
+    name="Startup Discovery Engine",
+    description=(
+        "Multi-source discovery of AI-native Brazilian startups" " with signal detection and dedup"
+    ),
+    category=CapabilityCategory.core,
+    required=False,
+    setup_instructions="Available once product_database is configured.",
+    failure_mode=(
+        "Manual seed discovery works without external sources;"
+        " URL list discovery requires httpx."
+    ),
+)
+_reg(
+    capability_id="discovery_sources",
+    name="Discovery Source Registry",
+    description=(
+        "Configurable registry of discovery sources" " (manual, URL list, incubators, accelerators)"
+    ),
+    category=CapabilityCategory.core,
+    required=False,
+    setup_instructions="Sources defined in src/config/discovery_sources.json.",
+)
+_reg(
+    capability_id="ai_native_signal_detection",
+    name="AI-Native Signal Detection",
+    description="Keyword-based detection of AI-native signals (AI, IA, LLM, GPU, CUDA, TensorRT)",
+    category=CapabilityCategory.core,
+    required=False,
+    setup_instructions="Built into discovery module; no external dependencies required.",
+)
+_reg(
+    capability_id="candidate_promotion",
+    name="Candidate to Startup Promotion",
+    description="Promote discovered candidates to Startup records with evidence migration",
+    category=CapabilityCategory.core,
+    required=False,
+    setup_instructions="Available once discovery engine and product_database are configured.",
+)
+
+# ---------------------------------------------------------------------------
 # Developer Tools
 # ---------------------------------------------------------------------------
 _reg(

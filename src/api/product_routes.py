@@ -21,11 +21,19 @@ from src.api.product_schemas import (
     ClaimListResponse,
     ClaimRead,
     ClaimReviewUpdate,
+    DedupCandidateResponse,
     DependencyHealthRead,
+    DiscoveryCandidateListResponse,
+    DiscoveryCandidateRead,
+    DiscoveryRunListResponse,
+    DiscoveryRunRead,
+    DiscoverySourceRead,
     EvidenceCoverageRead,
     ExportCreate,
     ExportRead,
     GenerateActivationRecommendationsResponse,
+    ManualSeedRequest,
+    ManualSeedResponse,
     OpportunityListItem,
     OpportunityListResponse,
     ProductCapabilityRead,
@@ -37,6 +45,7 @@ from src.api.product_schemas import (
     ProductReadinessRead,
     ProductSetupChecklistItem,
     ProductSetupChecklistRead,
+    PromoteCandidateResponse,
     ReadinessCheckRead,
     ReviewDecisionCreate,
     ReviewDecisionRead,
@@ -45,6 +54,8 @@ from src.api.product_schemas import (
     StartupListItem,
     StartupRead,
     StartupUpdate,
+    UrlListRequest,
+    UrlListResponse,
 )
 from src.database.models import (
     ActionBriefRecord,
@@ -55,6 +66,7 @@ from src.database.models import (
     Startup,
 )
 from src.database.session import get_db_session
+from src.discovery.service import StartupDiscoveryService
 from src.quality.service import ProductQualityService
 from src.services.product import ProductService
 from src.services.product.activation_service import ActivationPlaybookService
@@ -981,4 +993,214 @@ def _activation_rec_read(rec: dict) -> ActivationRecommendationRead:
         next_step=rec.get("next_step", ""),
         created_at=rec.get("created_at"),
         updated_at=rec.get("updated_at"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Discovery Routes
+# ---------------------------------------------------------------------------
+
+
+@router.get("/discovery/sources", response_model=list[DiscoverySourceRead])
+def list_discovery_sources(
+    session: DbSession,
+) -> list[DiscoverySourceRead]:
+    svc = StartupDiscoveryService(session)
+    sources = svc.list_sources()
+    return [DiscoverySourceRead(**s) for s in sources]
+
+
+@router.post("/discovery/manual-seed", response_model=ManualSeedResponse, status_code=201)
+def discover_manual_seed(
+    body: ManualSeedRequest,
+    session: DbSession,
+) -> ManualSeedResponse:
+    svc = StartupDiscoveryService(session)
+    result = svc.run_manual_seed_discovery(
+        [e.model_dump() for e in body.entries],
+    )
+    return ManualSeedResponse(**result)
+
+
+@router.post("/discovery/url-list", response_model=UrlListResponse, status_code=201)
+def discover_url_list(
+    body: UrlListRequest,
+    session: DbSession,
+) -> UrlListResponse:
+    svc = StartupDiscoveryService(session)
+    result = svc.run_url_list_discovery(body.urls)
+    return UrlListResponse(**result)
+
+
+@router.get("/discovery/runs", response_model=DiscoveryRunListResponse)
+def list_discovery_runs(
+    session: DbSession,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    status: str | None = Query(None),
+) -> DiscoveryRunListResponse:
+    svc = StartupDiscoveryService(session)
+    runs = svc.repo.list_discovery_runs(offset=offset, limit=limit, status=status)
+    items = [
+        DiscoveryRunRead(
+            id=r.id,
+            source_id=r.source_id,
+            status=r.status,
+            error_message=r.error_message,
+            results_count=r.results_count,
+            candidates_created=r.candidates_created,
+            duplicates_found=r.duplicates_found,
+            query_json=r.query_json,
+            metadata_json=r.metadata_json,
+            started_at=r.started_at,
+            completed_at=r.completed_at,
+            created_at=r.created_at,
+            updated_at=r.updated_at,
+        )
+        for r in runs
+    ]
+    return DiscoveryRunListResponse(items=items, total=len(items), offset=offset, limit=limit)
+
+
+@router.get("/discovery/runs/{run_id}", response_model=DiscoveryRunRead)
+def get_discovery_run(
+    run_id: str,
+    session: DbSession,
+) -> DiscoveryRunRead:
+    svc = StartupDiscoveryService(session)
+    run = svc.repo.get_discovery_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail=f"Discovery run not found: {run_id}")
+    return DiscoveryRunRead(
+        id=run.id,
+        source_id=run.source_id,
+        status=run.status,
+        error_message=run.error_message,
+        results_count=run.results_count,
+        candidates_created=run.candidates_created,
+        duplicates_found=run.duplicates_found,
+        query_json=run.query_json,
+        metadata_json=run.metadata_json,
+        started_at=run.started_at,
+        completed_at=run.completed_at,
+        created_at=run.created_at,
+        updated_at=run.updated_at,
+    )
+
+
+@router.get("/discovery/candidates", response_model=DiscoveryCandidateListResponse)
+def list_discovery_candidates(
+    session: DbSession,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    status: str | None = Query(None),
+    source_id: str | None = Query(None),
+    sector: str | None = Query(None),
+    confidence_min: float | None = Query(None, ge=0.0, le=1.0),
+    has_website: bool | None = Query(None),
+    ai_native_signal: bool | None = Query(None),
+) -> DiscoveryCandidateListResponse:
+    svc = StartupDiscoveryService(session)
+    candidates = svc.list_candidates(
+        offset=offset,
+        limit=limit,
+        status=status,
+        source_id=source_id,
+        sector=sector,
+        confidence_min=confidence_min,
+        has_website=has_website,
+        ai_native_signal=ai_native_signal,
+    )
+    items = [
+        DiscoveryCandidateRead(
+            id=c.id,
+            discovery_run_id=c.discovery_run_id,
+            source_id=c.source_id,
+            discovered_name=c.discovered_name,
+            normalized_name=c.normalized_name,
+            website=c.website,
+            country=c.country,
+            sector=c.sector,
+            description=c.description,
+            source_url=c.source_url,
+            raw_text_excerpt=c.raw_text_excerpt,
+            ai_native_signals_json=c.ai_native_signals_json,
+            evidence_refs_json=c.evidence_refs_json,
+            confidence=c.confidence,
+            status=c.status,
+            promoted_startup_id=c.promoted_startup_id,
+            metadata_json=c.metadata_json,
+            created_at=c.created_at,
+            updated_at=c.updated_at,
+        )
+        for c in candidates
+    ]
+    return DiscoveryCandidateListResponse(items=items, total=len(items), offset=offset, limit=limit)
+
+
+@router.get("/discovery/candidates/{candidate_id}", response_model=DiscoveryCandidateRead)
+def get_discovery_candidate(
+    candidate_id: str,
+    session: DbSession,
+) -> DiscoveryCandidateRead:
+    svc = StartupDiscoveryService(session)
+    c = svc.get_candidate_detail(candidate_id)
+    if c is None:
+        raise HTTPException(status_code=404, detail=f"Candidate not found: {candidate_id}")
+    return DiscoveryCandidateRead(
+        id=c.id,
+        discovery_run_id=c.discovery_run_id,
+        source_id=c.source_id,
+        discovered_name=c.discovered_name,
+        normalized_name=c.normalized_name,
+        website=c.website,
+        country=c.country,
+        sector=c.sector,
+        description=c.description,
+        source_url=c.source_url,
+        raw_text_excerpt=c.raw_text_excerpt,
+        ai_native_signals_json=c.ai_native_signals_json,
+        evidence_refs_json=c.evidence_refs_json,
+        confidence=c.confidence,
+        status=c.status,
+        promoted_startup_id=c.promoted_startup_id,
+        metadata_json=c.metadata_json,
+        created_at=c.created_at,
+        updated_at=c.updated_at,
+    )
+
+
+@router.post(
+    "/discovery/candidates/{candidate_id}/promote",
+    response_model=PromoteCandidateResponse,
+)
+def promote_discovery_candidate(
+    candidate_id: str,
+    session: DbSession,
+) -> PromoteCandidateResponse:
+    svc = StartupDiscoveryService(session)
+    try:
+        result = svc.promote_candidate(candidate_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=f"Candidate not found: {candidate_id}") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return PromoteCandidateResponse(**result)
+
+
+@router.post(
+    "/discovery/candidates/{candidate_id}/dedup",
+    response_model=DedupCandidateResponse,
+)
+def dedup_discovery_candidate(
+    candidate_id: str,
+    session: DbSession,
+) -> DedupCandidateResponse:
+    svc = StartupDiscoveryService(session)
+    result = svc.deduplicate_candidate(candidate_id)
+    if result.get("_error") == "not_found":
+        raise HTTPException(status_code=404, detail=f"Candidate not found: {candidate_id}")
+    return DedupCandidateResponse(
+        duplicate_of_candidate_id=result.get("duplicate_of_candidate_id"),
+        duplicate_of_startup_id=result.get("duplicate_of_startup_id"),
     )

@@ -508,3 +508,121 @@ class OptionalFeatureStatusRead(BaseModel):
     status: str
     reason: str = ""
     setup_instructions: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Discovery Schemas
+# ---------------------------------------------------------------------------
+
+
+class DiscoverySourceRead(BaseModel):
+    source_id: str
+    name: str
+    source_type: str
+    base_url: str
+    country_scope: str
+    sector_scope: str
+    allowed: bool
+    requires_api_key: bool
+    rate_limit_hint: str
+    collection_method: str
+    robots_or_terms_note: str
+    enabled_by_default: bool
+    notes: str
+    usable: bool
+
+
+class DiscoveryRunRead(BaseModel):
+    id: str
+    source_id: str | None = None
+    status: str
+    error_message: str | None = None
+    results_count: int = 0
+    candidates_created: int = 0
+    duplicates_found: int = 0
+    query_json: dict[str, Any] = Field(default_factory=dict)
+    metadata_json: dict[str, Any] = Field(default_factory=dict)
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class DiscoveryRunListResponse(BaseModel):
+    items: list[DiscoveryRunRead]
+    total: int
+    offset: int
+    limit: int
+
+
+class DiscoveryCandidateRead(BaseModel):
+    id: str
+    discovery_run_id: str | None = None
+    source_id: str
+    discovered_name: str
+    normalized_name: str
+    website: str
+    country: str
+    sector: str
+    description: str
+    source_url: str
+    raw_text_excerpt: str
+    ai_native_signals_json: dict[str, Any] = Field(default_factory=dict)
+    evidence_refs_json: list[dict[str, Any]] = Field(default_factory=list)
+    confidence: str
+    status: str
+    promoted_startup_id: str | None = None
+    metadata_json: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+    updated_at: datetime
+
+
+class DiscoveryCandidateListResponse(BaseModel):
+    items: list[DiscoveryCandidateRead]
+    total: int
+    offset: int
+    limit: int
+
+
+class ManualSeedEntry(BaseModel):
+    name: str = Field(default="", max_length=255)
+    website: str = ""
+    sector: str = ""
+    description: str = ""
+    country: str = "Brazil"
+
+
+class ManualSeedRequest(BaseModel):
+    entries: list[ManualSeedEntry] = Field(min_length=1, max_length=200)
+
+
+class ManualSeedResponse(BaseModel):
+    discovery_run_id: str
+    status: str
+    total_entries: int
+    candidates_created: int
+    duplicates_found: int
+
+
+class UrlListRequest(BaseModel):
+    urls: list[str] = Field(min_length=1, max_length=200)
+
+
+class UrlListResponse(BaseModel):
+    discovery_run_id: str
+    status: str
+    total_urls: int
+    candidates_created: int
+    duplicates_found: int
+    errors: list[str] = Field(default_factory=list)
+
+
+class PromoteCandidateResponse(BaseModel):
+    candidate_id: str
+    startup_id: str
+    status: str
+
+
+class DedupCandidateResponse(BaseModel):
+    duplicate_of_candidate_id: str | None = None
+    duplicate_of_startup_id: str | None = None

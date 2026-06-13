@@ -438,3 +438,76 @@ class ProductQualityMetric(TimestampMixin, Base):
     details_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
 
     quality_run: Mapped[ProductQualityRun] = relationship(back_populates="metrics")
+
+
+class DiscoveryRun(TimestampMixin, Base):
+    __tablename__ = "discovery_runs"
+    __table_args__ = (
+        Index("ix_discovery_run_source", "source_id"),
+        Index("ix_discovery_run_status", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    source_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="queued", index=True
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    query_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    results_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    candidates_created: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    duplicates_found: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    error_message: Mapped[str | None] = mapped_column(Text)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+
+    candidates: Mapped[list[StartupDiscoveryCandidate]] = relationship(
+        back_populates="discovery_run", cascade="all, delete-orphan"
+    )
+
+
+class StartupDiscoveryCandidate(TimestampMixin, Base):
+    __tablename__ = "startup_discovery_candidates"
+    __table_args__ = (
+        Index("ix_discovery_candidate_source", "source_id"),
+        Index("ix_discovery_candidate_status", "status"),
+        Index("ix_discovery_candidate_normalized_name", "normalized_name"),
+        Index("ix_discovery_candidate_website", "website"),
+        Index("ix_discovery_candidate_confidence", "confidence"),
+        Index("ix_discovery_candidate_run", "discovery_run_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    discovery_run_id: Mapped[str | None] = mapped_column(
+        ForeignKey("discovery_runs.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    source_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    discovered_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    normalized_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    website: Mapped[str] = mapped_column(String(2048), nullable=False, default="")
+    country: Mapped[str] = mapped_column(String(100), nullable=False, default="Brazil")
+    sector: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    source_url: Mapped[str] = mapped_column(String(2048), nullable=False, default="")
+    raw_text_excerpt: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    ai_native_signals_json: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    confidence: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="low", index=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="new", index=True
+    )
+    promoted_startup_id: Mapped[str | None] = mapped_column(
+        ForeignKey("startups.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    discovered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+
+    discovery_run: Mapped[DiscoveryRun | None] = relationship(back_populates="candidates")

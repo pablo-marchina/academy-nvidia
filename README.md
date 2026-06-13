@@ -35,7 +35,8 @@ How can NVIDIA identify, attract, and nurture Brazilian AI-native startups in a 
 13. **Reranking + Context Packing** deterministic reranking (composite score: gap/tech boost + provenance/duplicate/irrelevant penalties) and context packing (dedup, gap/tech limits, provenance filtering) for enriched, clean NVIDIA context in briefs.
 14. **Persistent Vector Store (Qdrant)** optional Qdrant-backed vector store with lazy connection, full payload provenance, and server-side filtering — falls back to in-memory.
 15. **CI/CD & Quality Gates** GitHub Actions CI (ruff, black, mypy, pytest), pre-commit hooks, Makefile targets, scope/documentation validation scripts.
-16. **Source Sync** Allowlist-based download of NVIDIA documentation to staging with hash comparison, robots.txt verification, rate limiting, and optional promotion to the local corpus.
+16. **Startup Discovery Engine** Multi-source discovery of AI-native Brazilian startups with manual seed and URL list importers, keyword-based AI-native signal detection, dedup (normalized_name + domain), DiscoveryRun lifecycle (queued/running/completed/degraded/failed), candidate management, and promotion to Startup records with evidence migration.
+17. **Source Sync** Allowlist-based download of NVIDIA documentation to staging with hash comparison, robots.txt verification, rate limiting, and optional promotion to the local corpus.
 17. **Corpus Freshness & Versioning** Local lifecycle policy with source versions, active/deprecated flags, stale/expired audit, and default retrieval filtering for active non-expired corpus chunks.
 18. **Scheduled Corpus Maintenance** Manual and scheduled-safe workflow that runs source sync dry-run, freshness audit, Qdrant ingest dry-run, optional real ingestion, RAG evals, golden evals, and artifact reports.
 19. **Regression Dashboard** Local Markdown/JSON dashboard consolidating ingestion, freshness, RAG evals, golden evals, Action Brief checks, warnings, and regressions for GitHub Actions summaries.
@@ -65,6 +66,14 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 
 14. **Claim Ledger** — Deterministic claim generation from evidence/gap/mapping records, evidence coverage metrics, unsupported critical claim detection, claim review
 15. **Claim API** — REST endpoints for listing claims, evidence coverage, and human review
+
+### Startup Discovery Engine
+- **Source Registry** — `src/config/discovery_sources.json` (6 sources) + `src/discovery/source_registry.py` (loader with cache, `is_usable()`, `list_enabled_sources()`)
+- **Signal Detection** — `src/discovery/signals.py` (30+ keywords, 5-factor confidence, has_nvidia_tech flag, evidence excerpts)
+- **Dedup** — `src/discovery/dedup.py` (normalize_name, extract_domain, is_duplicate_by_name, is_duplicate_by_domain)
+- **Repository** — `src/repositories/discovery.py` (DiscoveryRun + Candidate CRUD, promote, dedup, bulk creation)
+- **Service** — `src/discovery/service.py` (manual seed, URL list, promote, dedup)
+- **API** — 9 endpoints in `src/api/product_routes.py` (sources, manual-seed, url-list, runs, candidates, promote, dedup)
 
 ### Modules implemented
 - `src/repositories/claim.py` — claim persistence, coverage, unsupported detection
@@ -116,6 +125,10 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 - Answer Quality Eval: 9 tests (offline golden cases, missing sections/evidence/uncertainty, motion stability, unsupported claims, citation coverage, absolute language)
 - Optional LLM Judge: 4 tests (offline null provider, report aggregation, prompt contents, manual script output)
 - Output Validation Gate: 12 tests (Action Brief, Markdown, dashboard, and API output validators)
+- Discovery Signals: 11 tests (LLM, IA, GPU, CUDA, TensorRT, NLP, nvidia_tech, evidence_excerpts, confidence bounds)
+- Discovery Dedup: 15 tests (normalize_name, extract_domain, duplicate checks)
+- Discovery Repository: 15 tests (DiscoveryRun + Candidate CRUD)
+- Discovery API: 14 integration tests (sources, manual seed, runs, candidates, promote, dedup)
 
 ## Stack
 
