@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from src.discovery.dedup import (
     extract_domain,
     is_duplicate_by_domain,

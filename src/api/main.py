@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.product_routes import router as product_router
 from src.api.routes import router
+from src.api.workflow_routes import router as workflow_router
 from src.database.session import initialize_product_database
 
 
@@ -36,3 +37,4 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(product_router)
+app.include_router(workflow_router)

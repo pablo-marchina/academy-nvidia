@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from src.discovery.signals import calculate_confidence, detect_ai_native_signals
 
 
@@ -13,10 +11,7 @@ class TestDetectAiNativeSignals:
             source_id="test",
         )
         assert result["signal_count"] >= 1
-        assert any(
-            s["signal"] == "LLM" or "llm" in s["signal"].lower()
-            for s in result["signals"]
-        )
+        assert any(s["signal"] == "LLM" or "llm" in s["signal"].lower() for s in result["signals"])
         assert result["confidence_contribution"] > 0
 
     def test_detects_multiple_signals(self) -> None:

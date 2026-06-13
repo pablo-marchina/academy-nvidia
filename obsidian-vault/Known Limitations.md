@@ -88,3 +88,13 @@
 - No LLM-based signal enrichment — all signals are deterministic keyword matches.
 - Discovery does not automatically trigger AnalysisRun on promotion — user must run analysis manually.
 - No scheduled/periodic discovery — all discovery runs are manually triggered via API.
+
+## Workflow Orchestration (Epic 41)
+
+- Workflow runner executes all 11 nodes synchronously — may block the request thread for the full workflow duration.
+- LangGraph is optional (`[agent-orchestration]` extra); sequential fallback runner provides identical deterministic behavior but no graph-based execution.
+- Node implementations wrap existing services without adding new business logic beyond orchestration.
+- Workflow runs create AnalysisRuns synchronously; long-running workflows may block the request thread.
+- Retry policy is conservative (max 1, non-retryable for deterministic errors) — transient failures may still fail after one retry.
+- Workflow runner does not support parallel node execution or async workflows.
+- Workflow API endpoints do not include authentication or rate limiting.

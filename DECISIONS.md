@@ -531,4 +531,18 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 
 ---
 
+---
+
+## Decision 047 — LangGraph Orchestration Layer (Epic 41)
+
+- **Context:** The product needed a stateful orchestration layer for the 11-step product analysis workflow (load startup, collect evidence, validate, diagnose gaps, retrieve NVIDIA context, map technologies, generate claims, match playbooks, generate dossier, run quality, summarize readiness). Existing services were independent with no coordination layer.
+- **Decision:** Build a sequential workflow runner with LangGraph as an optional extra (`[agent-orchestration]`). The runner executes nodes deterministically with per-node retry (max 1), persists state to `WorkflowRun`/`WorkflowNodeRun` models, and provides a full REST API. LangGraph is not required for operation — the fallback runner provides identical deterministic behavior.
+- **Alternatives considered:** LangGraph as a core dependency (rejected — violates FPB-029 which classifies multi-agent orchestration as P3). Pure LangGraph with no fallback (rejected — LangGraph may not be needed). Rewriting existing services as nodes (rejected — "serviços existentes não devem ser reescritos; nodes apenas wrappers").
+- **Rationale:** Optional LangGraph keeps core installation lean. Nodes wrap existing services via `@_register` decorator without modifying them. Retry policy (max 1, non-retryable for LookupError/ValueError/TypeError/AssertionError) avoids infinite loops. Sequential execution guarantees deterministic output. `_dump_state` helper strips non-serializable `_session` key before JSON serialization.
+- **Risks:** Synchronous execution blocks the request thread for the full 11-node workflow. LangGraph extra may drift from the fallback runner if not kept in sync. Node implementations duplicate session management boilerplate.
+- **Validation:** 36 tests (24 unit + 12 integration) covering state, repository, runner, and API. `ruff`, `black`, `mypy` (1 pre-existing error). All pre-existing tests continue to pass.
+- **Status:** Implementado no Epic 41.
+
+---
+
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

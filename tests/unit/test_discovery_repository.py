@@ -70,7 +70,7 @@ class TestDiscoveryRuns:
 
     def test_list_runs_filtered_by_status(self, repository: DiscoveryRepository) -> None:
         r1 = repository.create_discovery_run(source_id="src1")
-        r2 = repository.create_discovery_run(source_id="src2")
+        repository.create_discovery_run(source_id="src2")
         repository.session.commit()
         repository.complete_discovery_run(r1.id)
         repository.session.commit()
@@ -124,7 +124,7 @@ class TestCandidates:
         assert len(created) == 2
 
     def test_list_candidates_filters(self, repository: DiscoveryRepository) -> None:
-        c1 = repository.create_candidate(
+        repository.create_candidate(
             source_id="src_a",
             discovered_name="High AI",
             normalized_name="high ai",
@@ -133,7 +133,7 @@ class TestCandidates:
             confidence="high",
             ai_native_signals_json={"signal_count": 5},
         )
-        c2 = repository.create_candidate(
+        repository.create_candidate(
             source_id="src_b",
             discovered_name="Low AI",
             normalized_name="low ai",

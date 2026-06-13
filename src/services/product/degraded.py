@@ -234,4 +234,40 @@ DEGRADED_STATES: dict[str, DegradedStateDefinition] = {
         user_message="A required field is missing from a structured output.",
         recommended_action="Check the output generator for the missing field.",
     ),
+    "WORKFLOW_NODE_FAILED": DegradedStateDefinition(
+        code="WORKFLOW_NODE_FAILED",
+        severity="error",
+        user_message="A workflow node failed during orchestration.",
+        recommended_action="Inspect the workflow run and node error messages.",
+    ),
+    "WORKFLOW_DEGRADED": DegradedStateDefinition(
+        code="WORKFLOW_DEGRADED",
+        severity="warning",
+        user_message="The workflow completed with degraded nodes.",
+        recommended_action="Review node status and check optional service availability.",
+    ),
+    "WORKFLOW_RAG_SKIPPED": DegradedStateDefinition(
+        code="WORKFLOW_RAG_SKIPPED",
+        severity="warning",
+        user_message="RAG retrieval was skipped during workflow execution.",
+        recommended_action="Verify RAG configuration and corpus availability.",
+    ),
+    "WORKFLOW_QUALITY_FAILED": DegradedStateDefinition(
+        code="WORKFLOW_QUALITY_FAILED",
+        severity="error",
+        user_message="Product quality evaluation failed during workflow.",
+        recommended_action="Inspect quality run logs and pipeline output integrity.",
+    ),
+    "WORKFLOW_DOSSIER_MISSING": DegradedStateDefinition(
+        code="WORKFLOW_DOSSIER_MISSING",
+        severity="warning",
+        user_message="Activation dossier was not generated during workflow.",
+        recommended_action="Check dossier service availability and analysis run state.",
+    ),
+    "WORKFLOW_DISCOVERY_PROMOTION_FAILED": DegradedStateDefinition(
+        code="WORKFLOW_DISCOVERY_PROMOTION_FAILED",
+        severity="warning",
+        user_message="Discovery candidate promotion failed during workflow.",
+        recommended_action="Verify candidate exists and promotion service is functional.",
+    ),
 }

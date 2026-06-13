@@ -64,3 +64,45 @@
 **Como corrigimos:** Ajustamos o teste para usar `top_k=15` (total de chunks com aquele gap), garantindo que todos os produtos sejam retornados.
 
 **Como evitar no futuro:** Ao testar retrieval por gap_type, verificar se `top_k` é grande o suficiente para cobrir todos os chunks esperados. Considerar scoring com boosting por conteúdo ou diversidade.
+
+---
+
+## Erro 004 — PydanticSerializationError: Session object in metadata_json (Epic 41)
+
+**Data:** 2026-06-13
+
+**O que aconteceu:** `WorkflowRunner.run_workflow()` adicionava `state.metadata_json["_session"] = self.session` e depois chamava `state.model_dump(mode="json")`, que falhava com `PydanticSerializationError: Unable to serialize unknown type: <class 'sqlalchemy.orm.session.Session'>`.
+
+**Causa provável:** O session object não é JSON serializable, mas estava sendo incluído no dump.
+
+**Como corrigimos:** Criamos `_dump_state()` que temporariamente remove `_session` de `metadata_json`, faz o dump, e restaura no `finally`.
+
+**Como evitar no futuro:** Nunca colocar objetos não-serializáveis em `metadata_json` antes de chamar `model_dump(mode="json")`.
+
+---
+
+## Erro 005 — TypeError: update_workflow_status missing required kwarg 'status' (Epic 41)
+
+**Data:** 2026-06-13
+
+**O que aconteceu:** `WorkflowRunner.run_workflow()` chamava `update_workflow_status()` com `current_node` e `state_json` mas sem `status`. A assinatura do método exige `status` como keyword-only obrigatório.
+
+**Causa provável:** Assumi que `update_workflow_status()` aceitava `current_node` alone para atualizações parciais, mas o contrato exige `status` sempre.
+
+**Como corrigimos:** Adicionamos `status=WorkflowStatus.RUNNING` em todas as chamadas.
+
+**Como evitar no futuro:** Sempre verificar a assinatura completa de métodos com keyword-only args antes de chamar.
+
+---
+
+## Erro 006 — AttributeError: 'ActivationDossierService' has no attribute 'generate_dossier' (Epic 41)
+
+**Data:** 2026-06-13
+
+**O que aconteceu:** `node_generate_activation_dossier()` chamava `dossier_service.generate_dossier()` que não existe. O método correto é `build_dossier_for_analysis_run()`.
+
+**Causa provável:** Assumi o nome do método baseado na descrição do serviço sem verificar a implementação real.
+
+**Como corrigimos:** Substituímos `generate_dossier()` por `build_dossier_for_analysis_run()` e ajustamos o retorno para usar `dossier.id`.
+
+**Como evitar no futuro:** Sempre verificar a interface real do serviço antes de escrever código que o consome.

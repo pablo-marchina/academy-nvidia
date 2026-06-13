@@ -625,4 +625,53 @@ class PromoteCandidateResponse(BaseModel):
 
 class DedupCandidateResponse(BaseModel):
     duplicate_of_candidate_id: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Workflow Schemas
+# ---------------------------------------------------------------------------
+
+
+class ProductWorkflowRunCreate(BaseModel):
+    startup_id: str | None = None
+    discovery_candidate_id: str | None = None
+    analysis_run_id: str | None = None
+    use_rag: bool = False
+
+
+class ProductWorkflowNodeRunRead(BaseModel):
+    id: str
+    workflow_run_id: str
+    node_name: str
+    status: str
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    error_message: str | None = None
+    retry_count: int = 0
+    created_at: datetime
+
+
+class ProductWorkflowRunRead(BaseModel):
+    id: str
+    startup_id: str | None = None
+    discovery_candidate_id: str | None = None
+    analysis_run_id: str | None = None
+    status: str
+    current_node: str
+    graph_version: str
+    error_message: str | None = None
+    degraded_reason: str | None = None
+    state: dict[str, Any] = Field(default_factory=dict)
+    nodes: list[ProductWorkflowNodeRunRead] = Field(default_factory=list)
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ProductWorkflowRunListResponse(BaseModel):
+    items: list[dict[str, Any]]
+    total: int
+    offset: int
+    limit: int
     duplicate_of_startup_id: str | None = None

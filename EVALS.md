@@ -73,9 +73,13 @@
 | Readiness Service (Epic 36.1) | `tests/unit/test_readiness_service.py` | 10 | ✅ |
 | Product Readiness API (Epic 36.1) | `tests/integration/test_product_readiness_api.py` | 9 | integration |
 | Product UI E2E Smoke (Epic 37) | `tests/e2e/test_product_ui.spec.ts` | 2 | Playwright |
+| Workflow State (Epic 41) | `tests/unit/test_workflow_state.py` | 5 | ✅ |
+| Workflow Repository (Epic 41) | `tests/unit/test_workflow_repository.py` | 19 | ✅ |
+| Workflow Runner (Epic 41) | `tests/unit/test_workflow_runner.py` | 6 | ✅ |
+| Workflow API Integration (Epic 41) | `tests/integration/test_workflow_api.py` | 12 | integration |
 | **Product Golden Path Acceptance (Epic 38)** | `tests/acceptance/test_product_golden_path.py` | **11 classes/suites** | acceptance |
 | **No Demo Dependency Guard (Epic 38)** | `tests/acceptance/test_no_demo_dependency.py` | **3 tests** | acceptance |
-| **Total** | **71 Python test files + 2 Playwright specs** | **~702 Python + 8 E2E** | **~656 pass, 32 skip/desel + acceptance + UI smoke** |
+| **Total** | **75 Python test files + 2 Playwright specs** | **~744 Python + 8 E2E** | **~698 pass, 32 skip/desel + acceptance + UI smoke** |
 
 ## Cobertura por módulo
 
@@ -124,6 +128,7 @@
 | `services/product/capability_registry.py` (Epic 36.1) | ✅ REAL | ✅ | 6 |
 | `services/product/config_registry.py` (Epic 36.1) | ✅ REAL | ✅ | 9 |
 | `services/product/readiness_service.py` (Epic 36.1) | ✅ REAL | ✅ | 10 |
+| `orchestration/` (Epic 41) | ✅ REAL | ✅ | 30 unit + 12 integration |
 
 ## Lacunas de cobertura
 
@@ -131,6 +136,7 @@
 - **Config:** `src/config/settings.py` sem testes
 - **Novos scripts:** `scripts/check_scope.py` e `scripts/check_docs_closure.py` testados (14 testes)
 - **Activation Playbook:** Epics 33 coberto por 22 testes unitários (loader + matcher) e 8 testes de integração (API). Sem teste de loader para path inexistente (Path(...).resolve() já cobre).
+- **Workflow Orchestration (Epic 41):** 30 testes unitários (state, repository, runner) + 12 testes de integração (API). Runner depende de session commit — tests sem commit falham. LangGraph detection testada via `_has_langgraph()`.
 
 ## Critérios de aceite por módulo
 
@@ -172,6 +178,10 @@
 | Answer Quality Eval | 9 tests (golden answer quality pass, missing required section, missing evidence omitted, uncertainty omitted, technology without gap, motion change, unsupported claims, low citation coverage, absolute language warning) | ✅ |
 | Output Validation Gate | 12 tests (valid brief, missing section, invalid motion, invalid gap, invalid NVIDIA technology, missing evidence, recommendation without evidence, dashboard required metrics, Markdown TODO warning, empty critical section, API warnings, low-confidence uncertainty) | ✅ |
 | Demo Acceptance | 5 integration tests (health, RAG status without Qdrant, sample brief output shape, answer quality evaluate, path traversal protection) + 2 Playwright smoke tests (UI happy path and API offline error) | ✅ |
+| Workflow State (Epic 41) | 5 tests (constants, defaults, full state, serialization) | ✅ |
+| Workflow Repository (Epic 41) | 19 tests (CRUD, status transitions, node tracing, retry) | ✅ |
+| Workflow Runner (Epic 41) | 6 tests (node registration, retry policy, langgraph detection, full execution) | ✅ |
+| Workflow API Integration (Epic 41) | 12 tests (POST/GET product-runs, nodes, analysis-run link, langgraph status) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
 

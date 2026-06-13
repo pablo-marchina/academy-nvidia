@@ -109,4 +109,34 @@ THRESHOLDS: dict[str, dict[str, Any]] = {
         "severity": METRIC_SEVERITY_INFO,
         "operator": "lte",
     },
+    "workflow_completion_rate": {
+        "threshold": 1.0,
+        "severity": METRIC_SEVERITY_ERROR,
+        "operator": "eq",
+    },
+    "node_failure_count": {
+        "threshold": 0.0,
+        "severity": METRIC_SEVERITY_ERROR,
+        "operator": "eq",
+    },
+    "degraded_node_count": {
+        "threshold": 2.0,
+        "severity": METRIC_SEVERITY_WARN,
+        "operator": "lte",
+    },
+    "workflow_duration_ms": {
+        "threshold": 30000.0,
+        "severity": METRIC_SEVERITY_INFO,
+        "operator": "lte",
+    },
+    "retry_count": {
+        "threshold": 1.0,
+        "severity": METRIC_SEVERITY_INFO,
+        "operator": "lte",
+    },
+    "critical_node_success": {
+        "threshold": 1.0,
+        "severity": METRIC_SEVERITY_ERROR,
+        "operator": "eq",
+    },
 }

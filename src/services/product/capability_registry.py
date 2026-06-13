@@ -457,6 +457,60 @@ _reg(
 )
 
 # ---------------------------------------------------------------------------
+# Agent Orchestration / Workflow
+# ---------------------------------------------------------------------------
+_reg(
+    capability_id="agent_orchestration",
+    name="Agent Orchestration",
+    description=(
+        "LangGraph-based workflow orchestration layer for product analysis runs. "
+        "Provides explicit stateful orchestration of discovery, analysis, "
+        "diagnosis, RAG, claims, playbooks, dossier, quality, and readiness."
+    ),
+    category=CapabilityCategory.core,
+    required=False,
+    required_extras=["agent-orchestration"],
+    setup_instructions=(
+        "Install with `pip install -e .[agent-orchestration]` and set "
+        "AGENT_ORCHESTRATION_ENABLED=true if explicit LangGraph is desired. "
+        "Fallback sequential runner works without this extra."
+    ),
+    failure_mode=(
+        "LangGraph is not installed. Workflow runner uses a deterministic "
+        "sequential fallback. All workflow endpoints remain functional."
+    ),
+    documentation_ref="docs/68_langgraph_orchestration_layer.md",
+)
+_reg(
+    capability_id="workflow_runs",
+    name="Workflow Runs",
+    description=(
+        "Persisted workflow runs with full state tracking, node-level tracing, "
+        "retry, and degraded/failed status propagation."
+    ),
+    category=CapabilityCategory.core,
+    required=False,
+    setup_instructions=(
+        "Available once product_database is configured and migration is applied. "
+        "No extra dependencies required for persistence."
+    ),
+)
+_reg(
+    capability_id="workflow_node_tracing",
+    name="Workflow Node Tracing",
+    description=(
+        "Per-node execution tracing with input/output snapshots, "
+        "retry count, and error tracking for all workflow nodes."
+    ),
+    category=CapabilityCategory.core,
+    required=False,
+    setup_instructions=(
+        "Available once workflow_runs capability is active. "
+        "Tracing is built into the WorkflowNodeRun model."
+    ),
+)
+
+# ---------------------------------------------------------------------------
 # Developer Tools
 # ---------------------------------------------------------------------------
 _reg(

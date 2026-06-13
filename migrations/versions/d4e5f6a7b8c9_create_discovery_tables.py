@@ -37,7 +37,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("discovery_runs", schema=None) as batch_op:
-        batch_op.create_index(batch_op.f("ix_discovery_runs_source_id"), ["source_id"], unique=False)
+        batch_op.create_index(
+            batch_op.f("ix_discovery_runs_source_id"), ["source_id"], unique=False
+        )
         batch_op.create_index(batch_op.f("ix_discovery_runs_status"), ["status"], unique=False)
 
     op.create_table(
@@ -62,12 +64,8 @@ def upgrade() -> None:
         sa.Column("discovered_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["discovery_run_id"], ["discovery_runs.id"], ondelete="SET NULL"
-        ),
-        sa.ForeignKeyConstraint(
-            ["promoted_startup_id"], ["startups.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["discovery_run_id"], ["discovery_runs.id"], ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(["promoted_startup_id"], ["startups.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("startup_discovery_candidates", schema=None) as batch_op:

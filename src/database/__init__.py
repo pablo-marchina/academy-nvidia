@@ -13,6 +13,8 @@ from src.database.models import (
     ScoreRecord,
     Startup,
     StartupEvidence,
+    WorkflowNodeRun,
+    WorkflowRun,
 )
 from src.database.session import (
     configure_product_database,
@@ -34,6 +36,8 @@ __all__ = [
     "ScoreRecord",
     "Startup",
     "StartupEvidence",
+    "WorkflowNodeRun",
+    "WorkflowRun",
     "configure_product_database",
     "get_db_session",
     "get_product_database",

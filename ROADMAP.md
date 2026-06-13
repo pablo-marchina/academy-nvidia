@@ -599,6 +599,31 @@
 - [x] All validations passing (pytest, ruff, black, mypy, scope, docs-closure)
 - [x] Nenhuma alteração em scoring, RAG, Qdrant, recommendation central
 
+### Epic 41 — LangGraph Orchestration Layer (concluído)
+- [x] `src/orchestration/state.py` — ProductWorkflowState (19 fields)
+- [x] `src/orchestration/nodes.py` — NodeResult, NodeDefinition, @_register decorator, WORKFLOW_NODES list
+- [x] `src/orchestration/node_impl.py` — 11 node implementations wrapping existing services
+- [x] `src/orchestration/runner.py` — WorkflowRunner (sequential, retry max 1, _has_langgraph detection)
+- [x] `src/orchestration/service.py` — WorkflowOrchestrationService (create, run, query)
+- [x] `src/repositories/workflow.py` — WorkflowRepository (WorkflowRun + WorkflowNodeRun CRUD, status transitions, completions)
+- [x] `src/database/models.py` — WorkflowRun + WorkflowNodeRun models with FK, indexes, relationships
+- [x] `migrations/versions/e5f6a7b8c9d0_create_workflow_tables.py` — Alembic migration 0006
+- [x] `src/api/workflow_routes.py` — 6 endpoints (POST/GET product-runs, GET nodes, GET analysis-run workflow, GET langgraph-status)
+- [x] `src/api/main.py` — workflow_router registrado
+- [x] `src/api/product_schemas.py` — 4 new workflow schemas
+- [x] `pyproject.toml` — langgraph movido para extra `[agent-orchestration]`
+- [x] `.env.example` — AGENT_ORCHESTRATION_ENABLED adicionado
+- [x] `src/services/product/degraded.py` — 6 new readiness check codes
+- [x] `src/quality/constants.py` — 6 new workflow metrics
+- [x] `src/services/product/capability_registry.py` — 3 workflow capabilities
+- [x] `docs/68_langgraph_orchestration_layer.md` — design document
+- [x] `tests/unit/test_workflow_state.py` — 5 tests (constants, defaults, serialization)
+- [x] `tests/unit/test_workflow_repository.py` — 19 tests (CRUD, status transitions, node tracing, retry)
+- [x] `tests/unit/test_workflow_runner.py` — 6 tests (node registration, retry policy, langgraph, execution)
+- [x] `tests/integration/test_workflow_api.py` — 12 tests (endpoints, langgraph status, analysis-run link)
+- [x] ROADMAP.md, EVALS.md, DECISIONS.md, README.md — atualizados
+- [x] Nenhuma alteração em scoring, RAG, Qdrant, recommendation central
+
 ### Epic 40 — Startup Discovery Engine (concluído)
 - [x] `src/config/discovery_sources.json` — 6 source definitions (manual_seed, configured_url_list, distrito, ace, bossa, inovativa)
 - [x] `src/discovery/source_registry.py` — source loader with cache, `is_usable()`, `list_enabled_sources()`
@@ -624,6 +649,5 @@
 - Documentation Pruning (consolidation of remaining early docs)
 - Human-in-the-loop review implementation
 - Professional exports
-- LangGraph orchestration
 - Cross-encoder reranking
 - Optional real LLM judge provider

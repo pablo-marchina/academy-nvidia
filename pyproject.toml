@@ -18,7 +18,6 @@ dependencies = [
   "beautifulsoup4",
   "trafilatura",
   "playwright",
-  "langgraph",
   "qdrant-client",
   "sqlalchemy",
   "alembic",
@@ -38,6 +37,9 @@ rag = [
 llm-judge = [
   "instructor>=1.8,<2",
 ]
+agent-orchestration = [
+  "langgraph>=0.2,<1",
+]
 
 [tool.setuptools]
 package-dir = {"" = "."}
@@ -54,7 +56,7 @@ markers = [
   "acceptance: marks end-to-end Product Golden Path acceptance tests",
   "e2e: marks Playwright browser-based end-to-end tests",
   "slow: marks tests that take longer than 5 seconds",
-  "optional: marks tests that require optional dependencies (rag, llm-judge)",
+  "optional: marks tests that require optional dependencies (rag, llm-judge, agent-orchestration)",
   "external_service: marks tests that require external services (Qdrant, PostgreSQL)",
 ]
 

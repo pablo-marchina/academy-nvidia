@@ -75,6 +75,15 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 - **Service** — `src/discovery/service.py` (manual seed, URL list, promote, dedup)
 - **API** — 9 endpoints in `src/api/product_routes.py` (sources, manual-seed, url-list, runs, candidates, promote, dedup)
 
+### Workflow Orchestration
+- **Workflow Runner** — deterministic sequential 11-node execution with per-node retry (max 1), degraded/failed status propagation, and state persistence. LangGraph optional extra (fallback works without it).
+- **Workflow Nodes** — 11 nodes wrapping existing services: load_startup_or_candidate (critical), collect_or_load_evidence, validate_evidence, diagnose_gaps, retrieve_nvidia_context, map_nvidia_technologies, generate_claims, match_activation_playbooks, generate_activation_dossier, run_product_quality, summarize_readiness.
+- **Workflow API** — 6 REST endpoints (POST/GET product-runs, GET nodes, GET analysis-run workflow, GET langgraph-status).
+- **Workflow Repository** — CRUD for workflow runs with full node-level tracing (input/output snapshots, retry count, error tracking).
+- **Database Models** — `WorkflowRun` and `WorkflowNodeRun` with FK, indexes, lifecycle statuses.
+- **Degraded State Codes** — 6 new readiness codes (WORKFLOW_NODE_FAILED, WORKFLOW_DEGRADED, WORKFLOW_RAG_SKIPPED, WORKFLOW_QUALITY_FAILED, WORKFLOW_DOSSIER_MISSING, WORKFLOW_DISCOVERY_PROMOTION_FAILED).
+- **Capability Registry** — 3 capabilities: `agent_orchestration` (requires `[agent-orchestration]` extra), `workflow_runs`, `workflow_node_tracing`.
+
 ### Modules implemented
 - `src/repositories/claim.py` — claim persistence, coverage, unsupported detection
 - `src/services/product/claim_ledger.py` — deterministic claim generation
@@ -129,6 +138,10 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 - Discovery Dedup: 15 tests (normalize_name, extract_domain, duplicate checks)
 - Discovery Repository: 15 tests (DiscoveryRun + Candidate CRUD)
 - Discovery API: 14 integration tests (sources, manual seed, runs, candidates, promote, dedup)
+- Workflow State: 5 tests (constants, defaults, serialization)
+- Workflow Repository: 19 tests (CRUD, status transitions, node tracing, retry)
+- Workflow Runner: 6 tests (node registration, retry policy, langgraph detection, full workflow execution)
+- Workflow API Integration: 12 tests (POST/GET product-runs, nodes, analysis-run link, langgraph status)
 
 ## Stack
 
@@ -702,6 +715,10 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - Integration tests excluded from CI (require `QDRANT_TEST_URL`).
 - Pre-commit hooks not auto-installed — developer must run `pre-commit install`.
 - `check_scope.py` relies on `git diff` against HEAD — may behave unexpectedly during rebase.
+- Workflow orchestration nodes wrap existing services without modifying them; node implementations do not add new business logic beyond orchestration.
+- LangGraph is optional (`pip install -e ".[agent-orchestration]"`); the sequential fallback runner provides the same deterministic behavior without LangGraph.
+- Workflow runner executes all 11 nodes synchronously — no parallel execution or async workflows yet.
+- Workflow runs create AnalysisRuns synchronously; long-running workflows may block the request thread.
 - Acceptance tests (`tests/acceptance/`) are excluded from `make validate` — run via `make acceptance`.
 - Playwright E2E tests are in a separate target (`make ui-e2e-product`) and require backend + frontend running.
 - Product golden fixture at `tests/fixtures/product_golden_path/` is minimal by design — edge cases are covered by unit/integration tests.
