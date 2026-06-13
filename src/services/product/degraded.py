@@ -143,6 +143,59 @@ DEGRADED_STATES: dict[str, DegradedStateDefinition] = {
         user_message="The dossier has one or more missing scores.",
         recommended_action="Inspect pipeline output and rerun analysis if needed.",
     ),
+    "QUALITY_LOW_EVIDENCE_COVERAGE": DegradedStateDefinition(
+        code="QUALITY_LOW_EVIDENCE_COVERAGE",
+        severity="warning",
+        user_message="Quality evaluation detected low evidence coverage.",
+        recommended_action="Improve evidence collection to increase the support ratio.",
+    ),
+    "QUALITY_HIGH_UNSUPPORTED_CLAIM_RATE": DegradedStateDefinition(
+        code="QUALITY_HIGH_UNSUPPORTED_CLAIM_RATE",
+        severity="warning",
+        user_message="Quality evaluation shows a high rate of unsupported claims.",
+        recommended_action="Review and collect additional evidence for unsupported claims.",
+    ),
+    "QUALITY_UNSUPPORTED_CRITICAL": DegradedStateDefinition(
+        code="QUALITY_UNSUPPORTED_CRITICAL",
+        severity="error",
+        user_message="Quality evaluation found unsupported critical claims.",
+        recommended_action="Collect evidence for all critical claims before proceeding.",
+    ),
+    "QUALITY_INCOMPLETE_DOSSIER": DegradedStateDefinition(
+        code="QUALITY_INCOMPLETE_DOSSIER",
+        severity="warning",
+        user_message="Quality evaluation found the dossier has missing required sections.",
+        recommended_action="Regenerate the dossier after filling missing sections.",
+    ),
+    "QUALITY_NO_PLAYBOOK": DegradedStateDefinition(
+        code="QUALITY_NO_PLAYBOOK",
+        severity="warning",
+        user_message="Quality evaluation found no activation playbook match.",
+        recommended_action="Review gap diagnosis and regenerate playbook recommendations.",
+    ),
+    "QUALITY_LOW_ACTIONABILITY": DegradedStateDefinition(
+        code="QUALITY_LOW_ACTIONABILITY",
+        severity="warning",
+        user_message="Quality evaluation found recommendations with low actionability.",
+        recommended_action=(
+            "Review recommendations and ensure motion, next step, "
+            "experiment, and metrics are defined."
+        ),
+    ),
+    "QUALITY_LOW_EXPORT_READINESS": DegradedStateDefinition(
+        code="QUALITY_LOW_EXPORT_READINESS",
+        severity="warning",
+        user_message="Quality evaluation shows low export readiness score.",
+        recommended_action=(
+            "Improve dossier quality, evidence coverage, " "and reduce unsupported claims."
+        ),
+    ),
+    "QUALITY_LOW_REVIEW_READINESS": DegradedStateDefinition(
+        code="QUALITY_LOW_REVIEW_READINESS",
+        severity="warning",
+        user_message="Quality evaluation shows low review readiness score.",
+        recommended_action="Complete a human review and improve evidence coverage.",
+    ),
     "PLAYBOOK_MISSING_SUCCESS_METRICS": DegradedStateDefinition(
         code="PLAYBOOK_MISSING_SUCCESS_METRICS",
         severity="warning",

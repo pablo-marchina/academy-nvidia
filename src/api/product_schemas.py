@@ -199,6 +199,8 @@ class OpportunityListItem(BaseModel):
     technical_experiment_summary: str | None = None
     dossier_available: bool = False
     latest_dossier_id: str | None = None
+    export_readiness_score: float | None = None
+    review_readiness_score: float | None = None
 
 
 class OpportunityListResponse(BaseModel):
@@ -397,3 +399,47 @@ class ActivationDossierSummaryRead(BaseModel):
     top_activation_playbook_id: str | None = None
     recommended_motion: str | None = None
     review_status: str | None = None
+
+
+class ProductQualityMetricRead(BaseModel):
+    id: str
+    quality_run_id: str
+    metric_name: str
+    metric_value: float
+    threshold: float
+    passed: bool
+    severity: str
+    details: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+
+
+class ProductQualityRunRead(BaseModel):
+    id: str
+    analysis_run_id: str
+    dossier_id: str | None = None
+    action_brief_id: str | None = None
+    status: str
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    evaluator_version: str
+    metrics: list[ProductQualityMetricRead] = Field(default_factory=list)
+    metrics_json: dict[str, Any] = Field(default_factory=dict)
+    summary_json: dict[str, Any] = Field(default_factory=dict)
+    degraded_reason: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ProductQualitySummaryRead(BaseModel):
+    analysis_run_id: str
+    quality_run_id: str | None = None
+    status: str | None = None
+    evaluator_version: str | None = None
+    overall_status: str
+    total_metrics: int
+    passed_metrics: int
+    failed_metrics: int
+    export_readiness_score: float | None = None
+    review_readiness_score: float | None = None
+    degraded_reason: str | None = None
+    metrics: dict[str, dict[str, Any]] = Field(default_factory=dict)

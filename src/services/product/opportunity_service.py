@@ -9,6 +9,11 @@ from sqlalchemy.orm import Session, joinedload
 
 from src.database.models import (
     AnalysisRun,
+    ProductQualityRun,
+)
+from src.quality.constants import (
+    METRIC_EXPORT_READINESS_SCORE,
+    METRIC_REVIEW_READINESS_SCORE,
 )
 from src.repositories.claim import ClaimRepository
 
@@ -122,6 +127,20 @@ class OpportunityService:
             except Exception:
                 pass
 
+            quality_export_readiness: float | None = None
+            quality_review_readiness: float | None = None
+            try:
+                quality_run = self._latest_quality_run(run.id)
+                if quality_run is not None and quality_run.summary_json:
+                    quality_export_readiness = quality_run.summary_json.get(
+                        METRIC_EXPORT_READINESS_SCORE
+                    )
+                    quality_review_readiness = quality_run.summary_json.get(
+                        METRIC_REVIEW_READINESS_SCORE
+                    )
+            except Exception:
+                pass
+
             items.append(
                 {
                     "startup_id": startup.id,
@@ -141,6 +160,8 @@ class OpportunityService:
                     "review_status": last_review.decision if last_review is not None else None,
                     "unsupported_claim_count": unsupported_claim_count,
                     "evidence_coverage": evidence_coverage,
+                    "export_readiness_score": quality_export_readiness,
+                    "review_readiness_score": quality_review_readiness,
                 }
             )
 
@@ -200,3 +221,12 @@ class OpportunityService:
         if not reviews:
             return None
         return max(reviews, key=lambda r: r.created_at)
+
+    def _latest_quality_run(self, analysis_run_id: str) -> ProductQualityRun | None:
+        stmt = (
+            select(ProductQualityRun)
+            .where(ProductQualityRun.analysis_run_id == analysis_run_id)
+            .order_by(ProductQualityRun.created_at.desc())
+            .limit(1)
+        )
+        return self.session.scalar(stmt)

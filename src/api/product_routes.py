@@ -29,6 +29,9 @@ from src.api.product_schemas import (
     OpportunityListItem,
     OpportunityListResponse,
     ProductHealthRead,
+    ProductQualityMetricRead,
+    ProductQualityRunRead,
+    ProductQualitySummaryRead,
     ReadinessCheckRead,
     ReviewDecisionCreate,
     ReviewDecisionRead,
@@ -43,9 +46,11 @@ from src.database.models import (
     ActivationDossierRecord,
     AnalysisRun,
     ClaimRecord,
+    ProductQualityRun,
     Startup,
 )
 from src.database.session import get_db_session
+from src.quality.service import ProductQualityService
 from src.services.product import ProductService
 from src.services.product.activation_service import ActivationPlaybookService
 from src.services.product.claim_ledger import ClaimLedgerService
@@ -741,6 +746,120 @@ def get_dossier_markdown(
         markdown=record.dossier_markdown,
         dossier_id=record.id,
         version=record.version,
+    )
+
+
+@router.post(
+    "/analysis-runs/{analysis_run_id}/quality-runs",
+    response_model=ProductQualityRunRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_quality_run(
+    analysis_run_id: str,
+    session: DbSession,
+) -> ProductQualityRunRead:
+    service = ProductService(session)
+    if service.get_analysis_run(analysis_run_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
+    quality_service = ProductQualityService(session)
+    try:
+        quality_run = quality_service.run_quality_evaluation_for_analysis_run(analysis_run_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return _quality_run_read(quality_run, session)
+
+
+@router.get(
+    "/analysis-runs/{analysis_run_id}/quality-runs",
+    response_model=list[ProductQualityRunRead],
+)
+def list_quality_runs(
+    analysis_run_id: str,
+    session: DbSession,
+) -> list[ProductQualityRunRead]:
+    service = ProductService(session)
+    if service.get_analysis_run(analysis_run_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
+    quality_service = ProductQualityService(session)
+    runs = quality_service.repository.list_quality_runs_for_analysis_run(analysis_run_id)
+    return [_quality_run_read(r, session) for r in runs]
+
+
+@router.get(
+    "/analysis-runs/{analysis_run_id}/quality-runs/latest",
+    response_model=ProductQualityRunRead,
+)
+def get_latest_quality_run(
+    analysis_run_id: str,
+    session: DbSession,
+) -> ProductQualityRunRead:
+    service = ProductService(session)
+    if service.get_analysis_run(analysis_run_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
+    quality_service = ProductQualityService(session)
+    quality_run = quality_service.repository.get_latest_quality_run_for_analysis_run(
+        analysis_run_id
+    )
+    if quality_run is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No quality run found for this analysis run. Run one first with POST.",
+        )
+    return _quality_run_read(quality_run, session)
+
+
+@router.get(
+    "/analysis-runs/{analysis_run_id}/quality-summary",
+    response_model=ProductQualitySummaryRead,
+)
+def get_quality_summary(
+    analysis_run_id: str,
+    session: DbSession,
+) -> ProductQualitySummaryRead:
+    service = ProductService(session)
+    if service.get_analysis_run(analysis_run_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
+    quality_service = ProductQualityService(session)
+    summary = quality_service.summarize_quality_result(analysis_run_id)
+    return ProductQualitySummaryRead(**summary)
+
+
+def _quality_run_read(
+    quality_run: ProductQualityRun,
+    session: Session,
+) -> ProductQualityRunRead:
+    from src.quality.repository import ProductQualityRepository
+
+    repo = ProductQualityRepository(session)
+    metrics = repo.get_metrics_for_quality_run(quality_run.id)
+    return ProductQualityRunRead(
+        id=quality_run.id,
+        analysis_run_id=quality_run.analysis_run_id,
+        dossier_id=quality_run.dossier_id,
+        action_brief_id=quality_run.action_brief_id,
+        status=quality_run.status,
+        started_at=quality_run.started_at,
+        completed_at=quality_run.completed_at,
+        evaluator_version=quality_run.evaluator_version,
+        metrics=[
+            ProductQualityMetricRead(
+                id=m.id,
+                quality_run_id=m.quality_run_id,
+                metric_name=m.metric_name,
+                metric_value=m.metric_value,
+                threshold=m.threshold,
+                passed=m.passed,
+                severity=m.severity,
+                details=m.details_json,
+                created_at=m.created_at,
+            )
+            for m in metrics
+        ],
+        metrics_json=quality_run.metrics_json,
+        summary_json=quality_run.summary_json,
+        degraded_reason=quality_run.degraded_reason,
+        created_at=quality_run.created_at,
+        updated_at=quality_run.updated_at,
     )
 
 

@@ -133,6 +133,9 @@ class AnalysisRun(TimestampMixin, Base):
     dossiers: Mapped[list[ActivationDossierRecord]] = relationship(
         back_populates="analysis_run", cascade="all, delete-orphan"
     )
+    quality_runs: Mapped[list[ProductQualityRun]] = relationship(
+        back_populates="analysis_run", cascade="all, delete-orphan"
+    )
 
 
 class ScoreRecord(TimestampMixin, Base):
@@ -376,3 +379,62 @@ class ActivationDossierRecord(TimestampMixin, Base):
     review_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     analysis_run: Mapped[AnalysisRun] = relationship(back_populates="dossiers")
+
+
+class ProductQualityRun(TimestampMixin, Base):
+    __tablename__ = "product_quality_runs"
+    __table_args__ = (
+        Index("ix_quality_run_analysis", "analysis_run_id"),
+        Index("ix_quality_run_status", "status"),
+        Index("ix_quality_run_created", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    analysis_run_id: Mapped[str] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    dossier_id: Mapped[str | None] = mapped_column(
+        ForeignKey("activation_dossier_records.id", ondelete="SET NULL"), nullable=True
+    )
+    action_brief_id: Mapped[str | None] = mapped_column(
+        ForeignKey("action_brief_records.id", ondelete="SET NULL"), nullable=True
+    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="running")
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    evaluator_version: Mapped[str] = mapped_column(String(50), nullable=False, default="1.0")
+    metrics_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    summary_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    degraded_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    analysis_run: Mapped[AnalysisRun] = relationship(back_populates="quality_runs")
+    dossier: Mapped[ActivationDossierRecord | None] = relationship()
+    action_brief: Mapped[ActionBriefRecord | None] = relationship()
+    metrics: Mapped[list[ProductQualityMetric]] = relationship(
+        back_populates="quality_run", cascade="all, delete-orphan"
+    )
+
+
+class ProductQualityMetric(TimestampMixin, Base):
+    __tablename__ = "product_quality_metrics"
+    __table_args__ = (
+        Index("ix_quality_metric_run", "quality_run_id"),
+        Index("ix_quality_metric_name", "metric_name"),
+        Index("ix_quality_metric_passed", "passed"),
+        Index("ix_quality_metric_severity", "severity"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    quality_run_id: Mapped[str] = mapped_column(
+        ForeignKey("product_quality_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    metric_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    metric_value: Mapped[float] = mapped_column(Float, nullable=False)
+    threshold: Mapped[float] = mapped_column(Float, nullable=False)
+    passed: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    severity: Mapped[str] = mapped_column(String(20), nullable=False, default="warn")
+    details_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+
+    quality_run: Mapped[ProductQualityRun] = relationship(back_populates="metrics")
