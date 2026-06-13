@@ -28,10 +28,15 @@ from src.api.product_schemas import (
     GenerateActivationRecommendationsResponse,
     OpportunityListItem,
     OpportunityListResponse,
+    ProductCapabilityRead,
+    ProductConfigurationItemRead,
     ProductHealthRead,
     ProductQualityMetricRead,
     ProductQualityRunRead,
     ProductQualitySummaryRead,
+    ProductReadinessRead,
+    ProductSetupChecklistItem,
+    ProductSetupChecklistRead,
     ReadinessCheckRead,
     ReviewDecisionCreate,
     ReviewDecisionRead,
@@ -55,6 +60,7 @@ from src.services.product import ProductService
 from src.services.product.activation_service import ActivationPlaybookService
 from src.services.product.claim_ledger import ClaimLedgerService
 from src.services.product.dossier_service import ActivationDossierService
+from src.services.product.readiness_service import ProductReadinessService
 
 router = APIRouter(tags=["product"])
 DbSession = Annotated[Session, Depends(get_db_session)]
@@ -822,6 +828,98 @@ def get_quality_summary(
     quality_service = ProductQualityService(session)
     summary = quality_service.summarize_quality_result(analysis_run_id)
     return ProductQualitySummaryRead(**summary)
+
+
+# ---------------------------------------------------------------------------
+# Product Capability & Configuration Endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get("/product/capabilities", response_model=list[ProductCapabilityRead])
+def list_capabilities() -> list[ProductCapabilityRead]:
+    svc = ProductReadinessService()
+    return [
+        ProductCapabilityRead(
+            capability_id=c.capability_id,
+            name=c.name,
+            description=c.description,
+            category=c.category,
+            required=c.required,
+            status=c.status.value,
+            status_reason=c.status_reason,
+            required_env_vars=c.required_env_vars,
+            optional_env_vars=c.optional_env_vars,
+            required_extras=c.required_extras,
+            required_services=c.required_services,
+            setup_instructions=c.setup_instructions,
+            failure_mode=c.failure_mode,
+            user_visible=c.user_visible,
+            documentation_ref=c.documentation_ref,
+        )
+        for c in svc.list_capabilities()
+    ]
+
+
+@router.get("/product/configuration", response_model=list[ProductConfigurationItemRead])
+def list_configuration() -> list[ProductConfigurationItemRead]:
+    svc = ProductReadinessService()
+    return [
+        ProductConfigurationItemRead(
+            key=item["key"],
+            description=item["description"],
+            required=item["required"],
+            secret=item["secret"],
+            default=item["default"],
+            current_value=item["current_value"],
+            is_set=item["is_set"],
+        )
+        for item in svc.list_required_configuration()
+    ]
+
+
+@router.get("/product/setup-checklist", response_model=ProductSetupChecklistRead)
+def get_setup_checklist() -> ProductSetupChecklistRead:
+    svc = ProductReadinessService()
+    items = svc.get_setup_checklist()
+    completed = sum(1 for i in items if i["is_set"])
+    pending = len(items) - completed
+    return ProductSetupChecklistRead(
+        items=[
+            ProductSetupChecklistItem(
+                key=i["key"],
+                description=i["description"],
+                is_set=i["is_set"],
+                required=i["required"],
+            )
+            for i in items
+        ],
+        total=len(items),
+        completed=completed,
+        pending=pending,
+    )
+
+
+@router.get("/product/readiness", response_model=ProductReadinessRead)
+def get_product_readiness() -> ProductReadinessRead:
+    svc = ProductReadinessService()
+    report = svc.get_product_readiness()
+    return ProductReadinessRead(
+        ready=report.ready,
+        blocking_missing_config=report.blocking_missing_config,
+        optional_missing_config=report.optional_missing_config,
+        unavailable_capabilities=report.unavailable_capabilities,
+        degraded_capabilities=report.degraded_capabilities,
+        setup_checklist=[
+            ProductSetupChecklistItem(
+                key=i["key"],
+                description=i["description"],
+                is_set=i["is_set"],
+                required=i["required"],
+            )
+            for i in report.setup_checklist
+        ],
+        user_messages=report.user_messages,
+    )
 
 
 def _quality_run_read(

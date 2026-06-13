@@ -1,0 +1,284 @@
+"""Central registry of product configuration items (env vars, extras, services).
+
+Each item tracks whether it is required, its source, current value,
+and a user-facing message.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import os
+from dataclasses import dataclass, field
+
+
+@dataclass
+class ConfigItem:
+    key: str
+    description: str
+    required_for: list[str] = field(default_factory=list)
+    required: bool = False
+    secret: bool = False
+    default: str = ""
+    current_value: str | None = None
+    source: str = "env"
+    example: str = ""
+    validation_rule: str = ""
+    user_message: str = ""
+
+    def is_set(self) -> bool:
+        val = self.current_value
+        if val is None:
+            val = os.environ.get(self.key, self.default)
+        return bool(val)
+
+
+CONFIG_ITEMS: dict[str, ConfigItem] = {}
+
+
+def _reg(
+    key: str,
+    description: str,
+    required_for: list[str] | None = None,
+    required: bool = False,
+    secret: bool = False,
+    default: str = "",
+    example: str = "",
+    validation_rule: str = "",
+    user_message: str = "",
+) -> ConfigItem:
+    item = ConfigItem(
+        key=key,
+        description=description,
+        required_for=required_for or [],
+        required=required,
+        secret=secret,
+        default=default,
+        source="env",
+        example=example,
+        validation_rule=validation_rule,
+        user_message=user_message,
+    )
+    CONFIG_ITEMS[key] = item
+    return item
+
+
+# ---------------------------------------------------------------------------
+# Core Required
+# ---------------------------------------------------------------------------
+_reg(
+    key="PRODUCT_DB_URL",
+    description="Database URL for product records (SQLite or PostgreSQL)",
+    required=True,
+    required_for=["product_database", "product_api"],
+    default="sqlite:///data/product/product.db",
+    example="sqlite:///data/product/product.db",
+    user_message="Set PRODUCT_DB_URL to point to your product database.",
+)
+_reg(
+    key="APP_MODE",
+    description="Application mode (product, development)",
+    required=True,
+    required_for=["product_api"],
+    default="product",
+    example="product",
+)
+_reg(
+    key="ENABLE_PRODUCT_PERSISTENCE",
+    description="Enable transactional product database persistence",
+    required=True,
+    required_for=["product_database"],
+    default="true",
+    example="true",
+)
+_reg(
+    key="PRODUCT_DATA_DIR",
+    description="Directory for product data files",
+    required=False,
+    default="data/product",
+    example="data/product",
+)
+
+# ---------------------------------------------------------------------------
+# RAG
+# ---------------------------------------------------------------------------
+_reg(
+    key="RAG_VECTOR_BACKEND",
+    description="Vector backend (in_memory, qdrant)",
+    required=False,
+    required_for=["rag_retrieval"],
+    default="in_memory",
+    example="in_memory",
+)
+_reg(
+    key="RAG_REQUIRED_FOR_PRODUCT",
+    description="Whether RAG is required for product analysis runs",
+    required=False,
+    default="false",
+    example="false",
+)
+_reg(
+    key="RAG_EMBEDDING_MODEL",
+    description="Sentence-transformer model name for embeddings",
+    required=False,
+    required_for=["sentence_transformer_embeddings"],
+    default="sentence-transformers/all-MiniLM-L6-v2",
+    example="sentence-transformers/all-MiniLM-L6-v2",
+)
+
+# ---------------------------------------------------------------------------
+# Qdrant
+# ---------------------------------------------------------------------------
+_reg(
+    key="QDRANT_URL",
+    description="Qdrant server URL",
+    required=False,
+    required_for=["qdrant_vector_store"],
+    default="http://localhost:6333",
+    example="http://localhost:6333",
+)
+_reg(
+    key="QDRANT_API_KEY",
+    description="Qdrant API key (optional)",
+    required=False,
+    secret=True,
+    default="",
+    example="<your-qdrant-api-key>",
+)
+_reg(
+    key="QDRANT_COLLECTION",
+    description="Qdrant collection name",
+    required=False,
+    required_for=["qdrant_vector_store"],
+    default="nvidia_corpus",
+    example="nvidia_corpus",
+)
+_reg(
+    key="QDRANT_VECTOR_SIZE",
+    description="Qdrant vector dimension",
+    required=False,
+    required_for=["qdrant_vector_store"],
+    default="384",
+    example="384",
+)
+
+# ---------------------------------------------------------------------------
+# LLM / Instructor / Judge
+# ---------------------------------------------------------------------------
+_reg(
+    key="ANSWER_QUALITY_LLM_JUDGE_ENABLED",
+    description="Enable optional LLM judge for answer quality",
+    required=False,
+    required_for=["optional_llm_judge"],
+    default="false",
+    example="true",
+    user_message="Set ANSWER_QUALITY_LLM_JUDGE_ENABLED=true and install .[llm-judge] extra.",
+)
+_reg(
+    key="ANSWER_QUALITY_LLM_JUDGE_PROVIDER",
+    description="LLM judge provider name (null, instructor_trial)",
+    required=False,
+    required_for=["optional_llm_judge"],
+    default="null",
+    example="null",
+)
+_reg(
+    key="ENABLE_INSTRUCTOR_TRIAL",
+    description="Enable instructor trial for structured output parsing",
+    required=False,
+    required_for=["optional_instructor_trial"],
+    default="false",
+    example="true",
+    user_message="Set ENABLE_INSTRUCTOR_TRIAL=true and install `pip install -e .[llm-judge]`.",
+)
+_reg(
+    key="OPENAI_API_KEY",
+    description="OpenAI API key (required for OpenAI structured outputs)",
+    required=False,
+    required_for=["optional_openai_structured_outputs"],
+    secret=True,
+    default="",
+    example="sk-...",
+)
+
+# ---------------------------------------------------------------------------
+# Observability
+# ---------------------------------------------------------------------------
+_reg(
+    key="LANGSMITH_API_KEY",
+    description="LangSmith API key for tracing",
+    required=False,
+    secret=True,
+    default="",
+    example="lsv2_...",
+)
+_reg(
+    key="LANGSMITH_PROJECT",
+    description="LangSmith project name",
+    required=False,
+    default="nvidia-startup-ai-radar",
+    example="nvidia-startup-ai-radar",
+)
+
+# ---------------------------------------------------------------------------
+# Database Test
+# ---------------------------------------------------------------------------
+_reg(
+    key="PRODUCT_DB_TEST_URL",
+    description="Database URL for PostgreSQL integration tests",
+    required=False,
+    required_for=["postgres_validation_optional"],
+    secret=True,
+    default="",
+    example="postgresql://postgres:postgres@localhost:5432/startup_radar",
+)
+
+
+def get_config_item(key: str) -> ConfigItem | None:
+    return CONFIG_ITEMS.get(key)
+
+
+def list_config_items() -> list[ConfigItem]:
+    return list(CONFIG_ITEMS.values())
+
+
+def get_required_config() -> list[ConfigItem]:
+    return [item for item in CONFIG_ITEMS.values() if item.required]
+
+
+def get_optional_config() -> list[ConfigItem]:
+    return [item for item in CONFIG_ITEMS.values() if not item.required]
+
+
+def resolve_config_values(items: list[ConfigItem] | None = None) -> list[ConfigItem]:
+    """Resolve current values from environment for the given items (or all)."""
+    resolved: list[ConfigItem] = []
+    for item in items or CONFIG_ITEMS.values():
+        val = os.environ.get(item.key)
+        resolved.append(
+            ConfigItem(
+                key=item.key,
+                description=item.description,
+                required_for=list(item.required_for),
+                required=item.required,
+                secret=item.secret,
+                default=item.default,
+                current_value="****" if (val and item.secret) else val,
+                source=item.source,
+                example=item.example,
+                validation_rule=item.validation_rule,
+                user_message=item.user_message,
+            )
+        )
+    return resolved
+
+
+def is_extra_installed(extra: str) -> bool:
+    """Check whether an optional extra package is installed."""
+    extra_map: dict[str, str] = {
+        "rag": "sentence_transformers",
+        "llm-judge": "instructor",
+    }
+    pkg = extra_map.get(extra)
+    if pkg is None:
+        return False
+    return importlib.util.find_spec(pkg) is not None

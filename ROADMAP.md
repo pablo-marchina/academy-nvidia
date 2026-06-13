@@ -512,6 +512,66 @@
 - [x] Validations passed (pytest 30/30, ruff, black, mypy, scope, docs-closure)
 - [x] ROADMAP, EVALS, DECISIONS, Obsidian vault updated
 
+### Epic 36 — Structured Output Reliability Layer (concluído)
+- [x] `src/evaluation/structured_outputs.py` — core module: parse_json_output, repair_json_if_safe, validate_output, run_validation_with_repair, build_structured_output_result, readiness_check_payload_from_result, quality_metrics_from_results
+- [x] 5 new degraded state codes in `src/services/product/degraded.py` (STRUCTURED_OUTPUT_INVALID, STRUCTURED_OUTPUT_REPAIRED, STRUCTURED_OUTPUT_RETRY_EXHAUSTED, STRUCTURED_OUTPUT_SCHEMA_DRIFT, STRUCTURED_OUTPUT_MISSING_REQUIRED_FIELD)
+- [x] 6 new quality metric constants in `src/quality/constants.py` with thresholds
+- [x] `src/quality/evaluators/structured_output_reliability.py` — evaluator querying readiness checks
+- [x] Integrated evaluator into `src/quality/service.py`
+- [x] Applied to Activation Dossier: DossierJsonSchema Pydantic model, validation in `_validate_dossier_json()`, readiness check creation on failure
+- [x] `src/evaluation/llm_judge_instructor_adapter.py` — optional Instructor trial adapter with lazy import
+- [x] `pyproject.toml` — added `[llm-judge]` extra with `instructor>=1.8,<2`
+- [x] `tests/unit/test_structured_outputs.py` — 30 tests (parse, repair, validate, retry, metrics, readiness payload)
+- [x] `tests/integration/test_structured_outputs.py` — 4 integration tests (dossier validation, quality metrics)
+- [x] `docs/62_structured_output_reliability.md` — design doc with inventory, architecture, state codes, metrics
+- [x] `docs/contracts/structured_output_contract.md` — contract with schemas, functions, invariants, examples
+- [x] `EVALS.md` updated with test entries and coverage
+- [x] `ROADMAP.md` updated with Epic 36 entries
+- [x] All validations passing (pytest, ruff, black, mypy, scope, docs-closure)
+
+### Epic 36.1 — Product Capability & Configuration Registry (concluído)
+- [x] `src/services/product/capability_registry.py` — 25+ capability definitions across all categories
+- [x] `src/services/product/config_registry.py` — 17+ config items with env var resolution, secret masking, extra checking
+- [x] `src/services/product/readiness_service.py` — ProductReadinessService: list_capabilities, get_capability_status, validate_configuration, get_product_readiness, get_setup_checklist, get_optional_features_status, get_missing_configuration
+- [x] `src/api/product_schemas.py` — 5 new schemas: ProductCapabilityRead, ProductConfigurationItemRead, ProductSetupChecklistRead, ProductReadinessRead, OptionalFeatureStatusRead
+- [x] `src/api/product_routes.py` — 4 new GET endpoints: /product/capabilities, /product/configuration, /product/setup-checklist, /product/readiness
+- [x] `.env.example` — 20 documented env vars with section headers and inline comments
+- [x] `pyproject.toml` — `[llm-judge]` extra (shared with Epic 36)
+- [x] `tests/unit/test_capability_registry.py` — 6 tests (required/optional/extras caps)
+- [x] `tests/unit/test_config_registry.py` — 9 tests (config items, secrets masking, extras check)
+- [x] `tests/unit/test_readiness_service.py` — 10 tests (capabilities, configuration, readiness report, optional features)
+- [x] `tests/integration/test_product_readiness_api.py` — 9 integration tests (capabilities, configuration, setup-checklist, readiness endpoints)
+- [x] `docs/63_product_capability_configuration_registry.md` — design doc
+- [x] `docs/contracts/product_configuration_contract.md` — contract with capability/config definitions, readiness, API
+- [x] `docs/contracts/product_api_contract.md` — updated with capability/configuration endpoints
+- [x] `README.md` — Product Setup section added
+- [x] `ROADMAP.md`, `EVALS.md` updated
+- [x] All validations passing (pytest, ruff, black, mypy, scope, docs-closure)
+
+### Epic 37 — Product UI Workspace & Setup Flow (em andamento)
+- [x] `docs/plans/2026-06-11_epic-37_product-ui-workspace-setup-flow.md` — plano aprovado
+- [x] `docs/64_product_ui_workspace.md` — design doc
+- [x] `frontend/src/api/types.ts` — tipos TypeScript alinhados aos schemas Pydantic
+- [x] `frontend/src/api/client.ts` — fetch genérico com tratamento de erro
+- [x] `frontend/src/api/product.ts` — funções para cada endpoint product
+- [x] `frontend/src/App.tsx` — routing por estado local (setup, capabilities, startups, opportunities, analysisRun, dossier)
+- [x] `frontend/src/components/SetupReadinessView.tsx` — readiness, setup checklist, blocking/optional config
+- [x] `frontend/src/components/CapabilitiesView.tsx` — capabilities agrupadas por categoria com status visual
+- [x] `frontend/src/components/StartupListView.tsx` — listar/criar startups
+- [x] `frontend/src/components/StartupDetailPanel.tsx` — detalhe + edição básica + run analysis
+- [x] `frontend/src/components/AnalysisRunDetailView.tsx` — scores, gaps, mappings, claims, quality, readiness checks
+- [x] `frontend/src/components/OpportunitiesView.tsx` — tabela ranqueada com paginação
+- [x] `frontend/src/components/DossierView.tsx` — Markdown + JSON raw + copy + regenerate
+- [x] `frontend/src/components/QualitySummaryPanel.tsx` — métricas pass/fail
+- [x] `frontend/src/components/ReviewForm.tsx` — review de analysis run e claims
+- [x] `frontend/.env.example` — VITE_API_BASE_URL + VITE_APP_ENV
+- [x] `Makefile` — alvo `ui-e2e-product` separado
+- [x] `tests/e2e/test_product_ui.spec.ts` — Playwright E2E smoke tests
+- [x] `README.md` — seção "Run the Product UI" atualizada
+- [x] Sem react-router-dom, TanStack Query, mock como fluxo principal
+- [x] UI consome Product API real, não lê data/demo_runs
+- [x] Nenhuma alteração em scoring, RAG, Qdrant, recommendation central
+
 ### Later Backlog
 - Documentation Pruning (consolidation of remaining early docs)
 - Human-in-the-loop review implementation

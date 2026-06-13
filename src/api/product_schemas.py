@@ -443,3 +443,68 @@ class ProductQualitySummaryRead(BaseModel):
     review_readiness_score: float | None = None
     degraded_reason: str | None = None
     metrics: dict[str, dict[str, Any]] = Field(default_factory=dict)
+
+
+# ---------------------------------------------------------------------------
+# Product Capability & Configuration Registry Schemas
+# ---------------------------------------------------------------------------
+
+
+class ProductCapabilityRead(BaseModel):
+    capability_id: str
+    name: str
+    description: str
+    category: str
+    required: bool
+    status: str
+    status_reason: str = ""
+    required_env_vars: list[str] = Field(default_factory=list)
+    optional_env_vars: list[str] = Field(default_factory=list)
+    required_extras: list[str] = Field(default_factory=list)
+    required_services: list[str] = Field(default_factory=list)
+    setup_instructions: str = ""
+    failure_mode: str = ""
+    user_visible: bool = True
+    documentation_ref: str = ""
+
+
+class ProductConfigurationItemRead(BaseModel):
+    key: str
+    description: str
+    required: bool
+    secret: bool = False
+    default: str = ""
+    current_value: str | None = None
+    is_set: bool = False
+
+
+class ProductSetupChecklistItem(BaseModel):
+    key: str
+    description: str
+    is_set: bool
+    required: bool
+
+
+class ProductSetupChecklistRead(BaseModel):
+    items: list[ProductSetupChecklistItem]
+    total: int
+    completed: int
+    pending: int
+
+
+class ProductReadinessRead(BaseModel):
+    ready: bool
+    blocking_missing_config: list[dict[str, Any]] = Field(default_factory=list)
+    optional_missing_config: list[dict[str, Any]] = Field(default_factory=list)
+    unavailable_capabilities: list[dict[str, Any]] = Field(default_factory=list)
+    degraded_capabilities: list[dict[str, Any]] = Field(default_factory=list)
+    setup_checklist: list[ProductSetupChecklistItem] = Field(default_factory=list)
+    user_messages: list[str] = Field(default_factory=list)
+
+
+class OptionalFeatureStatusRead(BaseModel):
+    capability_id: str
+    name: str
+    status: str
+    reason: str = ""
+    setup_instructions: str = ""

@@ -204,4 +204,34 @@ DEGRADED_STATES: dict[str, DegradedStateDefinition] = {
             "Ensure success metrics are defined " "before starting the playbook experiment."
         ),
     ),
+    "STRUCTURED_OUTPUT_INVALID": DegradedStateDefinition(
+        code="STRUCTURED_OUTPUT_INVALID",
+        severity="error",
+        user_message="A structured output failed schema validation and could not be repaired.",
+        recommended_action="Inspect the raw output and schema definition for drift.",
+    ),
+    "STRUCTURED_OUTPUT_REPAIRED": DegradedStateDefinition(
+        code="STRUCTURED_OUTPUT_REPAIRED",
+        severity="warning",
+        user_message="A structured output was repaired after validation failure.",
+        recommended_action="Review the repair to confirm the output is correct.",
+    ),
+    "STRUCTURED_OUTPUT_RETRY_EXHAUSTED": DegradedStateDefinition(
+        code="STRUCTURED_OUTPUT_RETRY_EXHAUSTED",
+        severity="error",
+        user_message="A structured output exhausted retry attempts without valid repair.",
+        recommended_action="Inspect the output source and schema; consider manual review.",
+    ),
+    "STRUCTURED_OUTPUT_SCHEMA_DRIFT": DegradedStateDefinition(
+        code="STRUCTURED_OUTPUT_SCHEMA_DRIFT",
+        severity="warning",
+        user_message="A structured output field type changed compared to expected schema.",
+        recommended_action="Verify the schema contract and update if intentional.",
+    ),
+    "STRUCTURED_OUTPUT_MISSING_REQUIRED_FIELD": DegradedStateDefinition(
+        code="STRUCTURED_OUTPUT_MISSING_REQUIRED_FIELD",
+        severity="error",
+        user_message="A required field is missing from a structured output.",
+        recommended_action="Check the output generator for the missing field.",
+    ),
 }

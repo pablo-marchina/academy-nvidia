@@ -8,13 +8,19 @@ from src.database.models import ProductQualityMetric, ProductQualityRun
 from src.quality.constants import (
     METRIC_ACTIVATION_PLAYBOOK_EVIDENCE_SUPPORT,
     METRIC_ACTIVATION_PLAYBOOK_PRESENT,
+    METRIC_AVG_RETRY_COUNT,
     METRIC_DEGRADED_STATE_COUNT,
     METRIC_DOSSIER_SECTION_COMPLETENESS,
     METRIC_EVIDENCE_COVERAGE,
     METRIC_EXPORT_READINESS_SCORE,
+    METRIC_MISSING_REQUIRED_FIELD_COUNT,
     METRIC_MISSING_REQUIRED_SECTIONS,
     METRIC_RECOMMENDATION_ACTIONABILITY_SCORE,
     METRIC_REVIEW_READINESS_SCORE,
+    METRIC_SCHEMA_VALIDATION_ERROR_COUNT,
+    METRIC_STRUCTURED_OUTPUT_FAILURE_RATE,
+    METRIC_STRUCTURED_OUTPUT_REPAIR_RATE,
+    METRIC_STRUCTURED_OUTPUT_VALID_RATE,
     METRIC_UNSUPPORTED_CLAIM_RATE,
     METRIC_UNSUPPORTED_CRITICAL_CLAIM_COUNT,
     METRIC_WEAK_CLAIM_RATE,
@@ -29,6 +35,9 @@ from src.quality.evaluators.recommendation_actionability import (
     RecommendationActionabilityEvaluator,
 )
 from src.quality.evaluators.review_readiness import ReviewReadinessEvaluator
+from src.quality.evaluators.structured_output_reliability import (
+    StructuredOutputReliabilityEvaluator,
+)
 from src.quality.repository import ProductQualityRepository
 from src.repositories.product import ProductRepository
 
@@ -215,6 +224,53 @@ class ProductQualityService:
                 quality_run_id,
                 METRIC_REVIEW_READINESS_SCORE,
                 rr_result.get("review_readiness_score", 0.0),
+            )
+        )
+
+        so = StructuredOutputReliabilityEvaluator(self.session)
+        so_result = so.evaluate(analysis_run_id)
+        metrics.append(
+            self._make_metric(
+                quality_run_id,
+                METRIC_STRUCTURED_OUTPUT_VALID_RATE,
+                so_result.get("structured_output_valid_rate", 1.0),
+            )
+        )
+        metrics.append(
+            self._make_metric(
+                quality_run_id,
+                METRIC_STRUCTURED_OUTPUT_REPAIR_RATE,
+                so_result.get("structured_output_repair_rate", 0.0),
+            )
+        )
+        metrics.append(
+            self._make_metric(
+                quality_run_id,
+                METRIC_STRUCTURED_OUTPUT_FAILURE_RATE,
+                so_result.get("structured_output_failure_rate", 0.0),
+            )
+        )
+        metrics.append(
+            self._make_metric(
+                quality_run_id,
+                METRIC_AVG_RETRY_COUNT,
+                so_result.get("avg_retry_count", 0.0),
+            )
+        )
+        error_count = so_result.get("schema_validation_error_count", 0)
+        metrics.append(
+            self._make_metric(
+                quality_run_id,
+                METRIC_SCHEMA_VALIDATION_ERROR_COUNT,
+                float(error_count),
+            )
+        )
+        missing_count = so_result.get("missing_required_field_count", 0)
+        metrics.append(
+            self._make_metric(
+                quality_run_id,
+                METRIC_MISSING_REQUIRED_FIELD_COUNT,
+                float(missing_count),
             )
         )
 

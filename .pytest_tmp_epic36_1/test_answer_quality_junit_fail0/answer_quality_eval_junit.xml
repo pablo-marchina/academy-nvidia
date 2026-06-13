@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuite name="pytest" tests="2" failures="1" errors="0" skipped="0">
+  <testcase classname="tests.evals.test_answer_quality_golden" name="test_ok" />
+  <testcase classname="tests.evals.test_answer_quality_golden" name="test_failure">
+    <failure message="unsupported_claim_count=1&#10;required_sections_missing=0" />
+  </testcase>
+</testsuite>

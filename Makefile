@@ -1,4 +1,4 @@
-.PHONY: test lint format-check typecheck validate validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e demo-acceptance demo-full-check demo-full demo-cli demo-cli-offline demo-cli-rag db-upgrade db-downgrade db-migrate db-current db-history
+.PHONY: test lint format-check typecheck validate validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e ui-e2e-product demo-acceptance demo-full-check demo-full demo-cli demo-cli-offline demo-cli-rag db-upgrade db-downgrade db-migrate db-current db-history
 
 test:
 	python -m pytest -m "not integration" --tb=short
@@ -100,6 +100,9 @@ ui-build:
 
 ui-e2e:
 	cd frontend && npm run test:e2e
+
+ui-e2e-product:
+	cd frontend && npm run test:e2e:product
 
 demo-acceptance: api-test ui-install ui-build ui-e2e
 

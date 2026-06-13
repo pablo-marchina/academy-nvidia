@@ -1,0 +1,9 @@
+
+sources:
+  nim:
+    title: NVIDIA NIM
+    product: NVIDIA NIM
+    gap_types: [high_latency]
+    version: "1.0"
+    document_type: nvidia_corpus
+    is_active: true

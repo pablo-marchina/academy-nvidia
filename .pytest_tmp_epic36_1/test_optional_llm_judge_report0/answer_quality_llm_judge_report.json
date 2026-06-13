@@ -1,0 +1,1 @@
+{"provider": {"provider_name": "null"}, "total_cases": 2, "completed_cases": 2, "error_cases": 0, "is_ci_gate": false, "summary": {"mean_score": 0.81, "mean_faithfulness_score": 0.85, "mean_answer_relevancy_score": 0.82, "mean_groundedness_score": 0.84, "mean_completeness_score": 0.8, "mean_uncertainty_honesty_score": 0.88, "mean_executive_usefulness_score": 0.81}}

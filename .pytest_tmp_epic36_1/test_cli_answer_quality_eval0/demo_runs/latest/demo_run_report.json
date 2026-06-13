@@ -1,0 +1,37 @@
+{
+  "run_id": "demo_20260613_192323",
+  "started_at": "2026-06-13T19:23:23.507293+00:00",
+  "finished_at": "2026-06-13T19:23:23.544750+00:00",
+  "input_file": "C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\examples\\demo\\sample_startup_input.json",
+  "startup_name": "Nexus AI Labs",
+  "parameters": {
+    "use_rag": false,
+    "rag_backend": null,
+    "offline": false,
+    "run_answer_quality_eval": true,
+    "format": "both"
+  },
+  "outputs": {
+    "brief_markdown": "C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\.pytest_tmp_epic36_1\\test_cli_answer_quality_eval0\\demo_runs\\latest\\startup_action_brief.md",
+    "brief_json": "C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\.pytest_tmp_epic36_1\\test_cli_answer_quality_eval0\\demo_runs\\latest\\startup_action_brief.json",
+    "answer_quality_eval": "C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\.pytest_tmp_epic36_1\\test_cli_answer_quality_eval0\\demo_runs\\latest\\answer_quality_eval.json"
+  },
+  "pipeline_summary": {
+    "final_priority_score": 44.4,
+    "recommended_motion": "monitor_and_nurture",
+    "gaps_detected": 11,
+    "recommendations": 15,
+    "evidence_items": 21,
+    "missing_evidence_items": 17,
+    "rag_used": false
+  },
+  "answer_quality_eval": {
+    "passed": true,
+    "status": "PASS",
+    "case_id": "demo_Nexus AI Labs",
+    "unsupported_claim_count": 0,
+    "forbidden_absolute_language_count": 0,
+    "required_sections_present": true
+  },
+  "status": "completed"
+}

@@ -8,17 +8,6 @@ export type StartupInput = {
   [key: string]: unknown;
 };
 
-export type BriefRequest = {
-  startup_name: string;
-  profile: JsonObject;
-  evidence: JsonObject[];
-  source_url: string;
-  use_rag: boolean;
-  rag_backend: "local" | "qdrant";
-  offline: boolean;
-  run_answer_quality_eval: boolean;
-};
-
 export type BriefResponse = {
   run_id: string;
   startup_name: string;
@@ -66,7 +55,10 @@ const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
 ).replace(/\/$/, "");
 
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+export async function requestJson<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
@@ -105,7 +97,16 @@ export function getRagStatus(): Promise<RagStatusResponse> {
   return requestJson<RagStatusResponse>("/rag/status");
 }
 
-export function createBrief(payload: BriefRequest): Promise<BriefResponse> {
+export function createBrief(payload: {
+  startup_name: string;
+  profile: JsonObject;
+  evidence: JsonObject[];
+  source_url: string;
+  use_rag: boolean;
+  rag_backend: "local" | "qdrant";
+  offline: boolean;
+  run_answer_quality_eval: boolean;
+}): Promise<BriefResponse> {
   return requestJson<BriefResponse>("/brief", {
     method: "POST",
     body: JSON.stringify(payload),

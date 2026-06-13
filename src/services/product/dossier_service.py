@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from src.database.models import (
     ActivationDossierRecord,
     AnalysisRun,
+)
+from src.evaluation.structured_outputs import (
+    readiness_check_payload_from_result,
+    run_validation_with_repair,
 )
 from src.repositories.claim import ClaimRepository
 from src.repositories.dossier import ActivationDossierRepository
@@ -17,12 +23,51 @@ from src.repositories.product import ProductRepository
 from src.repositories.review import ReviewDecisionRepository
 from src.services.product.activation_service import ActivationPlaybookService
 
+logger = logging.getLogger(__name__)
+
 _KEY_CLAIM_TYPES = (
     "gap_claim",
     "defensibility_claim",
     "nvidia_fit_claim",
     "production_readiness_claim",
 )
+
+
+class DossierStartupSchema(BaseModel):
+    name: str = ""
+    website: str = ""
+    country: str = ""
+    sector: str = ""
+    description: str = ""
+    product_summary: str = ""
+    status: str = ""
+
+
+class DossierExecutiveVerdictSchema(BaseModel):
+    recommended_motion: str = ""
+    evidence_coverage: float = 0.0
+    unsupported_claim_count: int = 0
+
+
+class DossierMetadataSchema(BaseModel):
+    analysis_run_id: str = ""
+    startup_id: str = ""
+    schema_version: str = "1.0"
+    dossier_version: int = 0
+
+
+class DossierJsonSchema(BaseModel):
+    metadata: DossierMetadataSchema = Field(default_factory=DossierMetadataSchema)
+    startup: DossierStartupSchema = Field(default_factory=DossierStartupSchema)
+    executive_verdict: DossierExecutiveVerdictSchema = Field(
+        default_factory=DossierExecutiveVerdictSchema
+    )
+    scores: dict[str, Any] = Field(default_factory=dict)
+    gaps: dict[str, Any] = Field(default_factory=dict)
+    risks: list[dict[str, Any]] = Field(default_factory=list)
+    uncertainties: list[dict[str, Any]] = Field(default_factory=list)
+    review: dict[str, Any] = Field(default_factory=dict)
+    next_action: dict[str, Any] = Field(default_factory=dict)
 
 
 class ActivationDossierService:
@@ -48,6 +93,7 @@ class ActivationDossierService:
 
         version = self.dossier_repo.next_version_for_analysis_run(analysis_run_id)
         dossier_json = self._build_dossier_json(run)
+        self._validate_dossier_json(dossier_json, analysis_run_id)
         dossier_markdown = self._render_dossier_markdown(dossier_json)
         evidence_coverage = dossier_json["executive_verdict"]["evidence_coverage"]
         unsupported_claim_count = dossier_json["executive_verdict"]["unsupported_claim_count"]
@@ -82,6 +128,35 @@ class ActivationDossierService:
         if dossier is None:
             return None
         return dossier.dossier_markdown
+
+    def _validate_dossier_json(
+        self,
+        dossier_json: dict[str, Any],
+        analysis_run_id: str,
+    ) -> None:
+        result = run_validation_with_repair(
+            schema=DossierJsonSchema,
+            raw_text=dossier_json,
+            output_type="activation_dossier",
+            schema_name="DossierJsonSchema",
+            max_retries=0,
+        )
+        if result.status in ("invalid", "failed"):
+            logger.warning(
+                "Dossier JSON validation failed for run %s: %s",
+                analysis_run_id,
+                [str(e) for e in result.validation_errors],
+            )
+            try:
+                from src.repositories.product import ProductRepository
+
+                product_repo = ProductRepository(self.session)
+                check_data = readiness_check_payload_from_result(result, analysis_run_id)
+                if check_data:
+                    product_repo.save_readiness_check(**check_data)
+                    self.session.commit()
+            except Exception:
+                logger.exception("Failed to create readiness check for dossier validation")
 
     def _build_dossier_json(self, run: AnalysisRun) -> dict[str, Any]:
         startup = run.startup

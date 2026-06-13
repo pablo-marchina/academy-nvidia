@@ -1,0 +1,36 @@
+playbooks:
+- confidence_rules:
+    evidence_coverage_boost: true
+    min_evidence_coverage: 0.3
+    requires_gap_match: true
+    unsupported_claim_penalty: true
+  description: A test playbook
+  evidence_requirements:
+  - Evidence of latency
+  expected_value: 50% reduction
+  implementation_complexity: medium
+  name: Test Playbook
+  nvidia_technologies:
+  - TensorRT
+  output_template:
+    fields:
+    - playbook_name
+    - technical_experiment
+    section_title: Recommended Activation Playbook
+  prerequisites:
+  - GPU access
+  recommended_motion: technical_workshop
+  risks:
+  - None
+  success_metrics:
+  - latency
+  target_claim_types:
+  - gap_claim
+  target_gap_types:
+  - high_latency
+  technical_experiment:
+    description: Test description
+    duration: 2 weeks
+    hypothesis: Test hypothesis
+    title: Test Experiment
+  version: '1.0'

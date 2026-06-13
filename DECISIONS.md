@@ -457,4 +457,38 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 
 ---
 
+## Decision 041 — Structured Output Reliability Layer (Epic 36)
+
+- **Context:** Dossier JSON validation was a simple try/except with no retry, no repair, no structured failure tracking, no quality metrics. Multiple modules parse JSON from various sources with inconsistent error handling.
+- **Decision:** Create a centralized `structured_outputs.py` module with: `parse_json_output()` (safe parse with error capture), `repair_json_if_safe()` (deterministic structural repair), `validate_output()` (Pydantic validation with `ValidationError` → structured details), `run_validation_with_repair()` (retry up to 1 with repair), `build_structured_output_result()` (unified result with degraded states), `readiness_check_payload_from_result()`, `quality_metrics_from_results()`. Add 5 degraded state codes to degraded.py, 6 quality metric constants, and an evaluator in quality/evaluators/. Integration: Activation Dossier gets `DossierJsonSchema` + `_validate_dossier_json()` + readiness check on failure.
+- **Alternatives considered:** Keep per-module try/except (rejected — inconsistent, no metrics). Use pydantic.TypeAdapter everywhere (good but not enough — needs retry/repair/readiness). Use instructor for all outputs (rejected — optional dependency, adds latency, too early).
+- **Rationale:** Centralization ensures consistent failure handling across all structured output consumers. Retry with repair handles the most common failure patterns (trailing commas, truncated JSON). Readiness checks make failures observable in the product dashboard. Quality metrics enable regression detection over time.
+- **Risks:** Repair is conservative by design — complex structural issues are not fixed. Retry max 1 prevents infinite loops. Instructor trial is optional and gated behind `[llm-judge]` extra.
+- **Validation:** 34 tests covering parse, repair, validate, retry, metrics, readiness payload, and dossier integration. 4 integration tests for dossier validation + quality metrics.
+- **Status:** Implementado no Epic 36.
+
+## Decision 042 — Capability & Configuration Registry (Epic 36.1)
+
+- **Context:** The product has no central registry for what features exist, which are enabled/configured, what env vars are required, what optional deps are missing, or whether the product is ready to use. Users and developers had to read `.env.example` and source code to understand configuration requirements.
+- **Decision:** Create a capability registry (25+ capabilities across 13 categories) and a configuration registry (17+ env vars) in `src/services/product/`, plus a `ProductReadinessService` that aggregates status from both registries and produces a readiness report. Expose via 4 API endpoints: `GET /product/capabilities`, `/product/configuration`, `/product/setup-checklist`, `/product/readiness`. Each capability has `id`, `name`, `description`, `category`, `required`, `enabled_by_default`, `status`, `required_env_vars`, `optional_env_vars`, `required_extras`, `required_services`, `health_check_key`, `setup_instructions`, `failure_mode`, `user_visible`, `documentation_ref`. Status is computed at call time from environment + extras.
+- **Alternatives considered:** Static YAML/JSON config file (rejected — cannot compute status dynamically from env). DB-backed registry (rejected — overkill before first product user). Feature flags library like `flipper` or `waffle` (rejected — avoid new dependency, Python env-driven is sufficient). Merge into health endpoints (rejected — different granularity: health = binary, readiness = diagnostic).
+- **Rationale:** No-DB design keeps it simple — env vars + importlib are sufficient for v1. Per-call computation guarantees status is always current. Required vs optional distinction lets users see what's blocking without frustration. API endpoints give both CLI (curl) and UI consumers the same data.
+- **Risks:** Environment-driven status means config changes require restart. `not_configured` for optional features may confuse users — mitigated by clear `status_reason` and `user_messages`. New capabilities must be registered manually (no auto-discovery).
+- **Validation:** 6 capability registry tests (required/optional/extras caps), 9 config registry tests (items, secrets, extras), 10 readiness service tests (capabilities, config, report, optional features), 9 integration tests (4 endpoints, field presence, blocking behavior).
+- **Status:** Implementado no Epic 36.1.
+
+---
+
+## Decision 043 — Product UI Routing & Stack (Epic 37)
+
+- **Context:** The product needs a first usable web UI that consumes the Product API (readiness, capabilities, startups, analysis, dossier, opportunities, review/quality). The existing demo UI was a standalone proof-of-concept with no connection to the Product backend.
+- **Decision:** Build the Product UI using React 19 + Vite 7 + TypeScript 5.9 (confirmed by user, no new dependencies). Use state-based routing in `App.tsx` (no react-router-dom). Use native `fetch` for API calls (no TanStack Query). No mock as main flow — UI consumes real Product API. Edit startup limited to name/sector/website (not a CRM). E2E tests (`make ui-e2e-product`) kept separate from `make validate`. Demo UI preserved but deprecated.
+- **Alternatives considered:** react-router-dom (rejected — escopo pequeno demais para justificar dependência extra). TanStack Query (rejected — não estava no projeto, fetch nativo suficiente). Mock-first development (rejected — user explicitly required real API consumption).
+- **Rationale:** State-based routing is simpler for 7 views; no dependency cost. Native fetch keeps the bundle minimal. Real API first avoids maintaining parallel mock logic. Minimal startup editing aligns with "not a CRM" constraint. Separate E2E avoids blocking `make validate` with browser/driver requirements.
+- **Risks:** State-based routing may need refactoring if views exceed ~15. No retry/caching layer in fetch means UI handles all error states explicitly.
+- **Validation:** `npm run build` passes (tsc + vite build, 0 erros, 0 warnings). Playwright smoke tests at `tests/e2e/test_product_ui.spec.ts` (readiness, capabilities). Alvo `make ui-e2e-product` separado do validate.
+- **Status:** Implementado no Epic 37.
+
+---
+
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

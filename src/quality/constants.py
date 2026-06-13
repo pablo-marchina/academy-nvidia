@@ -23,6 +23,12 @@ METRIC_RECOMMENDATION_ACTIONABILITY_SCORE = "recommendation_actionability_score"
 METRIC_DEGRADED_STATE_COUNT = "degraded_state_count"
 METRIC_EXPORT_READINESS_SCORE = "export_readiness_score"
 METRIC_REVIEW_READINESS_SCORE = "review_readiness_score"
+METRIC_STRUCTURED_OUTPUT_VALID_RATE = "structured_output_valid_rate"
+METRIC_STRUCTURED_OUTPUT_REPAIR_RATE = "structured_output_repair_rate"
+METRIC_STRUCTURED_OUTPUT_FAILURE_RATE = "structured_output_failure_rate"
+METRIC_AVG_RETRY_COUNT = "avg_retry_count"
+METRIC_SCHEMA_VALIDATION_ERROR_COUNT = "schema_validation_error_count"
+METRIC_MISSING_REQUIRED_FIELD_COUNT = "missing_required_field_count"
 
 DEFAULT_EVALUATOR_VERSION = "1.0"
 
@@ -82,5 +88,25 @@ THRESHOLDS: dict[str, dict[str, Any]] = {
         "threshold": 0.60,
         "severity": METRIC_SEVERITY_INFO,
         "operator": "gte",
+    },
+    METRIC_STRUCTURED_OUTPUT_VALID_RATE: {
+        "threshold": 0.95,
+        "severity": METRIC_SEVERITY_WARN,
+        "operator": "gte",
+    },
+    METRIC_STRUCTURED_OUTPUT_REPAIR_RATE: {
+        "threshold": 0.10,
+        "severity": METRIC_SEVERITY_INFO,
+        "operator": "lte",
+    },
+    METRIC_STRUCTURED_OUTPUT_FAILURE_RATE: {
+        "threshold": 0.05,
+        "severity": METRIC_SEVERITY_ERROR,
+        "operator": "lte",
+    },
+    METRIC_AVG_RETRY_COUNT: {
+        "threshold": 1.0,
+        "severity": METRIC_SEVERITY_INFO,
+        "operator": "lte",
     },
 }

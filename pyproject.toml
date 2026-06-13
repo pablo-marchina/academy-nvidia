@@ -35,6 +35,9 @@ dev = [
 rag = [
   "sentence-transformers>=5.5.1",
 ]
+llm-judge = [
+  "instructor>=1.8,<2",
+]
 
 [tool.setuptools]
 package-dir = {"" = "."}

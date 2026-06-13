@@ -15,6 +15,16 @@
 - Makefile requires `make` (available via `choco install make` or git-bash on Windows).
 - No coverage threshold enforcement in CI yet.
 
+## Capability & Configuration Registry (Epic 36.1)
+
+- Capability status is environment-driven — config changes require a restart.
+- New capabilities must be registered manually in `capability_registry.py` (no auto-discovery).
+- `not_configured` for optional features may confuse users until they read the `status_reason`.
+- No mechanism to auto-detect new env vars added at runtime.
+- Readiness service does not verify that required services (e.g., Qdrant server) are actually reachable — only checks if their env vars are configured.
+- No caching — every API call recomputes all capability statuses.
+- 4 new API endpoints (capabilities, configuration, setup-checklist, readiness) are unchanging data — they do not need database querying, but are served via the API layer for consistent access.
+
 ## Product
 
 - The pipeline uses deterministic heuristics, not an LLM, for all scoring and diagnosis steps.
@@ -52,3 +62,18 @@
 - Pipeline runs synchronously — may block for several seconds per request.
 - Qdrant status checks connectivity but not data freshness.
 - GET /demo/artifacts returns empty list when `data/demo_runs/` does not exist.
+
+## Product UI (Epic 37)
+
+- State-based routing — no URL-based navigation, deep linking, or browser back/forward support.
+- No auth/roles — any user can access all views.
+- No loading skeletons — uses simple "Loading..." text.
+- No optimistic updates — mutations wait for server response.
+- No error recovery UI — errors are shown via alert-style banner, not retry prompts.
+- No pagination on startups table (returns all startups at once; future: server-side pagination).
+- No pagination on evidence/claims within startup detail.
+- No charts or visualizations — all data displayed as text/tables.
+- Opportunities pagination is client-driven via offset/limit (server returns all opportunities, UI paginates).
+- DossierView auto-generates dossier if GET returns 404 — may produce duplicate if creation fails silently.
+- ReviewForm submits to server but does not refresh reviews list automatically after submit (manual nav reset).
+- No E2E tests run in CI (requires browser + running backend server).

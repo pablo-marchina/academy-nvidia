@@ -1,0 +1,35 @@
+sources:
+  nim:
+    title: New Title
+    url: https://docs.nvidia.com/nim/latest/
+    product: NVIDIA NIM
+    gap_types:
+    - external_api_dependency
+    document_type: nvidia_corpus
+    freshness_policy: weekly
+    stale_after_days: 7
+    version: '1.0'
+    content_hash: null
+    previous_content_hash: null
+    collected_at: null
+    last_checked_at: '2026-06-13T19:25:21.529127+00:00'
+    valid_from: null
+    valid_until: null
+    is_active: true
+    deprecated_at: null
+    superseded_by: null
+    deprecation_reason: null
+    versions:
+    - version: '1.0'
+      content_hash: null
+      previous_content_hash: null
+      collected_at: null
+      last_checked_at: '2026-06-13T19:25:21.529127+00:00'
+      valid_from: null
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null

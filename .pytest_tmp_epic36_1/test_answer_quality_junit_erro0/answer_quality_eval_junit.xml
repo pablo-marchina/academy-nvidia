@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuite name="pytest" tests="1" failures="0" errors="1" skipped="0">
+  <testcase classname="tests.evals.test_answer_quality_golden" name="test_error">
+    <error message="RuntimeError: answer quality fixture failed" />
+  </testcase>
+</testsuite>

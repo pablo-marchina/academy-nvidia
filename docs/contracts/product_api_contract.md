@@ -1,8 +1,8 @@
 # Product API Contract
 
 **Module:** `src/api/product_routes.py`
-**Version:** 2.1
-**Date:** 2026-06-12
+**Version:** 2.2
+**Date:** 2026-06-13
 
 ## Purpose
 
@@ -111,6 +111,31 @@ metadata.
 
 Pipeline failures are persisted and returned as an `AnalysisRunRead` with
 `status=failed` and `error_message`; they do not return demo fixtures.
+
+### Product Capability & Configuration (Epic 36.1)
+
+`ProductCapabilityRead` exposes each registered capability with `capability_id`,
+`name`, `description`, `category`, `required`, `status`, `status_reason`,
+`required_env_vars`, `optional_env_vars`, `required_extras`, `required_services`,
+`setup_instructions`, `failure_mode`, `user_visible`, `documentation_ref`.
+
+`ProductConfigurationItemRead` exposes each configuration item with `key`,
+`description`, `required`, `secret`, `default`, `current_value`, `is_set`.
+
+`ProductSetupChecklistRead` aggregates configuration items into a checklist
+with `items`, `total`, `completed`, `pending`.
+
+`ProductReadinessRead` provides a comprehensive readiness overview:
+`ready`, `blocking_missing_config`, `optional_missing_config`,
+`unavailable_capabilities`, `degraded_capabilities`, `setup_checklist`,
+`user_messages`.
+
+| Method | Path | Success | Errors |
+|---|---|---|---|
+| GET | `/product/capabilities` | `200 list[ProductCapabilityRead]` | — |
+| GET | `/product/configuration` | `200 list[ProductConfigurationItemRead]` | — |
+| GET | `/product/setup-checklist` | `200 ProductSetupChecklistRead` | — |
+| GET | `/product/readiness` | `200 ProductReadinessRead` | — |
 
 ## Health Contract
 

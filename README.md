@@ -379,16 +379,144 @@ pytest tests/integration/test_product_api.py -v
 pytest tests/integration/test_product_patch_review_export.py -v
 ```
 
-## Legacy Demo UI
+## Product Setup
 
-A local Vite + React demo UI exists under `frontend/`. It is a legacy surface
-that consumes the deprecated demo API endpoints. A product UI will replace it
-in a future epic.
+### Required Configuration
+
+1. Copy `.env.example` to `.env` and configure at minimum:
+   - `PRODUCT_DB_URL` — database URL (SQLite default works out of the box)
+   - `APP_MODE` — set to `product`
+   - `ENABLE_PRODUCT_PERSISTENCE` — set to `true`
+2. Install the base package:
+   ```bash
+   pip install -e .
+   ```
+3. Run database migrations:
+   ```bash
+   alembic upgrade head
+   ```
+4. Start the API:
+   ```bash
+   uvicorn src.main:app --reload
+   ```
+
+### Checking Readiness
 
 ```bash
-make ui-install   # install frontend dependencies
-make ui-dev       # run the local demo UI
-make ui-build     # build the local demo UI
+# Quick readiness check
+curl http://localhost:8000/product/readiness
+
+# List all features and their status
+curl http://localhost:8000/product/capabilities
+
+# Configuration checklist with progress
+curl http://localhost:8000/product/setup-checklist
+
+# All environment variables and current values
+curl http://localhost:8000/product/configuration
+```
+
+### Optional Features
+
+| Feature | Extra | Env Var | Install Command |
+|---|---|---|---|
+| RAG (sentence-transformers) | `rag` | `RAG_EMBEDDING_MODEL` | `pip install -e ".[rag]"` |
+| LLM Judge / Instructor Trial | `llm-judge` | `ANSWER_QUALITY_LLM_JUDGE_ENABLED=true` | `pip install -e ".[llm-judge]"` |
+| Qdrant Vector Store | — | `QDRANT_URL`, `QDRANT_COLLECTION` | Start Qdrant via docker-compose |
+
+To enable the optional Instructor trial:
+```bash
+pip install -e ".[llm-judge]"
+echo "ENABLE_INSTRUCTOR_TRIAL=true" >> .env
+echo "ANSWER_QUALITY_LLM_JUDGE_ENABLED=true" >> .env
+```
+
+If Instructor is not installed, the LLM Judge uses `NullLLMJudgeProvider`
+(deterministic offline scores) and the structured output trial reports
+`missing_dependency`. The product core remains fully functional.
+
+### How Readiness Blocks
+
+- Missing **required** configuration → `ready=false` with clear messages.
+- Missing **optional** configuration → feature marked `not_configured` or `missing_dependency`, but `ready=true`.
+- Missing optional extra (e.g., `instructor`) → capability status `missing_dependency`, product continues working.
+- No blocking occurs for optional features — the user sees what is missing but can still use the product.
+
+## Product UI
+
+A local Vite + React + TypeScript product UI lives under `frontend/`. It
+consumes the Product API (`/product/readiness`, `/product/capabilities`,
+`/startups`, `/analysis-runs`, `/opportunities`, `/dossier`, etc.) and
+provides a workspace for setup, capabilities, startup management, analysis
+execution, opportunities, dossier/quality visualization, and review actions.
+
+The Product UI is the primary interface for the product flow. A legacy demo
+UI is preserved for backward-compatible smoke testing but is deprecated.
+
+### Prerequisites
+
+- Backend running on `http://localhost:8000` (see [Running the API](#running-the-api))
+- Product database configured (see [Product Setup](#product-setup))
+
+### Environment
+
+Copy `frontend/.env.example` to `frontend/.env`:
+
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+Available variables:
+
+| Variable | Default | Description |
+|---|---|---|
+| `VITE_API_BASE_URL` | `http://localhost:8000` | Backend API URL |
+| `VITE_APP_ENV` | `development` | Environment label |
+
+These are client-side variables visible in the browser bundle. Never put
+secrets (API keys, passwords) in frontend env vars.
+
+### Running
+
+```bash
+make ui-install   # install frontend dependencies (npm install)
+make ui-dev       # run the local dev server
+make ui-build     # build for production
+```
+
+### Setup / Readiness
+
+Open `http://localhost:5173` in your browser. The UI automatically checks
+product readiness:
+
+- **Ready** — all required configuration is set. Use the workspace.
+- **Not Ready** — blocking and optional missing configuration is displayed
+  with setup instructions.
+
+The page shows a configuration checklist with progress, unavailable and
+degraded capabilities, and user messages.
+
+### Capabilities
+
+Navigate to the **Capabilities** tab to see all registered product capabilities
+grouped by category. Each capability shows status, required env vars, extras,
+and setup instructions.
+
+### Usage Flow
+
+1. Ensure the product is **Ready** (Setup tab).
+2. Create a startup via the **Startups** tab (name, website, sector).
+3. Open the startup and click **Run Analysis**.
+4. View the analysis run result: scores, gaps, NVIDIA mappings, claims,
+   evidence coverage, activation recommendations, readiness checks.
+5. Generate and view the **Activation Dossier** (Markdown + JSON).
+6. Browse **Opportunities** — ranked table with scores, playbooks, coverage.
+7. Submit reviews for analysis runs and claims (optional).
+
+### E2E Tests (separate target)
+
+```bash
+make ui-e2e-product   # Run product UI E2E smoke tests
 ```
 
 ## Using the Obsidian Vault

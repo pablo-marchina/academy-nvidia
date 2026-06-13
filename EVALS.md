@@ -66,7 +66,14 @@
 | Dossier Repository (Epic 34) | `tests/unit/test_dossier_repository.py` | 7 | ✅ |
 | Dossier Service (Epic 34) | `tests/unit/test_dossier_service.py` | 10 | ✅ |
 | Dossier API Integration (Epic 34) | `tests/integration/test_dossier_api.py` | 8 | integration |
-| **Total** | **63 Python test files + 1 Playwright spec** | **629 Python + 2 E2E** | **597 pass, 32 skip/desel + UI smoke** |
+| Structured Outputs Unit (Epic 36) | `tests/unit/test_structured_outputs.py` | 30 | ✅ |
+| Structured Outputs Integration (Epic 36) | `tests/integration/test_structured_outputs.py` | 4 | integration |
+| Capability Registry (Epic 36.1) | `tests/unit/test_capability_registry.py` | 6 | ✅ |
+| Config Registry (Epic 36.1) | `tests/unit/test_config_registry.py` | 9 | ✅ |
+| Readiness Service (Epic 36.1) | `tests/unit/test_readiness_service.py` | 10 | ✅ |
+| Product Readiness API (Epic 36.1) | `tests/integration/test_product_readiness_api.py` | 9 | integration |
+| Product UI E2E Smoke (Epic 37) | `tests/e2e/test_product_ui.spec.ts` | 2 | Playwright |
+| **Total** | **69 Python test files + 2 Playwright specs** | **688 Python + 4 E2E** | **656 pass, 32 skip/desel + UI smoke** |
 
 ## Cobertura por módulo
 
@@ -111,6 +118,10 @@
 | `scripts/check_docs_closure.py` | ✅ REAL | ✅ | 7 |
 | `scripts/build_regression_dashboard.py` | ✅ REAL | ✅ | 14 |
 | `validation/output_validation.py` | ✅ REAL | ✅ | 12 |
+| `evaluation/structured_outputs.py` (Epic 36) | ✅ REAL | ✅ | 30 |
+| `services/product/capability_registry.py` (Epic 36.1) | ✅ REAL | ✅ | 6 |
+| `services/product/config_registry.py` (Epic 36.1) | ✅ REAL | ✅ | 9 |
+| `services/product/readiness_service.py` (Epic 36.1) | ✅ REAL | ✅ | 10 |
 
 ## Lacunas de cobertura
 

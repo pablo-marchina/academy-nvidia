@@ -1,0 +1,326 @@
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+export interface StartupListItem {
+  id: string;
+  name: string;
+  website: string;
+  sector: string;
+  status: string;
+  latest_analysis_run_id: string | null;
+  latest_analysis_status: string | null;
+  review_decision: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StartupEvidenceRead {
+  id: string;
+  claim: string;
+  source_url: string;
+  source_type: string;
+  quote_or_evidence: string;
+  confidence: string;
+  evidence_kind: string;
+  collected_at: string;
+  metadata: Record<string, JsonValue>;
+}
+
+export interface StartupRead {
+  id: string;
+  name: string;
+  normalized_name: string;
+  website: string;
+  country: string;
+  sector: string;
+  description: string;
+  product_summary: string;
+  status: string;
+  tags: string[];
+  evidence: StartupEvidenceRead[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReadinessCheckRead {
+  code: string;
+  severity: string;
+  status: string;
+  user_message: string;
+  internal_detail: string;
+  recommended_action: string;
+  metadata: Record<string, JsonValue>;
+  observed_at: string;
+}
+
+export interface AnalysisRunRead {
+  id: string;
+  startup_id: string;
+  status: string;
+  error_message: string | null;
+  degraded_reason: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  pipeline_version: string;
+  corpus_version: string | null;
+  input_snapshot: Record<string, JsonValue>;
+  output_snapshot: Record<string, JsonValue>;
+  scores: Record<string, JsonValue>[];
+  gaps: Record<string, JsonValue>[];
+  nvidia_mappings: Record<string, JsonValue>[];
+  readiness_checks: ReadinessCheckRead[];
+  action_brief_id: string | null;
+  claim_summary: ClaimSummaryRead | null;
+  dossier_summary: ActivationDossierSummaryRead | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ActionBriefRead {
+  id: string;
+  analysis_run_id: string;
+  version: number;
+  schema_version: string;
+  brief_json: Record<string, JsonValue>;
+  brief_markdown: string;
+  is_latest: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReviewDecisionRead {
+  id: string;
+  analysis_run_id: string;
+  decision: string;
+  reviewer: string;
+  notes: string;
+  metadata: Record<string, JsonValue>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OpportunityListItem {
+  startup_id: string;
+  startup_name: string;
+  latest_analysis_run_id: string | null;
+  recommended_motion: string | null;
+  inception_fit_score: number | null;
+  ai_native_score: number | null;
+  production_readiness_score: number | null;
+  composite_score: number | null;
+  confidence: string | null;
+  status: string;
+  top_gaps: string[];
+  top_nvidia_mappings: string[];
+  degraded_count: number;
+  last_analyzed_at: string | null;
+  review_status: string | null;
+  unsupported_claim_count: number | null;
+  evidence_coverage: number | null;
+  top_activation_playbook: string | null;
+  activation_confidence: string | null;
+  activation_next_step: string | null;
+  technical_experiment_summary: string | null;
+  dossier_available: boolean;
+  latest_dossier_id: string | null;
+  export_readiness_score: number | null;
+  review_readiness_score: number | null;
+}
+
+export interface OpportunityListResponse {
+  items: OpportunityListItem[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+export interface ClaimRead {
+  id: string;
+  startup_id: string;
+  analysis_run_id: string;
+  claim_text: string;
+  claim_type: string;
+  support_level: string;
+  confidence: string;
+  evidence_refs: Record<string, JsonValue>[];
+  used_in_score: boolean;
+  used_in_gap: boolean;
+  used_in_mapping: boolean;
+  used_in_brief: boolean;
+  review_status: string;
+  reviewer_notes: string;
+  metadata: Record<string, JsonValue>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClaimListResponse {
+  items: ClaimRead[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+export interface EvidenceCoverageRead {
+  total_claims: number;
+  supported_claims: number;
+  unsupported_claims: number;
+  weak_claims: number;
+  critical_claims: number;
+  critical_supported_claims: number;
+  evidence_coverage: number;
+  unsupported_claim_rate: number;
+  avg_claim_confidence: number;
+}
+
+export interface ClaimSummaryRead {
+  total_claims: number;
+  supported_claims: number;
+  unsupported_claims: number;
+  evidence_coverage: number;
+}
+
+export interface ActivationRecommendationRead {
+  id: string;
+  analysis_run_id: string;
+  playbook_id: string;
+  playbook_name: string;
+  matched_gap_types: string[];
+  matched_claim_ids: string[];
+  nvidia_technologies: string[];
+  technical_experiment: string;
+  success_metrics: string[];
+  recommended_motion: string;
+  priority: number;
+  confidence: string;
+  reasoning: string;
+  evidence_refs: Record<string, JsonValue>[];
+  risks: string[];
+  next_step: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface ActivationDossierRead {
+  id: string;
+  analysis_run_id: string;
+  version: number;
+  schema_version: string;
+  dossier_json: Record<string, JsonValue>;
+  dossier_markdown: string;
+  is_latest: boolean;
+  evidence_coverage: number;
+  unsupported_claim_count: number;
+  top_activation_playbook_id: string | null;
+  recommended_motion: string;
+  review_status: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ActivationDossierMarkdownRead {
+  markdown: string;
+  dossier_id: string;
+  version: number;
+}
+
+export interface ActivationDossierSummaryRead {
+  dossier_id: string | null;
+  dossier_version: number | null;
+  dossier_available: boolean;
+  evidence_coverage: number | null;
+  unsupported_claim_count: number | null;
+  top_activation_playbook_id: string | null;
+  recommended_motion: string | null;
+  review_status: string | null;
+}
+
+export interface ProductCapabilityRead {
+  capability_id: string;
+  name: string;
+  description: string;
+  category: string;
+  required: boolean;
+  status: string;
+  status_reason: string;
+  required_env_vars: string[];
+  optional_env_vars: string[];
+  required_extras: string[];
+  required_services: string[];
+  setup_instructions: string;
+  failure_mode: string;
+  user_visible: boolean;
+  documentation_ref: string;
+}
+
+export interface ProductConfigurationItemRead {
+  key: string;
+  description: string;
+  required: boolean;
+  secret: boolean;
+  default: string;
+  current_value: string | null;
+  is_set: boolean;
+}
+
+export interface ProductSetupChecklistItem {
+  key: string;
+  description: string;
+  is_set: boolean;
+  required: boolean;
+}
+
+export interface ProductSetupChecklistRead {
+  items: ProductSetupChecklistItem[];
+  total: number;
+  completed: number;
+  pending: number;
+}
+
+export interface ProductReadinessRead {
+  ready: boolean;
+  blocking_missing_config: Record<string, JsonValue>[];
+  optional_missing_config: Record<string, JsonValue>[];
+  unavailable_capabilities: Record<string, JsonValue>[];
+  degraded_capabilities: Record<string, JsonValue>[];
+  setup_checklist: ProductSetupChecklistItem[];
+  user_messages: string[];
+}
+
+export interface ProductQualitySummaryRead {
+  analysis_run_id: string;
+  quality_run_id: string | null;
+  status: string | null;
+  evaluator_version: string | null;
+  overall_status: string;
+  total_metrics: number;
+  passed_metrics: number;
+  failed_metrics: number;
+  export_readiness_score: number | null;
+  review_readiness_score: number | null;
+  degraded_reason: string | null;
+  metrics: Record<string, Record<string, JsonValue>>;
+}
+
+export interface ProductHealthRead {
+  status: string;
+  app_mode: string;
+  product_persistence_enabled: boolean;
+  database_available: boolean;
+  schema_ready: boolean;
+  database_url: string;
+  error: string | null;
+}
+
+export interface StartupCreatePayload {
+  name: string;
+  website: string;
+  sector: string;
+  description?: string;
+  status?: string;
+}
+
+export interface StartupUpdatePayload {
+  name?: string;
+  website?: string;
+  sector?: string;
+}

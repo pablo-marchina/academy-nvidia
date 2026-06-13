@@ -1,0 +1,143 @@
+{
+  "case_id": "demo_Nexus AI Labs",
+  "case_description": "Generic quality check for demo startup 'Nexus AI Labs'",
+  "passed": true,
+  "metrics": {
+    "required_sections_present": true,
+    "missing_evidence_preserved": true,
+    "uncertainty_preserved": true,
+    "recommended_motion_consistent": true,
+    "required_evidence_ids_present": true,
+    "required_gap_ids_present": true,
+    "required_technology_ids_present": true,
+    "unsupported_claim_count": 0,
+    "rag_context_citation_coverage": 1.0,
+    "startup_evidence_citation_coverage": 1.0,
+    "forbidden_absolute_language_count": 0,
+    "answer_quality_status": "PASS",
+    "nvidia_technology_gap_consistent": true
+  },
+  "gates": [
+    {
+      "gate_name": "required_sections_present",
+      "status": "PASS",
+      "passed": true,
+      "details": "required Action Brief sections are present"
+    },
+    {
+      "gate_name": "missing_evidence_preserved",
+      "status": "PASS",
+      "passed": true,
+      "details": "missing_evidence preserved when expected"
+    },
+    {
+      "gate_name": "uncertainty_preserved",
+      "status": "PASS",
+      "passed": true,
+      "details": "uncertainty preserved when expected"
+    },
+    {
+      "gate_name": "technology_requires_gap",
+      "status": "PASS",
+      "passed": true,
+      "details": "NVIDIA technologies map to diagnosed gaps"
+    },
+    {
+      "gate_name": "recommended_motion_consistent",
+      "status": "PASS",
+      "passed": true,
+      "details": "recommended_motion is consistent with expected output"
+    },
+    {
+      "gate_name": "unsupported_claim_limit",
+      "status": "PASS",
+      "passed": true,
+      "details": "unsupported claim count within limit"
+    },
+    {
+      "gate_name": "required_evidence_ids_present",
+      "status": "PASS",
+      "passed": true,
+      "details": "required startup evidence identifiers are present"
+    },
+    {
+      "gate_name": "required_gap_ids_present",
+      "status": "PASS",
+      "passed": true,
+      "details": "required gap identifiers are present"
+    },
+    {
+      "gate_name": "required_technology_ids_present",
+      "status": "PASS",
+      "passed": true,
+      "details": "required NVIDIA technology identifiers are present"
+    },
+    {
+      "gate_name": "citation_coverage",
+      "status": "PASS",
+      "passed": true,
+      "details": "citation coverage within threshold"
+    },
+    {
+      "gate_name": "forbidden_absolute_language",
+      "status": "PASS",
+      "passed": true,
+      "details": "forbidden absolute language within threshold"
+    }
+  ],
+  "required_section_checks": [
+    {
+      "section_title": "Executive Summary",
+      "present": true
+    },
+    {
+      "section_title": "Why This Startup Matters",
+      "present": true
+    },
+    {
+      "section_title": "AI-Native Maturity",
+      "present": true
+    },
+    {
+      "section_title": "Scores Overview",
+      "present": true
+    },
+    {
+      "section_title": "Evidence",
+      "present": true
+    }
+  ],
+  "evidence_coverage_checks": [
+    {
+      "coverage_type": "startup_evidence",
+      "required_ids": [],
+      "present_ids": [],
+      "missing_ids": [],
+      "coverage": 1.0
+    },
+    {
+      "coverage_type": "gap",
+      "required_ids": [],
+      "present_ids": [],
+      "missing_ids": [],
+      "coverage": 1.0
+    },
+    {
+      "coverage_type": "technology",
+      "required_ids": [],
+      "present_ids": [],
+      "missing_ids": [],
+      "coverage": 1.0
+    },
+    {
+      "coverage_type": "rag_source",
+      "required_ids": [],
+      "present_ids": [],
+      "missing_ids": [],
+      "coverage": 1.0
+    }
+  ],
+  "unsupported_claims": [],
+  "failure_reasons": [],
+  "warnings": []
+}

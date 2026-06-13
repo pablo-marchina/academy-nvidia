@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuite name="pytest" tests="2" failures="0" errors="0" skipped="0">
+  <testcase
+    classname="tests.evals.test_answer_quality_golden"
+    name="test_answer_quality_golden_cases_run_offline"
+  />
+  <testcase
+    classname="tests.evals.test_answer_quality_golden"
+    name="test_detects_unsupported_claims"
+  />
+</testsuite>
