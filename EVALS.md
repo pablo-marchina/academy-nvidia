@@ -73,7 +73,9 @@
 | Readiness Service (Epic 36.1) | `tests/unit/test_readiness_service.py` | 10 | ✅ |
 | Product Readiness API (Epic 36.1) | `tests/integration/test_product_readiness_api.py` | 9 | integration |
 | Product UI E2E Smoke (Epic 37) | `tests/e2e/test_product_ui.spec.ts` | 2 | Playwright |
-| **Total** | **69 Python test files + 2 Playwright specs** | **688 Python + 4 E2E** | **656 pass, 32 skip/desel + UI smoke** |
+| **Product Golden Path Acceptance (Epic 38)** | `tests/acceptance/test_product_golden_path.py` | **11 classes/suites** | acceptance |
+| **No Demo Dependency Guard (Epic 38)** | `tests/acceptance/test_no_demo_dependency.py` | **3 tests** | acceptance |
+| **Total** | **71 Python test files + 2 Playwright specs** | **~702 Python + 8 E2E** | **~656 pass, 32 skip/desel + acceptance + UI smoke** |
 
 ## Cobertura por módulo
 
@@ -195,6 +197,31 @@ Estes critérios avaliam a **qualidade do processo de desenvolvimento assistido 
 - **Curto prazo:** 100% dos épicos não triviais terão plano salvo, Review Diff executado, Obsidian atualizado
 - **Médio prazo:** Review Diff detecta 0 falsos negativos (nada fora de escopo passa)
 - **Longo prazo:** Developer RAG implementado com recall@5 ≥90%
+
+## Pytest Markers (Epic 39)
+
+| Marker | Descrição | Onde roda |
+|--------|-----------|-----------|
+| `unit` | Testes isolados (default, sem marker) | `make validate-fast`, `make test`, `make test-unit` |
+| `integration` | Testes de integração (Qdrant, PostgreSQL, API) | `make test-integration`, CI manual |
+| `acceptance` | Product Golden Path | `make acceptance`, `make prepare-release` |
+| `e2e` | Playwright E2E | `make ui-e2e-product`, `make ui-e2e` |
+| `slow` | Testes lentos (>5s) | `make test-slow` |
+| `optional` | Dependências opcionais (rag, llm-judge) | `make test-optional` |
+| `external_service` | Serviços externos (Qdrant real, PostgreSQL) | `make test-external` |
+
+`make validate-fast` roda: `pytest -m "not (integration or acceptance or e2e or slow or optional or external_service)"`
+
+## Makefile Validate Targets (Epic 39)
+
+| Target | Components | Use |
+|--------|-----------|-----|
+| `validate-fast` | lint + format-check + typecheck + test-unit | Iteração rápida (<60s) |
+| `validate-backend` | validate-fast | Backend-only |
+| `validate-frontend` | ui-lint + ui-build | Frontend checks |
+| `validate-docs` | check_scope + check_docs_closure | Documentation integrity |
+| `validate-full` | validate-fast + validate-docs + validate-frontend | Pre-commit validation |
+| `prepare-release` | validate-full + acceptance + ui-build | Pre-release gate |
 
 ## CI/CD Quality Gates
 

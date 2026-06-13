@@ -153,7 +153,8 @@ class ClaimLedgerService:
                     "startup_id": startup_id,
                     "analysis_run_id": run_id,
                     "claim_text": (
-                        f"Gap: {gap.gap_type} (detected={gap.detected}, confidence={gap.confidence})"
+                        f"Gap: {gap.gap_type} (detected={gap.detected}, "
+                        f"confidence={gap.confidence})"
                     ),
                     "claim_type": ClaimType.gap_claim.value,
                     "support_level": support,
@@ -281,7 +282,8 @@ class ClaimLedgerService:
                     "severity": "warning",
                     "detail": (
                         f"Evidence coverage is {coverage['evidence_coverage']:.0%} "
-                        f"({coverage['supported_claims']}/{coverage['total_claims']} claims supported)."
+                        f"({coverage['supported_claims']}/"
+                        f"{coverage['total_claims']} claims supported)."
                     ),
                     "claim_ids": [],
                 }

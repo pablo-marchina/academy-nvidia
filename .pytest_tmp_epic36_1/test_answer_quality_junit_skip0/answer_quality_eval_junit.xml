@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<testsuite name="pytest" tests="2" failures="0" errors="0" skipped="1">
-  <testcase classname="tests.evals.test_answer_quality_golden" name="test_ok" />
-  <testcase classname="tests.evals.test_answer_quality_golden" name="test_skipped">
-    <skipped message="optional" />
-  </testcase>
-</testsuite>

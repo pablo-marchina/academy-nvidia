@@ -55,7 +55,7 @@ def test_review_create_and_latest(
     review_repo.session.commit()
     assert r1.decision == "approve"
 
-    r2 = review_repo.create(
+    review_repo.create(
         analysis_run_id=run_id,
         decision="needs_more_evidence",
         reviewer="analyst-2",

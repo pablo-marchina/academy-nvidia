@@ -1,0 +1,31 @@
+{
+  "name": "Golden Path AI",
+  "website": "https://goldenpath-ai.example.com",
+  "sector": "AI Infrastructure",
+  "description": "AI infrastructure platform for production GPU inference and model serving",
+  "product_summary": "Managed GPU inference with auto-scaling and model optimization",
+  "tags": ["golden-path", "acceptance-test"],
+  "evidence": [
+    {
+      "claim": "Operates GPU inference in production",
+      "source_url": "https://gp.example.com/platform",
+      "source_type": "official_site",
+      "quote_or_evidence": "Platform runs production GPU inference workloads.",
+      "confidence": "high"
+    },
+    {
+      "claim": "Uses NVIDIA GPUs for model serving",
+      "source_url": "https://gp.example.com/tech-stack",
+      "source_type": "blog",
+      "quote_or_evidence": "Stack includes NVIDIA A100 GPUs for model serving.",
+      "confidence": "medium"
+    },
+    {
+      "claim": "500+ enterprise customers",
+      "source_url": "https://gp.example.com/customers",
+      "source_type": "official_site",
+      "quote_or_evidence": "Serving 500+ enterprise customers.",
+      "confidence": "low"
+    }
+  ]
+}

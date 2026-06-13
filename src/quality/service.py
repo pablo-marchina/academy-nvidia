@@ -95,7 +95,7 @@ class ProductQualityService:
             if status == "degraded":
                 self.repository.degrade_quality_run(
                     quality_run.id,
-                    degraded_reason=reason,
+                    degraded_reason=reason or "",
                     metrics_json=metrics_dict,
                     summary_json=summary,
                 )

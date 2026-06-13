@@ -21,7 +21,7 @@ echo "PASS"
 echo ""
 
 echo "--- pytest (unit only) ---"
-python -m pytest -m "not integration" --tb=short
+python -m pytest -m "not (integration or acceptance or e2e or slow or optional or external_service)" --tb=short
 echo "PASS"
 echo ""
 

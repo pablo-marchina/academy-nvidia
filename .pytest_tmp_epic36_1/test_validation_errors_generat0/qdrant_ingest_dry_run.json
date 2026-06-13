@@ -1,1 +1,0 @@
-{"documents_seen": 1, "documents_valid": 0, "documents_skipped": 1, "chunks_created": 0, "chunks_upserted": 0, "sources_failed": ["bad_source"], "validation_errors": ["missing title"]}

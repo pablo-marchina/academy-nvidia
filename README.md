@@ -86,7 +86,9 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 - `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit, corpus maintenance orchestration, regression dashboard generation
 
 ### Testing
-- 604 Python tests (555 passing + 29 skippable/desel integration) across 60 Python test files, plus 2 Playwright UI smoke tests
+- ~700 Python tests across 71 Python test files, plus 8 Playwright UI smoke/E2E tests
+- Backend acceptance tests (`tests/acceptance/`, marker: `acceptance`) validate the Product Golden Path
+- Playwright E2E smoke tests (`tests/e2e/test_product_ui.spec.ts`, 6 tests) cover UI golden path
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -137,6 +139,80 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 - Vite
 - React
 - TypeScript
+
+## Quickstart
+
+### Required Setup
+1. Copy `.env.example` to `.env` and set at minimum:
+   - `PRODUCT_DB_URL=sqlite:///data/product/product.db`
+   - `APP_MODE=product`
+   - `ENABLE_PRODUCT_PERSISTENCE=true`
+2. Install backend:
+   ```bash
+   pip install -e ".[dev]"
+   ```
+3. Run migrations:
+   ```bash
+   alembic upgrade head
+   ```
+4. Start backend:
+   ```bash
+   uvicorn src.api.main:app --reload
+   ```
+5. Check readiness:
+   ```bash
+   curl http://localhost:8000/product/readiness
+   curl http://localhost:8000/product/capabilities
+   ```
+
+### Optional Setup
+- **RAG:** `pip install -e ".[rag]"` + configure `RAG_EMBEDDING_MODEL`
+- **Qdrant:** `docker compose up qdrant -d` + configure `QDRANT_URL`
+- **LLM Judge / Instructor:** `pip install -e ".[llm-judge]"` + `ENABLE_INSTRUCTOR_TRIAL=true`
+
+### Start Frontend
+```bash
+cp frontend/.env.example frontend/.env
+cd frontend && npm install && npm run dev
+```
+Open http://localhost:5173 in your browser.
+
+### Run First Analysis (via API)
+```bash
+# Create startup
+curl -X POST http://localhost:8000/startups \
+  -H "Content-Type: application/json" \
+  -d '{"name":"My Startup","website":"https://example.com","sector":"AI"}'
+
+# Get startup ID from response, then run analysis
+curl -X POST http://localhost:8000/startups/{id}/analysis-runs \
+  -H "Content-Type: application/json" \
+  -d '{"use_rag":false}'
+
+# View dossier
+curl -X POST http://localhost:8000/analysis-runs/{run_id}/dossier
+
+# Run quality checks
+curl -X POST http://localhost:8000/analysis-runs/{run_id}/quality-runs
+
+# View opportunities
+curl http://localhost:8000/opportunities
+```
+
+### Run Acceptance Tests
+```bash
+make acceptance           # Backend acceptance tests (Product Golden Path)
+make ui-e2e-product       # Playwright E2E smoke (separate target, requires backend)
+python scripts/product_acceptance_report.py  # Readiness report
+```
+
+### Troubleshooting
+- Readiness false: check `curl /product/readiness` → `blocking_missing_config`
+- Analysis run fails: check `curl /analysis-runs/{id}` → `error_message`, `degraded_reason`
+- UI blank: check `curl http://localhost:8000/health/product` → status
+- Missing features: check `curl /product/capabilities` for `not_configured` status
+
+---
 
 ## Installation
 
@@ -282,6 +358,11 @@ make regression-dashboard  # build local Markdown/JSON regression dashboard
 make ui-install  # install frontend dependencies
 make ui-dev      # run the legacy demo UI
 make ui-build    # build the legacy demo UI
+make acceptance  # run Product Golden Path acceptance tests (separate target)
+make acceptance-backend  # run acceptance tests excluding E2E
+make prepare-release  # validate + acceptance + ui-build (pre-release gate)
+make product-readiness-report  # generate readiness report via API
+make ui-e2e-product  # Playwright E2E smoke tests for Product UI (separate target)
 ```
 
 ## CI/CD
@@ -516,8 +597,20 @@ and setup instructions.
 ### E2E Tests (separate target)
 
 ```bash
-make ui-e2e-product   # Run product UI E2E smoke tests
+make ui-e2e-product   # Run product UI E2E smoke tests (6 tests: readiness, capabilities, startups, opportunities, create startup, run analysis)
 ```
+
+E2E tests require both backend and frontend running (auto-configured via Playwright webServer). Not included in `make validate`.
+
+### Acceptance Tests (separate target)
+
+```bash
+make acceptance            # Run Product Golden Path backend acceptance tests
+make acceptance-backend    # Same as acceptance (excludes E2E)
+make prepare-release       # Full pre-release validation: validate + acceptance + ui-build
+```
+
+Acceptance tests validate the full product flow: readiness → capabilities → startup CRUD → analysis run → claims → activation playbook → dossier → quality → opportunities → export. Run via `@pytest.mark.acceptance`, excluded from `make validate`.
 
 ## Using the Obsidian Vault
 
@@ -596,3 +689,14 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - Integration tests excluded from CI (require `QDRANT_TEST_URL`).
 - Pre-commit hooks not auto-installed — developer must run `pre-commit install`.
 - `check_scope.py` relies on `git diff` against HEAD — may behave unexpectedly during rebase.
+- Acceptance tests (`tests/acceptance/`) are excluded from `make validate` — run via `make acceptance`.
+- Playwright E2E tests are in a separate target (`make ui-e2e-product`) and require backend + frontend running.
+- Product golden fixture at `tests/fixtures/product_golden_path/` is minimal by design — edge cases are covered by unit/integration tests.
+- Acceptance tests use SQLite by default. PostgreSQL validation requires `PRODUCT_DB_TEST_URL` and the `integration` marker.
+- `make validate-fast` = lint + format-check + typecheck + unit tests (excludes integration/acceptance/e2e/slow/optional/external_service).
+- `make validate-full` = validate-fast + docs validation + frontend lint/build — recommended before commits.
+- `make prepare-release` = validate-full + acceptance + ui-build — complete pre-release gate.
+- pytest markers available: `unit`, `integration`, `acceptance`, `e2e`, `slow`, `optional`, `external_service`.
+- Migrations auto-geradas excluídas do ruff (E501, I001, UP007, UP035) por serem código gerado pelo Alembic.
+- Black exclui `.pytest_tmp*`, `node_modules/`, `.git/` para evitar PermissionError no Windows.
+- Playwright E2E tests (`make ui-e2e-product`) require browser binaries (`npx playwright install`) — not included in validate targets.

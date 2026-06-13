@@ -548,7 +548,7 @@
 - [x] `ROADMAP.md`, `EVALS.md` updated
 - [x] All validations passing (pytest, ruff, black, mypy, scope, docs-closure)
 
-### Epic 37 — Product UI Workspace & Setup Flow (em andamento)
+### Epic 37 — Product UI Workspace & Setup Flow (concluido)
 - [x] `docs/plans/2026-06-11_epic-37_product-ui-workspace-setup-flow.md` — plano aprovado
 - [x] `docs/64_product_ui_workspace.md` — design doc
 - [x] `frontend/src/api/types.ts` — tipos TypeScript alinhados aos schemas Pydantic
@@ -570,6 +570,33 @@
 - [x] `README.md` — seção "Run the Product UI" atualizada
 - [x] Sem react-router-dom, TanStack Query, mock como fluxo principal
 - [x] UI consome Product API real, não lê data/demo_runs
+- [x] Nenhuma alteração em scoring, RAG, Qdrant, recommendation central
+
+### Epic 38 — End-to-End Product Acceptance & Release Hardening (concluído)
+- [x] `docs/plans/2026-06-13_epic-38_end-to-end-product-acceptance-release-hardening.md` — plano
+- [x] `docs/65_end_to_end_product_acceptance.md` — design doc
+- [x] `docs/contracts/product_acceptance_contract.md` — contrato de aceitação
+- [x] `tests/fixtures/product_golden_path/` — fixture golden (startup.json + expected.json)
+- [x] `tests/acceptance/` — acceptance tests (golden path, no-demo-dependency, fixture shape)
+- [x] `scripts/product_acceptance_report.py` — relatório de readiness
+- [x] `Makefile` — targets: acceptance, acceptance-backend, prepare-release, product-readiness-report
+- [x] `README.md` — seção Quickstart + Troubleshooting
+- [x] `ROADMAP.md`, `EVALS.md`, `DECISIONS.md`, `AGENTS.md` — atualizados
+- [x] `tests/e2e/test_product_ui.spec.ts` — E2E expandido (6 tests)
+- [x] Frontend build passa (`npm run build`)
+- [x] Nenhuma alteração em scoring, RAG, Qdrant, recommendation central
+
+### Epic 39 — Project-Wide Error & Limitation Cleanup (concluído)
+- [x] mypy: 5 errors fixed (structured_outputs.py, quality/service.py)
+- [x] ruff: 73 errors → 0 (migrations excluded, 3 files fixed)
+- [x] black: `.pytest_tmp*`, `node_modules/`, `.git/` excluded; 6 files reformatted
+- [x] pyproject.toml: pytest markers added, sentence-transformers version fixed
+- [x] Makefile: hierarchical targets (validate-fast, validate-full, test-unit, etc.)
+- [x] scripts/validate.sh: marker filter updated
+- [x] ERROR_LOG.md, DECISIONS.md, ROADMAP.md, README.md, EVALS.md, AGENTS.md updated
+- [x] docs/66_project_wide_error_limitation_cleanup.md created
+- [x] docs/plans/2026-06-13_epic-39_project-wide-error-limitation-cleanup.md created
+- [x] All validations passing (pytest, ruff, black, mypy, scope, docs-closure)
 - [x] Nenhuma alteração em scoring, RAG, Qdrant, recommendation central
 
 ### Later Backlog

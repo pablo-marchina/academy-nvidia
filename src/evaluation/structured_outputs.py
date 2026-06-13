@@ -74,7 +74,10 @@ def parse_json_output(raw_text: str) -> dict[str, Any] | None:
     if not isinstance(raw_text, str) or not raw_text.strip():
         return None
     try:
-        return json.loads(raw_text)
+        result = json.loads(raw_text)
+        if isinstance(result, dict):
+            return result
+        return None
     except json.JSONDecodeError:
         return None
 
@@ -92,14 +95,20 @@ def repair_json_if_safe(raw_text: str) -> dict[str, Any] | None:
     cleaned = re.sub(r",\s*([}\]])", r"\1", cleaned)
 
     try:
-        return json.loads(cleaned)
+        result = json.loads(cleaned)
+        if isinstance(result, dict):
+            return result
+        return None
     except json.JSONDecodeError:
         pass
 
     if "'" in cleaned:
         double_quoted = cleaned.replace("'", '"')
         try:
-            return json.loads(double_quoted)
+            result = json.loads(double_quoted)
+            if isinstance(result, dict):
+                return result
+            return None
         except json.JSONDecodeError:
             pass
 
@@ -126,8 +135,8 @@ def validate_output(
         raw_str = json.dumps(parsed)
     elif isinstance(raw_or_obj, str):
         raw_str = raw_or_obj
-        parsed = parse_json_output(raw_str)
-        if parsed is None:
+        parsed_or_none = parse_json_output(raw_str)
+        if parsed_or_none is None:
             latency = (time.monotonic() - start) * 1000
             return StructuredOutputResult(
                 output_type=output_type,
@@ -145,6 +154,7 @@ def validate_output(
                 model_name=model_name,
                 latency_ms=latency,
             )
+        parsed = parsed_or_none
     else:
         latency = (time.monotonic() - start) * 1000
         return StructuredOutputResult(

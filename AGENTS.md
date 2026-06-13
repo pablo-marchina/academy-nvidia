@@ -54,6 +54,8 @@ Construir uma plataforma multiagente para identificar startups brasileiras AI-na
 11. Sempre rodar `make validate` (ou `scripts/validate.sh`) antes do commit.
 12. Rodar `python scripts/check_scope.py` para verificar contratos e docs quando alterar `src/` ou `tests/`.
 13. Antes de fechar um épico, rodar `python scripts/check_docs_closure.py`.
+14. Rodar `make acceptance` para validar o Product Golden Path antes de release. Não incluído em `make validate` (aceitação é lenta e separada).
+15. Rodar `make prepare-release` para validação completa (validate + acceptance + ui-build) antes de marcar release.
 
 ## Fluxo de trabalho esperado
 1. Entender a tarefa.
@@ -318,7 +320,10 @@ Se qualquer item do checklist falhar, o épico nao pode ser marcado como conclui
 - ruff check .
 - black --check .
 - mypy src
-- make validate (ou scripts/validate.sh)
+- make validate-fast (rapido, apenas unit tests)
+- make validate-full (completo, inclui docs + frontend)
+- make validate (alias para validate-fast ou scripts/validate.sh)
+- make prepare-release (validate-full + acceptance + ui-build)
 - python scripts/check_scope.py
 - python scripts/check_docs_closure.py
 

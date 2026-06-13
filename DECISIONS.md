@@ -491,4 +491,30 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 
 ---
 
+---
+
+## Decision 044 — Product Golden Path Acceptance (Epic 38)
+
+- **Context:** The product has backend, API, quality layer, dossier, playbooks, claims, and UI. There was no end-to-end acceptance test proving the full flow works. Individual integration tests existed but no unified Product Golden Path.
+- **Decision:** Create a Product Golden Path acceptance test suite at `tests/acceptance/` using `@pytest.mark.acceptance`. The golden path validates 17 sequential steps: readiness → capabilities → startup CRUD → analysis run → claims → activation recommendations → dossier → quality → opportunities → export. A fixture at `tests/fixtures/product_golden_path/` provides a controlled input. A separate guard (`test_no_demo_dependency.py`) ensures no step reads `data/demo_runs`. Acceptance tests run via `make acceptance` (separate from `make validate`).
+- **Alternatives considered:** Extend existing `integration` tests (rejected — mixing integration with acceptance dilutes purpose). Add Playwright-only acceptance (rejected — too slow, couples to UI). Add to `make validate` (rejected — acceptance should not block fast local dev).
+- **Rationale:** FastAPI TestClient acceptance tests are fast (~5 seconds), deterministic, and test real product API logic. The `acceptance` marker keeps them separate from unit and integration tests. The golden fixture is small, explicit, and version-controlled.
+- **Risks:** Acceptance tests may duplicate existing integration test logic. Mitigated: acceptance tests focus on the *full flow sequence*, integration tests on individual endpoint edge cases.
+- **Validation:** `make acceptance` passes. `make prepare-release` runs validate + acceptance + ui-build. `make validate` does not include acceptance tests.
+- **Status:** Implementado no Epic 38.
+
+---
+
+## Decision 045 — Validate Targets Restructuring (Epic 39)
+
+- **Context:** `make validate` was a monolithic target that ran lint + format-check + typecheck + all tests. There was no fast path for quick validation, no filtered test targets, and no distinction between unit/integration/acceptance/e2e. CI ran `pytest` without marker filtering.
+- **Decision:** Split `make validate` into hierarchical targets. `validate-fast` = lint + format-check + typecheck + unit tests (excludes integration, acceptance, e2e, slow, optional, external_service). `validate-full` = validate-fast + docs validation + frontend lint/build. `prepare-release` = validate-full + acceptance. Added pytest markers: `unit`, `integration`, `acceptance`, `e2e`, `slow`, `optional`, `external_service`.
+- **Alternatives considered:** Keep `make validate` monolithic (rejected — too slow for iterative dev). Remove slow tests from default (rejected — CI should still catch them). No markers (rejected — no isolation).
+- **Rationale:** Hierarchical targets match the speed-to-confidence tradeoff. Fast path (<60s) for local iteration, full path for pre-release. Markers let developers run exactly what they need.
+- **Risks:** validate-fast may miss integration regressions — mitigated by CI running broader tests. New markers require developer discipline to tag tests correctly.
+- **Validation:** `make lint`, `make format-check`, `make typecheck`, `make validate-fast` all pass. 773 total tests collected, validate-fast runs only unit tests.
+- **Status:** Implementado no Epic 39.
+
+---
+
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

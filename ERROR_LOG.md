@@ -29,6 +29,20 @@
 
 ---
 
+## Erro 005 — Projeto com mypy, ruff e black errors (Epic 39)
+
+**Data:** 2026-06-13
+
+**O que aconteceu:** Ao executar `make validate`, o projeto apresentava 5 mypy errors, 73 ruff errors e black não completava por PermissionError no Windows (`.pytest_tmp`).
+
+**Causa provável:** Acúmulo de dívida técnica ao longo de 38 épicos. Migrations auto-geradas não eram validadas. sentence-transformers version estava incorreta em pyproject.toml (`>=5.5.1` → `>=2.2.0`).
+
+**Como corrigimos:** mypy: adicionados guards de type narrowing em structured_outputs.py e `degraded_reason=reason or ""` em quality/service.py. Ruff: adicionado migrations ao extend-exclude + fixes em 3 arquivos. Black: excluídos `.pytest_tmp*`, `node_modules/`, `.git/` + reformatados 6 arquivos. Adicionados pytest markers e Makefile targets hierárquicos.
+
+**Como evitar no futuro:** Rodar `make validate-fast` antes de todo commit. Manter CI configurado para detectar regressões.
+
+---
+
 ## Erro 004 — check_docs_closure.py UnboundLocalError (Epic 18)
 
 **Data:** 2026-06-10

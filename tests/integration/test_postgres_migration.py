@@ -73,8 +73,11 @@ def test_postgres_json_columns_work() -> None:
         with engine.connect() as conn:
             conn.execute(
                 text(
-                    "INSERT INTO startups (id, name, normalized_name, website, sector, tags_json) "
-                    "VALUES ('test-1', 'PG Startup', 'pg startup', 'https://pg.example.com', 'AI', '[\"tag1\",\"tag2\"]'::json)"
+                    "INSERT INTO startups "
+                    "(id, name, normalized_name, website, sector, tags_json) "
+                    "VALUES ('test-1', 'PG Startup', 'pg startup', "
+                    "'https://pg.example.com', 'AI', "
+                    '\'["tag1","tag2"]\'::json)'
                 )
             )
             conn.commit()

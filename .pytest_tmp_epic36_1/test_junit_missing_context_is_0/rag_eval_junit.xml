@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<testsuite name="pytest" tests="1" failures="1" errors="0" skipped="0">
-  <testcase classname="tests.unit.test_rag_eval.TestRunRagEval" name="test_all_golden_queries_pass">
-    <failure message="case a: missing_context_count=1&#10;case b: missing_context_count=2" />
-  </testcase>
-</testsuite>
