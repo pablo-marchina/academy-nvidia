@@ -81,7 +81,9 @@
 | **Opportunity Score (Epic 43)** | `tests/unit/test_opportunity_score.py` | **43** | ✅ |
 | **Product Golden Path Acceptance (Epic 38)** | `tests/acceptance/test_product_golden_path.py` | **11 classes/suites** | acceptance |
 | **No Demo Dependency Guard (Epic 38)** | `tests/acceptance/test_no_demo_dependency.py` | **3 tests** | acceptance |
-| **Total** | **77 Python test files + 2 Playwright specs** | **~818 Python + 8 E2E** | **~752 pass + acceptance + UI smoke** |
+| **No Demo Dependency (Epic 45)** | `tests/acceptance/test_no_demo_dependency.py` | **3** | acceptance |
+| **Check No Demo Dependency (Epic 45)** | `scripts/check_no_demo_dependency.py` | **manual** | script |
+| **Total** | **77 Python test files + 2 Playwright specs + 1 script** | **~818 Python + 8 E2E** | **~752 pass + acceptance + UI smoke** |
 
 ## Cobertura por módulo
 
@@ -590,6 +592,49 @@ pytest tests/integration/test_discovery_api.py -v
 - Erros de fonte geram DiscoveryRun `degraded` ou `failed`, nunca crash.
 - Discovery não depende de APIs pagas, LLM, ou dados de demo.
 - URL list discovery respeita `robots.txt` e políticas de scraping.
+
+## Epic 45 — Final Delivery Package & Acceptance Evidence
+
+**Tipo:** Documentação + scripts de validação
+
+| Artefato | Status |
+|---|---|
+| `docs/72_final_acceptance_evidence.md` | Template criado |
+| `docs/73_final_architecture_summary.md` | Criado |
+| `docs/74_final_evaluation_report.md` | Criado |
+| `docs/screenshots/INSTRUCTIONS.md` | Criado |
+| `sample_inputs/README.md` | Criado |
+| `scripts/check_no_demo_dependency.py` | Criado |
+| `README.md` — Demo Script | Atualizado |
+| `README.md` — Validation Matrix | Atualizado |
+| `README.md` — Playwright Policy | Atualizado |
+| `README.md` — Sample Input Policy | Atualizado |
+| `README.md` — Release Checklist | Atualizado |
+| `README.md` — Known Limitations | Consolidado |
+
+### Validation Matrix
+
+| Comando | Categoria | Alvo | Bloqueia entrega? |
+|---|---|---|---|
+| `make validate-fast` | Build | lint + format + typecheck + unit tests | Sim |
+| `make validate-backend` | Build | validate-fast | Sim |
+| `make validate-frontend` | Build | tsc --noEmit + npm run build | Sim |
+| `make acceptance` | Build | Product Golden Path | Sim |
+| `make validate-docs` | Build | check_scope + check_docs_closure | Overridable |
+| `make validate-full` | Build | validate-fast + docs + frontend | Sim |
+| `make prepare-release` | Build | validate-full + acceptance + ui-build | Sim |
+| `python scripts/check_no_demo_dependency.py` | Evidence | No demo dependency | Sim |
+| `make ui-e2e-product` | Evidence | Playwright E2E smoke | No (extra) |
+
+### Invariants
+
+- Nenhuma feature nova adicionada
+- Nenhuma mudança em scoring, RAG, Discovery, LangGraph, UI, Quality
+- README não promete endpoint inexistente
+- Known limitations honestas e completas
+- Sample inputs não são fallback automático
+- Playwright não bloqueia validate-fast
+- Nenhuma dependência de `data/demo_runs`
 
 ## Product Backend Foundation (Epic 29)
 

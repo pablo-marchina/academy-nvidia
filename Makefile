@@ -1,4 +1,4 @@
-.PHONY: test test-unit test-integration test-acceptance test-e2e test-slow test-optional lint format-check typecheck validate validate-fast validate-full validate-backend validate-frontend validate-docs validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e ui-e2e-product demo-acceptance demo-full-check demo-full demo-cli demo-cli-offline demo-cli-rag db-upgrade db-downgrade db-migrate db-current db-history acceptance acceptance-backend prepare-release product-readiness-report ui-lint ui-lint-fix
+.PHONY: test test-unit test-integration test-acceptance test-e2e test-slow test-optional lint format-check typecheck validate validate-fast validate-full validate-backend validate-frontend validate-docs validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e ui-e2e-product demo-acceptance demo-full-check demo-full demo-cli demo-cli-offline demo-cli-rag db-upgrade db-downgrade db-migrate db-current db-history acceptance acceptance-backend prepare-release product-readiness-report ui-lint ui-lint-fix validate-no-demo
 
 test:
 	python -m pytest -m "not (integration or acceptance or e2e or slow or optional or external_service)" --tb=short
@@ -50,6 +50,9 @@ validate-fast: lint format-check typecheck test
 validate-backend: validate-fast
 
 validate-frontend: ui-lint ui-build
+
+validate-no-demo:
+	python scripts/check_no_demo_dependency.py
 
 validate-docs:
 	python scripts/check_scope.py && python scripts/check_docs_closure.py

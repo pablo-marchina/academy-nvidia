@@ -700,6 +700,23 @@
 - [x] Build TypeScript passa sem erros (`npm run build`)
 - [x] ROADMAP, README atualizados
 
+### Epic 45 — Final Delivery Package & Acceptance Evidence (planejado)
+
+**Status:** Planejado e documentado
+
+- [ ] `docs/plans/2026-06-13_epic-45_final-delivery-package.md` — plano salvo
+- [ ] `README.md` atualizado com demo script, validation matrix, playwright policy, sample input policy, release checklist, known limitations consolidadas
+- [ ] `docs/72_final_acceptance_evidence.md` — acceptance evidence template
+- [ ] `docs/73_final_architecture_summary.md` — architecture summary
+- [ ] `docs/74_final_evaluation_report.md` — evaluation report
+- [ ] `docs/screenshots/INSTRUCTIONS.md` — screenshot instructions
+- [ ] `sample_inputs/README.md` — sample input policy
+- [ ] `scripts/check_no_demo_dependency.py` — no demo dependency proof
+- [ ] `EVALS.md`, `ROADMAP.md` — atualizados
+- [ ] `docs/65_end_to_end_product_acceptance.md` — atualizado com Playwright e sample policies
+- [ ] Nenhuma feature nova adicionada
+- [ ] Nenhuma dependência de `data/demo_runs`
+
 ### Later Backlog
 - Documentation Pruning (consolidation of remaining early docs)
 - Human-in-the-loop review implementation

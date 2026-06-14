@@ -1,7 +1,7 @@
 # End-to-End Product Acceptance
 
-**Epic:** 38
-**Versão:** 1.0
+**Epic:** 38 (atualizado Epic 45)
+**Versão:** 1.1
 **Data:** 2026-06-13
 
 ## Propósito
@@ -43,25 +43,52 @@ Validar que o NVIDIA Startup AI Radar funciona ponta a ponta como uma solução 
 - Dossier é gerado deterministicamente sem LLM
 - Quality run não bloqueia core flow
 
+## Playwright Policy
+
+(Added in Epic 45)
+
+1. **Playwright E2E is separate** from core validation targets.
+2. **Browser binaries are not installed automatically** — manual command: `npx playwright install`.
+3. **Playwright does not block `make validate`** — absence of browsers never breaks `validate-fast`.
+4. **`make ui-e2e-product` is extra evidence**, not a delivery gate.
+5. If browsers are unavailable, E2E tests are skipped gracefully.
+
+## Sample Input Policy
+
+(Added in Epic 45)
+
+1. **Sample inputs are controlled test/demo data only** — never used as automatic fallback.
+2. **Samples are NOT stored in `data/demo_runs/`** (directory removed in Epic 31).
+3. **Approved locations:** `sample_inputs/` (manual demo), `tests/fixtures/` (automated tests), `docs/examples/` (documentation).
+4. **The product flow uses DB/API real** — samples are never loaded automatically.
+5. See `sample_inputs/README.md` for full documentation.
+
 ## Release Checklist
 
-- [ ] DB migrated (`alembic upgrade head`)
-- [ ] Readiness checked (`GET /product/readiness`)
-- [ ] Capabilities visible (`GET /product/capabilities`)
-- [ ] Required config complete
-- [ ] Optional features documented
-- [ ] Backend unit tests pass (`pytest -m "not integration"`)
-- [ ] Backend acceptance tests pass (`pytest -m acceptance`)
-- [ ] Frontend build passes (`npm run build`)
-- [ ] Frontend lint passes (if configured)
-- [ ] UI E2E smoke passes (`make ui-e2e-product` — separate target)
-- [ ] No `data/demo_runs` dependency
-- [ ] Dossier generated and retrievable
-- [ ] Quality run generated
-- [ ] Opportunities visible
-- [ ] All 10 Product UI views functional (Setup, Capabilities, Discovery, Startups, Opportunities, Workflow, Export, Quality)
-- [ ] Known limitations updated
-- [ ] Documentation updated (README, ROADMAP, EVALS)
+### Preparation
+- [ ] Backend env configured (`cp .env.example .env`)
+- [ ] DB migrations applied (`alembic upgrade head`)
+- [ ] Product readiness checked (`GET /product/readiness` → `ready=true`)
+
+### Validation
+- [ ] Backend tests passed (`make validate-fast`)
+- [ ] Frontend build passed (`make validate-frontend`)
+- [ ] Docs closure passed (`make validate-docs`)
+- [ ] Scope check passed (`python scripts/check_scope.py`)
+- [ ] Acceptance path executed (`make acceptance`)
+
+### Evidence
+- [ ] No `data/demo_runs` dependency (`python scripts/check_no_demo_dependency.py`)
+- [ ] Known limitations updated (see README)
+- [ ] Screenshots captured (see `docs/screenshots/INSTRUCTIONS.md`)
+- [ ] Demo script reviewed (see README — Demo Script section)
+- [ ] Final evaluation report updated (`docs/74_final_evaluation_report.md`)
+- [ ] Architecture summary updated (`docs/73_final_architecture_summary.md`)
+
+### Optional (non-blocking)
+- [ ] E2E smoke tests passed (`make ui-e2e-product`)
+- [ ] Full pre-release gate (`make prepare-release`)
+- [ ] Obsidian vault backfill
 
 ## Known Limitations
 

@@ -44,7 +44,7 @@ How can NVIDIA identify, attract, and nurture Brazilian AI-native startups in a 
 21. **Evidence & Claim Ledger** Deterministic claim generation from persisted pipeline records, evidence coverage metrics, unsupported claim detection, and human review of claims.
 21. **Optional LLM Judge Adapter** Experimental/manual answer quality judge interface with offline null provider and informational JSON/Markdown reports.
 
-See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the consolidated product backlog and [docs/contracts/product_api_contract.md](docs/contracts/product_api_contract.md) for the product API contract.
+See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the consolidated product backlog, [docs/contracts/product_api_contract.md](docs/contracts/product_api_contract.md) for the product API contract, and [docs/73_final_architecture_summary.md](docs/73_final_architecture_summary.md) for the detailed architecture summary.
 
 ## Current Capabilities
 
@@ -251,6 +251,153 @@ python scripts/product_acceptance_report.py  # Readiness report
 - Analysis run fails: check `curl /analysis-runs/{id}` → `error_message`, `degraded_reason`
 - UI blank: check `curl http://localhost:8000/health/product` → status
 - Missing features: check `curl /product/capabilities` for `not_configured` status
+
+## Demo Script
+
+The following script walks through the complete product flow from environment setup to delivery. Estimated time: 15–20 minutes.
+
+### 1. Prepare Environment
+```bash
+cp .env.example .env
+# Edit .env: PRODUCT_DB_URL, APP_MODE=product, ENABLE_PRODUCT_PERSISTENCE=true
+pip install -e ".[dev]"
+alembic upgrade head
+```
+
+### 2. Start Backend
+```bash
+uvicorn src.api.main:app --reload
+# Verify: curl http://localhost:8000/health → {"status": "ok"}
+```
+
+### 3. Start Frontend
+```bash
+cp frontend/.env.example frontend/.env
+cd frontend && npm install && npm run dev
+```
+Open http://localhost:5173 in your browser.
+
+### 4. Setup (UI)
+- Open **Setup** tab
+- Confirm `Product is ready: true`
+- Verify configuration checklist shows all required items complete
+- Review capabilities status
+
+### 5. Capabilities (UI)
+- Open **Capabilities** tab
+- Verify categories: Product Core, Discovery, RAG, Quality, Workflow, Orchestration
+
+### 6. Discovery (UI)
+- Open **Discovery** tab
+- Review available discovery sources
+- Click **Manual Seed**, add a startup name and URL
+- Verify candidates appear with AI-native signal detection
+
+### 7. Promote Candidate
+- Select a candidate
+- Click **Promote to Startup**
+- Verify startup created in the Startups list
+
+### 8. Run Workflow
+- Open the startup detail
+- Click **Run Analysis** (or trigger workflow via API)
+- Wait for completion (status: `completed` or `degraded`)
+- Verify: scores, gaps, NVIDIA mappings, claims
+
+### 9. Opportunities (UI)
+- Open **Opportunities** tab
+- Switch to **Ranked** tab
+- Verify opportunity scores, activation playbooks, evidence coverage
+
+### 10. Dossier (UI)
+- Select a high-priority startup
+- Open **Dossier**
+- View Markdown summary and raw JSON
+- Note any warnings (low coverage, unsupported claims)
+
+### 11. Quality (UI)
+- Open **Quality** tab
+- Verify quality metrics and pass/fail breakdown
+
+### 12. Export (UI)
+- Open **Export Delivery** tab
+- Review export checklist
+- Execute curl commands to export Markdown/JSON
+
+### 13. Validation
+```bash
+make validate          # lint + format + typecheck + unit tests
+make acceptance        # Product Golden Path
+python scripts/check_no_demo_dependency.py  # no demo data proof
+```
+
+### 14. E2E Smoke (optional)
+```bash
+npx playwright install
+make ui-e2e-product    # requires backend + frontend running
+```
+
+## Validation Command Matrix
+
+| Command | Objetivo | Pré-requisitos | Esperado | Bloqueia entrega? |
+|---|---|---|---|---|
+| `make validate-fast` (ou `make validate`) | lint + format-check + typecheck + unit tests | Python + dev extras, pip install | 0 errors | Sim |
+| `make validate-backend` | Idem validate-fast | Python + dev extras | 0 errors | Sim |
+| `make validate-frontend` | tsc --noEmit + npm run build | Node + npm install | 0 errors | Sim |
+| `make acceptance` | Product Golden Path (17 steps) | Backend running, DB migrated | All PASS | Sim |
+| `make validate-docs` | check_scope + check_docs_closure | Git HEAD | All PASS | Overridable |
+| `make typecheck` | mypy src | Python + dev extras | 0 errors | Sim |
+| `make format-check` | black --check . | Python + dev extras | 0 errors | Sim |
+| `make validate-full` | validate-fast + docs + frontend | Python + Node | 0 errors | Sim |
+| `make prepare-release` | validate-full + acceptance + ui-build | Python + Node | 0 errors | Sim |
+| `make ui-e2e-product` | Playwright E2E smoke (6 tests) | Backend + frontend running, browsers | 6 PASS | No (extra) |
+
+### Quick Reference
+```bash
+make validate          # Fast iteration (<60s)
+make validate-full     # Pre-commit validation
+make acceptance        # Product Golden Path
+make prepare-release   # Pre-release gate
+```
+
+### Running Individual Validations
+```bash
+pytest                 # All unit tests
+ruff check .           # Lint
+black --check .        # Format
+mypy src               # Typecheck
+pytest -m acceptance   # Acceptance tests only
+python scripts/check_no_demo_dependency.py  # No demo dependency
+```
+
+## Playwright Policy
+
+1. **Playwright E2E is separate** from core validation targets.
+2. **Browser binaries are not installed automatically.** Manual command:
+   ```bash
+   npx playwright install
+   ```
+3. **Playwright does not block `make validate`** — absence of browsers never breaks `validate-fast`.
+4. **`make ui-e2e-product` is extra evidence**, not a delivery gate.
+5. If browsers are unavailable, E2E tests are skipped gracefully (Playwright config handles this).
+6. E2E tests auto-start backend + frontend via Playwright's `webServer` config.
+
+## Sample Input Policy
+
+1. **Sample inputs are controlled test/demo data only** — never used as automatic fallback.
+2. **Samples are NOT stored in `data/demo_runs/`** (directory removed in Epic 31).
+3. **Approved locations:**
+   - `sample_inputs/` — manual demo (load via explicit API call)
+   - `tests/fixtures/` — automated tests
+   - `docs/examples/` — documentation examples
+4. **The product flow uses DB/API real** — samples are never loaded automatically.
+5. To load a sample manually:
+   ```bash
+   curl -X POST http://localhost:8000/startups \
+     -H "Content-Type: application/json" \
+     -d @sample_inputs/<file.json>
+   ```
+6. See `sample_inputs/README.md` for full documentation.
 
 ---
 
@@ -694,63 +841,90 @@ Reusable AI skills live in [skills](/C:/Users/Inteli/Documents/Projetos/academy-
 
 No startup recommendation is valid without evidence and an explicit technical gap.
 
+## Release Checklist
+
+Use this checklist to validate a release candidate before delivery.
+
+### Preparation
+- [ ] Backend env configured (`cp .env.example .env`)
+- [ ] DB migrations applied (`alembic upgrade head`)
+- [ ] Product readiness checked (`GET /product/readiness` → `ready=true`)
+
+### Validation
+- [ ] Backend tests passed (`make validate-fast`)
+- [ ] Frontend build passed (`make validate-frontend`)
+- [ ] Docs closure passed (`make validate-docs`)
+- [ ] Scope check passed (`python scripts/check_scope.py`)
+- [ ] Acceptance path executed (`make acceptance`)
+
+### Evidence
+- [ ] No `data/demo_runs` dependency (`python scripts/check_no_demo_dependency.py`)
+- [ ] Limitations documented (see Known Limitations below)
+- [ ] Screenshots captured (see `docs/screenshots/INSTRUCTIONS.md`)
+- [ ] Demo script reviewed (see Demo Script section above)
+- [ ] Final evaluation report updated (`docs/74_final_evaluation_report.md`)
+
+### Optional (non-blocking)
+- [ ] E2E smoke tests passed (`make ui-e2e-product`)
+- [ ] Full pre-release gate (`make prepare-release`)
+- [ ] Obsidian vault backfill
+
 ## Known Limitations
 
-- The pipeline uses deterministic heuristics, not an LLM, for all scoring and diagnosis steps.
-- Scraping collects from a single public URL — no crawling in scale.
-- RAG semantic/hybrid retrieval requires the optional `rag` extra for real embeddings: `pip install -e ".[rag]"` (mock provider used in tests).
-- RAG evaluation multi-mode comparison uses `MockEmbeddingProvider` by default — real semantic quality requires `sentence-transformers`.
-- Qdrant ingestion with the default `sentence-transformers/all-MiniLM-L6-v2` model uses 384-dimensional vectors, so `QDRANT_VECTOR_SIZE` must remain `384` for that collection.
-- Corpus is local and allowlist-backed in `data/nvidia_corpus/`; scheduled maintenance is safe by default and does not promote sources or run real ingestion unless explicitly requested in a manual workflow run.
-- Regression dashboard quality is limited by the reports available in the run; missing reports are surfaced as `WARN`, and JUnit-based eval reports expose pass/fail and failed cases rather than full retrieval metrics.
-- Answer quality evaluation is deterministic and pattern-based; it checks required structure, provenance, motion stability, and known unsupported-claim patterns, but it is not a semantic LLM judge.
-- Output validation is structural and contract-focused; it does not replace human review or semantic judgment, and unknown output types return controlled warnings rather than hard failures.
-- Optional LLM judge reports are experimental and informational; Epic 23.2 implements only an offline null provider, no real provider integration, no API calls, and no CI gate.
-- Minimal Demo UI is local/dev only, has no authentication or deploy workflow, and now has a narrow Playwright smoke suite rather than broad frontend unit coverage.
-- Relevance scoring in lexical mode is keyword-match-based; semantic mode uses cosine similarity; reranking uses a deterministic composite formula (no cross-encoder).
-- Vector store defaults to in-memory for local/test paths; optional QdrantStore persistence is available and must be configured explicitly for product use.
-- Context packing uses configurable limits (per-tech=2, per-gap=3, global=5) — may drop relevant contexts in edge cases.
-- RAG pipeline integrated as optional Step 11 — no support for multi-turn or interactive context queries.
-- QdrantStore does not auto-fallback to in-memory on connection error (caller must catch `QdrantConnectionError`).
-- Automated ingestion script at `scripts/ingest_nvidia_corpus.py` handles corpus → Qdrant pipeline with validation, hashing, embeddings, and provenance preservation.
-- Corpus freshness audit at `scripts/audit_nvidia_corpus_freshness.py` runs offline and detects stale, expired, deprecated, superseded, missing metadata, and duplicate active versions.
-- Recommendation Engine is deterministic (no LLM) and fully integrated in the pipeline.
-- Gap Diagnosis and NVIDIA Technology Mapping are integrated in the pipeline output.
-- Scores depend on the quality and coverage of public evidence available for the startup.
-- Evidence confidence is assigned heuristically by rule-based validation, not by a learned model.
-- The system does not prove real internal usage of AI — it only structures publicly available signals.
-- `recommended_motion` is a preliminary suggestion based on deterministic rules, not a final business decision.
-- No human review/status workflow yet; Epic 29 implements persistence and lifecycle only.
-- Golden eval harness at `tests/evals/` with 38 tests across 7 golden cases.
-- Agents (`src/agents/`) and interface (`src/interface/`) remain stubs; `src/database/` now implements the SQLite-first product persistence foundation.
-- Opportunity Score is a deterministic weighted formula — weights are based on product judgment, not learned from outcomes. All weights and penalties are documented in the contract for future adjustment.
-- Opportunity Score requires an analysis run with completed or degraded status; raw startup records without analysis runs have no opportunity score.
-- Ranked pipeline view only includes startups with persisted opportunity scores; startups without computed scores are excluded from ranking.
-- Obsidian vault has structure but no populated content beyond templates.
-- CI only tests on Ubuntu — no Windows/macOS matrix in CI.
-- Integration tests excluded from CI (require `QDRANT_TEST_URL`).
-- Pre-commit hooks not auto-installed — developer must run `pre-commit install`.
-- `check_scope.py` relies on `git diff` against HEAD — may behave unexpectedly during rebase.
-- Workflow orchestration nodes wrap existing services without modifying them; node implementations do not add new business logic beyond orchestration.
-- LangGraph is optional (`pip install -e ".[agent-orchestration]"`); the sequential fallback runner provides the same deterministic behavior without LangGraph.
-- Workflow runner executes all 11 nodes synchronously — no parallel execution or async workflows yet.
-- Workflow runs create AnalysisRuns synchronously; long-running workflows may block the request thread.
-- Acceptance tests (`tests/acceptance/`) are excluded from `make validate` — run via `make acceptance`.
-- Playwright E2E tests are in a separate target (`make ui-e2e-product`) and require backend + frontend running.
-- Product golden fixture at `tests/fixtures/product_golden_path/` is minimal by design — edge cases are covered by unit/integration tests.
-- Acceptance tests use SQLite by default. PostgreSQL validation requires `PRODUCT_DB_TEST_URL` and the `integration` marker.
-- `make validate-fast` = lint + format-check + typecheck + unit tests (excludes integration/acceptance/e2e/slow/optional/external_service).
-- `make validate-full` = validate-fast + docs validation + frontend lint/build — recommended before commits.
-- `make prepare-release` = validate-full + acceptance + ui-build — complete pre-release gate.
-- pytest markers available: `unit`, `integration`, `acceptance`, `e2e`, `slow`, `optional`, `external_service`.
-- Migrations auto-geradas excluídas do ruff (E501, I001, UP007, UP035) por serem código gerado pelo Alembic.
-- Black exclui `.pytest_tmp*`, `node_modules/`, `.git/` para evitar PermissionError no Windows.
-- Playwright E2E tests (`make ui-e2e-product`) require browser binaries (`npx playwright install`) — not included in validate targets.
-- Discovery view's promote endpoint creates a startup record — no duplicate-check before promote in UI (backend dedup handled separately).
-- Discovery view candidates filter does not paginate (first 100 only).
-- Workflow view is read-only — no UI for creating new workflow runs (requires API call or backend trigger).
-- Export view provides curl commands but does not trigger actual export creation from the UI.
-- Opportunity detail panel computes/views scores per analysis run — no batch compute action.
-- Quality view wraps the existing `QualitySummaryPanel` component — requires `/product/quality-report` endpoint.
-- No React Router — navigation uses local state in App.tsx, which means no deep-linking or browser back/forward support.
-- No frontend unit tests — only Playwright E2E smoke tests cover the UI.
+### CI & Environment
+
+| Limitation | Impact | Blocks delivery? | Mitigation | Future |
+|---|---|---|---|---|
+| CI only tests on Ubuntu | Windows/macOS not tested | No | CI uses Ubuntu (GitHub hosted) | Add matrix build |
+| Pre-commit hooks not auto-installed | Hooks don't run automatically | No | Documented in README | Auto-install via setup.py |
+| Integration tests excluded from CI | Qdrant/PG tests manual only | No | Marked `@pytest.mark.integration` | Add service containers to CI |
+| Playwright requires manual browser install | E2E doesn't run without `npx playwright install` | No | Separate target, documented | Add CI E2E stage |
+
+### Product Intelligence
+
+| Limitation | Impact | Blocks delivery? | Mitigation | Future |
+|---|---|---|---|---|
+| Pipeline uses deterministic heuristics, not LLM | Less flexible than human judgment | No | Deterministic = auditable, testable | Add optional LLM judge |
+| Scores depend on public evidence quality | Startups with low web presence get lower scores | No | Confidence penalty signals uncertainty | Improve source connectors |
+| Evidence confidence is heuristic | May not reflect true reliability | No | Rule-based, transparent | Add learned calibration |
+| `recommended_motion` is preliminary | Not a final business decision | No | Explicitly documented | Add human review workflow |
+| Opportunity Score weights are judgment-based | May not reflect real priorities | No | All weights documented in contract | Calibrate against outcomes |
+
+### Validation & Testing
+
+| Limitation | Impact | Blocks delivery? | Mitigation | Future |
+|---|---|---|---|---|
+| Acceptance tests excluded from `make validate` | Full flow test requires `make acceptance` | No | Documented; `prepare-release` includes both | Evaluate merging |
+| No frontend unit tests | Only E2E covers UI | No (acceptable v1) | Backend tests cover API | Add Vitest |
+| No React Router | No deep-linking or browser navigation | No (acceptable v1) | State-based navigation | Add React Router |
+| Golden fixture is minimal | Edge cases in unit tests | No | Unit/integration tests cover edge cases | Enrich fixture |
+| Acceptance tests use SQLite by default | PostgreSQL not tested automatically | No | `integration` marker for PG | Add PG CI job |
+
+### User Interface (v1 limitations)
+
+| Limitation | Impact | Blocks delivery? | Mitigation | Future |
+|---|---|---|---|---|
+| Discovery candidates limited to 100 | Pagination missing | No | Documented | Add pagination |
+| Workflow view read-only | Can't create workflow from UI | No | API trigger works | Add UI button |
+| Export view shows curl commands, no trigger | Requires terminal | No | Commands documented | Add UI export button |
+| No batch opportunity compute | Must compute per analysis run | No | API handles it | Add batch endpoint |
+
+### RAG & Vector Store
+
+| Limitation | Impact | Blocks delivery? | Mitigation | Future |
+|---|---|---|---|---|
+| RAG requires optional `[rag]` extra | No semantic retrieval without it | No | Falls back to lexical | Improve optional handling |
+| QdrantStore no auto-fallback to in-memory | Qdrant offline = RAG failure | No | Caller catches `QdrantConnectionError` | Add auto-fallback |
+| Context packing limits (2/3/5) | May drop relevant contexts in edge cases | No | Configurable via `PackingConfig` | Evaluate dynamic limits |
+| Reranking is deterministic, no cross-encoder | May miss semantic relevance | No | Transparent formula | Add optional cross-encoder |
+| No multi-turn RAG queries | Single-shot retrieval only | No | Adequate for briefs | Add interactive mode |
+
+### Codebase & Process
+
+| Limitation | Impact | Blocks delivery? | Mitigation | Future |
+|---|---|---|---|---|
+| Obsidian vault has structure but minimal content | Research notes not backfilled | No | Manual process documented | Automate backfill |
+| `check_scope.py` uses `git diff HEAD` | May behave unexpectedly during rebase | No | Override flag available | Improve robustness |
+| `src/agents/` and `src/interface/` remain stubs | Agent framework not implemented | No | Not required for product flow | Implement v1 agents |
+| No human review workflow | Review is single-decision only | No | Appendix-only audit log | Add review workflow |
+| No PDF export | JSON and Markdown only | No | Adequate for delivery | Add PDF generation |
