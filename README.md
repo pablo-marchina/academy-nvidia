@@ -67,6 +67,8 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 14. **Claim Ledger** — Deterministic claim generation from evidence/gap/mapping records, evidence coverage metrics, unsupported critical claim detection, claim review
 15. **Claim API** — REST endpoints for listing claims, evidence coverage, and human review
 
+16. **Opportunity Score & Pipeline Ranking** — Evidence-backed 0.0–1.0 scoring with 10 weighted components (composite ranking, evidence coverage, gap resolution, NVIDIA mapping, activation readiness, dossier completeness, quality score, claim support, review status, production readiness), 8 penalty types, weight redistribution, score tiers (critical/high/medium/low/not_recommended), explanation model, and ranked pipeline API.
+
 ### Startup Discovery Engine
 - **Source Registry** — `src/config/discovery_sources.json` (6 sources) + `src/discovery/source_registry.py` (loader with cache, `is_usable()`, `list_enabled_sources()`)
 - **Signal Detection** — `src/discovery/signals.py` (30+ keywords, 5-factor confidence, has_nvidia_tech flag, evidence excerpts)
@@ -709,7 +711,9 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - No human review/status workflow yet; Epic 29 implements persistence and lifecycle only.
 - Golden eval harness at `tests/evals/` with 38 tests across 7 golden cases.
 - Agents (`src/agents/`) and interface (`src/interface/`) remain stubs; `src/database/` now implements the SQLite-first product persistence foundation.
-- Product analysis execution is synchronous and schema migrations are not versioned yet.
+- Opportunity Score is a deterministic weighted formula — weights are based on product judgment, not learned from outcomes. All weights and penalties are documented in the contract for future adjustment.
+- Opportunity Score requires an analysis run with completed or degraded status; raw startup records without analysis runs have no opportunity score.
+- Ranked pipeline view only includes startups with persisted opportunity scores; startups without computed scores are excluded from ranking.
 - Obsidian vault has structure but no populated content beyond templates.
 - CI only tests on Ubuntu — no Windows/macOS matrix in CI.
 - Integration tests excluded from CI (require `QDRANT_TEST_URL`).

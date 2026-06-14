@@ -78,9 +78,10 @@
 | Workflow Runner (Epic 41) | `tests/unit/test_workflow_runner.py` | 6 | ✅ |
 | Workflow API Integration (Epic 41) | `tests/integration/test_workflow_api.py` | 12 | integration |
 | **Hybrid RAG (Epic 42)** | `tests/unit/test_hybrid_rag.py` | **31** | ✅ |
+| **Opportunity Score (Epic 43)** | `tests/unit/test_opportunity_score.py` | **43** | ✅ |
 | **Product Golden Path Acceptance (Epic 38)** | `tests/acceptance/test_product_golden_path.py` | **11 classes/suites** | acceptance |
 | **No Demo Dependency Guard (Epic 38)** | `tests/acceptance/test_no_demo_dependency.py` | **3 tests** | acceptance |
-| **Total** | **76 Python test files + 2 Playwright specs** | **~775 Python + 8 E2E** | **~729 pass, 32 skip/desel + acceptance + UI smoke** |
+| **Total** | **77 Python test files + 2 Playwright specs** | **~818 Python + 8 E2E** | **~752 pass + acceptance + UI smoke** |
 
 ## Cobertura por módulo
 
@@ -197,6 +198,10 @@
 | Hybrid RAG Citation (Epic 42) | 4 tests (empty, single chunk, evidence refs format, source coverage, factory) | ✅ |
 | Hybrid RAG Evidence Refs (Epic 42) | 3 tests (from chunks, from result, dossier section) | ✅ |
 | Hybrid RAG RetrievalMode (Epic 42) | 1 test (enum values) | ✅ |
+| Opportunity Score Tiers (Epic 43) | 6 tests (critical, high, medium, low, not_recommended, contraindication override) | ✅ |
+| Opportunity Score Penalties (Epic 43) | 13 tests (claims, evidence coverage, degraded, contraindication, non_ai, low confidence, incomplete data) | ✅ |
+| Opportunity Score Components (Epic 43) | 5 tests (gap_resolution, nvidia_mapping, activation_readiness, dossier_completeness, claim_support) | ✅ |
+| Opportunity Score Service (Epic 43) | 19 tests (compute, get_latest, recompute, penalties, ranked, bounds, components, evidence refs, error, scope) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
 

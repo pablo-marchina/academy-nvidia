@@ -36,6 +36,8 @@ from src.api.product_schemas import (
     ManualSeedResponse,
     OpportunityListItem,
     OpportunityListResponse,
+    OpportunityScoreCreateResponse,
+    OpportunityScoreRead,
     ProductCapabilityRead,
     ProductConfigurationItemRead,
     ProductHealthRead,
@@ -46,6 +48,8 @@ from src.api.product_schemas import (
     ProductSetupChecklistItem,
     ProductSetupChecklistRead,
     PromoteCandidateResponse,
+    RankedOpportunityListResponse,
+    RankedOpportunityRead,
     ReadinessCheckRead,
     ReviewDecisionCreate,
     ReviewDecisionRead,
@@ -72,6 +76,7 @@ from src.services.product import ProductService
 from src.services.product.activation_service import ActivationPlaybookService
 from src.services.product.claim_ledger import ClaimLedgerService
 from src.services.product.dossier_service import ActivationDossierService
+from src.services.product.opportunity_score_service import OpportunityScoreService
 from src.services.product.readiness_service import ProductReadinessService
 
 router = APIRouter(tags=["product"])
@@ -458,6 +463,113 @@ def list_opportunities(
             pass
     return OpportunityListResponse(
         items=[OpportunityListItem(**item) for item in items],
+        total=total,
+        offset=offset,
+        limit=limit,
+    )
+
+
+@router.post(
+    "/analysis-runs/{analysis_run_id}/opportunity-score",
+    response_model=OpportunityScoreCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def compute_opportunity_score(
+    analysis_run_id: str,
+    session: DbSession,
+) -> OpportunityScoreCreateResponse:
+    service = OpportunityScoreService(session)
+    try:
+        result = service.compute_score(analysis_run_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    from src.api.product_schemas import (
+        OpportunityScoreComponentRead,
+        OpportunityScoreExplainRead,
+        OpportunityScorePenaltyRead,
+    )
+
+    components = result.get("components", {})
+    explanation = OpportunityScoreExplainRead(
+        components=[
+            OpportunityScoreComponentRead(name=name, value=val, weight=0.0)
+            for name, val in components.items()
+        ],
+        missing_components=[name for name, val in components.items() if val is None],
+        penalties=[
+            OpportunityScorePenaltyRead(type=p["type"], value=p["value"], detail=p["detail"])
+            for p in (result.get("penalties") or [])
+        ],
+        penalty_total=result.get("penalty_total", 0.0),
+        formula_summary=(f"base_score - penalties = {result.get('opportunity_score', 0):.4f}"),
+    )
+
+    return OpportunityScoreCreateResponse(
+        analysis_run_id=analysis_run_id,
+        opportunity_score=result.get("opportunity_score", 0.0),
+        score_tier=result.get("score_tier", "low"),
+        evidence_ref_count=result.get("evidence_ref_count", 0),
+        recommended_action=result.get("recommended_action", ""),
+        reasoning=result.get("reasoning", ""),
+        explanation=explanation,
+    )
+
+
+@router.get(
+    "/analysis-runs/{analysis_run_id}/opportunity-score",
+    response_model=OpportunityScoreRead,
+)
+def get_opportunity_score(
+    analysis_run_id: str,
+    session: DbSession,
+) -> OpportunityScoreRead:
+    service = OpportunityScoreService(session)
+    result = service.get_latest_score(analysis_run_id)
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No opportunity score found for this analysis run",
+        )
+    return OpportunityScoreRead(
+        id=result["id"],
+        analysis_run_id=result["analysis_run_id"],
+        score_version=result["score_version"],
+        opportunity_score=result["opportunity_score"],
+        score_tier=result["score_tier"],
+        components=result["components"],
+        penalties=result["penalties"],
+        penalty_total=result["penalty_total"],
+        evidence_refs=result["evidence_refs"],
+        recommended_action=result["recommended_action"],
+        reasoning=result["reasoning"],
+        created_at=result["created_at"],
+        updated_at=result["updated_at"],
+    )
+
+
+@router.get(
+    "/opportunities/ranked",
+    response_model=RankedOpportunityListResponse,
+)
+def list_ranked_opportunities(
+    session: DbSession,
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+    min_score: float | None = Query(default=None, ge=0, le=1),
+    tier: str | None = Query(default=None),
+    recommended_action: str | None = Query(default=None),
+) -> RankedOpportunityListResponse:
+    service = OpportunityScoreService(session)
+    items, total = service.list_ranked_opportunities(
+        offset=offset,
+        limit=limit,
+        min_score=min_score,
+        tier=tier,
+        recommended_action=recommended_action,
+    )
+    return RankedOpportunityListResponse(
+        items=[RankedOpportunityRead(**item) for item in items],
         total=total,
         offset=offset,
         limit=limit,

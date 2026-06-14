@@ -665,6 +665,23 @@
 - [x] ROADMAP, EVALS, DECISIONS, README atualizados
 - [x] Total: 775 tests, 76 test files
 
+### Epic 43 — Opportunity Score & Pipeline Ranking (concluído)
+- [x] Migration 0007 — `opportunity_score_records` table
+- [x] `src/database/models.py` — `OpportunityScoreRecord` model
+- [x] `src/repositories/opportunity_score.py` — `OpportunityScoreRepository`
+- [x] `src/quality/constants.py` — 5 new opportunity metric constants
+- [x] `src/services/product/capability_registry.py` — `opportunity_scoring` capability
+- [x] `src/services/product/degraded.py` — 3 new degraded states
+- [x] `src/services/product/opportunity_score_service.py` — 10 components, 8 penalties, redistribution, explanation, ranked pipeline
+- [x] `src/api/product_schemas.py` — 5 new schemas
+- [x] `src/api/product_routes.py` — 4 new endpoints (POST/GET opportunity-score, GET ranked opportunities)
+- [x] `src/api/product_routes.py` — opportunity-score enrichements
+- [x] `docs/contracts/opportunity_score_contract.md`
+- [x] `docs/plans/2026-06-13_epic-43_opportunity-score-pipeline-ranking.md`
+- [x] `tests/unit/test_opportunity_score.py` — 43 unit tests (all passing)
+- [x] ROADMAP, EVALS, README atualizados
+- [x] Total: 752+ tests, 68 test files
+
 ### Later Backlog
 - Documentation Pruning (consolidation of remaining early docs)
 - Human-in-the-loop review implementation

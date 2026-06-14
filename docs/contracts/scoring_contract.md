@@ -5,6 +5,7 @@
 - `src/scoring/inception_fit_score.py` — `compute_inception_fit_score()`
 - `src/scoring/production_readiness.py` — `compute_production_readiness()`
 - `src/scoring/composite_ranking.py` — `compute_composite_ranking()`
+- `src/services/product/opportunity_score_service.py` — `OpportunityScoreService` (consolidated 0.0–1.0 score)
 
 ## What Each Score Promises
 

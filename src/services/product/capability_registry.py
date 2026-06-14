@@ -35,6 +35,7 @@ class CapabilityCategory(str, Enum):
     llm_judge = "llm_judge"
     export = "export"
     frontend = "frontend"
+    opportunity_scoring = "opportunity_scoring"
     developer_tools = "developer_tools"
 
 
@@ -576,6 +577,24 @@ _reg(
         "Available once workflow_runs capability is active. "
         "Tracing is built into the WorkflowNodeRun model."
     ),
+)
+
+# ---------------------------------------------------------------------------
+# Opportunity Scoring
+# ---------------------------------------------------------------------------
+_reg(
+    capability_id="opportunity_scoring",
+    name="Opportunity Score & Pipeline Ranking",
+    description=(
+        "Evidence-backed opportunity scoring with 10 weighted components, "
+        "8 penalty types, and ranked pipeline view"
+    ),
+    category=CapabilityCategory.opportunity_scoring,
+    required=True,
+    setup_instructions=(
+        "Available once product_database is configured and migration 0007 is applied."
+    ),
+    documentation_ref="docs/contracts/opportunity_score_contract.md",
 )
 
 # ---------------------------------------------------------------------------

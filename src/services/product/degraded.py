@@ -270,4 +270,24 @@ DEGRADED_STATES: dict[str, DegradedStateDefinition] = {
         user_message="Discovery candidate promotion failed during workflow.",
         recommended_action="Verify candidate exists and promotion service is functional.",
     ),
+    "OPPORTUNITY_SCORE_UNAVAILABLE": DegradedStateDefinition(
+        code="OPPORTUNITY_SCORE_UNAVAILABLE",
+        severity="warning",
+        user_message="Opportunity score has not been computed for this analysis run.",
+        recommended_action="Run opportunity scoring for the analysis run.",
+    ),
+    "OPPORTUNITY_LOW_CONFIDENCE": DegradedStateDefinition(
+        code="OPPORTUNITY_LOW_CONFIDENCE",
+        severity="info",
+        user_message="Opportunity score has low confidence due to missing or weak evidence.",
+        recommended_action=(
+            "Collect additional evidence and rerun analysis before making decisions."
+        ),
+    ),
+    "OPPORTUNITY_HIGH_PENALTY": DegradedStateDefinition(
+        code="OPPORTUNITY_HIGH_PENALTY",
+        severity="warning",
+        user_message="Opportunity score has a high penalty total, indicating significant gaps.",
+        recommended_action="Review penalties and address top gaps before proceeding.",
+    ),
 }

@@ -136,6 +136,9 @@ class AnalysisRun(TimestampMixin, Base):
     quality_runs: Mapped[list[ProductQualityRun]] = relationship(
         back_populates="analysis_run", cascade="all, delete-orphan"
     )
+    opportunity_scores: Mapped[list[OpportunityScoreRecord]] = relationship(
+        back_populates="analysis_run", cascade="all, delete-orphan"
+    )
 
 
 class ScoreRecord(TimestampMixin, Base):
@@ -544,6 +547,33 @@ class WorkflowRun(TimestampMixin, Base):
     startup: Mapped[Startup | None] = relationship()
     discovery_candidate: Mapped[StartupDiscoveryCandidate | None] = relationship()
     analysis_run: Mapped[AnalysisRun | None] = relationship()
+
+
+class OpportunityScoreRecord(TimestampMixin, Base):
+    __tablename__ = "opportunity_score_records"
+    __table_args__ = (
+        Index("ix_opportunity_score_run_version", "analysis_run_id", "score_version"),
+        Index("ix_opportunity_score_score", "opportunity_score"),
+        Index("ix_opportunity_score_tier", "score_tier"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    analysis_run_id: Mapped[str] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    score_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    opportunity_score: Mapped[float] = mapped_column(Float, nullable=False)
+    score_tier: Mapped[str] = mapped_column(String(30), nullable=False)
+    components_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    penalties_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
+    penalty_total: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    recommended_action: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    reasoning: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+    analysis_run: Mapped[AnalysisRun] = relationship()
 
 
 class WorkflowNodeRun(TimestampMixin, Base):

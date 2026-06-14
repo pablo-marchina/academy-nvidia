@@ -555,6 +555,16 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 - **Validation:** 31 unit tests covering all modules. All 775 pre-existing tests unchanged.
 - **Status:** Implementado no Epic 42.
 
+## Decision 049 — Opportunity Score: Evidence-Backed Consolidated Scoring with Weight Redistribution
+
+- **Context:** Epic 43 required a higher-level opportunity scoring layer that consolidates all existing analysis outputs (composite ranking, gaps, claims, activation recommendations, dossier, quality) into a single 0.0–1.0 score per startup, with explainable components, penalties, and tier-based ranking. Options included: using an LLM judge as the primary scorer, building a learning-to-rank model, or creating a deterministic weighted formula.
+- **Decision:** Deterministic weighted formula with 10 components (composite_ranking 20%, evidence_coverage 15%, gap_resolution 12%, nvidia_mapping 10%, activation_readiness 10%, dossier_completeness 10%, quality_score 8%, claim_support 7%, review_status 5%, production_readiness 3%) that redistribute weights proportionally when data is missing. 8 penalty types (unsupported claims, low evidence coverage, critical unsupported, degraded states, low confidence, contraindication, incomplete data, non_ai classification). Idempotency via incremental score_version per analysis_run.
+- **Alternatives considered:** LLM judge as primary scorer (rejected — non-deterministic, violates project rules). Learning-to-rank model (rejected — overkill for current data volume, would require labeled training data). Simple average of existing scores (rejected — loses nuance, no penalty system).
+- **Rationale:** Deterministic formula keeps scores reproducible, testable, and explainable. Weight redistribution follows the same pattern as `composite_ranking.py`. Penalties explicitly penalize unsupported claims and low evidence quality. The explanation model produces human-readable reasoning for every score.
+- **Risks:** Weight choices are arbitrary until validated against real outcomes. Mitigated: all weights are documented in the contract and can be adjusted as data accumulates. Contraindication and NON_AI penalties override all other signals — may be too aggressive. Mitigated: applied only when evidence is strong (support_level in strong/medium).
+- **Validation:** 43 unit tests covering tiers, penalties, components, compute, get, recompute, ranked pipeline, bounds, evidence refs. All 752 pre-existing tests unchanged.
+- **Status:** Implementado no Epic 43.
+
 ---
 
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.

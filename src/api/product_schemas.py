@@ -401,6 +401,81 @@ class ActivationDossierSummaryRead(BaseModel):
     review_status: str | None = None
 
 
+# ---------------------------------------------------------------------------
+# Opportunity Score Schemas (Epic 43)
+# ---------------------------------------------------------------------------
+
+
+class OpportunityScoreComponentRead(BaseModel):
+    name: str
+    value: float | None = None
+    weight: float
+
+
+class OpportunityScorePenaltyRead(BaseModel):
+    type: str
+    value: float
+    detail: str
+
+
+class OpportunityScoreExplainRead(BaseModel):
+    components: list[OpportunityScoreComponentRead]
+    missing_components: list[str] = []
+    penalties: list[OpportunityScorePenaltyRead] = []
+    penalty_total: float = 0.0
+    formula_summary: str = ""
+
+
+class OpportunityScoreRead(BaseModel):
+    id: str
+    analysis_run_id: str
+    score_version: int
+    opportunity_score: float
+    score_tier: str
+    components: dict[str, Any] = Field(default_factory=dict)
+    penalties: list[dict[str, Any]] = Field(default_factory=list)
+    penalty_total: float = 0.0
+    evidence_refs: list[dict[str, Any]] = Field(default_factory=list)
+    recommended_action: str = ""
+    reasoning: str = ""
+    created_at: datetime
+    updated_at: datetime
+
+
+class OpportunityScoreCreateResponse(BaseModel):
+    analysis_run_id: str
+    opportunity_score: float
+    score_tier: str
+    evidence_ref_count: int
+    recommended_action: str
+    reasoning: str
+    explanation: OpportunityScoreExplainRead
+
+
+class RankedOpportunityRead(BaseModel):
+    startup_id: str
+    startup_name: str
+    sector: str = ""
+    latest_analysis_run_id: str
+    opportunity_score: float
+    score_tier: str
+    components: dict[str, Any] = Field(default_factory=dict)
+    penalties: list[dict[str, Any]] = Field(default_factory=list)
+    penalty_total: float = 0.0
+    evidence_ref_count: int = 0
+    recommended_action: str = ""
+    reasoning: str = ""
+    score_version: int = 0
+    created_at: datetime | None = None
+
+
+class RankedOpportunityListResponse(BaseModel):
+    items: list[RankedOpportunityRead]
+    total: int
+    offset: int
+    limit: int
+
+
 class ProductQualityMetricRead(BaseModel):
     id: str
     quality_run_id: str

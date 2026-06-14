@@ -169,3 +169,12 @@ THRESHOLDS: dict[str, dict[str, Any]] = {
         "operator": "eq",
     },
 }
+
+# ---------------------------------------------------------------------------
+# Opportunity Score metric constants (Epic 43)
+# ---------------------------------------------------------------------------
+METRIC_OPPORTUNITY_SCORE = "opportunity_score"
+METRIC_OPPORTUNITY_COMPONENT_COVERAGE = "opportunity_component_coverage"
+METRIC_OPPORTUNITY_PENALTY_TOTAL = "opportunity_penalty_total"
+METRIC_OPPORTUNITY_EVIDENCE_REF_COUNT = "opportunity_evidence_ref_count"
+METRIC_OPPORTUNITY_RECOMMENDED_ACTION_DEFINED = "opportunity_recommended_action_defined"

@@ -22,6 +22,7 @@ def test_alembic_metadata_imports() -> None:
         "create all product entities",
         "create claim_records",
         "create activation_dossier_records",
+        "create opportunity_score_records table",
     )
 
 
@@ -55,11 +56,12 @@ def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
             "export_records",
             "claim_records",
             "activation_dossier_records",
+            "opportunity_score_records",
         }
         assert required.issubset(tables), f"Missing tables: {required - set(tables)}"
         assert "alembic_version" in tables
 
-        tables_before_our_migration = {
+        tables_before_opportunity_migration = {
             "startups",
             "startup_evidence",
             "analysis_runs",
@@ -72,18 +74,23 @@ def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
             "export_records",
             "claim_records",
             "activation_recommendations",
+            "activation_dossier_records",
+            "discovery_runs",
+            "startup_discovery_candidates",
+            "workflow_runs",
+            "workflow_node_runs",
         }
 
         command.downgrade(config, "-1")
         tables_after = inspect(engine).get_table_names()
         remaining = set(tables_after) - {"alembic_version"}
         assert (
-            "activation_dossier_records" not in tables_after
-        ), "activation_dossier_records should have been removed"
-        missing_tables = tables_before_our_migration - remaining
-        assert tables_before_our_migration.issubset(
+            "opportunity_score_records" not in tables_after
+        ), "opportunity_score_records should have been removed"
+        missing_tables = tables_before_opportunity_migration - remaining
+        assert tables_before_opportunity_migration.issubset(
             remaining
-        ), f"Tables before our migration missing: {missing_tables}"
+        ), f"Tables before opportunity-score migration missing: {missing_tables}"
     finally:
         if engine is not None:
             engine.dispose()
