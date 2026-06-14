@@ -96,13 +96,33 @@ export function DossierView({ runId, onBack }: DossierViewProps) {
         </div>
         <div className="panel-body">
           {dossier && (
-            <div className="dossier-meta">
-              <span className="muted">
-                v{dossier.version} | Coverage: {Math.round(dossier.evidence_coverage * 100)}% |
-                Motion: {dossier.recommended_motion} |
-                Unsupported claims: {dossier.unsupported_claim_count}
-              </span>
-            </div>
+            <>
+              <div className="dossier-meta">
+                <span className="muted">
+                  v{dossier.version} | Coverage: {Math.round(dossier.evidence_coverage * 100)}% |
+                  Motion: {dossier.recommended_motion} |
+                  Unsupported claims: {dossier.unsupported_claim_count}
+                </span>
+              </div>
+
+              {dossier.evidence_coverage < 0.5 && (
+                <div className="message warning-message">
+                  Low evidence coverage ({Math.round(dossier.evidence_coverage * 100)}%). Consider collecting more evidence before sharing this dossier externally.
+                </div>
+              )}
+
+              {dossier.unsupported_claim_count > 3 && (
+                <div className="message warning-message">
+                  {dossier.unsupported_claim_count} unsupported claims found. Review and gather evidence for unsupported claims to strengthen the dossier.
+                </div>
+              )}
+
+              {dossier.recommended_motion === "no_motion" && (
+                <div className="message warning-message">
+                  No recommended motion assigned. The dossier quality may be insufficient for activation decisions.
+                </div>
+              )}
+            </>
           )}
 
           {showJson && dossier ? (

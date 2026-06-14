@@ -324,3 +324,254 @@ export interface StartupUpdatePayload {
   website?: string;
   sector?: string;
 }
+
+// Discovery types
+export interface DiscoverySourceRead {
+  source_id: string;
+  name: string;
+  source_type: string;
+  base_url: string;
+  country_scope: string;
+  sector_scope: string;
+  allowed: boolean;
+  requires_api_key: boolean;
+  rate_limit_hint: string;
+  collection_method: string;
+  robots_or_terms_note: string;
+  enabled_by_default: boolean;
+  notes: string;
+  usable: boolean;
+}
+
+export interface DiscoveryRunRead {
+  id: string;
+  source_id: string | null;
+  status: string;
+  error_message: string | null;
+  results_count: number;
+  candidates_created: number;
+  duplicates_found: number;
+  query_json: Record<string, JsonValue>;
+  metadata_json: Record<string, JsonValue>;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DiscoveryRunListResponse {
+  items: DiscoveryRunRead[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+export interface DiscoveryCandidateRead {
+  id: string;
+  discovery_run_id: string | null;
+  source_id: string;
+  discovered_name: string;
+  normalized_name: string;
+  website: string;
+  country: string;
+  sector: string;
+  description: string;
+  source_url: string;
+  raw_text_excerpt: string;
+  ai_native_signals_json: Record<string, JsonValue>;
+  evidence_refs_json: Record<string, JsonValue>[];
+  confidence: string;
+  status: string;
+  promoted_startup_id: string | null;
+  metadata_json: Record<string, JsonValue>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DiscoveryCandidateListResponse {
+  items: DiscoveryCandidateRead[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+export interface ManualSeedEntry {
+  name: string;
+  website?: string;
+  sector?: string;
+  description?: string;
+  country?: string;
+}
+
+export interface ManualSeedRequest {
+  entries: ManualSeedEntry[];
+}
+
+export interface ManualSeedResponse {
+  discovery_run_id: string;
+  status: string;
+  total_entries: number;
+  candidates_created: number;
+  duplicates_found: number;
+}
+
+export interface UrlListRequest {
+  urls: string[];
+}
+
+export interface UrlListResponse {
+  discovery_run_id: string;
+  status: string;
+  total_urls: number;
+  candidates_created: number;
+  duplicates_found: number;
+  errors: string[];
+}
+
+export interface PromoteCandidateResponse {
+  candidate_id: string;
+  startup_id: string;
+  status: string;
+}
+
+// Workflow types
+export interface ProductWorkflowRunCreate {
+  startup_id?: string | null;
+  discovery_candidate_id?: string | null;
+  analysis_run_id?: string | null;
+  use_rag?: boolean;
+}
+
+export interface ProductWorkflowNodeRunRead {
+  id: string;
+  workflow_run_id: string;
+  node_name: string;
+  status: string;
+  started_at: string | null;
+  completed_at: string | null;
+  error_message: string | null;
+  retry_count: number;
+  created_at: string;
+}
+
+export interface ProductWorkflowRunRead {
+  id: string;
+  startup_id: string | null;
+  discovery_candidate_id: string | null;
+  analysis_run_id: string | null;
+  status: string;
+  current_node: string;
+  graph_version: string;
+  error_message: string | null;
+  degraded_reason: string | null;
+  state: Record<string, JsonValue>;
+  nodes: ProductWorkflowNodeRunRead[];
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductWorkflowRunListResponse {
+  items: ProductWorkflowRunRead[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+// Opportunity Score types
+export interface OpportunityScoreComponentRead {
+  name: string;
+  value: number | null;
+  weight: number;
+}
+
+export interface OpportunityScorePenaltyRead {
+  type: string;
+  value: number;
+  detail: string;
+}
+
+export interface OpportunityScoreExplainRead {
+  components: OpportunityScoreComponentRead[];
+  missing_components: string[];
+  penalties: OpportunityScorePenaltyRead[];
+  penalty_total: number;
+  formula_summary: string;
+}
+
+export interface OpportunityScoreRead {
+  id: string;
+  analysis_run_id: string;
+  score_version: number;
+  opportunity_score: number;
+  score_tier: string;
+  components: Record<string, JsonValue>;
+  penalties: Record<string, JsonValue>[];
+  penalty_total: number;
+  evidence_refs: Record<string, JsonValue>[];
+  recommended_action: string;
+  reasoning: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OpportunityScoreCreateResponse {
+  analysis_run_id: string;
+  opportunity_score: number;
+  score_tier: string;
+  evidence_ref_count: number;
+  recommended_action: string;
+  reasoning: string;
+  explanation: OpportunityScoreExplainRead;
+}
+
+export interface RankedOpportunityRead {
+  startup_id: string;
+  startup_name: string;
+  sector: string;
+  latest_analysis_run_id: string;
+  opportunity_score: number;
+  score_tier: string;
+  components: Record<string, JsonValue>;
+  penalties: Record<string, JsonValue>[];
+  penalty_total: number;
+  evidence_ref_count: number;
+  recommended_action: string;
+  reasoning: string;
+  score_version: number;
+  created_at: string | null;
+}
+
+export interface RankedOpportunityListResponse {
+  items: RankedOpportunityRead[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+// Export types
+export interface ExportCreate {
+  export_type: string;
+}
+
+export interface ExportRead {
+  id: string;
+  analysis_run_id: string;
+  action_brief_id: string | null;
+  export_type: string;
+  status: string;
+  storage_path: string;
+  content_hash: string;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Quality Report
+export interface QualityReportRead {
+  status: string;
+  summary: string;
+  metrics: Record<string, JsonValue>;
+  last_updated: string | null;
+}

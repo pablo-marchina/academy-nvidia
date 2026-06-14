@@ -59,6 +59,7 @@ Validar que o NVIDIA Startup AI Radar funciona ponta a ponta como uma solução 
 - [ ] Dossier generated and retrievable
 - [ ] Quality run generated
 - [ ] Opportunities visible
+- [ ] All 10 Product UI views functional (Setup, Capabilities, Discovery, Startups, Opportunities, Workflow, Export, Quality)
 - [ ] Known limitations updated
 - [ ] Documentation updated (README, ROADMAP, EVALS)
 
@@ -80,7 +81,9 @@ Validar que o NVIDIA Startup AI Radar funciona ponta a ponta como uma solução 
 - Crawler-based NVIDIA corpus ingestion
 
 ### Experimental
-- Product UI is v1 — state-based routing, no react-router-dom, no TanStack Query, vanilla CSS
+- Product UI is v1 — state-based routing, no react-router-dom, no TanStack Query, vanilla CSS, no frontend unit tests
+- 10 views consolidated (Setup, Capabilities, Discovery, Startups, Opportunities, Workflow, Export, Quality) — no React Router
+- Discovery view is read-only for candidates (promote creates startup); workflow view is read-only (no create from UI)
 - Structured Output Reliability Layer (Epic 36) — Instructor trial optional
 
 ### Acceptance test limitations

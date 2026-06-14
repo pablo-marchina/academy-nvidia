@@ -682,6 +682,24 @@
 - [x] ROADMAP, EVALS, README atualizados
 - [x] Total: 752+ tests, 68 test files
 
+### Epic 44 — Final Product UI & Demo Flow Hardening (concluído)
+- [x] `frontend/src/api/types.ts` — adicionados tipos DiscoveryRun, Candidate, WorkflowRun, RankedOpportunity, Export, OpportunityScore
+- [x] `frontend/src/api/product.ts` — 17 novas funções API (discovery, workflow, opportunity-score, exports, quality)
+- [x] `frontend/src/App.tsx` — navegação expandida para 10 views (Setup, Capabilities, Discovery, Startups, Opportunities, Workflow, Export, Quality)
+- [x] `frontend/src/components/DiscoveryView.tsx` — runs list, candidates list, filters, promote button, manual seed
+- [x] `frontend/src/components/WorkflowView.tsx` + `WorkflowNodeTimeline.tsx` — workflow runs list, node timeline, detail view
+- [x] `frontend/src/components/ExportDeliveryView.tsx` — checklist, export commands, limitations
+- [x] `frontend/src/components/QualityView.tsx` — dedicated quality report view (separada do Setup)
+- [x] `frontend/src/components/OpportunityDetailPanel.tsx` — detailed opportunity score view
+- [x] `frontend/src/components/OpportunitiesView.tsx` — All + Ranked tabs com dados de ranked opportunities
+- [x] `frontend/src/components/DossierView.tsx` — warnings para missing evidence / baixa cobertura
+- [x] `frontend/src/components/SetupReadinessView.tsx` — Playwright binary note + link para Quality view
+- [x] `frontend/src/styles.css` — estilos para timeline, export, tabs, filters, checklist
+- [x] `docs/plans/2026-06-13_epic-44_final-product-ui-demo-flow.md`
+- [x] Nenhuma alteração em backend, scoring, RAG, Qdrant, LangGraph
+- [x] Build TypeScript passa sem erros (`npm run build`)
+- [x] ROADMAP, README atualizados
+
 ### Later Backlog
 - Documentation Pruning (consolidation of remaining early docs)
 - Human-in-the-loop review implementation

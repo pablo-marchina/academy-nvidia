@@ -8,21 +8,30 @@ import { StartupDetailPanel } from "./components/StartupDetailPanel";
 import { AnalysisRunDetailView } from "./components/AnalysisRunDetailView";
 import { OpportunitiesView } from "./components/OpportunitiesView";
 import { DossierView } from "./components/DossierView";
+import { DiscoveryView } from "./components/DiscoveryView";
+import { WorkflowView } from "./components/WorkflowView";
+import { ExportDeliveryView } from "./components/ExportDeliveryView";
+import { QualityView } from "./components/QualityView";
 
 type ActiveView =
   | "setup"
   | "capabilities"
+  | "discovery"
   | "startups"
   | "startupDetail"
   | "analysisRun"
   | "dossier"
-  | "opportunities";
+  | "opportunities"
+  | "workflow"
+  | "exportDelivery"
+  | "quality";
 
 export default function App() {
   const [activeView, setActiveView] = useState<ActiveView>("setup");
   const [ready, setReady] = useState<boolean | null>(null);
   const [selectedStartupId, setSelectedStartupId] = useState<string | null>(null);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [selectedWorkflowRunId, setSelectedWorkflowRunId] = useState<string | null>(null);
 
   const checkReadiness = useCallback(async () => {
     try {
@@ -41,8 +50,8 @@ export default function App() {
   }, []);
 
   function navigateTo(view: string) {
-    if (view === "setup" || view === "capabilities" || view === "startups" || view === "opportunities" || view === "startupDetail" || view === "analysisRun" || view === "dossier") {
-      setActiveView(view);
+    if (view === "setup" || view === "capabilities" || view === "discovery" || view === "startups" || view === "opportunities" || view === "workflow" || view === "exportDelivery" || view === "quality") {
+      setActiveView(view as ActiveView);
     }
   }
 
@@ -78,6 +87,15 @@ export default function App() {
     setActiveView("analysisRun");
   }
 
+  function handleSelectWorkflowRun(workflowId: string) {
+    setSelectedWorkflowRunId(workflowId);
+  }
+
+  function handlePromoteToStartup(startupId: string) {
+    setSelectedStartupId(startupId);
+    setActiveView("startupDetail");
+  }
+
   return (
     <div className="app-shell">
       <header className="top-header">
@@ -93,7 +111,7 @@ export default function App() {
         <nav className="top-nav">
           <button
             type="button"
-            className={`nav-btn ${activeView === "setup" ? "active" : ""}`}
+            className={`nav-btn ${activeView === "setup" || activeView === "quality" ? "active" : ""}`}
             onClick={() => navigateTo("setup")}
           >
             Setup
@@ -104,6 +122,13 @@ export default function App() {
             onClick={() => navigateTo("capabilities")}
           >
             Capabilities
+          </button>
+          <button
+            type="button"
+            className={`nav-btn ${activeView === "discovery" ? "active" : ""}`}
+            onClick={() => navigateTo("discovery")}
+          >
+            Discovery
           </button>
           <button
             type="button"
@@ -119,6 +144,20 @@ export default function App() {
           >
             Opportunities
           </button>
+          <button
+            type="button"
+            className={`nav-btn ${activeView === "workflow" ? "active" : ""}`}
+            onClick={() => navigateTo("workflow")}
+          >
+            Workflow
+          </button>
+          <button
+            type="button"
+            className={`nav-btn ${activeView === "exportDelivery" ? "active" : ""}`}
+            onClick={() => navigateTo("exportDelivery")}
+          >
+            Export
+          </button>
         </nav>
       </header>
 
@@ -127,7 +166,16 @@ export default function App() {
           <SetupReadinessView onNavigate={navigateTo} />
         )}
 
+        {activeView === "quality" && <QualityView />}
+
         {activeView === "capabilities" && <CapabilitiesView />}
+
+        {activeView === "discovery" && (
+          <DiscoveryView
+            onPromoteToStartup={handlePromoteToStartup}
+            onSelectRun={handleRunCreated}
+          />
+        )}
 
         {activeView === "startups" && (
           <StartupListView onSelectStartup={handleSelectStartup} />
@@ -162,6 +210,16 @@ export default function App() {
             onSelectStartup={handleSelectStartup}
           />
         )}
+
+        {activeView === "workflow" && (
+          <WorkflowView
+            onSelectWorkflowRun={handleSelectWorkflowRun}
+            selectedWorkflowRunId={selectedWorkflowRunId}
+            onSelectStartup={handleSelectStartup}
+          />
+        )}
+
+        {activeView === "exportDelivery" && <ExportDeliveryView />}
       </main>
     </div>
   );

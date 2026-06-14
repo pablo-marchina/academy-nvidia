@@ -96,3 +96,12 @@
 - Corpus freshness audit now runs in the safe corpus maintenance schedule, but stale content is not yet rendered as an Action Brief warning.
 - Existing Qdrant collections must be reingested to receive lifecycle payload fields
 - Stale corpus context is audit-visible but not yet rendered as an Action Brief warning
+
+## Epic 44 — Product UI
+
+- Discovery view candidates list limited to first 100 (no pagination)
+- Workflow view is read-only (no UI for creating new workflow runs)
+- Export view provides curl commands but does not trigger actual export creation from the UI
+- No React Router — navigation uses local state in App.tsx (no deep-linking, no browser back/forward)
+- No frontend unit tests — only Playwright E2E smoke tests (6 tests) cover the UI
+- Quality view wraps existing QualitySummaryPanel — requires /product/quality-report endpoint

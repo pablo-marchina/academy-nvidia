@@ -603,6 +603,27 @@ pytest tests/integration/test_discovery_api.py -v
 - 2 API integration tests: product happy path, health endpoints, duplicate
   startup, and missing-resource behavior.
 
+## Epic 44 — Final Product UI & Demo Flow Hardening
+
+**Tipo:** Frontend-only (sem novos testes Python)
+
+| View | Status | Testado por |
+|---|---|---|
+| Setup | Enhanced | Playwright E2E |
+| Capabilities | Unchanged | Playwright E2E |
+| Discovery | New | Manual (backend tests cover API) |
+| Startups | Unchanged | Playwright E2E |
+| Startup Detail | Unchanged | Playwright E2E |
+| Analysis Run | Unchanged | Playwright E2E |
+| Dossier | Enhanced | Playwright E2E |
+| Opportunities | Enhanced | Playwright E2E |
+| Workflow | New | Manual (backend tests cover API) |
+| Export Delivery | New | Manual |
+| Quality | New | Manual (backend tests cover API) |
+
+**Validação:** `npm run build` — `tsc -b` + `vite build` passam sem erros.
+Sem alterações em backend, scoring, RAG, Qdrant ou LangGraph.
+
 ### Invariants
 
 - Product state is persisted in the SQLAlchemy transactional database.

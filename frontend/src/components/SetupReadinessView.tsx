@@ -203,6 +203,42 @@ export function SetupReadinessView({ onNavigate }: SetupReadinessViewProps) {
         </div>
       )}
 
+      <div className="panel">
+        <div className="panel-header"><h2>Playwright E2E Tests</h2></div>
+        <div className="panel-body">
+          <p className="hint-text">
+            E2E tests require Playwright browsers to be installed:
+          </p>
+          <div className="export-command-cmd">
+            <code>npx playwright install chromium</code>
+            <button
+              type="button"
+              className="badge-button"
+              onClick={() => navigator.clipboard.writeText("npx playwright install chromium")}
+            >
+              Copy
+            </button>
+          </div>
+          <p className="hint-text" style={{ marginTop: 8 }}>
+            Run E2E tests: <code>npx playwright test</code>
+            <br />
+            The test runner starts both the backend (port 8000) and frontend (port 5173) automatically.
+          </p>
+          <p className="hint-text">
+            See <code>tests/e2e/test_product_ui.spec.ts</code> for the full test suite.
+          </p>
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="panel-header">
+          <h2>Product Quality</h2>
+          <button type="button" className="secondary-button" onClick={() => onNavigate("quality")}>
+            View Full Report
+          </button>
+        </div>
+      </div>
+
       {readiness.ready && (
         <div className="cta-section">
           <button

@@ -86,6 +86,18 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 - **Degraded State Codes** — 6 new readiness codes (WORKFLOW_NODE_FAILED, WORKFLOW_DEGRADED, WORKFLOW_RAG_SKIPPED, WORKFLOW_QUALITY_FAILED, WORKFLOW_DOSSIER_MISSING, WORKFLOW_DISCOVERY_PROMOTION_FAILED).
 - **Capability Registry** — 3 capabilities: `agent_orchestration` (requires `[agent-orchestration]` extra), `workflow_runs`, `workflow_node_tracing`.
 
+### Product UI (10 consolidated views)
+1. **Setup** — product readiness, configuration checklist, Playwright E2E notes, quality report link
+2. **Capabilities** — product capability registry with status and setup instructions
+3. **Discovery** — sources, discovery runs, candidates list with filters, manual seed, promote to startup
+4. **Startups** — startup list with status, detail panel, analysis run creation
+5. **Analysis Run** — full run detail with scores, claims, gaps, NVIDIA mappings, readiness checks
+6. **Dossier** — activation dossier with markdown, raw JSON, warnings for low coverage/unsupported claims
+7. **Opportunities** — All opportunities + Ranked tab with opportunity-score columns
+8. **Workflow** — workflow runs list, node timeline (read-only), detail view
+9. **Export Delivery** — checklist, export commands (curl), limitations and notes
+10. **Quality** — dedicated quality report view with metrics and pass/fail breakdown
+
 ### Modules implemented
 - `src/repositories/claim.py` — claim persistence, coverage, unsupported detection
 - `src/services/product/claim_ledger.py` — deterministic claim generation
@@ -106,9 +118,9 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 - `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit, corpus maintenance orchestration, regression dashboard generation
 
 ### Testing
-- ~775 Python tests across 76 Python test files, plus 8 Playwright UI smoke/E2E tests
+- ~775 Python tests across 76 Python test files, plus 6 Playwright UI E2E smoke tests
 - Backend acceptance tests (`tests/acceptance/`, marker: `acceptance`) validate the Product Golden Path
-- Playwright E2E smoke tests (`tests/e2e/test_product_ui.spec.ts`, 6 tests) cover UI golden path
+- Playwright E2E smoke tests (`tests/e2e/test_product_ui.spec.ts`, 6 tests) cover UI golden path (setup, capabilities, startup creation, detail, analysis run, dossier, opportunities)
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)
 - Gap diagnosis: 14 tests covering 10/15 gaps individually + end-to-end + missing evidence
 - NVIDIA mapping: coverage verified for all 15 gaps (each has ≥1 technology mapped)
@@ -734,3 +746,11 @@ No startup recommendation is valid without evidence and an explicit technical ga
 - Migrations auto-geradas excluídas do ruff (E501, I001, UP007, UP035) por serem código gerado pelo Alembic.
 - Black exclui `.pytest_tmp*`, `node_modules/`, `.git/` para evitar PermissionError no Windows.
 - Playwright E2E tests (`make ui-e2e-product`) require browser binaries (`npx playwright install`) — not included in validate targets.
+- Discovery view's promote endpoint creates a startup record — no duplicate-check before promote in UI (backend dedup handled separately).
+- Discovery view candidates filter does not paginate (first 100 only).
+- Workflow view is read-only — no UI for creating new workflow runs (requires API call or backend trigger).
+- Export view provides curl commands but does not trigger actual export creation from the UI.
+- Opportunity detail panel computes/views scores per analysis run — no batch compute action.
+- Quality view wraps the existing `QualitySummaryPanel` component — requires `/product/quality-report` endpoint.
+- No React Router — navigation uses local state in App.tsx, which means no deep-linking or browser back/forward support.
+- No frontend unit tests — only Playwright E2E smoke tests cover the UI.
