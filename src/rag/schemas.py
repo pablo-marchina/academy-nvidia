@@ -2,9 +2,14 @@
 
 Epic 14 adds: RerankingConfig, PackedContext, DroppedContext, PackingResult,
 SupportingNvidiaContext.
+
+Epic 42 adds: RetrievalMode, RagEvidenceChunk, QueryPlan, RagEvidenceChunkList.
 """
 
 from __future__ import annotations
+
+from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -171,3 +176,62 @@ class RagPipelineOutput(BaseModel):
     retrieval_mode: str = "lexical"
     missing_context: bool = True
     rag_quality_summary: str = ""
+
+
+# ------------------------------------------------------------------
+# Epic 42 — Hybrid RAG + Reranking Hardening schemas
+# ------------------------------------------------------------------
+
+
+class RetrievalMode(str, Enum):
+    DENSE_ONLY = "dense_only"
+    SPARSE_ONLY = "sparse_only"
+    HYBRID = "hybrid"
+    HYBRID_WITH_RERANK = "hybrid_with_rerank"
+    # Legacy mode aliases
+    LEXICAL = "lexical"
+    SEMANTIC = "semantic"
+
+
+class RagEvidenceChunk(BaseModel):
+    """A single evidence chunk returned by the Hybrid RAG retriever.
+
+    Carries full provenance, per-mode scores, and retrieval metadata
+    for consumption by Claim Ledger, Dossier, and Product Quality.
+    """
+
+    chunk_id: str
+    source_title: str
+    source_url: str | None = None
+    section: str = ""
+    text: str
+    score_dense: float = 0.0
+    score_sparse: float = 0.0
+    score_fused: float = 0.0
+    score_rerank: float = 0.0
+    retrieval_mode: str = "hybrid_with_rerank"
+    corpus_version: str = "1.0"
+    metadata_json: dict[str, Any] = Field(default_factory=dict)
+
+
+class QueryPlan(BaseModel):
+    """Deterministic query plan produced by RagQueryPlanner."""
+
+    primary_query: str = ""
+    keyword_query: str = ""
+    technology_filters: list[str] = Field(default_factory=list)
+    target_doc_categories: list[str] = Field(default_factory=list)
+    must_have_terms: list[str] = Field(default_factory=list)
+    optional_terms: list[str] = Field(default_factory=list)
+    metadata_filters: dict[str, str] = Field(default_factory=dict)
+
+
+class RagEvidenceChunkList(BaseModel):
+    """Collection of evidence chunks with aggregate metadata."""
+
+    chunks: list[RagEvidenceChunk] = Field(default_factory=list)
+    retrieval_mode: str = "dense_only"
+    total_raw: int = 0
+    total_returned: int = 0
+    fallback_reason: str = ""
+    degraded: bool = False

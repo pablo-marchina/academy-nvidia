@@ -30,6 +30,15 @@ METRIC_AVG_RETRY_COUNT = "avg_retry_count"
 METRIC_SCHEMA_VALIDATION_ERROR_COUNT = "schema_validation_error_count"
 METRIC_MISSING_REQUIRED_FIELD_COUNT = "missing_required_field_count"
 
+# RAG quality metrics (Epic 42)
+METRIC_RAG_RETRIEVAL_SUCCESS = "rag_retrieval_success"
+METRIC_RAG_DEGRADED_MODE = "rag_degraded_mode"
+METRIC_RAG_FALLBACK_COUNT = "rag_fallback_count"
+METRIC_RAG_SOURCE_COVERAGE = "rag_source_coverage"
+METRIC_RAG_AVG_DENSE_SCORE = "rag_avg_dense_score"
+METRIC_RAG_AVG_SPARSE_SCORE = "rag_avg_sparse_score"
+METRIC_RAG_AVG_FUSED_SCORE = "rag_avg_fused_score"
+
 DEFAULT_EVALUATOR_VERSION = "1.0"
 
 DOSSIER_REQUIRED_SECTIONS: set[str] = {
@@ -49,6 +58,26 @@ DOSSIER_REQUIRED_SECTIONS: set[str] = {
 }
 
 THRESHOLDS: dict[str, dict[str, Any]] = {
+    METRIC_RAG_RETRIEVAL_SUCCESS: {
+        "threshold": 1.0,
+        "severity": METRIC_SEVERITY_ERROR,
+        "operator": "eq",
+    },
+    METRIC_RAG_DEGRADED_MODE: {
+        "threshold": 0.0,
+        "severity": METRIC_SEVERITY_WARN,
+        "operator": "eq",
+    },
+    METRIC_RAG_SOURCE_COVERAGE: {
+        "threshold": 0.50,
+        "severity": METRIC_SEVERITY_WARN,
+        "operator": "gte",
+    },
+    METRIC_RAG_AVG_FUSED_SCORE: {
+        "threshold": 0.30,
+        "severity": METRIC_SEVERITY_INFO,
+        "operator": "gte",
+    },
     METRIC_EVIDENCE_COVERAGE: {
         "threshold": 0.60,
         "severity": METRIC_SEVERITY_WARN,

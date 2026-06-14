@@ -77,9 +77,10 @@
 | Workflow Repository (Epic 41) | `tests/unit/test_workflow_repository.py` | 19 | ✅ |
 | Workflow Runner (Epic 41) | `tests/unit/test_workflow_runner.py` | 6 | ✅ |
 | Workflow API Integration (Epic 41) | `tests/integration/test_workflow_api.py` | 12 | integration |
+| **Hybrid RAG (Epic 42)** | `tests/unit/test_hybrid_rag.py` | **31** | ✅ |
 | **Product Golden Path Acceptance (Epic 38)** | `tests/acceptance/test_product_golden_path.py` | **11 classes/suites** | acceptance |
 | **No Demo Dependency Guard (Epic 38)** | `tests/acceptance/test_no_demo_dependency.py` | **3 tests** | acceptance |
-| **Total** | **75 Python test files + 2 Playwright specs** | **~744 Python + 8 E2E** | **~698 pass, 32 skip/desel + acceptance + UI smoke** |
+| **Total** | **76 Python test files + 2 Playwright specs** | **~775 Python + 8 E2E** | **~729 pass, 32 skip/desel + acceptance + UI smoke** |
 
 ## Cobertura por módulo
 
@@ -129,6 +130,13 @@
 | `services/product/config_registry.py` (Epic 36.1) | ✅ REAL | ✅ | 9 |
 | `services/product/readiness_service.py` (Epic 36.1) | ✅ REAL | ✅ | 10 |
 | `orchestration/` (Epic 41) | ✅ REAL | ✅ | 30 unit + 12 integration |
+| `rag/query_planner.py` (Epic 42) | ✅ REAL | ✅ | 5 (via test_hybrid_rag) |
+| `rag/sparse_retrieval.py` (Epic 42) | ✅ REAL | ✅ | 4 (via test_hybrid_rag) |
+| `rag/fusion.py` (Epic 42) | ✅ REAL | ✅ | 7 (via test_hybrid_rag) |
+| `rag/reranker.py` (Epic 42) | ✅ REAL | ✅ | 4 (via test_hybrid_rag) |
+| `rag/citation.py` (Epic 42) | ✅ REAL | ✅ | 4 (via test_hybrid_rag) |
+| `rag/evidence_refs.py` (Epic 42) | ✅ REAL | ✅ | 3 (via test_hybrid_rag) |
+| `quality/evaluators/rag_quality.py` (Epic 42) | ✅ REAL | ✅ | (via test_hybrid_rag — evaluate_rag_retrieval) |
 
 ## Lacunas de cobertura
 
@@ -182,6 +190,13 @@
 | Workflow Repository (Epic 41) | 19 tests (CRUD, status transitions, node tracing, retry) | ✅ |
 | Workflow Runner (Epic 41) | 6 tests (node registration, retry policy, langgraph detection, full execution) | ✅ |
 | Workflow API Integration (Epic 41) | 12 tests (POST/GET product-runs, nodes, analysis-run link, langgraph status) | ✅ |
+| Hybrid RAG Query Planner (Epic 42) | 5 tests (empty, gaps, technology, product_summary, claims+gaps) | ✅ |
+| Hybrid RAG Sparse Retrieval (Epic 42) | 4 tests (empty index, build+retrieve, lifecycle filter, score bounds) | ✅ |
+| Hybrid RAG Fusion (Epic 42) | 7 tests (RRF empty/only/dense/sparse/dedup/weighted/top-k, weighted fusion, weighted dedup) | ✅ |
+| Hybrid RAG Reranker (Epic 42) | 4 tests (NoOp passthrough, NoOp top_k, CrossEncoder default, build factory) | ✅ |
+| Hybrid RAG Citation (Epic 42) | 4 tests (empty, single chunk, evidence refs format, source coverage, factory) | ✅ |
+| Hybrid RAG Evidence Refs (Epic 42) | 3 tests (from chunks, from result, dossier section) | ✅ |
+| Hybrid RAG RetrievalMode (Epic 42) | 1 test (enum values) | ✅ |
 
 ## Critérios de Qualidade do Desenvolvimento
 

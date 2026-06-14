@@ -126,6 +126,91 @@ _reg(
 )
 
 # ---------------------------------------------------------------------------
+# Hybrid RAG (Epic 42)
+# ---------------------------------------------------------------------------
+_reg(
+    key="RAG_RETRIEVAL_MODE",
+    description="Retrieval mode (dense_only, sparse_only, hybrid, hybrid_with_rerank)",
+    required=False,
+    required_for=["hybrid_rag"],
+    default="dense_only",
+    example="hybrid_with_rerank",
+)
+_reg(
+    key="RAG_DENSE_TOP_K",
+    description="Top K for dense retrieval",
+    required=False,
+    required_for=["hybrid_rag"],
+    default="5",
+    example="5",
+)
+_reg(
+    key="RAG_SPARSE_TOP_K",
+    description="Top K for sparse/BM25 retrieval",
+    required=False,
+    required_for=["hybrid_rag"],
+    default="5",
+    example="5",
+)
+_reg(
+    key="RAG_RERANK_TOP_K",
+    description="Top K after reranking",
+    required=False,
+    required_for=["hybrid_rag"],
+    default="3",
+    example="3",
+)
+_reg(
+    key="RAG_DENSE_WEIGHT",
+    description="Weight for dense results in hybrid fusion (0.0-1.0)",
+    required=False,
+    required_for=["hybrid_rag"],
+    default="0.5",
+    example="0.5",
+)
+_reg(
+    key="RAG_SPARSE_WEIGHT",
+    description="Weight for sparse results in hybrid fusion (0.0-1.0)",
+    required=False,
+    required_for=["hybrid_rag"],
+    default="0.5",
+    example="0.5",
+)
+_reg(
+    key="RERANKER_PROVIDER",
+    description="Reranker provider (none, local_cross_encoder)",
+    required=False,
+    required_for=["rag_reranking"],
+    default="none",
+    example="local_cross_encoder",
+)
+_reg(
+    key="RERANKER_MODEL",
+    description="Cross-encoder model name for local reranking",
+    required=False,
+    required_for=["rag_reranking"],
+    default="BAAI/bge-reranker-v2-m3",
+    example="BAAI/bge-reranker-v2-m3",
+)
+_reg(
+    key="COHERE_API_KEY",
+    description="Cohere API key for optional Cohere Rerank (future)",
+    required=False,
+    required_for=["optional_external_reranker"],
+    secret=True,
+    default="",
+    example="<your-cohere-api-key>",
+)
+_reg(
+    key="RAGAS_EVAL_ENABLED",
+    description="Enable optional Ragas evaluation trial (requires [eval] extra)",
+    required=False,
+    required_for=["optional_ragas_eval"],
+    default="false",
+    example="true",
+)
+
+# ---------------------------------------------------------------------------
 # Qdrant
 # ---------------------------------------------------------------------------
 _reg(

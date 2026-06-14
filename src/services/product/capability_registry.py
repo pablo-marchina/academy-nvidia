@@ -184,6 +184,74 @@ _reg(
     health_check_key="rag",
     documentation_ref="docs/35_product_rag_design.md",
 )
+_reg(
+    capability_id="hybrid_rag",
+    name="Hybrid RAG",
+    description="Hybrid retrieval with dense + sparse fusion and configurable modes",
+    category=CapabilityCategory.rag,
+    required=False,
+    required_env_vars=["RAG_RETRIEVAL_MODE"],
+    optional_env_vars=[
+        "RAG_DENSE_TOP_K",
+        "RAG_SPARSE_TOP_K",
+        "RAG_DENSE_WEIGHT",
+        "RAG_SPARSE_WEIGHT",
+    ],
+    setup_instructions=(
+        "Set RAG_RETRIEVAL_MODE to hybrid or hybrid_with_rerank. " "Install extras as needed."
+    ),
+    failure_mode="Falls back to dense_only if sparse or reranker unavailable.",
+    documentation_ref="docs/69_hybrid_rag_reranking.md",
+)
+_reg(
+    capability_id="sparse_retrieval",
+    name="Sparse Retrieval",
+    description="BM25-style keyword retrieval over NVIDIA corpus chunks",
+    category=CapabilityCategory.rag,
+    required=False,
+    setup_instructions=(
+        "Built into Hybrid RAG; no extra dependencies required. " "Uses local BM25 implementation."
+    ),
+    failure_mode="Falls back to dense_only if corpus is empty or index not built.",
+    documentation_ref="docs/69_hybrid_rag_reranking.md",
+)
+_reg(
+    capability_id="rag_reranking",
+    name="RAG Reranking",
+    description="Optional cross-encoder reranking for hybrid retrieval results",
+    category=CapabilityCategory.rag,
+    required=False,
+    enabled_by_default=False,
+    required_env_vars=["RERANKER_PROVIDER"],
+    setup_instructions=(
+        "Set RERANKER_PROVIDER=local_cross_encoder. "
+        "Requires sentence-transformers with CrossEncoder support."
+    ),
+    failure_mode="Falls back to NoOpReranker (no reranking) if model unavailable.",
+    documentation_ref="docs/69_hybrid_rag_reranking.md",
+)
+_reg(
+    capability_id="optional_ragas_eval",
+    name="Ragas Evaluation (Optional)",
+    description="Optional Ragas evaluation trial for RAG quality metrics",
+    category=CapabilityCategory.quality,
+    required=False,
+    enabled_by_default=False,
+    required_env_vars=["RAGAS_EVAL_ENABLED"],
+    setup_instructions="Set RAGAS_EVAL_ENABLED=true and install the [eval] extra.",
+    failure_mode="Not configured; quality gates use deterministic RAG metrics only.",
+)
+_reg(
+    capability_id="optional_external_reranker",
+    name="External Reranker (Optional)",
+    description="Optional Cohere Rerank API integration",
+    category=CapabilityCategory.rag,
+    required=False,
+    enabled_by_default=False,
+    required_env_vars=["COHERE_API_KEY"],
+    setup_instructions="Set COHERE_API_KEY and RERANKER_PROVIDER=cohere.",
+    failure_mode="Not configured; uses NoOpReranker fallback.",
+)
 
 # ---------------------------------------------------------------------------
 # Evidence / Claims

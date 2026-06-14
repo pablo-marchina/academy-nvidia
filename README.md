@@ -97,14 +97,14 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 - `src/diagnosis/` — gap diagnosis (15 detectors) + NVIDIA technology mapping
 - `src/recommendation/` — deterministic recommendation engine (schemas, engine)
 - `src/briefing/` — Startup Action Brief consolidation and Markdown rendering
-- `src/rag/` — Product RAG ingestion, lexical + semantic + hybrid retrieval, embeddings, vector store, playbook retriever, **deterministic reranking, context packing, Qdrant persistent vector store**
+- `src/rag/` — Product RAG ingestion, lexical + semantic + hybrid retrieval, embeddings, vector store, playbook retriever, **deterministic reranking, context packing, Qdrant persistent vector store, + Epic 42: Hybrid RAG (query planner, BM25 sparse retrieval, RRF/weighted fusion, cross-encoder reranking, citation packaging, evidence refs helpers)**
 - `src/evaluation/` — Offline RAG evaluation (golden queries, metrics, quality gates, multi-mode comparison, **reranking/packed**), deterministic Answer Quality evaluation, and optional experimental LLM judge adapter with offline null provider
 - `src/config/` — settings via pydantic-settings
 - `src/database/`, `src/repositories/`, `src/services/product/` — SQLite-first transactional product persistence, persisted analysis lifecycle, and explicit degraded states
 - `scripts/` — validation and quality gate scripts (check_scope, check_docs_closure, validate), Qdrant corpus ingestion, NVIDIA source sync, corpus freshness audit, corpus maintenance orchestration, regression dashboard generation
 
 ### Testing
-- ~700 Python tests across 71 Python test files, plus 8 Playwright UI smoke/E2E tests
+- ~775 Python tests across 76 Python test files, plus 8 Playwright UI smoke/E2E tests
 - Backend acceptance tests (`tests/acceptance/`, marker: `acceptance`) validate the Product Golden Path
 - Playwright E2E smoke tests (`tests/e2e/test_product_ui.spec.ts`, 6 tests) cover UI golden path
 - All scoring modules have scenario-based tests (Portuguese-named golden examples)

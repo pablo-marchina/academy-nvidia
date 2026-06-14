@@ -645,9 +645,28 @@
 - [x] `obsidian-vault/04 Decisions/` e `03 Research/` — notas criadas
 - [x] Nenhuma alteração em scoring, RAG, Qdrant, recommendation central, LangGraph
 
+### Epic 42 — Hybrid RAG + Reranking Hardening (concluído)
+- [x] `src/rag/schemas.py` — RetrievalMode enum, RagEvidenceChunk, QueryPlan, RagEvidenceChunkList
+- [x] `src/rag/query_planner.py` — deterministic query planner
+- [x] `src/rag/sparse_retrieval.py` — BM25 local sparse retriever
+- [x] `src/rag/fusion.py` — RRF + weighted score fusion
+- [x] `src/rag/reranker.py` — Reranker ABC, NoOpReranker, OptionalCrossEncoderReranker
+- [x] `src/rag/hybrid_retriever.py` — HybridRagRetriever service
+- [x] `src/rag/citation.py` — CitationPackage with citations/evidence_refs/source_coverage
+- [x] `src/rag/evidence_refs.py` — Claim Ledger + Dossier helpers
+- [x] `src/quality/constants.py` — 6 new RAG metric constants + thresholds
+- [x] `src/quality/evaluators/rag_quality.py` — evaluate_rag_retrieval()
+- [x] `src/services/product/config_registry.py` — 9 hybrid RAG config items
+- [x] `src/services/product/capability_registry.py` — 5 RAG capabilities
+- [x] `.env.example` — 9 hybrid RAG env vars
+- [x] `tests/unit/test_hybrid_rag.py` — 31 tests (all passing)
+- [x] `docs/plans/2026-06-13_epic-42_hybrid-rag-reranking-hardening.md`
+- [x] `docs/contracts/hybrid_rag_contract.md`
+- [x] ROADMAP, EVALS, DECISIONS, README atualizados
+- [x] Total: 775 tests, 76 test files
+
 ### Later Backlog
 - Documentation Pruning (consolidation of remaining early docs)
 - Human-in-the-loop review implementation
 - Professional exports
-- Cross-encoder reranking
 - Optional real LLM judge provider

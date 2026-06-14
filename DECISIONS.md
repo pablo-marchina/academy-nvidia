@@ -545,4 +545,16 @@ Estas decisões são sobre o **processo de desenvolvimento**, não sobre a arqui
 
 ---
 
+## Decision 048 — Hybrid RAG: BM25 Local, NoOp Reranker, No Qdrant Sparse
+
+- **Context:** Epic 42 required adding sparse retrieval, deterministic query planning, fusion, reranking, and citation packaging to the RAG module. Options included: using Qdrant sparse vectors, adding external reranker APIs, or building local pure-Python alternatives.
+- **Decision:** Sparse retrieval uses local BM25 over the existing ChunkIndex (pure Python, no Qdrant sparse vectors — avoids reingestion). Reranking uses NoOpReranker as default with OptionalCrossEncoderReranker (lazy-loaded via sentence-transformers, an existing optional dep) as an opt-in upgrade. Fusion defaults to RRF with configurable dense/sparse weights. Query planner is deterministic string/keyword logic — no LLM. Citation packaging is a pure projection of RagEvidenceChunk — no new DB models.
+- **Alternatives considered:** Qdrant sparse vectors (rejected — requires reingestion of the entire collection). Cohere/API reranker (rejected — paid, adds external dependency). LLM query planner (rejected — non-deterministic, no need for v1). Ragas integration (noted as optional future step).
+- **Rationale:** Local BM25 avoids any reingestion of the existing Qdrant collection. NoOpReranker makes the non-reranked path zero-cost and always available. CrossEncoder loads on first use — no startup penalty. Deterministic query planner keeps retrieval testable and reproducible.
+- **Risks:** BM25 over lexical-only index may not add much value over existing keyword retrieval. Mitigated: configurable fusion weights let users tune the hybrid blend. CrossEncoder model download (~2GB) may fail in constrained environments. Mitigated: silent fallback to NoOp with log warning.
+- **Validation:** 31 unit tests covering all modules. All 775 pre-existing tests unchanged.
+- **Status:** Implementado no Epic 42.
+
+---
+
 ADRs (Architectural Decision Records) individuais estão em `docs/adr/`. Cada ADR cobre uma decisão específica. Decisões neste arquivo são consolidadas para visão geral.
