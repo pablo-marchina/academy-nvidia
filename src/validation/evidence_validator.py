@@ -45,6 +45,7 @@ class ValidatedEvidence(BaseModel):
     confidence: ConfidenceLevel
     evidence_kind: EvidenceKind
     collected_at: datetime
+    is_critical: bool = False
 
 
 def _is_hypothesis(text: str) -> bool:
@@ -79,6 +80,8 @@ def validate_evidence(evidence: Evidence) -> ValidatedEvidence:
     quote = evidence.quote_or_evidence
     claim = evidence.claim
 
+    is_critical = evidence.source_type == SourceType.OFFICIAL_SITE
+
     if not quote or not quote.strip():
         return ValidatedEvidence(
             claim=claim,
@@ -88,6 +91,7 @@ def validate_evidence(evidence: Evidence) -> ValidatedEvidence:
             confidence=ConfidenceLevel.LOW,
             evidence_kind=EvidenceKind.UNVERIFIED,
             collected_at=evidence.collected_at,
+            is_critical=is_critical,
         )
 
     stripped = quote.strip()
@@ -101,6 +105,7 @@ def validate_evidence(evidence: Evidence) -> ValidatedEvidence:
             confidence=ConfidenceLevel.MEDIUM,
             evidence_kind=EvidenceKind.HYPOTHESIS,
             collected_at=evidence.collected_at,
+            is_critical=is_critical,
         )
 
     if _is_explicit_quote(stripped, claim):
@@ -117,6 +122,7 @@ def validate_evidence(evidence: Evidence) -> ValidatedEvidence:
             confidence=confidence,
             evidence_kind=EvidenceKind.FACT,
             collected_at=evidence.collected_at,
+            is_critical=is_critical,
         )
 
     if len(stripped) >= _MIN_EXPLICIT_LENGTH:
@@ -128,6 +134,7 @@ def validate_evidence(evidence: Evidence) -> ValidatedEvidence:
             confidence=ConfidenceLevel.MEDIUM,
             evidence_kind=EvidenceKind.STRONG_INFERENCE,
             collected_at=evidence.collected_at,
+            is_critical=is_critical,
         )
 
     return ValidatedEvidence(
@@ -138,6 +145,7 @@ def validate_evidence(evidence: Evidence) -> ValidatedEvidence:
         confidence=ConfidenceLevel.LOW,
         evidence_kind=EvidenceKind.WEAK_INFERENCE,
         collected_at=evidence.collected_at,
+        is_critical=is_critical,
     )
 
 

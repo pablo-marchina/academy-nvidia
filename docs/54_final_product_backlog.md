@@ -275,7 +275,8 @@ Proposed only; not implemented in this epic.
 | GET | `/startups/{id}` | Retrieve startup, evidence summary, latest run |
 | POST | `/startups/{id}/analysis-runs` | Start analysis for a startup |
 | GET | `/analysis-runs/{id}` | Retrieve run status and structured outputs |
-| GET | `/analysis-runs/{id}/brief` | Retrieve latest versioned Action Brief |
+| GET | `/analysis-runs/{id}/brief` | Retrieve canonical persisted auditable Action Brief |
+| GET | `/analysis-runs/{id}/brief/export/json` | Export canonical persisted Action Brief as JSON |
 | POST | `/analysis-runs/{id}/evaluate` | Run quality evaluation on a persisted brief |
 | POST | `/analysis-runs/{id}/review` | Record human review/status decision |
 | GET | `/opportunities` | List ranked opportunities from persisted runs |

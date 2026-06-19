@@ -102,7 +102,7 @@ class TestDossierSchemaValidation:
             schema_name="SampleDossierSchema",
         )
         assert result.status == "valid"
-        assert result.parsed_output is not None
+        assert result.parsed_object is not None
 
     def test_quality_metrics_from_dossier_validation(self) -> None:
         from src.evaluation.structured_outputs import quality_metrics_from_results

@@ -148,6 +148,51 @@
       "expected_products": [],
       "is_critical": false,
       "top_k_for_test": 3
+    },
+    {
+      "case_id": "kw_inference",
+      "description": "keyword 'inference' returns NIM, TensorRT-LLM, Triton",
+      "query": { "gap_type": null, "technology": null, "keywords": ["inference"] },
+      "expected_source_ids": ["nim", "tensorrt_llm", "triton"],
+      "expected_products": ["NVIDIA NIM", "TensorRT-LLM", "Triton Inference Server"],
+      "is_critical": true,
+      "top_k_for_test": 10
+    },
+    {
+      "case_id": "kw_production",
+      "description": "keyword 'production' returns NIM, Riva, TensorRT-LLM, Triton",
+      "query": { "gap_type": null, "technology": null, "keywords": ["production"] },
+      "expected_source_ids": ["nim", "riva", "tensorrt_llm", "triton"],
+      "expected_products": ["NVIDIA NIM", "NVIDIA Riva", "TensorRT-LLM", "Triton Inference Server"],
+      "is_critical": false,
+      "top_k_for_test": 5
+    },
+    {
+      "case_id": "kw_open_source",
+      "description": "keyword 'open-source' returns Clara/MONAI, NeMo Guardrails, RAPIDS, TensorRT-LLM",
+      "query": { "gap_type": null, "technology": null, "keywords": ["open-source"] },
+      "expected_source_ids": ["clara_monai", "nemo_guardrails", "rapids", "tensorrt_llm"],
+      "expected_products": ["Clara / MONAI", "NeMo Guardrails", "NVIDIA RAPIDS", "TensorRT-LLM"],
+      "is_critical": false,
+      "top_k_for_test": 5
+    },
+    {
+      "case_id": "kw_latency",
+      "description": "keyword 'latency' returns NIM, Riva, TensorRT-LLM, Triton",
+      "query": { "gap_type": null, "technology": null, "keywords": ["latency"] },
+      "expected_source_ids": ["nim", "riva", "tensorrt_llm", "triton"],
+      "expected_products": ["NVIDIA NIM", "NVIDIA Riva", "TensorRT-LLM", "Triton Inference Server"],
+      "is_critical": false,
+      "top_k_for_test": 8
+    },
+    {
+      "case_id": "kw_model",
+      "description": "keyword 'model' returns 8 sources (all except Morpheus and NeMo Guardrails)",
+      "query": { "gap_type": null, "technology": null, "keywords": ["model"] },
+      "expected_source_ids": ["clara_monai", "isaac", "nim", "omniverse", "rapids", "riva", "tensorrt_llm", "triton"],
+      "expected_products": ["Clara / MONAI", "NVIDIA Isaac", "NVIDIA NIM", "NVIDIA Omniverse", "NVIDIA RAPIDS", "NVIDIA Riva", "TensorRT-LLM", "Triton Inference Server"],
+      "is_critical": false,
+      "top_k_for_test": 10
     }
   ]
 }

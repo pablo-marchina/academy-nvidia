@@ -20,7 +20,7 @@ def repos(tmp_path: Path) -> tuple[ReviewDecisionRepository, ProductRepository]:
 
 def _create_startup_and_run(
     product_repo: ProductRepository,
-) -> str:
+) -> tuple[str, str]:
     startup = product_repo.create_startup(
         name="Review Test",
         website="https://review.example.com",
@@ -37,17 +37,18 @@ def _create_startup_and_run(
         config_snapshot={},
     )
     product_repo.session.commit()
-    return run.id
+    return startup.id, run.id
 
 
 def test_review_create_and_latest(
     repos: tuple[ReviewDecisionRepository, ProductRepository],
 ) -> None:
     review_repo, product_repo = repos
-    run_id = _create_startup_and_run(product_repo)
+    startup_id, run_id = _create_startup_and_run(product_repo)
 
     r1 = review_repo.create(
         analysis_run_id=run_id,
+        startup_id=startup_id,
         decision="approve",
         reviewer="analyst-1",
         notes="Good startup",
@@ -57,6 +58,7 @@ def test_review_create_and_latest(
 
     review_repo.create(
         analysis_run_id=run_id,
+        startup_id=startup_id,
         decision="needs_more_evidence",
         reviewer="analyst-2",
         notes="Need more data",
@@ -76,7 +78,7 @@ def test_review_does_not_recalculate_score(
     repos: tuple[ReviewDecisionRepository, ProductRepository],
 ) -> None:
     review_repo, product_repo = repos
-    run_id = _create_startup_and_run(product_repo)
+    startup_id, run_id = _create_startup_and_run(product_repo)
 
     product_repo.save_score(
         analysis_run_id=run_id,
@@ -90,6 +92,7 @@ def test_review_does_not_recalculate_score(
 
     review_repo.create(
         analysis_run_id=run_id,
+        startup_id=startup_id,
         decision="reject",
         reviewer="analyst-1",
         notes="Not a fit",
@@ -105,12 +108,13 @@ def test_review_multiple_decisions_append_only(
     repos: tuple[ReviewDecisionRepository, ProductRepository],
 ) -> None:
     review_repo, product_repo = repos
-    run_id = _create_startup_and_run(product_repo)
+    startup_id, run_id = _create_startup_and_run(product_repo)
 
     decisions = ["approve", "needs_more_evidence", "monitor"]
     for i, dec in enumerate(decisions):
         review_repo.create(
             analysis_run_id=run_id,
+            startup_id=startup_id,
             decision=dec,
             reviewer=f"user-{i}",
             notes=f"Review {i}",

@@ -5,10 +5,12 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from src.api.product_schemas import (
     ActionBriefRead,
+    ActionBriefJsonExportRead,
     ActivationDossierGenerateResponse,
     ActivationDossierMarkdownRead,
     ActivationDossierRead,
@@ -17,7 +19,10 @@ from src.api.product_schemas import (
     ActivationRecommendationListResponse,
     ActivationRecommendationRead,
     AnalysisRunCreate,
+    AnalysisRunDetailResponse,
     AnalysisRunRead,
+    AnalysisRunWorkflowRequest,
+    AnalysisRunWorkflowResponse,
     ClaimListResponse,
     ClaimRead,
     ClaimReviewUpdate,
@@ -47,6 +52,7 @@ from src.api.product_schemas import (
     ProductReadinessRead,
     ProductSetupChecklistItem,
     ProductSetupChecklistRead,
+    PersistedActionBriefRead,
     PromoteCandidateResponse,
     RankedOpportunityListResponse,
     RankedOpportunityRead,
@@ -58,6 +64,7 @@ from src.api.product_schemas import (
     StartupListItem,
     StartupRead,
     StartupUpdate,
+    WorkflowReviewDecisionCreate,
     UrlListRequest,
     UrlListResponse,
 )
@@ -71,12 +78,20 @@ from src.database.models import (
 )
 from src.database.session import get_db_session
 from src.discovery.service import StartupDiscoveryService
+from src.orchestration.service import WorkflowOrchestrationService
 from src.quality.service import ProductQualityService
+from src.repositories.product import ProductRepository
+from src.repositories.workflow import WorkflowRepository
 from src.services.product import ProductService
 from src.services.product.activation_service import ActivationPlaybookService
 from src.services.product.claim_ledger import ClaimLedgerService
 from src.services.product.dossier_service import ActivationDossierService
+from src.services.product.export_service import (
+    persisted_action_brief_json_export_payload,
+    persisted_action_brief_payload,
+)
 from src.services.product.opportunity_score_service import OpportunityScoreService
+from src.services.product.readiness_gate import ReadinessGate
 from src.services.product.readiness_service import ProductReadinessService
 
 router = APIRouter(tags=["product"])
@@ -184,6 +199,162 @@ def _analysis_run_read(run: AnalysisRun) -> AnalysisRunRead:
     )
 
 
+def _build_workflow_response(
+    state_analysis_run_id: str | None,
+    startup_id: str,
+    session: Session,
+    *,
+    workflow_state_status: str = "",
+    blockers: list[str] | None = None,
+) -> AnalysisRunWorkflowResponse:
+    executed: list[str] = []
+    review_required = False
+    if state_analysis_run_id:
+        try:
+            wf_repo = WorkflowRepository(session)
+            wf_run = wf_repo.get_workflow_for_analysis_run(state_analysis_run_id)
+            if wf_run and wf_run.state_json:
+                sd = wf_run.state_json
+                executed = list(
+                    dict.fromkeys(
+                        sd.get("completed_nodes", [])
+                        + sd.get("failed_nodes", [])
+                        + sd.get("degraded_nodes", [])
+                    )
+                )
+                review_required = sd.get("review_required", False)
+                if not blockers:
+                    blockers = sd.get("blockers", [])
+        except Exception:
+            pass
+    quality_val: dict[str, Any] = {}
+    if state_analysis_run_id:
+        try:
+            qs = ProductQualityService(session)
+            summ = qs.summarize_quality_result(state_analysis_run_id)
+            if summ:
+                quality_val = dict(summ)
+        except Exception:
+            pass
+    quality = quality_val
+    action_brief: ActionBriefRead | None = None
+    evidence_validation: dict[str, Any] = {}
+    rag_metrics: dict[str, Any] = {}
+    recommendation_metrics: dict[str, Any] = {}
+    brief_metrics: dict[str, Any] = {}
+    if state_analysis_run_id:
+        try:
+            repo = ProductRepository(session)
+            br = repo.get_latest_action_brief(state_analysis_run_id)
+            if br:
+                action_brief = _action_brief_read(br)
+        except Exception:
+            pass
+        try:
+            run = repo.get_analysis_run(state_analysis_run_id)
+            if run:
+                output = run.output_snapshot_json or {}
+                evidence_validation = output.get("validated_evidence", {})
+                rag_metrics = output.get("rag_output", {})
+                recommendation_metrics = output.get("recommendation", {})
+                raw_brief_metrics = output.get("brief_metrics")
+                brief_metrics = (
+                    raw_brief_metrics
+                    if isinstance(raw_brief_metrics, dict)
+                    else output.get("action_brief", {})
+                )
+        except Exception:
+            pass
+    status_val = workflow_state_status or "completed"
+    return AnalysisRunWorkflowResponse(
+        run_id=state_analysis_run_id or "",
+        startup_id=startup_id,
+        status=status_val,
+        review_required=review_required,
+        executed_nodes=executed,
+        blockers=blockers or [],
+        quality=quality,
+        evidence_validation=evidence_validation,
+        rag_metrics=rag_metrics,
+        recommendation_metrics=recommendation_metrics,
+        brief_metrics=brief_metrics,
+        action_brief=action_brief,
+    )
+
+
+def _build_detail_response(analysis_run_id: str, session: Session) -> AnalysisRunDetailResponse:
+    svc = ProductService(session)
+    run = svc.get_analysis_run(analysis_run_id)
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
+    executed: list[str] = []
+    blockers: list[str] = []
+    review_required = False
+    review_payload: dict[str, Any] | None = None
+    try:
+        wf_repo = WorkflowRepository(session)
+        wf_run = wf_repo.get_workflow_for_analysis_run(analysis_run_id)
+        if wf_run and wf_run.state_json:
+            sd = wf_run.state_json
+            executed = list(
+                dict.fromkeys(
+                    sd.get("completed_nodes", [])
+                    + sd.get("failed_nodes", [])
+                    + sd.get("degraded_nodes", [])
+                )
+            )
+            blockers = sd.get("blockers", [])
+            review_required = sd.get("review_required", False)
+            review_payload = sd.get("review_payload")
+    except Exception:
+        pass
+    quality_res: dict[str, Any] = {}
+    try:
+        qs = ProductQualityService(session)
+        summ = qs.summarize_quality_result(analysis_run_id)
+        if summ:
+            quality_res = dict(summ)
+    except Exception:
+        pass
+    quality = quality_res
+    output = run.output_snapshot_json or {}
+    evidence_validation = output.get("validated_evidence", {})
+    rag_metrics = output.get("rag_output", {})
+    recommendation_metrics = output.get("recommendation", {})
+    raw_brief_metrics = output.get("brief_metrics")
+    brief_metrics = (
+        raw_brief_metrics if isinstance(raw_brief_metrics, dict) else output.get("action_brief", {})
+    )
+    if isinstance(rag_metrics, dict):
+        pass
+    else:
+        rag_metrics = {}
+    action_brief: ActionBriefRead | None = None
+    try:
+        brief_record = svc.repository.get_latest_action_brief(analysis_run_id)
+        if brief_record:
+            action_brief = _action_brief_read(brief_record)
+    except Exception:
+        pass
+    return AnalysisRunDetailResponse(
+        run_id=run.id,
+        startup_id=run.startup_id,
+        status=run.status,
+        executed_nodes=executed,
+        blockers=blockers,
+        quality=quality,
+        evidence_validation=evidence_validation if isinstance(evidence_validation, dict) else {},
+        rag_metrics=rag_metrics if isinstance(rag_metrics, dict) else {},
+        recommendation_metrics=recommendation_metrics
+        if isinstance(recommendation_metrics, dict)
+        else {},
+        brief_metrics=brief_metrics if isinstance(brief_metrics, dict) else {},
+        action_brief=action_brief,
+        review_required=review_required,
+        review_payload=review_payload,
+    )
+
+
 def _inject_claim_summary(result: AnalysisRunRead, session: Session) -> None:
     try:
         from src.api.product_schemas import ClaimSummaryRead
@@ -228,8 +399,25 @@ def _action_brief_read(record: ActionBriefRecord) -> ActionBriefRead:
     )
 
 
+def _persisted_action_brief_read(
+    run: AnalysisRun,
+    record: ActionBriefRecord,
+) -> PersistedActionBriefRead:
+    try:
+        return PersistedActionBriefRead(**persisted_action_brief_payload(run, record))
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Persisted action brief is not compatible with the quantitative schema.",
+        ) from exc
+
+
 @router.post("/startups", response_model=StartupRead, status_code=status.HTTP_201_CREATED)
-def create_startup(request: StartupCreate, session: DbSession) -> StartupRead:
+def create_startup(
+    request: StartupCreate,
+    session: DbSession,
+    _gate: None = Depends(ReadinessGate()),
+) -> StartupRead:
     service = ProductService(session)
     payload = request.model_dump(mode="python")
     try:
@@ -274,6 +462,55 @@ def get_startup(startup_id: str, session: DbSession) -> StartupRead:
 
 
 @router.post(
+    "/analysis-runs",
+    response_model=AnalysisRunWorkflowResponse,
+    status_code=status.HTTP_200_OK,
+)
+def create_analysis_run_workflow(
+    request: AnalysisRunWorkflowRequest,
+    session: DbSession,
+) -> AnalysisRunWorkflowResponse:
+    startup_id = request.startup_id
+    svc = ProductService(session)
+    startup = svc.get_startup(startup_id)
+    if startup is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Startup not found."
+        )
+    readiness = ProductReadinessService().get_product_readiness()
+    if not readiness.ready:
+        msgs: list[str] = []
+        for m in readiness.user_messages or []:
+            if isinstance(m, dict):
+                msgs.append(m.get("reason", str(m)))
+            else:
+                msgs.append(str(m))
+        return AnalysisRunWorkflowResponse(
+            run_id="",
+            startup_id=startup_id,
+            status="blocked",
+            blockers=msgs,
+        )
+    try:
+        orch = WorkflowOrchestrationService(session)
+        state = orch.create_and_run_workflow(
+            startup_id=startup_id,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Analysis run failed.",
+        )
+    return _build_workflow_response(
+        state.analysis_run_id,
+        startup_id,
+        session,
+        workflow_state_status=state.status or "completed",
+        blockers=state.blockers,
+    )
+
+
+@router.post(
     "/startups/{startup_id}/analysis-runs",
     response_model=AnalysisRunRead,
     status_code=status.HTTP_201_CREATED,
@@ -282,6 +519,7 @@ def create_analysis_run(
     startup_id: str,
     request: AnalysisRunCreate,
     session: DbSession,
+    _gate: None = Depends(ReadinessGate()),
 ) -> AnalysisRunRead:
     service = ProductService(session)
     try:
@@ -300,26 +538,47 @@ def create_analysis_run(
     return result
 
 
-@router.get("/analysis-runs/{analysis_run_id}", response_model=AnalysisRunRead)
-def get_analysis_run(analysis_run_id: str, session: DbSession) -> AnalysisRunRead:
-    run = ProductService(session).get_analysis_run(analysis_run_id)
-    if run is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
-    result = _analysis_run_read(run)
-    _inject_claim_summary(result, session)
-    _inject_dossier_summary(result, session)
-    return result
+@router.get("/analysis-runs/{analysis_run_id}", response_model=AnalysisRunDetailResponse)
+def get_analysis_run(analysis_run_id: str, session: DbSession) -> AnalysisRunDetailResponse:
+    return _build_detail_response(analysis_run_id, session)
 
 
-@router.get("/analysis-runs/{analysis_run_id}/brief", response_model=ActionBriefRead)
-def get_action_brief(analysis_run_id: str, session: DbSession) -> ActionBriefRead:
+@router.get("/analysis-runs/{analysis_run_id}/brief", response_model=PersistedActionBriefRead)
+def get_action_brief(analysis_run_id: str, session: DbSession) -> PersistedActionBriefRead:
     service = ProductService(session)
-    if service.get_analysis_run(analysis_run_id) is None:
+    run = service.get_analysis_run(analysis_run_id)
+    if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
     brief = service.get_action_brief_for_run(analysis_run_id)
     if brief is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Action brief not found.")
-    return _action_brief_read(brief)
+    return _persisted_action_brief_read(run, brief)
+
+
+@router.get(
+    "/analysis-runs/{analysis_run_id}/brief/export/json",
+    response_model=ActionBriefJsonExportRead,
+)
+def export_action_brief_json(
+    analysis_run_id: str,
+    session: DbSession,
+) -> ActionBriefJsonExportRead:
+    service = ProductService(session)
+    run = service.get_analysis_run(analysis_run_id)
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
+    brief = service.get_action_brief_for_run(analysis_run_id)
+    if brief is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Action brief not found.")
+    try:
+        return ActionBriefJsonExportRead(
+            **persisted_action_brief_json_export_payload(run, brief)
+        )
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Persisted action brief is not compatible with the quantitative schema.",
+        ) from exc
 
 
 @router.get("/health/product", response_model=ProductHealthRead)
@@ -334,7 +593,12 @@ def dependency_health(session: DbSession) -> DependencyHealthRead:
 
 
 @router.patch("/startups/{startup_id}", response_model=StartupRead)
-def update_startup(startup_id: str, request: StartupUpdate, session: DbSession) -> StartupRead:
+def update_startup(
+    startup_id: str,
+    request: StartupUpdate,
+    session: DbSession,
+    _gate: None = Depends(ReadinessGate()),
+) -> StartupRead:
     service = ProductService(session)
     fields = request.model_dump(exclude_unset=True)
     if not fields:
@@ -360,6 +624,7 @@ def create_review(
     analysis_run_id: str,
     request: ReviewDecisionCreate,
     session: DbSession,
+    _gate: None = Depends(ReadinessGate()),
 ) -> ReviewDecisionRead:
     service = ProductService(session)
     try:
@@ -375,12 +640,106 @@ def create_review(
     return ReviewDecisionRead(
         id=record.id,
         analysis_run_id=record.analysis_run_id,
+        startup_id=record.startup_id,
         decision=record.decision,
         reviewer=record.reviewer,
         notes=record.notes,
+        thread_id=record.thread_id,
+        review_payload_snapshot=record.review_payload_snapshot,
+        status_before_resume=record.status_before_resume,
+        status_after_resume=record.status_after_resume,
         metadata=record.metadata_json,
         created_at=record.created_at,
         updated_at=record.updated_at,
+    )
+
+
+@router.post(
+    "/analysis-runs/{analysis_run_id}/resume",
+    response_model=AnalysisRunWorkflowResponse,
+    status_code=status.HTTP_200_OK,
+)
+def resume_analysis_run(
+    analysis_run_id: str,
+    body: WorkflowReviewDecisionCreate,
+    session: DbSession,
+) -> AnalysisRunWorkflowResponse:
+    """Resume an analysis run workflow that is awaiting human review.
+
+    Persists a ReviewDecision as an audit record, then resumes the
+    LangGraph workflow from its interrupt point.  The graph
+    checkpointer must have been cached from the initial run.
+    """
+    svc = ProductService(session)
+    run = svc.get_analysis_run(analysis_run_id)
+    if run is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Analysis run not found: {analysis_run_id}",
+        )
+    wf_repo = WorkflowRepository(session)
+    wf_run = wf_repo.get_workflow_for_analysis_run(analysis_run_id)
+    if wf_run is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No workflow found for analysis run: {analysis_run_id}",
+        )
+
+    status_before = wf_run.status
+    thread_id: str | None = None
+    review_payload: dict | None = None
+    if wf_run.state_json:
+        meta = wf_run.state_json.get("metadata_json") or {}
+        thread_id = meta.get("_langgraph_thread_id")
+        review_payload = wf_run.state_json.get("review_payload")
+
+    from src.repositories.review import ReviewDecisionRepository
+
+    review_repo = ReviewDecisionRepository(session)
+    try:
+        review_record = review_repo.create(
+            analysis_run_id=analysis_run_id,
+            startup_id=run.startup_id,
+            decision=body.decision,
+            reviewer=body.reviewer,
+            notes=body.notes,
+            thread_id=thread_id,
+            review_payload_snapshot=review_payload,
+            status_before_resume=status_before,
+        )
+        session.flush()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to persist review decision.",
+        ) from exc
+
+    try:
+        orch = WorkflowOrchestrationService(session)
+        orch.submit_review(
+            wf_run.id,
+            decision=body.decision,
+            reviewer=body.reviewer,
+            notes=body.notes,
+        )
+    except (LookupError, RuntimeError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    wf_run_after = wf_repo.get_workflow_run(wf_run.id)
+    if wf_run_after is not None:
+        review_repo.update_status_after_resume(
+            review_record.id,
+            status_after_resume=wf_run_after.status,
+        )
+        session.commit()
+
+    return _build_workflow_response(
+        analysis_run_id,
+        run.startup_id,
+        session,
     )
 
 
@@ -397,9 +756,14 @@ def list_reviews(analysis_run_id: str, session: DbSession) -> list[ReviewDecisio
         ReviewDecisionRead(
             id=item.id,
             analysis_run_id=item.analysis_run_id,
+            startup_id=item.startup_id,
             decision=item.decision,
             reviewer=item.reviewer,
             notes=item.notes,
+            thread_id=item.thread_id,
+            review_payload_snapshot=item.review_payload_snapshot,
+            status_before_resume=item.status_before_resume,
+            status_after_resume=item.status_after_resume,
             metadata=item.metadata_json,
             created_at=item.created_at,
             updated_at=item.updated_at,
@@ -477,6 +841,7 @@ def list_opportunities(
 def compute_opportunity_score(
     analysis_run_id: str,
     session: DbSession,
+    _gate: None = Depends(ReadinessGate()),
 ) -> OpportunityScoreCreateResponse:
     service = OpportunityScoreService(session)
     try:
@@ -585,6 +950,7 @@ def create_export(
     analysis_run_id: str,
     request: ExportCreate,
     session: DbSession,
+    _gate: None = Depends(ReadinessGate()),
 ) -> ExportRead:
     service = ProductService(session)
     try:
@@ -775,6 +1141,7 @@ def list_activation_recommendations(
 def generate_activation_recommendations(
     analysis_run_id: str,
     session: DbSession,
+    _gate: None = Depends(ReadinessGate()),
 ) -> GenerateActivationRecommendationsResponse:
     service = ProductService(session)
     if service.get_analysis_run(analysis_run_id) is None:
@@ -812,6 +1179,7 @@ def _dossier_read(record: ActivationDossierRecord) -> ActivationDossierRead:
 def create_dossier(
     analysis_run_id: str,
     session: DbSession,
+    _gate: None = Depends(ReadinessGate()),
     force: bool = Query(default=False, description="Force regeneration of a new version"),
 ) -> ActivationDossierGenerateResponse:
     service = ProductService(session)
@@ -887,6 +1255,7 @@ def get_dossier_markdown(
 def create_quality_run(
     analysis_run_id: str,
     session: DbSession,
+    _gate: None = Depends(ReadinessGate()),
 ) -> ProductQualityRunRead:
     service = ProductService(session)
     if service.get_analysis_run(analysis_run_id) is None:
@@ -1033,6 +1402,7 @@ def get_product_readiness() -> ProductReadinessRead:
         optional_missing_config=report.optional_missing_config,
         unavailable_capabilities=report.unavailable_capabilities,
         degraded_capabilities=report.degraded_capabilities,
+        health_checks=report.health_checks,
         setup_checklist=[
             ProductSetupChecklistItem(
                 key=i["key"],

@@ -19,8 +19,8 @@ class ExportReadinessEvaluator(BaseQualityEvaluator):
         evidence_coverage = coverage.get("evidence_coverage", 0.0)
         unsupported_count = coverage.get("unsupported_claims", 0)
 
-        dossier_score = 0.35 if dossier_exists and has_markdown else 0.0
-        evidence_score = min(evidence_coverage, 1.0) * 0.35
+        dossier_score = 0.50 if dossier_exists and has_markdown else 0.0
+        evidence_score = min(evidence_coverage, 1.0) * 0.50
         unsupported_penalty = 0.30 if unsupported_count > 0 else 0.0
         score = round(dossier_score + evidence_score - unsupported_penalty, 4)
 

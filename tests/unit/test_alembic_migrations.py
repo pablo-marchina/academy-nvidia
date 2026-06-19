@@ -23,6 +23,7 @@ def test_alembic_metadata_imports() -> None:
         "create claim_records",
         "create activation_dossier_records",
         "create opportunity_score_records table",
+        "add review_decision audit columns",
     )
 
 
@@ -39,7 +40,8 @@ def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
     command.upgrade(config, "head")
     engine = None
     try:
-        from sqlalchemy import create_engine
+        from sqlalchemy import create_engine, inspect as sa_inspect
+        from sqlalchemy import text
 
         engine = create_engine(db_url)
         tables = inspect(engine).get_table_names()
@@ -60,6 +62,12 @@ def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
         }
         assert required.issubset(tables), f"Missing tables: {required - set(tables)}"
         assert "alembic_version" in tables
+
+        # Verify new columns exist at head
+        with engine.connect() as conn:
+            rd_cols = {row[1] for row in conn.execute(text("PRAGMA table_info('review_decisions')"))}
+        for col in ("startup_id", "thread_id", "review_payload_snapshot", "status_before_resume", "status_after_resume"):
+            assert col in rd_cols, f"Column {col} should exist at head"
 
         tables_before_opportunity_migration = {
             "startups",
@@ -82,15 +90,20 @@ def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
         }
 
         command.downgrade(config, "-1")
+        with engine.connect() as conn:
+            rd_cols_after = {row[1] for row in conn.execute(text("PRAGMA table_info('review_decisions')"))}
+        for col in ("startup_id", "thread_id", "review_payload_snapshot", "status_before_resume", "status_after_resume"):
+            assert col not in rd_cols_after, f"Column {col} should have been removed by downgrade"
+
         tables_after = inspect(engine).get_table_names()
         remaining = set(tables_after) - {"alembic_version"}
         assert (
-            "opportunity_score_records" not in tables_after
-        ), "opportunity_score_records should have been removed"
+            "opportunity_score_records" in tables_after
+        ), "opportunity_score_records should still exist (downgrade only reverted audit columns)"
         missing_tables = tables_before_opportunity_migration - remaining
         assert tables_before_opportunity_migration.issubset(
             remaining
-        ), f"Tables before opportunity-score migration missing: {missing_tables}"
+        ), f"Tables before audit-column migration missing: {missing_tables}"
     finally:
         if engine is not None:
             engine.dispose()

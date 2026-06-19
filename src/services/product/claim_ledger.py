@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from src.database.models import AnalysisRun, ClaimRecord, ScoreRecord
+from src.quantitative.params import CONFIDENCE_FLOAT_MAP
 from src.repositories.claim import ClaimRepository
 from src.services.product.claim_constants import (
     ClaimType,
@@ -15,7 +16,7 @@ from src.services.product.claim_constants import (
 
 
 def _confidence_to_float(confidence: str) -> float:
-    return {"high": 1.0, "medium": 0.6, "low": 0.2}.get(confidence, 0.0)
+    return CONFIDENCE_FLOAT_MAP.get(confidence, 0.0)
 
 
 def _calculate_support_level(

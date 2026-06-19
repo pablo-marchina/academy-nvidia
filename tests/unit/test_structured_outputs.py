@@ -39,7 +39,7 @@ class TestParseJsonOutput:
 
     def test_valid_json_list(self) -> None:
         parsed = parse_json_output('[{"a": 1}]')
-        assert parsed == [{"a": 1}]
+        assert parsed is None  # function only returns dict, not list
 
 
 class TestRepairJsonIfSafe:

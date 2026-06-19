@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.quantitative.params import CONFIDENCE_FLOAT_MAP
 from src.quality.evaluators.base import BaseQualityEvaluator
 from src.services.product.activation_service import ActivationPlaybookService
 
@@ -23,8 +24,7 @@ class ActivationPlaybookEvaluator(BaseQualityEvaluator):
                 top_confidence = top.get("confidence", "low")
                 top_playbook_id = top.get("playbook_id")
                 top_playbook_name = top.get("playbook_name")
-                confidence_map = {"high": 1.0, "medium": 0.6, "low": 0.2}
-                evidence_support = confidence_map.get(top_confidence, 0.2)
+                evidence_support = CONFIDENCE_FLOAT_MAP.get(top_confidence, 0.3)
 
         return {
             "activation_playbook_present": playbook_present,

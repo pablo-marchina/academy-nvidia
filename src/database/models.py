@@ -262,12 +262,20 @@ class ReviewDecision(TimestampMixin, Base):
     analysis_run_id: Mapped[str] = mapped_column(
         ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    startup_id: Mapped[str] = mapped_column(
+        ForeignKey("startups.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     decision: Mapped[str] = mapped_column(String(50), nullable=False)
     reviewer: Mapped[str] = mapped_column(String(255), nullable=False)
     notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    thread_id: Mapped[str | None] = mapped_column(String(255), index=True)
+    review_payload_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    status_before_resume: Mapped[str | None] = mapped_column(String(50))
+    status_after_resume: Mapped[str | None] = mapped_column(String(50))
     metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
 
     analysis_run: Mapped[AnalysisRun] = relationship(back_populates="reviews")
+    startup: Mapped[Startup] = relationship()
 
 
 class ExportRecord(TimestampMixin, Base):

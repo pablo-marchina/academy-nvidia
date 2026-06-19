@@ -26,6 +26,8 @@ _PAYLOAD_INDEX_FIELDS = [
     "document_type",
     "content_hash",
     "is_active",
+    "corpus_version",
+    "nvidia_technology",
 ]
 
 _POINT_ID_PREFIX = "nvidia-startup-ai-radar:nvidia_corpus:"
@@ -346,8 +348,15 @@ def _entry_to_point(entry: VectorEntry, models_module: Any) -> Any:
             "source_title": entry.title,
             "source_url": entry.url or "",
             "product": entry.product,
+            "nvidia_technology": entry.nvidia_technology or entry.product,
             "gap_types": list(entry.gap_types),
             "version": entry.version,
+            "corpus_version": entry.corpus_version,
+            "chunk_text": entry.content,
+            "content": entry.content,
+            "chunk_index": entry.chunk_index,
+            "char_count": entry.char_count or len(entry.content),
+            "ingested_at": entry.ingested_at or now,
             "content_hash": entry.content_hash or chunk_hash,
             "previous_content_hash": entry.previous_content_hash or "",
             "chunk_hash": chunk_hash,
@@ -385,7 +394,7 @@ def _point_to_entry(point: Any) -> VectorEntry:
         chunk_id=payload.get("chunk_id", point.id),
         source_id=payload.get("source_id", ""),
         title=payload.get("source_title", ""),
-        content=payload.get("content", ""),
+        content=payload.get("chunk_text") or payload.get("content", ""),
         product=payload.get("product", ""),
         gap_types=list(payload.get("gap_types", [])),
         url=payload.get("source_url") or None,
@@ -406,6 +415,11 @@ def _point_to_entry(point: Any) -> VectorEntry:
         deprecated_at=payload.get("deprecated_at") or None,
         superseded_by=payload.get("superseded_by") or None,
         deprecation_reason=payload.get("deprecation_reason") or None,
+        nvidia_technology=payload.get("nvidia_technology", ""),
+        corpus_version=payload.get("corpus_version", "1.0"),
+        chunk_index=payload.get("chunk_index", 0),
+        char_count=payload.get("char_count", 0),
+        ingested_at=payload.get("ingested_at", ""),
     )
 
 

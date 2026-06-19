@@ -316,6 +316,7 @@ def extract_profile(
     clean_text: str,
     url: str,
     startup_name_hint: str | None = None,
+    source_type: SourceType | None = None,
 ) -> StartupProfile:
     """Build a StartupProfile from clean text using heuristic rules only.
 
@@ -327,14 +328,17 @@ def extract_profile(
         The original URL from which the text was extracted.
     startup_name_hint:
         Optional known startup name (e.g. from user input).
+    source_type:
+        Optional pre-classified source type. When provided, the
+        URL-based classification is skipped.
 
     Returns
     -------
     StartupProfile
         A validated profile. Fields that could not be extracted
-        are set to ``"Not verified"`` or left empty.
+        are set to ``"Not Verified"`` or left empty.
     """
-    source_type = classify_source(url)
+    source_type = source_type or classify_source(url)
     name = _extract_name(clean_text, startup_name_hint)
     sector = _extract_sector(clean_text)
     description = _extract_description(clean_text)

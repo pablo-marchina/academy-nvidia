@@ -59,3 +59,12 @@ def test_invalid_confidence_rejected() -> None:
             confidence="certain",
             collected_at=datetime.now(UTC),
         )
+
+
+def test_confidence_level_from_score() -> None:
+    assert ConfidenceLevel.from_score(0.9) == ConfidenceLevel.HIGH
+    assert ConfidenceLevel.from_score(0.7) == ConfidenceLevel.HIGH
+    assert ConfidenceLevel.from_score(0.6) == ConfidenceLevel.MEDIUM
+    assert ConfidenceLevel.from_score(0.4) == ConfidenceLevel.MEDIUM
+    assert ConfidenceLevel.from_score(0.3) == ConfidenceLevel.LOW
+    assert ConfidenceLevel.from_score(0.0) == ConfidenceLevel.LOW

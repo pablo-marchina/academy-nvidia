@@ -12,6 +12,7 @@ import { DiscoveryView } from "./components/DiscoveryView";
 import { WorkflowView } from "./components/WorkflowView";
 import { ExportDeliveryView } from "./components/ExportDeliveryView";
 import { QualityView } from "./components/QualityView";
+import { HumanReviewView } from "./components/HumanReviewView";
 
 type ActiveView =
   | "setup"
@@ -24,7 +25,8 @@ type ActiveView =
   | "opportunities"
   | "workflow"
   | "exportDelivery"
-  | "quality";
+  | "quality"
+  | "humanReview";
 
 export default function App() {
   const [activeView, setActiveView] = useState<ActiveView>("setup");
@@ -50,7 +52,7 @@ export default function App() {
   }, []);
 
   function navigateTo(view: string) {
-    if (view === "setup" || view === "capabilities" || view === "discovery" || view === "startups" || view === "opportunities" || view === "workflow" || view === "exportDelivery" || view === "quality") {
+    if (view === "setup" || view === "capabilities" || view === "discovery" || view === "startups" || view === "opportunities" || view === "workflow" || view === "exportDelivery" || view === "quality" || view === "humanReview") {
       setActiveView(view as ActiveView);
     }
   }
@@ -158,6 +160,13 @@ export default function App() {
           >
             Export
           </button>
+          <button
+            type="button"
+            className={`nav-btn ${activeView === "humanReview" ? "active" : ""}`}
+            onClick={() => navigateTo("humanReview")}
+          >
+            Review
+          </button>
         </nav>
       </header>
 
@@ -220,6 +229,8 @@ export default function App() {
         )}
 
         {activeView === "exportDelivery" && <ExportDeliveryView />}
+
+        {activeView === "humanReview" && <HumanReviewView />}
       </main>
     </div>
   );

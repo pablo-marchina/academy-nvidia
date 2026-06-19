@@ -72,7 +72,8 @@ class TestCalculateConfidence:
             is_manual_seed=True,
             source_reliable=True,
         )
-        assert conf == "high"
+        assert isinstance(conf, float)
+        assert conf >= 0.7
 
     def test_high_confidence_name_and_signals(self) -> None:
         conf = calculate_confidence(
@@ -80,7 +81,8 @@ class TestCalculateConfidence:
             has_website=False,
             signal_contribution=0.4,
         )
-        assert conf == "high"
+        assert isinstance(conf, float)
+        assert conf >= 0.7
 
     def test_low_confidence_no_name_no_signals(self) -> None:
         conf = calculate_confidence(
@@ -88,7 +90,8 @@ class TestCalculateConfidence:
             has_website=False,
             signal_contribution=0.0,
         )
-        assert conf == "low"
+        assert isinstance(conf, float)
+        assert conf <= 0.1
 
     def test_high_from_signals_alone(self) -> None:
         conf = calculate_confidence(
@@ -96,7 +99,8 @@ class TestCalculateConfidence:
             has_website=False,
             signal_contribution=0.9,
         )
-        assert conf == "high"
+        assert isinstance(conf, float)
+        assert conf >= 0.7
 
     def test_confidence_bounds(self) -> None:
         for contrib in [0.0, 0.1, 0.3, 0.5, 0.7, 1.0]:
@@ -105,4 +109,4 @@ class TestCalculateConfidence:
                 has_website=False,
                 signal_contribution=contrib,
             )
-            assert conf in ("low", "medium", "high")
+            assert 0.0 <= conf <= 1.0

@@ -1,13 +1,14 @@
 """Embedding provider abstraction for Product RAG.
 
-Supports local (sentence-transformers) and mock/deterministic providers.
-No API keys required for default usage.
+Supports local (sentence-transformers) for production.
+MockEmbeddingProvider kept here for test backward compatibility.
 """
 
 from __future__ import annotations
 
 import hashlib
 import math
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -29,14 +30,21 @@ class EmbeddingProvider(ABC):
 
 
 class MockEmbeddingProvider(EmbeddingProvider):
-    """Deterministic pseudo-embedding provider for tests.
+    """Deterministic pseudo-embedding provider for tests only.
 
     Generates reproducible embeddings using MD5 hash as seed.
     Similar texts (by hash prefix) get related but non-identical vectors.
     No external dependencies, no model downloads.
+
+    Deprecated: import from tests.helpers.mock_embeddings for new code.
     """
 
     def __init__(self, vector_size: int = 4) -> None:
+        warnings.warn(
+            "MockEmbeddingProvider is for tests only.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.vector_size = vector_size
 
     def embed(self, text: str) -> list[float]:

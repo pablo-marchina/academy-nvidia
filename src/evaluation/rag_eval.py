@@ -20,7 +20,7 @@ from src.evaluation.rag_eval_schemas import (
     RetrievalMode,
 )
 from src.rag.context_packing import pack_contexts
-from src.rag.embeddings import EmbeddingProvider, MockEmbeddingProvider
+from src.rag.embeddings import EmbeddingProvider
 from src.rag.hybrid_retrieval import hybrid_retrieve
 from src.rag.reranking import rerank_contexts
 from src.rag.retrieval import ChunkIndex, build_default_index
@@ -252,7 +252,7 @@ def _retrieve_for_mode(
     mode: RetrievalMode,
     case: RagEvalCase,
     idx: ChunkIndex,
-    emb: EmbeddingProvider,
+    emb: EmbeddingProvider | None,
     vector_store: VectorStore | None,
     reranking_config: RerankingConfig | None = None,
     packing_config: PackingConfig | None = None,
@@ -263,11 +263,15 @@ def _retrieve_for_mode(
     if mode == RetrievalMode.LEXICAL:
         retrieved = idx.retrieve(case.query, top_k=case.top_k_for_test)
     elif mode == RetrievalMode.SEMANTIC:
+        if emb is None:
+            raise ValueError("embedding_model is required for semantic RAG evaluation")
         if vector_store is None or vector_store.size == 0:
             retrieved = []
         else:
             retrieved = semantic_retrieve(case.query, emb, vector_store, top_k=case.top_k_for_test)
     elif mode == RetrievalMode.HYBRID:
+        if emb is None:
+            raise ValueError("embedding_model is required for hybrid RAG evaluation")
         if vector_store is None or vector_store.size == 0:
             retrieved = idx.retrieve(case.query, top_k=case.top_k_for_test)
         else:
@@ -275,12 +279,16 @@ def _retrieve_for_mode(
                 case.query, idx, emb, vector_store, top_k=case.top_k_for_test
             )
     elif mode == RetrievalMode.HYBRID_RERANKED:
+        if emb is None:
+            raise ValueError("embedding_model is required for hybrid RAG evaluation")
         if vector_store is None or vector_store.size == 0:
             raw = idx.retrieve(case.query, top_k=case.top_k_for_test)
         else:
             raw = hybrid_retrieve(case.query, idx, emb, vector_store, top_k=case.top_k_for_test)
         retrieved = rerank_contexts(raw, case.query, config=reranking_config)
     elif mode == RetrievalMode.HYBRID_RERANKED_PACKED:
+        if emb is None:
+            raise ValueError("embedding_model is required for hybrid RAG evaluation")
         if vector_store is None or vector_store.size == 0:
             raw = idx.retrieve(case.query, top_k=case.top_k_for_test)
         else:
@@ -341,7 +349,14 @@ def run_mode_eval(
         Evaluation results + quality gates for this mode.
     """
     idx = chunk_index if chunk_index is not None else build_default_index()
-    emb = embedding_model if embedding_model is not None else MockEmbeddingProvider()
+    needs_embedding = mode in (RetrievalMode.SEMANTIC, RetrievalMode.HYBRID,
+                               RetrievalMode.HYBRID_RERANKED, RetrievalMode.HYBRID_RERANKED_PACKED)
+    if needs_embedding:
+        if embedding_model is None:
+            raise ValueError("embedding_model is required for semantic/hybrid RAG evaluation")
+        emb = embedding_model
+    else:
+        emb = None
     cases = _load_golden_queries(golden_path)
 
     results: list[RagEvalResult] = []

@@ -6,17 +6,12 @@ from pydantic import BaseModel, Field
 
 from src.classification.ai_native_classifier import ClassificationResult
 from src.extraction.schemas import AINativeLevel, ConfidenceLevel, StartupProfile
+from src.quantitative.params import (
+    CONFIDENCE_SCORE_FACTORS,
+    DEFENSIBILITY_WEIGHTS,
+    NO_EVIDENCE_FACTOR,
+)
 from src.validation.evidence_validator import ValidatedEvidence
-
-# ---------------------------------------------------------------------------
-# Dimension weights (from docs/00_case_plan.md)
-# ---------------------------------------------------------------------------
-_AI_CORE_WEIGHT = 0.25
-_PROPRIETARY_DATA_WEIGHT = 0.20
-_WORKFLOW_WEIGHT = 0.15
-_REAL_USAGE_WEIGHT = 0.15
-_REPLICATION_WEIGHT = 0.15
-_NVIDIA_FIT_WEIGHT = 0.10
 
 # ---------------------------------------------------------------------------
 # Evidence filtering keywords per dimension
@@ -97,12 +92,7 @@ _PRIORITY_SECTORS: list[str] = [
     "EdTech",
 ]
 
-_CONFIDENCE_TO_FACTOR: dict[ConfidenceLevel, float] = {
-    ConfidenceLevel.HIGH: 1.0,
-    ConfidenceLevel.MEDIUM: 0.7,
-    ConfidenceLevel.LOW: 0.4,
-}
-_NO_EVIDENCE_FACTOR = 0.3
+
 
 
 # ---------------------------------------------------------------------------
@@ -151,8 +141,8 @@ def _evidence_confidence_penalty(
     evidence_list: list[ValidatedEvidence],
 ) -> tuple[float, ConfidenceLevel]:
     if not evidence_list:
-        return _NO_EVIDENCE_FACTOR, ConfidenceLevel.LOW
-    factors = [_CONFIDENCE_TO_FACTOR.get(ev.confidence, 0.4) for ev in evidence_list]
+        return NO_EVIDENCE_FACTOR, ConfidenceLevel.LOW
+    factors = [CONFIDENCE_SCORE_FACTORS.get(ev.confidence.value, 0.4) for ev in evidence_list]
     avg = sum(factors) / len(factors)
     if avg >= 0.8:
         return avg, ConfidenceLevel.HIGH
@@ -213,7 +203,7 @@ def _score_ai_core_dependency(
 
     return DimensionScore(
         dimension_name="ai_core_dependency",
-        weight=_AI_CORE_WEIGHT,
+        weight=DEFENSIBILITY_WEIGHTS["ai_core"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -264,7 +254,7 @@ def _score_proprietary_data(
 
     return DimensionScore(
         dimension_name="proprietary_data",
-        weight=_PROPRIETARY_DATA_WEIGHT,
+        weight=DEFENSIBILITY_WEIGHTS["proprietary_data"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -313,7 +303,7 @@ def _score_workflow_integration(
 
     return DimensionScore(
         dimension_name="workflow_integration",
-        weight=_WORKFLOW_WEIGHT,
+        weight=DEFENSIBILITY_WEIGHTS["workflow_integration"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -362,7 +352,7 @@ def _score_real_usage_learning(
 
     return DimensionScore(
         dimension_name="real_usage_learning",
-        weight=_REAL_USAGE_WEIGHT,
+        weight=DEFENSIBILITY_WEIGHTS["real_usage"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -420,7 +410,7 @@ def _score_replication_complexity(
 
     return DimensionScore(
         dimension_name="replication_complexity",
-        weight=_REPLICATION_WEIGHT,
+        weight=DEFENSIBILITY_WEIGHTS["replication_barrier"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -483,7 +473,7 @@ def _score_nvidia_fit_potential(
 
     return DimensionScore(
         dimension_name="nvidia_fit_potential",
-        weight=_NVIDIA_FIT_WEIGHT,
+        weight=DEFENSIBILITY_WEIGHTS["nvidia_fit"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -554,7 +544,7 @@ def compute_defensibility_score(
                 f"Weak evidence for dimension: {name} (confidence: {ds.confidence.value})"
             )
 
-    conf_factors = [_CONFIDENCE_TO_FACTOR.get(s.confidence, 0.4) for s in scores.values()]
+    conf_factors = [CONFIDENCE_SCORE_FACTORS.get(s.confidence.value, 0.4) for s in scores.values()]
     avg_conf = sum(conf_factors) / len(conf_factors)
 
     if avg_conf >= 0.8:

@@ -8,20 +8,14 @@ from pydantic import BaseModel, Field
 
 from src.classification.ai_native_classifier import ClassificationResult
 from src.extraction.schemas import AINativeLevel, ConfidenceLevel
+from src.quantitative.params import (
+    CLASSIFICATION_TO_BASE_SCORE,
+    CONFIDENCE_PENALTY_ON_MISSING,
+    OPPORTUNITY_SCORE_WEIGHTS,
+)
 from src.scoring.defensibility_score import DefensibilityScoreResult
 from src.scoring.inception_fit_score import InceptionFitScoreResult
 from src.scoring.production_readiness import ProductionReadinessResult
-
-# ---------------------------------------------------------------------------
-# Weights for composite score
-# ---------------------------------------------------------------------------
-_DEFENSIBILITY_WEIGHT = 0.30
-_INCEPTION_FIT_WEIGHT = 0.25
-_PRODUCTION_READINESS_WEIGHT = 0.35
-_CLASSIFICATION_WEIGHT = 0.10
-
-_CONFIDENCE_PENALTY_ON_MISSING = 0.15
-
 
 # ---------------------------------------------------------------------------
 # Models
@@ -64,17 +58,8 @@ class RankedStartup(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
-_CLASSIFICATION_TO_BASE: dict[AINativeLevel, float] = {
-    AINativeLevel.NON_AI: 0,
-    AINativeLevel.AI_ASSISTED: 25,
-    AINativeLevel.AI_ENABLED: 50,
-    AINativeLevel.AI_NATIVE: 80,
-    AINativeLevel.AI_NATIVE_SERVICE: 85,
-}
-
-
 def _score_from_classification(result: ClassificationResult) -> float:
-    return _CLASSIFICATION_TO_BASE.get(result.classification, 0)
+    return CLASSIFICATION_TO_BASE_SCORE.get(result.classification.value, 0)
 
 
 def _compute_confidence_penalty(
@@ -89,19 +74,19 @@ def _compute_confidence_penalty(
 
     if ds is None:
         missing.append("defensibility_score")
-        penalty += _CONFIDENCE_PENALTY_ON_MISSING
+        penalty += CONFIDENCE_PENALTY_ON_MISSING
     elif ds.confidence == ConfidenceLevel.LOW:
         penalty += 0.05
 
     if isr is None:
         missing.append("inception_fit_score")
-        penalty += _CONFIDENCE_PENALTY_ON_MISSING
+        penalty += CONFIDENCE_PENALTY_ON_MISSING
     elif isr.confidence == ConfidenceLevel.LOW:
         penalty += 0.05
 
     if pr is None:
         missing.append("production_readiness")
-        penalty += _CONFIDENCE_PENALTY_ON_MISSING
+        penalty += CONFIDENCE_PENALTY_ON_MISSING
     elif pr.confidence == ConfidenceLevel.LOW:
         penalty += 0.05
 
@@ -159,22 +144,22 @@ def compute_composite_score(
         (
             "defensibility",
             defensibility.total_score if defensibility else None,
-            _DEFENSIBILITY_WEIGHT,
+            OPPORTUNITY_SCORE_WEIGHTS["defensibility"],
         ),
         (
             "inception_fit",
             inception_fit.total_score if inception_fit else None,
-            _INCEPTION_FIT_WEIGHT,
+            OPPORTUNITY_SCORE_WEIGHTS["inception_fit"],
         ),
         (
             "production_readiness",
             production_readiness.production_readiness_score if production_readiness else None,
-            _PRODUCTION_READINESS_WEIGHT,
+            OPPORTUNITY_SCORE_WEIGHTS["production_readiness"],
         ),
         (
             "classification",
             _score_from_classification(classification_result) if classification_result else None,
-            _CLASSIFICATION_WEIGHT,
+            OPPORTUNITY_SCORE_WEIGHTS["classification"],
         ),
     ]
 
@@ -221,10 +206,10 @@ def compute_composite_score(
     )
     lines: list[str] = [
         f"Composite score: {composite}/100 (confidence: {overall_conf.value})",
-        f"  defensibility ({_DEFENSIBILITY_WEIGHT}): {def_score}",
-        f"  inception_fit ({_INCEPTION_FIT_WEIGHT}): {inc_score}",
-        f"  production_readiness ({_PRODUCTION_READINESS_WEIGHT}): {pr_score}",
-        f"  classification ({_CLASSIFICATION_WEIGHT}): {clf_score}",
+        f'  defensibility ({OPPORTUNITY_SCORE_WEIGHTS["defensibility"]}): {def_score}',
+        f'  inception_fit ({OPPORTUNITY_SCORE_WEIGHTS["inception_fit"]}): {inc_score}',
+        f'  production_readiness ({OPPORTUNITY_SCORE_WEIGHTS["production_readiness"]}): {pr_score}',
+        f'  classification ({OPPORTUNITY_SCORE_WEIGHTS["classification"]}): {clf_score}',
         f"  confidence_penalty: {confidence_penalty:.2f}",
     ]
     if missing:

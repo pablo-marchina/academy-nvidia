@@ -22,6 +22,28 @@ data/startup_profiles/*
 !data/processed/.gitkeep
 !data/startup_profiles/.gitkeep
 
+# Node.js dependencies (Epic XY)
+node_modules/
+
+# Local SQLite databases
+data/product/*.db
+
+# Generated test artifacts
+test_exports/
+
+# Log files
+*.log
+
+# SQLite variants
+*.sqlite
+*.sqlite3
+
+# Environment file variants (e.g. .env.local, .env.prod)
+.env.*
+
+# Generated product exports
+data/product/exports/
+
 # Generated demo and report artifacts (Epic 31)
 data/demo_runs/latest/
 data/regression_reports/*

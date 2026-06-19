@@ -434,6 +434,33 @@ export interface PromoteCandidateResponse {
   status: string;
 }
 
+// Workflow Review types
+export interface WorkflowReviewPayload {
+  run_id: string;
+  startup_id: string | null;
+  reason: string;
+  severity: string;
+  failed_quality_checks: string[];
+  blockers: string[];
+  expected_human_actions: string[];
+  resumable: boolean;
+  interrupt_enabled: boolean;
+}
+
+export interface WorkflowReviewDecisionCreate {
+  decision: string;
+  reviewer: string;
+  notes: string;
+}
+
+export interface WorkflowReviewDecisionRead {
+  workflow_id: string;
+  decision: string;
+  reviewer: string;
+  notes: string;
+  created_at: string;
+}
+
 // Workflow types
 export interface ProductWorkflowRunCreate {
   startup_id?: string | null;

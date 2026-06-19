@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from src.services.product.capability_registry import CapabilityStatus
+from src.services.product.health_executor import get_health_executor
 from src.services.product.readiness_service import ProductReadinessService
 
 
 class TestProductReadinessService:
+    def setup_method(self) -> None:
+        get_health_executor().invalidate()
+
     def test_list_capabilities_returns_all(self) -> None:
         svc = ProductReadinessService()
         caps = svc.list_capabilities()
@@ -35,6 +39,7 @@ class TestProductReadinessService:
         report = svc.get_product_readiness()
         assert hasattr(report, "ready")
         assert hasattr(report, "blocking_missing_config")
+        assert hasattr(report, "health_checks")
         assert hasattr(report, "setup_checklist")
 
     def test_setup_checklist_not_empty(self) -> None:
@@ -62,3 +67,74 @@ class TestProductReadinessService:
             CapabilityStatus.available,
             CapabilityStatus.not_configured,
         )
+
+    def test_health_check_key_propagated(self) -> None:
+        svc = ProductReadinessService()
+        cap = svc.get_capability_status("product_database")
+        assert cap is not None
+        assert cap.health_check_key == "product_db"
+        cap_qdrant = svc.get_capability_status("qdrant_vector_store")
+        assert cap_qdrant is not None
+        assert cap_qdrant.health_check_key == "qdrant"
+        cap_llm = svc.get_capability_status("optional_llm_judge")
+        assert cap_llm is not None
+        assert cap_llm.health_check_key == "llm_judge"
+
+    def test_health_check_called_in_get_product_readiness(self) -> None:
+        svc = ProductReadinessService()
+        report = svc.get_product_readiness()
+        assert isinstance(report.ready, bool)
+        assert hasattr(report, "health_checks")
+
+    def test_health_check_mock_overrides_status(self) -> None:
+        from unittest.mock import patch
+
+        from src.services.product.health_executor import (
+            CapabilityStatus,
+            HealthCheckResult,
+        )
+
+        get_health_executor().invalidate()
+        with patch(
+            "src.services.product.health_executor.HealthCheckExecutor._execute",
+            return_value=HealthCheckResult(
+                status=CapabilityStatus.unavailable,
+                detail="Mocked unavailable",
+            ),
+        ):
+            svc = ProductReadinessService()
+            report = svc.get_product_readiness()
+            assert isinstance(report.ready, bool)
+            product_db_health = [
+                h for h in report.health_checks
+                if h.get("health_check_key") == "product_db"
+            ]
+            if product_db_health:
+                assert product_db_health[0]["status"] == "unavailable"
+                assert product_db_health[0]["detail"] == "Mocked unavailable"
+
+    def test_rag_not_blocking_by_default(self) -> None:
+        svc = ProductReadinessService()
+        report = svc.get_product_readiness()
+        rag_blocking = [
+            b for b in report.blocking_missing_config
+            if "qdrant" in b.get("capability_id", "")
+        ]
+        assert len(rag_blocking) == 0
+
+    def test_rag_blocking_when_rag_required(self) -> None:
+        import os
+        from unittest.mock import patch
+
+        with patch.dict(os.environ, {"RAG_REQUIRED_FOR_PRODUCT": "true"}):
+            svc = ProductReadinessService()
+            report = svc.get_product_readiness()
+            rag_blocking = [
+                b for b in report.blocking_missing_config
+                if b.get("capability_id") == "qdrant_vector_store"
+            ]
+            assert len(rag_blocking) > 0
+            assert any(
+                "QDRANT_URL" in b.get("reason", "")
+                for b in rag_blocking
+            )

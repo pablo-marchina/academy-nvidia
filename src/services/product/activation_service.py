@@ -13,12 +13,13 @@ from src.database.models import (
 )
 from src.playbook.loader import load_playbooks
 from src.playbook.schemas import ActivationPlaybook
+from src.quantitative.params import CONFIDENCE_FLOAT_MAP
 from src.repositories.activation import ActivationRecommendationRepository
 from src.repositories.claim import ClaimRepository
 
 
 def _confidence_value(conf: str) -> float:
-    return {"high": 1.0, "medium": 0.6, "low": 0.2}.get(conf, 0.0)
+    return CONFIDENCE_FLOAT_MAP.get(conf, 0.0)
 
 
 def _inverse_confidence_value(conf: str) -> float:
@@ -93,6 +94,8 @@ _RELEVANT_DEGRADED_CODES = {
     "WEAK_NVIDIA_FIT_EVIDENCE",
     "BRIEF_HAS_UNSUPPORTED_CLAIM",
     "SCORE_HAS_LOW_EVIDENCE_SUPPORT",
+    "PLAYBOOK_LOW_EVIDENCE_SUPPORT",
+    "PLAYBOOK_UNSUPPORTED_CLAIMS",
 }
 
 

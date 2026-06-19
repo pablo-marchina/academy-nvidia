@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
@@ -15,10 +16,12 @@ from src.evaluation.answer_quality_eval import evaluate_answer_quality
 from src.evaluation.answer_quality_schemas import AnswerQualityEvalCase
 from src.extraction.schemas import ConfidenceLevel, Evidence, SourceType, StartupProfile
 from src.pipeline.run_pipeline import run_full_pipeline
-from src.rag.embeddings import MockEmbeddingProvider
+from src.quantitative.params import CONFIDENCE_FLOAT_MAP
+from src.rag.embeddings import SentenceTransformerProvider
 from src.rag.retrieval import build_default_index
 from src.rag.schemas import PackingConfig, RerankingConfig
 from src.rag.vector_store import InMemoryVectorStore
+from src.scraping.source_policy import source_quality_score
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 _DEMO_RUNS_DIR = _PROJECT_ROOT / "data" / "demo_runs"
@@ -51,10 +54,10 @@ def get_version() -> dict[str, str]:
 
 def get_rag_status() -> dict[str, Any]:
     info: dict[str, Any] = {
-        "backend": "in_memory",
+        "backend": "",
         "collection_name": "nvidia_corpus",
-        "vector_size": 384,
-        "qdrant_url": "http://localhost:6333",
+        "vector_size": 0,
+        "qdrant_url": "",
         "qdrant_available": False,
         "error": None,
     }
@@ -71,6 +74,12 @@ def get_rag_status() -> dict[str, Any]:
         info["backend"] = "qdrant"
     except Exception as e:
         info["error"] = str(e)
+        app_mode = os.environ.get("APP_MODE", "").lower()
+        rag_required = os.environ.get("RAG_REQUIRED_FOR_PRODUCT", "true").lower() == "true"
+        if app_mode == "product" or rag_required:
+            info["backend"] = "unavailable_required"
+        else:
+            info["backend"] = "unavailable_optional"
     return info
 
 
@@ -82,12 +91,17 @@ def build_rag_dependencies(
         return chunk_index, None, None
 
     if rag_backend == "local":
-        embedding_model = MockEmbeddingProvider()
+        app_mode = os.environ.get("APP_MODE", "").lower()
+        if app_mode == "product":
+            raise RuntimeError(
+                "InMemoryVectorStore is FORBIDDEN in product mode. Set RAG_VECTOR_BACKEND=qdrant."
+            )
+        embedding_model = SentenceTransformerProvider()
         vector_store: Any = InMemoryVectorStore()
     elif rag_backend == "qdrant":
         from src.rag.qdrant_store import QdrantConfig, QdrantStore
 
-        embedding_model = MockEmbeddingProvider()
+        embedding_model = SentenceTransformerProvider()
         config = QdrantConfig(collection_name="nvidia_corpus")
         store = QdrantStore(config=config)
         store._ensure_client()
@@ -98,11 +112,27 @@ def build_rag_dependencies(
     return chunk_index, embedding_model, vector_store
 
 
+def _compute_confidence(evidence_list: list[Evidence]) -> float:
+    if not evidence_list:
+        return 0.0
+    scores = []
+    for e in evidence_list:
+        sq = source_quality_score(e.source_type)
+        cl = CONFIDENCE_FLOAT_MAP.get(e.confidence.value, 0.5)
+        scores.append(sq * cl)
+    return round(sum(scores) / len(scores), 2)
+
+
 def _build_profile(startup_name: str, raw: dict[str, Any]) -> StartupProfile:
     p = raw.get("profile", {})
+    sources = _build_evidence(raw)
+    confidence = _compute_confidence(sources)
+    source_url = raw.get("source_url")
+    if not isinstance(source_url, str) or not source_url:
+        raise ValueError("source_url is required to build startup profile")
     return StartupProfile(
         startup_name=startup_name,
-        website=HttpUrl(raw.get("source_url", "https://example.com")),
+        website=HttpUrl(source_url),
         sector=p.get("sector", "Technology"),
         description=p.get("description", ""),
         product_summary=p.get("product_summary", ""),
@@ -110,8 +140,8 @@ def _build_profile(startup_name: str, raw: dict[str, Any]) -> StartupProfile:
         tech_stack_signals=p.get("tech_stack", []),
         customers=p.get("customers", []),
         funding_signals=p.get("funding", []),
-        sources=[],
-        confidence_score=0.6,
+        sources=sources,
+        confidence_score=confidence,
     )
 
 
@@ -119,8 +149,8 @@ def _build_evidence(raw: dict[str, Any]) -> list[Evidence]:
     return [
         Evidence(
             claim=e["claim"],
-            source_url=HttpUrl("https://example.com"),
-            source_type=SourceType.OFFICIAL_SITE,
+            source_url=HttpUrl(e.get("source_url", raw.get("source_url"))),
+            source_type=SourceType(e.get("source_type", SourceType.OFFICIAL_SITE.value)),
             quote_or_evidence=e["claim"],
             confidence=ConfidenceLevel(e.get("confidence", "medium")),
             collected_at=datetime.now(UTC),
@@ -199,7 +229,7 @@ def run_brief_pipeline(
     warnings: list[str] = []
 
     profile = _build_profile(startup_name, raw_input)
-    evidence = _build_evidence(raw_input)
+    evidence = profile.sources
 
     chunk_index = None
     embedding_model = None
@@ -213,6 +243,10 @@ def run_brief_pipeline(
             reranking_config = RerankingConfig()
             packing_config = PackingConfig()
         except Exception as exc:
+            if os.environ.get("RAG_REQUIRED_FOR_PRODUCT", "true").lower() == "true":
+                raise RuntimeError(
+                    f"RAG is required for product but failed to build: {exc}"
+                ) from exc
             warnings.append(f"RAG dependency build failed: {exc}. Running without RAG.")
             chunk_index = None
             embedding_model = None

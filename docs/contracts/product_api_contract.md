@@ -41,8 +41,24 @@ for later workflows.
 
 ### ActionBrief
 
-`ActionBriefRead` returns a versioned persisted record containing both validated
-JSON and rendered Markdown. Only one record per run is marked `is_latest`.
+`PersistedActionBriefRead` returned by `GET /analysis-runs/{id}/brief` is the
+canonical product-consumer read model for the user-facing Action Brief. It
+serializes the already persisted quantitative `ActionBriefRecord.brief_json`
+together with `AnalysisRun.output_snapshot_json["brief_metrics"]`; it must not
+recalculate brief generation, ranking, RAG, scoring, scraping, LLM output, or
+recommendations.
+
+The canonical brief response preserves: `run_id`, `startup_id`, `generated_at`,
+`brief_status`, `executive_summary_quantitative`, `recommendation_summary`,
+`top_recommendations`, `evidence_summary`, `rag_summary`, `gap_summary`,
+`scoring_summary`, `risk_summary`, `blockers`, `next_best_actions`,
+`audit_trail`, `quality_gate_snapshot`, `calibration_snapshot`, `brief_metrics`,
+and `schema_version`. Blocked briefs are returned as persisted, including
+blockers and audit trail. Missing briefs return `404`.
+
+`ActionBriefRead` may still appear embedded in run detail responses as the
+versioned persistence envelope containing validated JSON and rendered Markdown.
+It is not the canonical consumer payload for the user-facing Action Brief.
 
 ### ReviewDecision
 
@@ -79,6 +95,13 @@ content_hash, error_message, and timestamps. Status values: pending,
 completed, failed. Content is generated from the persisted ActionBriefRecord,
 not from demo artifacts.
 
+`GET /analysis-runs/{id}/brief/export/json` returns the canonical persisted
+Action Brief wrapped with `export_metadata` (`export_id`, `run_id`,
+`exported_at`, `export_format=json`,
+`source=persisted_analysis_run_action_brief`, `schema_version`). The export
+does not include tracebacks, secrets, environment variables, tokens, rendered
+Markdown, or internal fields outside the canonical brief schema.
+
 ### Opportunity
 
 `OpportunityListItem` represents a startup's latest analysis run with key
@@ -97,7 +120,8 @@ metadata.
 | PATCH | `/startups/{id}` | `200 StartupRead` | `404`, `409` duplicate name, `422` |
 | POST | `/startups/{id}/analysis-runs` | `201 AnalysisRunRead` | `404`, `422` |
 | GET | `/analysis-runs/{id}` | `200 AnalysisRunRead` | `404` unknown run |
-| GET | `/analysis-runs/{id}/brief` | `200 ActionBriefRead` | `404` |
+| GET | `/analysis-runs/{id}/brief` | `200 PersistedActionBriefRead` | `404` |
+| GET | `/analysis-runs/{id}/brief/export/json` | `200 ActionBriefJsonExportRead` | `404` |
 | POST | `/analysis-runs/{id}/dossier` | `201 ActivationDossierRead` | `404`, `409` draft run |
 | GET | `/analysis-runs/{id}/dossier` | `200 ActivationDossierRead` | `404` |
 | GET | `/analysis-runs/{id}/dossier/markdown` | `200 ActivationDossierMarkdownRead` | `404` |

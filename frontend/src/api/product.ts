@@ -38,6 +38,8 @@ import type {
   ExportCreate,
   ExportRead,
   QualityReportRead,
+  WorkflowReviewPayload,
+  WorkflowReviewDecisionRead,
 } from "./types";
 
 export function getProductReadiness(): Promise<ProductReadinessRead> {
@@ -406,6 +408,30 @@ export function getExport(
   exportId: string,
 ): Promise<ExportRead> {
   return requestJson<ExportRead>(`/exports/${exportId}`);
+}
+
+// Workflow Review API
+export function getWorkflowReviewPayload(
+  workflowId: string,
+): Promise<WorkflowReviewPayload> {
+  return requestJson<WorkflowReviewPayload>(
+    `/workflows/${workflowId}/review-payload`,
+  );
+}
+
+export function submitWorkflowReview(
+  workflowId: string,
+  decision: string,
+  reviewer: string,
+  notes = "",
+): Promise<WorkflowReviewDecisionRead> {
+  return requestJson<WorkflowReviewDecisionRead>(
+    `/workflows/${workflowId}/review`,
+    {
+      method: "POST",
+      body: JSON.stringify({ decision, reviewer, notes }),
+    },
+  );
 }
 
 // Quality Report API

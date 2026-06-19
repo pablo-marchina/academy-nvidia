@@ -3,8 +3,13 @@
 from urllib.parse import urlparse
 
 from src.extraction.schemas import SourceType
+from src.quantitative.params import SOURCE_QUALITY_SCORES
 
 _KNOWN_OFFICIAL_HINTS = ("about", "company", "careers", "blog")
+
+
+def source_quality_score(source_type: SourceType) -> float:
+    return SOURCE_QUALITY_SCORES.get(source_type.value, 0.3)
 
 
 def classify_source(url: str) -> SourceType:

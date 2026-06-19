@@ -20,6 +20,7 @@ from src.services.product.config_registry import (
     is_extra_installed,
     resolve_config_values,
 )
+from src.services.product.health_executor import get_health_executor
 
 # Checked extras cache
 _EXTRA_CACHE: dict[str, bool | None] = {}
@@ -39,6 +40,7 @@ class ResolvedCapability:
     optional_env_vars: list[str] = field(default_factory=list)
     required_extras: list[str] = field(default_factory=list)
     required_services: list[str] = field(default_factory=list)
+    health_check_key: str = ""
     setup_instructions: str = ""
     failure_mode: str = ""
     user_visible: bool = True
@@ -52,6 +54,7 @@ class ProductReadinessReport:
     optional_missing_config: list[dict[str, Any]] = field(default_factory=list)
     unavailable_capabilities: list[dict[str, Any]] = field(default_factory=list)
     degraded_capabilities: list[dict[str, Any]] = field(default_factory=list)
+    health_checks: list[dict[str, Any]] = field(default_factory=list)
     setup_checklist: list[dict[str, Any]] = field(default_factory=list)
     user_messages: list[str] = field(default_factory=list)
 
@@ -106,54 +109,89 @@ class ProductReadinessService:
         capabilities = self.list_capabilities()
         config_items = resolve_config_values()
 
+        rag_required = os.environ.get("RAG_REQUIRED_FOR_PRODUCT", "false").lower() == "true"
+        executor = get_health_executor()
+
         blocking: list[dict[str, Any]] = []
         optional_missing: list[dict[str, Any]] = []
         unavailable: list[dict[str, Any]] = []
         degraded: list[dict[str, Any]] = []
+        health_checks: list[dict[str, Any]] = []
         messages: list[str] = []
         checklist: list[dict[str, Any]] = []
 
         for cap in capabilities:
-            if cap.status == CapabilityStatus.not_configured and cap.required:
-                blocking.append(
+            is_effectively_required = cap.required or (
+                rag_required and cap.category in ("rag",)
+            )
+
+            effective_status = cap.status
+            effective_reason = cap.status_reason
+
+            if cap.health_check_key:
+                check = executor.check(cap.health_check_key)
+                health_checks.append(
                     {
                         "capability_id": cap.capability_id,
-                        "name": cap.name,
-                        "reason": cap.status_reason,
+                        "health_check_key": cap.health_check_key,
+                        "status": check.status.value,
+                        "detail": check.detail,
+                        "latency_ms": check.latency_ms,
+                    }
+                )
+                if (
+                    effective_status == CapabilityStatus.available
+                    and check.status != CapabilityStatus.available
+                ):
+                    effective_status = check.status
+                    effective_reason = check.detail
+
+            _base = {
+                "capability_id": cap.capability_id,
+                "name": cap.name,
+                "health_check_key": cap.health_check_key,
+            }
+
+            if effective_status == CapabilityStatus.not_configured and is_effectively_required:
+                blocking.append(
+                    {
+                        **_base,
+                        "reason": effective_reason,
                         "setup_instructions": cap.setup_instructions,
                     }
                 )
                 messages.append(
-                    f"Required capability '{cap.name}' is not configured: " f"{cap.status_reason}"
+                    f"Required capability '{cap.name}' is not configured: "
+                    f"{effective_reason}"
                 )
-            elif cap.status == CapabilityStatus.not_configured and not cap.required:
+            elif (
+                effective_status == CapabilityStatus.not_configured
+                and not is_effectively_required
+            ):
                 optional_missing.append(
                     {
-                        "capability_id": cap.capability_id,
-                        "name": cap.name,
-                        "reason": cap.status_reason,
+                        **_base,
+                        "reason": effective_reason,
                         "setup_instructions": cap.setup_instructions,
                     }
                 )
-            elif cap.status in (
+            elif effective_status in (
                 CapabilityStatus.unavailable,
                 CapabilityStatus.missing_dependency,
             ):
-                unavailable.append(
-                    {
-                        "capability_id": cap.capability_id,
-                        "name": cap.name,
-                        "reason": cap.status_reason,
-                    }
-                )
-            elif cap.status == CapabilityStatus.degraded:
-                degraded.append(
-                    {
-                        "capability_id": cap.capability_id,
-                        "name": cap.name,
-                        "reason": cap.status_reason,
-                    }
-                )
+                entry = {**_base, "reason": effective_reason}
+                if is_effectively_required:
+                    blocking.append(
+                        dict(entry, setup_instructions=cap.setup_instructions)
+                    )
+                    messages.append(
+                        f"Required capability '{cap.name}' is unavailable: "
+                        f"{effective_reason}"
+                    )
+                else:
+                    unavailable.append(entry)
+            elif effective_status == CapabilityStatus.degraded:
+                degraded.append({**_base, "reason": effective_reason})
 
         for item in config_items:
             if item.required:
@@ -183,6 +221,7 @@ class ProductReadinessService:
             optional_missing_config=optional_missing,
             unavailable_capabilities=unavailable,
             degraded_capabilities=degraded,
+            health_checks=health_checks,
             setup_checklist=checklist,
             user_messages=list(set(messages)),
         )
@@ -224,6 +263,7 @@ def _resolve_capability(cap: CapabilityDefinition) -> ResolvedCapability:
         optional_env_vars=list(cap.optional_env_vars),
         required_extras=list(cap.required_extras),
         required_services=list(cap.required_services),
+        health_check_key=cap.health_check_key,
         setup_instructions=cap.setup_instructions,
         failure_mode=cap.failure_mode,
         user_visible=cap.user_visible,

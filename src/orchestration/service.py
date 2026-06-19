@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -91,7 +92,46 @@ class WorkflowOrchestrationService:
                 "started_at": r.started_at,
                 "completed_at": r.completed_at,
                 "created_at": r.created_at,
-                "updated_at": r.updated_at,
+                    "updated_at": r.updated_at,
             }
             for r in runs
         ]
+
+    def get_review_payload(self, workflow_id: str) -> dict[str, Any] | None:
+        run = self.repo.get_workflow_run(workflow_id)
+        if run is None:
+            return None
+        state: dict[str, Any] = run.state_json or {}
+        return state.get("review_payload")
+
+    def submit_review(
+        self,
+        workflow_id: str,
+        *,
+        decision: str,
+        reviewer: str,
+        notes: str,
+    ) -> dict[str, Any]:
+        run = self.repo.get_workflow_run(workflow_id)
+        if run is None:
+            raise LookupError(f"Workflow run not found: {workflow_id}")
+
+        state_data: dict[str, Any] = dict(run.state_json or {})
+        state_data["workflow_id"] = run.id
+        state_data["startup_id"] = run.startup_id
+        state_data["current_node"] = run.current_node
+        workflow_state = ProductWorkflowState(**state_data)
+
+        now = datetime.now(UTC).isoformat()
+
+        runner = WorkflowRunner(self.session)
+        runner.resume_workflow(workflow_state, decision=decision, notes=notes, reviewed_by=reviewer)
+        self.session.commit()
+
+        return {
+            "workflow_id": workflow_id,
+            "decision": decision,
+            "reviewer": reviewer,
+            "notes": notes,
+            "created_at": now,
+        }

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
 from src.api.schemas import (
     ArtifactListResponse,
@@ -18,6 +20,8 @@ from src.api.service import (
     run_brief_evaluate,
     run_brief_pipeline,
 )
+from src.discovery.service import StartupDiscoveryService
+from src.services.product.health_executor import get_health_executor
 
 router = APIRouter()
 
@@ -25,6 +29,15 @@ router = APIRouter()
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@router.post("/admin/health/refresh")
+def refresh_health_cache(key: str | None = Query(default=None)) -> dict[str, str]:
+    executor = get_health_executor()
+    executor.invalidate(key)
+    if key:
+        return {"status": "ok", "invalidated_key": key}
+    return {"status": "ok", "invalidated_key": "all"}
 
 
 @router.get("/version", response_model=VersionResponse)
@@ -78,3 +91,40 @@ def demo_artifacts(
 ) -> ArtifactListResponse:
     result = list_artifacts(path)
     return ArtifactListResponse(**result)
+
+
+@router.get("/discovery/sources")
+def discovery_sources() -> list[dict]:
+    from src.discovery.source_registry import load_sources
+
+    return [
+        {
+            "source_id": s.source_id,
+            "name": s.name,
+            "source_type": s.source_type.value,
+            "collection_method": s.collection_method.value,
+            "base_url": s.base_url,
+            "enabled": s.enabled_by_default,
+        }
+        for s in load_sources().values()
+    ]
+
+
+@router.post("/discovery/scrape/{source_id}")
+def discovery_scrape(source_id: str) -> dict:
+    import os
+
+    db_url = os.environ.get(
+        "PRODUCT_DB_URL",
+        "sqlite:///data/product/product.db",
+    )
+    engine = create_engine(db_url)
+    try:
+        with Session(engine) as session:
+            svc = StartupDiscoveryService(session)
+            result = svc.run_source_scraper_discovery(source_id)
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc

@@ -9,8 +9,10 @@ from sqlalchemy.orm import Session
 from src.database.models import StartupDiscoveryCandidate
 from src.discovery.dedup import extract_domain, is_duplicate_by_name, normalize_name
 from src.discovery.signals import calculate_confidence, detect_ai_native_signals
-from src.discovery.source_registry import load_sources
+from src.discovery.source_registry import DiscoverySource, load_sources
+from src.extraction.schemas import ConfidenceLevel
 from src.repositories.discovery import DiscoveryRepository
+from src.scraping.scrapers.base_scraper import scraper_registry
 
 
 class StartupDiscoveryService:
@@ -85,7 +87,7 @@ class StartupDiscoveryService:
                     source_url=website,
                     source_id=source_id,
                 )
-                confidence = calculate_confidence(
+                confidence_score = calculate_confidence(
                     has_name=True,
                     has_website=bool(website),
                     signal_contribution=signals_result["confidence_contribution"],
@@ -116,9 +118,12 @@ class StartupDiscoveryService:
                         "raw_text_excerpt": description[:500] if description else "",
                         "ai_native_signals_json": signals_result,
                         "evidence_refs_json": signals_result.get("evidence_excerpts", []),
-                        "confidence": confidence,
+                        "confidence": ConfidenceLevel.from_score(confidence_score).value,
                         "status": "new",
-                        "metadata_json": {"seed_type": "manual"},
+                        "metadata_json": {
+                            "seed_type": "manual",
+                            "confidence_score": confidence_score,
+                        },
                     }
                 )
 
@@ -260,7 +265,7 @@ class StartupDiscoveryService:
         if signals_result["signal_count"] == 0:
             return None
 
-        confidence = calculate_confidence(
+        confidence_score = calculate_confidence(
             has_name=False,
             has_website=False,
             signal_contribution=signals_result["confidence_contribution"],
@@ -278,9 +283,12 @@ class StartupDiscoveryService:
             "raw_text_excerpt": text[:1000],
             "ai_native_signals_json": signals_result,
             "evidence_refs_json": signals_result.get("evidence_excerpts", []),
-            "confidence": confidence,
+            "confidence": ConfidenceLevel.from_score(confidence_score).value,
             "status": "new",
-            "metadata_json": {"extraction_method": "url_list_text"},
+            "metadata_json": {
+                "extraction_method": "url_list_text",
+                "confidence_score": confidence_score,
+            },
         }
 
     # ------------------------------------------------------------------ #
@@ -404,3 +412,101 @@ class StartupDiscoveryService:
         self, candidates: list[dict[str, Any]]
     ) -> list[StartupDiscoveryCandidate]:
         return self.repo.create_candidates_bulk(candidates)
+
+    def _entry_to_candidate(
+        self,
+        entry: dict[str, Any],
+        source: DiscoverySource,
+        run_id: str,
+    ) -> dict[str, Any] | None:
+        name = entry.get("name", "").strip()
+        if not name:
+            return None
+        signals_result = detect_ai_native_signals(
+            f"{name} {entry.get('description', '')}",
+            source_url=source.base_url,
+            source_id=source.source_id,
+        )
+        confidence_score = calculate_confidence(
+            has_name=True,
+            has_website=False,
+            signal_contribution=signals_result["confidence_contribution"],
+        )
+        existing = self.repo.list_candidates(limit=10000)
+        existing_names = [c.discovered_name for c in existing]
+        norm_name = normalize_name(name)
+        if is_duplicate_by_name(name, existing_names):
+            return None
+        return {
+            "discovery_run_id": run_id,
+            "source_id": source.source_id,
+            "discovered_name": name,
+            "normalized_name": norm_name,
+            "website": "",
+            "country": "Brazil",
+            "sector": "AI",
+            "description": entry.get("description", name),
+            "source_url": source.base_url,
+            "raw_text_excerpt": entry.get("description", name)[:500],
+            "ai_native_signals_json": signals_result,
+            "evidence_refs_json": signals_result.get("evidence_excerpts", []),
+            "confidence": ConfidenceLevel.from_score(confidence_score).value,
+            "status": "new",
+            "metadata_json": {
+                "source_scraper": source.source_id,
+                "confidence_score": confidence_score,
+            },
+        }
+
+    def run_source_scraper_discovery(
+        self,
+        source_id: str,
+    ) -> dict[str, Any]:
+        scraper_cls = scraper_registry.get(source_id)
+        if scraper_cls is None:
+            raise ValueError(f"No scraper registered for source_id='{source_id}'")
+
+        sources = load_sources()
+        source = sources.get(source_id)
+        if source is None:
+            raise ValueError(f"Source not found: {source_id}")
+
+        run = self.repo.create_discovery_run(
+            source_id=source_id,
+            query_json={"type": "source_scraper", "source_id": source_id},
+        )
+        self.repo.update_discovery_run_status(
+            run.id, status="running", started_at=datetime.now(UTC),
+        )
+        self.session.commit()
+
+        try:
+            scraper = scraper_cls()
+            entries = scraper.scrape(source)
+            candidates_data: list[dict[str, Any]] = []
+            for entry in entries:
+                candidate = self._entry_to_candidate(entry, source, run.id)
+                if candidate is not None:
+                    candidates_data.append(candidate)
+
+            created = self.repo.create_candidates_bulk(candidates_data)
+            self.repo.complete_discovery_run(
+                run.id,
+                results_count=len(entries),
+                candidates_created=len(created),
+                duplicates_found=len(entries) - len(candidates_data),
+            )
+            self.session.commit()
+            return {
+                "discovery_run_id": run.id,
+                "source_id": source_id,
+                "status": "completed",
+                "total_entries": len(entries),
+                "candidates_created": len(created),
+                "duplicates_found": len(entries) - len(candidates_data),
+            }
+        except Exception as exc:
+            self.session.rollback()
+            self.repo.fail_discovery_run(run.id, error_message=str(exc))
+            self.session.commit()
+            raise

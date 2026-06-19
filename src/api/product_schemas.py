@@ -3,10 +3,18 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, HttpUrl
 
+from src.briefing.schemas import (
+    ActionBriefMetrics,
+    AuditTrail,
+    Blockers,
+    CalibrationSnapshot,
+    QualityGateSnapshot,
+    TopRecommendation,
+)
 from src.extraction.schemas import ConfidenceLevel, SourceType
 
 
@@ -91,6 +99,47 @@ class AnalysisRunCreate(BaseModel):
     corpus_version: str | None = None
 
 
+class AnalysisRunWorkflowRequest(BaseModel):
+    startup_id: str = Field(min_length=1)
+    startup_name: str | None = Field(default=None, max_length=255)
+    website_url: HttpUrl | None = None
+    notes: str | None = None
+    run_mode: str = "single_startup"
+
+
+class AnalysisRunWorkflowResponse(BaseModel):
+    run_id: str
+    startup_id: str
+    status: str
+    review_required: bool = False
+    executed_nodes: list[str] = Field(default_factory=list)
+    blockers: list[str] = Field(default_factory=list)
+    quality: dict[str, Any] = Field(default_factory=dict)
+    evidence_validation: dict[str, Any] = Field(default_factory=dict)
+    rag_metrics: dict[str, Any] = Field(default_factory=dict)
+    recommendation_metrics: dict[str, Any] = Field(default_factory=dict)
+    brief_metrics: dict[str, Any] = Field(default_factory=dict)
+    action_brief: ActionBriefRead | None = None
+    review_decision: str | None = None
+    review_notes: str = ""
+
+
+class AnalysisRunDetailResponse(BaseModel):
+    run_id: str
+    startup_id: str
+    status: str
+    executed_nodes: list[str] = Field(default_factory=list)
+    blockers: list[str] = Field(default_factory=list)
+    quality: dict[str, Any] = Field(default_factory=dict)
+    evidence_validation: dict[str, Any] = Field(default_factory=dict)
+    rag_metrics: dict[str, Any] = Field(default_factory=dict)
+    recommendation_metrics: dict[str, Any] = Field(default_factory=dict)
+    brief_metrics: dict[str, Any] = Field(default_factory=dict)
+    action_brief: ActionBriefRead | None = None
+    review_required: bool = False
+    review_payload: dict[str, Any] | None = None
+
+
 class ReadinessCheckRead(BaseModel):
     code: str
     severity: str
@@ -137,6 +186,44 @@ class ActionBriefRead(BaseModel):
     updated_at: datetime
 
 
+class PersistedActionBriefRead(BaseModel):
+    run_id: str
+    startup_id: str | None = None
+    generated_at: str = ""
+    brief_status: str
+    executive_summary_quantitative: dict[str, Any] = Field(default_factory=dict)
+    recommendation_summary: str = ""
+    top_recommendations: list[TopRecommendation] = Field(default_factory=list)
+    evidence_summary: str = ""
+    rag_summary: str = ""
+    gap_summary: str = ""
+    scoring_summary: str = ""
+    risk_summary: str = ""
+    blockers: list[Blockers] = Field(default_factory=list)
+    next_best_actions: list[str] = Field(default_factory=list)
+    audit_trail: AuditTrail = Field(default_factory=AuditTrail)
+    quality_gate_snapshot: QualityGateSnapshot = Field(default_factory=QualityGateSnapshot)
+    calibration_snapshot: CalibrationSnapshot = Field(default_factory=CalibrationSnapshot)
+    brief_metrics: ActionBriefMetrics = Field(default_factory=ActionBriefMetrics)
+    schema_version: str
+
+
+class ActionBriefExportMetadata(BaseModel):
+    export_id: str
+    run_id: str
+    exported_at: datetime
+    export_format: Literal["json"] = "json"
+    source: Literal["persisted_analysis_run_action_brief"] = (
+        "persisted_analysis_run_action_brief"
+    )
+    schema_version: str
+
+
+class ActionBriefJsonExportRead(BaseModel):
+    export_metadata: ActionBriefExportMetadata
+    action_brief: PersistedActionBriefRead
+
+
 _REVIEW_DECISIONS = r"^(approve|reject|needs_more_evidence|monitor|contact|not_recommended)$"
 
 
@@ -150,9 +237,14 @@ class ReviewDecisionCreate(BaseModel):
 class ReviewDecisionRead(BaseModel):
     id: str
     analysis_run_id: str
+    startup_id: str
     decision: str
     reviewer: str
     notes: str
+    thread_id: str | None = None
+    review_payload_snapshot: dict[str, Any] | None = None
+    status_before_resume: str | None = None
+    status_after_resume: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
@@ -573,6 +665,7 @@ class ProductReadinessRead(BaseModel):
     optional_missing_config: list[dict[str, Any]] = Field(default_factory=list)
     unavailable_capabilities: list[dict[str, Any]] = Field(default_factory=list)
     degraded_capabilities: list[dict[str, Any]] = Field(default_factory=list)
+    health_checks: list[dict[str, Any]] = Field(default_factory=list)
     setup_checklist: list[ProductSetupChecklistItem] = Field(default_factory=list)
     user_messages: list[str] = Field(default_factory=list)
 
@@ -700,6 +793,7 @@ class PromoteCandidateResponse(BaseModel):
 
 class DedupCandidateResponse(BaseModel):
     duplicate_of_candidate_id: str | None = None
+    duplicate_of_startup_id: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -750,3 +844,34 @@ class ProductWorkflowRunListResponse(BaseModel):
     offset: int
     limit: int
     duplicate_of_startup_id: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Workflow Review Schemas
+# ---------------------------------------------------------------------------
+
+
+class WorkflowReviewPayloadRead(BaseModel):
+    run_id: str
+    startup_id: str | None = None
+    reason: str
+    severity: str
+    failed_quality_checks: list[str] = Field(default_factory=list)
+    blockers: list[str] = Field(default_factory=list)
+    expected_human_actions: list[str] = Field(default_factory=list)
+    resumable: bool = False
+    interrupt_enabled: bool = False
+
+
+class WorkflowReviewDecisionCreate(BaseModel):
+    decision: str = Field(..., pattern=r"^(approve|reject|request_more_evidence)$")
+    reviewer: str = ""
+    notes: str = ""
+
+
+class WorkflowReviewDecisionRead(BaseModel):
+    workflow_id: str
+    decision: str
+    reviewer: str
+    notes: str
+    created_at: datetime

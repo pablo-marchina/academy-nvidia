@@ -74,9 +74,15 @@ class TestReadinessEndpoint:
         data = resp.json()
         assert "ready" in data
         assert "blocking_missing_config" in data
+        assert "health_checks" in data
         assert "setup_checklist" in data
         assert "user_messages" in data
 
     def test_readiness_is_bool(self) -> None:
         resp = client.get("/product/readiness")
         assert isinstance(resp.json()["ready"], bool)
+
+    def test_readiness_health_checks_is_list(self) -> None:
+        resp = client.get("/product/readiness")
+        data = resp.json()
+        assert isinstance(data["health_checks"], list)

@@ -1,3 +1,4 @@
+from src.orchestration.graph import NodeExecutionError, build_workflow_graph
 from src.orchestration.nodes import (
     NODE_NAMES,
     WORKFLOW_NODES,
@@ -16,4 +17,6 @@ __all__ = [
     "WORKFLOW_NODES",
     "NODE_NAMES",
     "WorkflowRunner",
+    "build_workflow_graph",
+    "NodeExecutionError",
 ]

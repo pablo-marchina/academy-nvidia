@@ -152,6 +152,10 @@ def _make_chunk(
         deprecated_at=source_info.deprecated_at if source_info else None,
         superseded_by=source_info.superseded_by if source_info else None,
         deprecation_reason=source_info.deprecation_reason if source_info else None,
+        nvidia_technology=source_info.product if source_info else "",
+        corpus_version=source_info.version if source_info else "1.0",
+        chunk_index=index,
+        char_count=len(content),
     )
 
 

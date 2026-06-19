@@ -152,13 +152,16 @@ _reg(
 _reg(
     capability_id="qdrant_vector_store",
     name="Qdrant Vector Store",
-    description="Persistent vector store for NVIDIA corpus retrieval",
+    description="Persistent vector store for NVIDIA corpus retrieval. Required for production RAG.",
     category=CapabilityCategory.rag,
-    required=False,
+    required=True,
     required_env_vars=["QDRANT_URL", "QDRANT_COLLECTION"],
-    optional_env_vars=["QDRANT_API_KEY", "QDRANT_VECTOR_SIZE"],
+    optional_env_vars=["QDRANT_API_KEY", "QDRANT_VECTOR_SIZE", "QDRANT_MIN_POINTS"],
     required_services=["Qdrant server"],
-    setup_instructions="Set QDRANT_URL and QDRANT_COLLECTION. Start Qdrant via docker-compose.",
+    setup_instructions=(
+        "Set QDRANT_URL and QDRANT_COLLECTION. Start Qdrant via docker-compose. "
+        "Run: python scripts/ingest_nvidia_corpus.py"
+    ),
     health_check_key="qdrant",
     documentation_ref="docs/39_qdrant_persistent_vector_store.md",
 )
@@ -167,20 +170,25 @@ _reg(
     name="Sentence Transformer Embeddings",
     description="Embedding provider using sentence-transformers",
     category=CapabilityCategory.rag,
-    required=False,
+    required=True,
     required_extras=["rag"],
     required_env_vars=["RAG_EMBEDDING_MODEL"],
     setup_instructions="Install with `pip install -e .[rag]` and set RAG_EMBEDDING_MODEL.",
-    failure_mode="Falls back to MockEmbeddingProvider for deterministic embeddings.",
+    failure_mode="Raises ImportError at runtime if [rag] extra is not installed.",
 )
 _reg(
     capability_id="rag_retrieval",
     name="RAG Retrieval",
-    description="Lexical, semantic, and hybrid retrieval from NVIDIA corpus",
+    description=(
+        "Lexical, semantic, and hybrid retrieval from NVIDIA corpus. "
+        "Required for all NVIDIA recommendations."
+    ),
     category=CapabilityCategory.rag,
-    required=False,
+    required=True,
+    required_env_vars=["RAG_VECTOR_BACKEND"],
     setup_instructions=(
-        "RAG works with in-memory index by default; " "Qdrant and embeddings are optional."
+        "Set RAG_VECTOR_BACKEND=qdrant. "
+        "Ingest the NVIDIA corpus with: python scripts/ingest_nvidia_corpus.py"
     ),
     health_check_key="rag",
     documentation_ref="docs/35_product_rag_design.md",
@@ -430,9 +438,11 @@ _reg(
     enabled_by_default=False,
     required_env_vars=["ANSWER_QUALITY_LLM_JUDGE_ENABLED"],
     setup_instructions=(
-        "Set ANSWER_QUALITY_LLM_JUDGE_ENABLED=true and choose a provider " "(default: null)."
+        "Set ANSWER_QUALITY_LLM_JUDGE_ENABLED=true and choose a provider "
+        "(default: null)."
     ),
     failure_mode="Disabled by default; deterministic NullLLMJudgeProvider used.",
+    health_check_key="llm_judge",
     documentation_ref="docs/48_optional_llm_judge.md",
 )
 _reg(

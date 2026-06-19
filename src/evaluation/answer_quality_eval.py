@@ -63,6 +63,10 @@ def evaluate_answer_quality(
     rag_citation_coverage = _rag_context_citation_coverage(brief)
     startup_citation_coverage = _startup_evidence_citation_coverage(brief)
 
+    total_claims = max(_total_claim_count(brief), 1)
+    unsupported_claim_rate = round(len(unsupported_claims) / total_claims, 4)
+    citation_precision = _compute_citation_precision(brief)
+
     metrics = AnswerQualityMetrics(
         required_sections_present=all(check.present for check in section_checks),
         missing_evidence_preserved=missing_evidence_preserved,
@@ -72,8 +76,10 @@ def evaluate_answer_quality(
         required_gap_ids_present=not gap_check.missing_ids,
         required_technology_ids_present=not technology_check.missing_ids,
         unsupported_claim_count=len(unsupported_claims),
+        unsupported_claim_rate=unsupported_claim_rate,
         rag_context_citation_coverage=rag_citation_coverage,
         startup_evidence_citation_coverage=startup_citation_coverage,
+        citation_precision=citation_precision,
         forbidden_absolute_language_count=forbidden_count,
         answer_quality_status=AnswerQualityStatus.PASS,
         nvidia_technology_gap_consistent=technology_gap_consistent,
@@ -451,6 +457,24 @@ def _normalize_identifier(value: object) -> str:
     return str(value).strip().lower().replace(" ", "_")
 
 
+def _total_claim_count(brief: StartupActionBrief) -> int:
+    count = 0
+    for section in brief.sections:
+        count += len(section.items)
+    return count
+
+
+def _compute_citation_precision(brief: StartupActionBrief) -> float:
+    packed = brief.packed_rag_contexts
+    evidence = brief.evidence_used
+    total_cited = len(packed) + len(evidence)
+    if total_cited == 0:
+        return 1.0
+    rag_cited = sum(1 for c in packed if c.source_id and str(c.url or "").strip())
+    ev_cited = sum(1 for e in evidence if str(e.source_url or "").strip())
+    return round((rag_cited + ev_cited) / total_cited, 4)
+
+
 def _gate(
     gate_name: str,
     passed: bool,
@@ -483,8 +507,10 @@ def _missing_brief_result(case: AnswerQualityEvalCase) -> AnswerQualityEvalResul
         required_gap_ids_present=False,
         required_technology_ids_present=False,
         unsupported_claim_count=0,
+        unsupported_claim_rate=0.0,
         rag_context_citation_coverage=0.0,
         startup_evidence_citation_coverage=0.0,
+        citation_precision=0.0,
         forbidden_absolute_language_count=0,
         answer_quality_status=AnswerQualityStatus.FAIL,
         nvidia_technology_gap_consistent=False,

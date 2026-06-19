@@ -315,6 +315,7 @@ class ProductService:
         review_repo = ReviewDecisionRepository(self.session)
         record = review_repo.create(
             analysis_run_id=analysis_run_id,
+            startup_id=run.startup_id,
             decision=decision,
             reviewer=reviewer,
             notes=notes,

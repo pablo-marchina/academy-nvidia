@@ -8,6 +8,7 @@ retrieval code.
 from __future__ import annotations
 
 import math
+import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -41,6 +42,11 @@ class VectorEntry:
     deprecated_at: str | None = None
     superseded_by: str | None = None
     deprecation_reason: str | None = None
+    nvidia_technology: str = ""
+    corpus_version: str = "1.0"
+    chunk_index: int = 0
+    char_count: int = 0
+    ingested_at: str = ""
 
 
 class VectorStore(ABC):
@@ -125,10 +131,11 @@ class InMemoryVectorStore(VectorStore):
 
     No external dependencies.  Supports filters by product, gap_type,
     source_id, version, and document_type.
-    Designed for development and testing — swap for Qdrant in production.
+    Designed for development and testing — MUST NOT be used in production.
     """
 
     def __init__(self) -> None:
+        _assert_not_production()
         self._entries: dict[str, VectorEntry] = {}
 
     # ------------------------------------------------------------------
@@ -243,6 +250,17 @@ class InMemoryVectorStore(VectorStore):
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
+
+
+def _assert_not_production() -> None:
+    """Raise RuntimeError if APP_MODE=product and RAG_VECTOR_BACKEND=in_memory."""
+    app_mode = os.environ.get("APP_MODE", "").lower()
+    backend = os.environ.get("RAG_VECTOR_BACKEND", "in_memory").lower()
+    if app_mode == "product" and backend == "in_memory":
+        raise RuntimeError(
+            "InMemoryVectorStore is FORBIDDEN in production. "
+            "Set RAG_VECTOR_BACKEND=qdrant in your .env file."
+        )
 
 
 def _cosine_similarity(a: list[float], b: list[float]) -> float:

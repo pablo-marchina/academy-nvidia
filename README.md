@@ -616,7 +616,8 @@ make api-dev     # development with reload
 | `PATCH` | `/startups/{id}` | Update startup fields partially |
 | `POST` | `/startups/{id}/analysis-runs` | Execute and persist an analysis run |
 | `GET` | `/analysis-runs/{id}` | Read persisted lifecycle and outputs |
-| `GET` | `/analysis-runs/{id}/brief` | Read the latest versioned Action Brief |
+| `GET` | `/analysis-runs/{id}/brief` | Canonical source for the persisted, auditable quantitative Action Brief |
+| `GET` | `/analysis-runs/{id}/brief/export/json` | Export the same persisted Action Brief with JSON export metadata |
 | `POST` | `/analysis-runs/{id}/review` | Record human review decision |
 | `GET` | `/analysis-runs/{id}/reviews` | List review decisions for a run |
 | `GET` | `/opportunities` | Ranked opportunities with filters and pagination |
@@ -624,6 +625,14 @@ make api-dev     # development with reload
 | `GET` | `/exports/{id}` | Retrieve export metadata |
 | `GET` | `/health/product` | Check product database and schema |
 | `GET` | `/health/dependencies` | Check database, Qdrant, and RAG corpus |
+
+Product consumers should treat `GET /analysis-runs/{id}/brief` as the canonical
+read model for the user-facing Action Brief. It serializes the already persisted
+`AnalysisRun` Action Brief with quantitative recommendations, evidence/RAG IDs,
+audit trail, quality/calibration snapshots, and `brief_metrics`; it does not
+trigger brief generation, RAG retrieval, scoring, scraping, or recommendation
+ranking. Use `GET /analysis-runs/{id}` for run lifecycle/status and summary
+context, not as the primary Action Brief payload.
 
 ### Legacy demo endpoints
 

@@ -7,6 +7,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, HttpUrl
 
+from src.quantitative.params import CONFIDENCE_THRESHOLDS
+
 
 class SourceType(str, Enum):
     OFFICIAL_SITE = "official_site"
@@ -21,6 +23,14 @@ class ConfidenceLevel(str, Enum):
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
+
+    @classmethod
+    def from_score(cls, score: float) -> ConfidenceLevel:
+        if score >= CONFIDENCE_THRESHOLDS["high_min"]:
+            return cls.HIGH
+        if score >= CONFIDENCE_THRESHOLDS["medium_min"]:
+            return cls.MEDIUM
+        return cls.LOW
 
 
 class AINativeLevel(str, Enum):
@@ -68,6 +78,11 @@ class Evidence(BaseModel):
     quote_or_evidence: str
     confidence: ConfidenceLevel
     collected_at: datetime
+    source_quality_score: float | None = None
+    evidence_confidence_score: float | None = None
+    score_status: str | None = None
+    score_features: dict[str, float] | None = None
+    score_calibration_decision_ids: list[str] | None = None
 
 
 class StartupProfile(BaseModel):

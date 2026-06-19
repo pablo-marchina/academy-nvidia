@@ -8,6 +8,7 @@ from pydantic import BaseModel
 class WorkflowStatus:
     QUEUED = "queued"
     RUNNING = "running"
+    AWAITING_REVIEW = "awaiting_review"
     COMPLETED = "completed"
     DEGRADED = "degraded"
     FAILED = "failed"
@@ -28,6 +29,8 @@ class ProductWorkflowState(BaseModel):
     startup_id: str | None = None
     discovery_candidate_id: str | None = None
     analysis_run_id: str | None = None
+    status: str = ""
+    blockers: list[str] = []
     current_node: str = ""
     completed_nodes: list[str] = []
     failed_nodes: list[str] = []

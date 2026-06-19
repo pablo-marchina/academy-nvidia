@@ -20,7 +20,7 @@ from src.rag.embeddings import EmbeddingProvider
 from src.rag.rag_pipeline import run_rag_pipeline
 from src.rag.retrieval import ChunkIndex
 from src.rag.schemas import PackingConfig, RagPipelineOutput, RerankingConfig
-from src.rag.vector_store import InMemoryVectorStore
+from src.rag.vector_store import VectorStore
 from src.recommendation import RecommendationResult, build_recommendations
 from src.scoring.composite_ranking import (
     CompositeResult,
@@ -74,7 +74,7 @@ def run_full_pipeline(
     evidence_list: list[Evidence] | None = None,
     chunk_index: ChunkIndex | None = None,
     embedding_model: EmbeddingProvider | None = None,
-    vector_store: InMemoryVectorStore | None = None,
+    vector_store: VectorStore | None = None,
     reranking_config: RerankingConfig | None = None,
     packing_config: PackingConfig | None = None,
 ) -> PipelineResult:
@@ -90,8 +90,8 @@ def run_full_pipeline(
       7. Composite Score + Confidence-aware Ranking
       8. Gap Diagnosis
       9. NVIDIA Technology Mapping
-     10. Deterministic Recommendation Engine
-     11. Product RAG (optional — hybrid retrieval, reranking, context packing)
+     10. Product RAG (hybrid retrieval, reranking, context packing)
+     11. Deterministic Recommendation Engine (blocked if RAG context missing)
 
     Parameters
     ----------
@@ -112,7 +112,7 @@ def run_full_pipeline(
     embedding_model:
         Embedding provider for semantic RAG. If None, lexical fallback.
     vector_store:
-        Vector store for semantic RAG. If None or empty, lexical fallback.
+        Vector store for semantic RAG. Must be QdrantStore in production.
     reranking_config:
         Reranking weights. If None, reranking is skipped.
     packing_config:
@@ -122,7 +122,7 @@ def run_full_pipeline(
     -------
     PipelineResult
         All intermediate and final outputs including gaps, recommendations,
-        and (optionally) RAG output.
+        and RAG output.
     """
     # Step 1: Extraction
     if profile is None:
@@ -191,7 +191,17 @@ def run_full_pipeline(
     candidates = build_technology_candidates(gap_diag.diagnosed_gaps)
     gap_diagnosis = gap_diag.model_copy(update={"nvidia_technology_candidates": candidates})
 
-    # Step 10: Deterministic Recommendation Engine
+    # Step 10: Product RAG (required for recommendations)
+    rag_output = run_rag_pipeline(
+        gap_diagnosis=gap_diagnosis,
+        chunk_index=chunk_index,
+        embedding_model=embedding_model,
+        vector_store=vector_store,
+        reranking_config=reranking_config,
+        packing_config=packing_config,
+    )
+
+    # Step 11: Deterministic Recommendation Engine (requires RAG context)
     recommendation = build_recommendations(
         startup_name=startup_name,
         profile=profile,
@@ -204,19 +214,8 @@ def run_full_pipeline(
         final_priority_score=final_priority_score,
         recommended_motion=recommended_motion,
         gap_diagnosis=gap_diagnosis,
+        rag_context=rag_output,
     )
-
-    # Step 11: Product RAG (optional)
-    rag_output = None
-    if gap_diagnosis is not None:
-        rag_output = run_rag_pipeline(
-            gap_diagnosis=gap_diagnosis,
-            chunk_index=chunk_index,
-            embedding_model=embedding_model,
-            vector_store=vector_store,
-            reranking_config=reranking_config,
-            packing_config=packing_config,
-        )
 
     # Aggregate evidence_used and missing_evidence
     all_missing: list[str] = list(defensibility.missing_evidence)

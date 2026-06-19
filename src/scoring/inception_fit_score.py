@@ -6,15 +6,12 @@ from pydantic import BaseModel, Field
 
 from src.classification.ai_native_classifier import ClassificationResult
 from src.extraction.schemas import AINativeLevel, ConfidenceLevel, StartupProfile, TechnicalGap
+from src.quantitative.params import (
+    CONFIDENCE_SCORE_FACTORS,
+    INCEPTION_FIT_WEIGHTS,
+    NO_EVIDENCE_FACTOR,
+)
 from src.validation.evidence_validator import ValidatedEvidence
-
-# ---------------------------------------------------------------------------
-# Dimension weights (from docs/00_case_plan.md)
-# ---------------------------------------------------------------------------
-_GAP_TAXONOMY_WEIGHT = 0.35
-_VERTICAL_ALIGNMENT_WEIGHT = 0.25
-_TECHNICAL_MATURITY_WEIGHT = 0.20
-_REVENUE_POTENTIAL_WEIGHT = 0.20
 
 # ---------------------------------------------------------------------------
 # Evidence filtering keywords per dimension
@@ -54,12 +51,7 @@ _PRIORITY_SECTORS: list[str] = [
     "EdTech",
 ]
 
-_CONFIDENCE_TO_FACTOR: dict[ConfidenceLevel, float] = {
-    ConfidenceLevel.HIGH: 1.0,
-    ConfidenceLevel.MEDIUM: 0.7,
-    ConfidenceLevel.LOW: 0.4,
-}
-_NO_EVIDENCE_FACTOR = 0.3
+
 
 
 # ---------------------------------------------------------------------------
@@ -109,8 +101,8 @@ def _evidence_confidence_penalty(
     evidence_list: list[ValidatedEvidence],
 ) -> tuple[float, ConfidenceLevel]:
     if not evidence_list:
-        return _NO_EVIDENCE_FACTOR, ConfidenceLevel.LOW
-    factors = [_CONFIDENCE_TO_FACTOR.get(ev.confidence, 0.4) for ev in evidence_list]
+        return NO_EVIDENCE_FACTOR, ConfidenceLevel.LOW
+    factors = [CONFIDENCE_SCORE_FACTORS.get(ev.confidence.value, 0.4) for ev in evidence_list]
     avg = sum(factors) / len(factors)
     if avg >= 0.8:
         return avg, ConfidenceLevel.HIGH
@@ -211,7 +203,7 @@ def _score_gap_taxonomy(
 
     return InceptionFitDimension(
         dimension_name="explicit_gap_taxonomy",
-        weight=_GAP_TAXONOMY_WEIGHT,
+        weight=INCEPTION_FIT_WEIGHTS["gap_taxonomy"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -252,7 +244,7 @@ def _score_vertical_alignment(
 
     return InceptionFitDimension(
         dimension_name="vertical_alignment",
-        weight=_VERTICAL_ALIGNMENT_WEIGHT,
+        weight=INCEPTION_FIT_WEIGHTS["vertical_alignment"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -302,7 +294,7 @@ def _score_technical_maturity(
 
     return InceptionFitDimension(
         dimension_name="technical_maturity",
-        weight=_TECHNICAL_MATURITY_WEIGHT,
+        weight=INCEPTION_FIT_WEIGHTS["technical_maturity"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -351,7 +343,7 @@ def _score_revenue_potential(
 
     return InceptionFitDimension(
         dimension_name="revenue_potential",
-        weight=_REVENUE_POTENTIAL_WEIGHT,
+        weight=INCEPTION_FIT_WEIGHTS["revenue_potential"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -421,7 +413,7 @@ def compute_inception_fit_score(
                 f"Weak evidence for dimension: {name} (confidence: {ds.confidence.value})"
             )
 
-    conf_factors = [_CONFIDENCE_TO_FACTOR.get(s.confidence, 0.4) for s in scores.values()]
+    conf_factors = [CONFIDENCE_SCORE_FACTORS.get(s.confidence.value, 0.4) for s in scores.values()]
     avg_conf = sum(conf_factors) / len(conf_factors)
 
     if avg_conf >= 0.8:

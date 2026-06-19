@@ -55,8 +55,10 @@ class AnswerQualityMetrics(BaseModel):
     required_gap_ids_present: bool
     required_technology_ids_present: bool
     unsupported_claim_count: int
+    unsupported_claim_rate: float = 0.0
     rag_context_citation_coverage: float
     startup_evidence_citation_coverage: float
+    citation_precision: float = 0.0
     forbidden_absolute_language_count: int
     answer_quality_status: AnswerQualityStatus
     nvidia_technology_gap_consistent: bool = True

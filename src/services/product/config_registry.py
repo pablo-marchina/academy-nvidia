@@ -103,18 +103,19 @@ _reg(
 # ---------------------------------------------------------------------------
 _reg(
     key="RAG_VECTOR_BACKEND",
-    description="Vector backend (in_memory, qdrant)",
-    required=False,
+    description="Vector backend (in_memory, qdrant). Must be qdrant in production.",
+    required=True,
     required_for=["rag_retrieval"],
-    default="in_memory",
-    example="in_memory",
+    default="qdrant",
+    example="qdrant",
+    user_message="Set RAG_VECTOR_BACKEND=qdrant. InMemory blocked when APP_MODE=product.",
 )
 _reg(
     key="RAG_REQUIRED_FOR_PRODUCT",
     description="Whether RAG is required for product analysis runs",
     required=False,
-    default="false",
-    example="false",
+    default="true",
+    example="true",
 )
 _reg(
     key="RAG_EMBEDDING_MODEL",
@@ -244,6 +245,14 @@ _reg(
     required_for=["qdrant_vector_store"],
     default="384",
     example="384",
+)
+_reg(
+    key="QDRANT_MIN_POINTS",
+    description="Minimum number of points required for Qdrant collection to be considered healthy",
+    required=False,
+    required_for=["qdrant_vector_store"],
+    default="10",
+    example="10",
 )
 
 # ---------------------------------------------------------------------------

@@ -22,12 +22,14 @@ FIXTURE_DIR = Path(__file__).resolve().parent.parent / "fixtures" / "product_gol
 
 @pytest.fixture
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
+    db_url = f"sqlite:///{(tmp_path / 'golden_path.db').as_posix()}"
+    monkeypatch.setenv("PRODUCT_DB_URL", db_url)
     monkeypatch.setenv("APP_MODE", "product")
     monkeypatch.setenv("ENABLE_PRODUCT_PERSISTENCE", "true")
     monkeypatch.setenv("QDRANT_URL", "")
     monkeypatch.setenv("RAG_REQUIRED_FOR_PRODUCT", "false")
     monkeypatch.setenv("PRODUCT_DATA_DIR", str(tmp_path / "product_data"))
-    configure_product_database(f"sqlite:///{(tmp_path / 'golden_path.db').as_posix()}")
+    configure_product_database(db_url)
     with TestClient(app) as test_client:
         yield test_client
     reset_product_database_runtime()

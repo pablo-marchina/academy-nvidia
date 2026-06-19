@@ -1,6 +1,29 @@
 """Recommendation engine — deterministic gap-based NVIDIA technology recommendations."""
 
-from src.recommendation.recommendation_engine import build_recommendations
+from src.recommendation.nvidia_technology_mapping import (
+    GAP_TECHNOLOGY_CANDIDATES,
+    GOLDEN_MAPPING_SAMPLES,
+    GOLDEN_SET_STATUS,
+    NvidiaMappingCalibrationMetrics,
+    NvidiaMappingConfidenceFeatures,
+    NvidiaMappingFeatures,
+    NvidiaMappingMetrics,
+    NvidiaMappingStatus,
+    NvidiaTechnologyMappingRecord,
+    REQUIRED_MAPPING_DECISIONS,
+    build_nvidia_technology_mappings,
+    compute_mapping_metrics,
+    extract_mapping_features,
+)
+from src.recommendation.recommendation_engine import (
+    NvidiaRecommendationMetrics,
+    NvidiaRecommendationRecord,
+    RecommendationRankingStatus,
+    REQUIRED_RECOMMENDATION_DECISIONS,
+    build_recommendations,
+    compute_recommendation_metrics,
+    rank_recommendations_from_mappings,
+)
 from src.recommendation.schemas import (
     PerGapRecommendation,
     RecommendationResult,
@@ -14,4 +37,24 @@ __all__ = [
     "RecommendationResult",
     "RecommendedNextAction",
     "SuggestedTechnicalExperiment",
+    "NvidiaTechnologyMappingRecord",
+    "NvidiaMappingFeatures",
+    "NvidiaMappingConfidenceFeatures",
+    "NvidiaMappingMetrics",
+    "NvidiaMappingCalibrationMetrics",
+    "NvidiaMappingStatus",
+    "NvidiaRecommendationRecord",
+    "NvidiaRecommendationMetrics",
+    "RecommendationRankingStatus",
+    "GoldenMappingSample",
+    "GAP_TECHNOLOGY_CANDIDATES",
+    "REQUIRED_MAPPING_DECISIONS",
+    "REQUIRED_RECOMMENDATION_DECISIONS",
+    "GOLDEN_MAPPING_SAMPLES",
+    "GOLDEN_SET_STATUS",
+    "build_nvidia_technology_mappings",
+    "compute_mapping_metrics",
+    "extract_mapping_features",
+    "rank_recommendations_from_mappings",
+    "compute_recommendation_metrics",
 ]

@@ -64,6 +64,10 @@ class RagChunk(BaseModel):
     deprecated_at: str | None = None
     superseded_by: str | None = None
     deprecation_reason: str | None = None
+    nvidia_technology: str = ""
+    corpus_version: str = "1.0"
+    chunk_index: int = 0
+    char_count: int = 0
 
 
 class RetrievalQuery(BaseModel):

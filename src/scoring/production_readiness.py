@@ -6,15 +6,12 @@ from pydantic import BaseModel, Field
 
 from src.classification.ai_native_classifier import ClassificationResult
 from src.extraction.schemas import AINativeLevel, ConfidenceLevel, StartupProfile
+from src.quantitative.params import (
+    CONFIDENCE_SCORE_FACTORS,
+    NO_EVIDENCE_FACTOR,
+    PRODUCTION_READINESS_WEIGHTS,
+)
 from src.validation.evidence_validator import ValidatedEvidence
-
-# ---------------------------------------------------------------------------
-# Dimension weights
-# ---------------------------------------------------------------------------
-_REAL_USERS_WEIGHT = 0.30
-_SCALE_INFERENCE_WEIGHT = 0.30
-_PRIVACY_GOV_WEIGHT = 0.20
-_DATA_INFRA_WEIGHT = 0.20
 
 # ---------------------------------------------------------------------------
 # Evidence filtering keywords per dimension
@@ -100,12 +97,7 @@ _SCALE_TECH_KEYWORDS: list[str] = [
     "serverless",
 ]
 
-_CONFIDENCE_TO_FACTOR: dict[ConfidenceLevel, float] = {
-    ConfidenceLevel.HIGH: 1.0,
-    ConfidenceLevel.MEDIUM: 0.7,
-    ConfidenceLevel.LOW: 0.4,
-}
-_NO_EVIDENCE_FACTOR = 0.3
+
 
 
 # ---------------------------------------------------------------------------
@@ -153,8 +145,8 @@ def _evidence_confidence_penalty(
     evidence_list: list[ValidatedEvidence],
 ) -> tuple[float, ConfidenceLevel]:
     if not evidence_list:
-        return _NO_EVIDENCE_FACTOR, ConfidenceLevel.LOW
-    factors = [_CONFIDENCE_TO_FACTOR.get(ev.confidence, 0.4) for ev in evidence_list]
+        return NO_EVIDENCE_FACTOR, ConfidenceLevel.LOW
+    factors = [CONFIDENCE_SCORE_FACTORS.get(ev.confidence.value, 0.4) for ev in evidence_list]
     avg = sum(factors) / len(factors)
     if avg >= 0.8:
         return avg, ConfidenceLevel.HIGH
@@ -221,7 +213,7 @@ def _score_real_users_and_deployment(
 
     return ReadinessDimension(
         dimension_name="real_users_and_deployment",
-        weight=_REAL_USERS_WEIGHT,
+        weight=PRODUCTION_READINESS_WEIGHTS["real_users"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -292,7 +284,7 @@ def _score_scale_and_inference(
 
     return ReadinessDimension(
         dimension_name="scale_and_inference",
-        weight=_SCALE_INFERENCE_WEIGHT,
+        weight=PRODUCTION_READINESS_WEIGHTS["scale_inference"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -349,7 +341,7 @@ def _score_privacy_and_governance(
 
     return ReadinessDimension(
         dimension_name="privacy_and_governance",
-        weight=_PRIVACY_GOV_WEIGHT,
+        weight=PRODUCTION_READINESS_WEIGHTS["privacy_governance"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -406,7 +398,7 @@ def _score_data_infrastructure(
 
     return ReadinessDimension(
         dimension_name="data_infrastructure",
-        weight=_DATA_INFRA_WEIGHT,
+        weight=PRODUCTION_READINESS_WEIGHTS["data_infrastructure"],
         raw_score=raw,
         adjusted_score=adjusted,
         confidence=conf,
@@ -471,7 +463,7 @@ def compute_production_readiness(
                 f"Weak evidence for dimension: {name} (confidence: {ds.confidence.value})"
             )
 
-    conf_factors = [_CONFIDENCE_TO_FACTOR.get(s.confidence, 0.4) for s in scores.values()]
+    conf_factors = [CONFIDENCE_SCORE_FACTORS.get(s.confidence.value, 0.4) for s in scores.values()]
     avg_conf = sum(conf_factors) / len(conf_factors)
 
     if avg_conf >= 0.8:

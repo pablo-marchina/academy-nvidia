@@ -172,6 +172,14 @@ RANKING ATUAL (12 startups analisadas)
 
 **O que o usuário vê:** Briefing executivo completo.
 
+**Fonte canônica para o produto:** o consumidor deve ler
+`GET /analysis-runs/{run_id}/brief`. Esse endpoint retorna o `action_brief`
+quantitativo já persistido no `AnalysisRun`, com `brief_status`,
+`top_recommendations`, scores/confidence/uncertainty, evidências, IDs de
+contexto RAG, `audit_trail`, snapshots de qualidade/calibração e
+`brief_metrics`. Ele não recalcula brief, ranking, RAG, scoring, scraping ou
+recommendation.
+
 → Ver template completo em `16_briefing_template.md` e exemplo no Ato 9 de `08_demo_script.md`.
 
 **Seções do brief:**
@@ -200,6 +208,10 @@ RANKING ATUAL (12 startups analisadas)
 | Markdown | Leitura, documentação, compartilhamento interno |
 | JSON | Integração com sistemas, API, automação |
 | CLI stdout | Visualização direta no terminal |
+
+Para integração JSON do produto, use
+`GET /analysis-runs/{run_id}/brief/export/json`, que exporta o mesmo objeto
+persistido e adiciona `export_metadata`.
 
 **O que o usuário faz:**
 - Exporta como markdown para anexar em email ou documento
