@@ -42,9 +42,7 @@ def _preflight_configuration_check(state: ProductWorkflowState) -> dict[str, Any
     report = svc.get_product_readiness()
 
     if not report.ready:
-        msg = "; ".join(report.user_messages) if report.user_messages else (
-            "Product readiness checks failed"
-        )
+        msg = "; ".join(report.user_messages) if report.user_messages else ("Product readiness checks failed")
         raise NodeExecutionError("preflight_configuration_check", msg)
 
     return {
@@ -102,9 +100,7 @@ def _make_langgraph_node(node_def: Any) -> Any:
 
         if result.status == NodeStatus.FAILED:
             if wf_repo and node_run_id:
-                wf_repo.update_node_run_status(
-                    node_run_id, status="failed", error_message=result.error_message
-                )
+                wf_repo.update_node_run_status(node_run_id, status="failed", error_message=result.error_message)
             raise NodeExecutionError(node_name, result.error_message or "Unknown error")
 
         updates: dict[str, Any] = dict(result.state_updates or {})

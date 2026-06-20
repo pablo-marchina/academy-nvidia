@@ -209,8 +209,7 @@ def test_tese_forte_evidencia_fraca() -> None:
             "AI signal: predictive model",
         ],
         product_summary=(
-            "Our AI-powered platform uses deep learning and computer vision "
-            "to deliver predictive models."
+            "Our AI-powered platform uses deep learning and computer vision " "to deliver predictive models."
         ),
         description="An AI-native company building computer vision solutions.",
         tech_stack_signals=["Tech stack: pytorch"],
@@ -232,9 +231,7 @@ def test_tese_forte_evidencia_fraca() -> None:
     assert result.total_score >= 0
     assert result.total_score <= 100
     assert result.missing_evidence, "Expected missing evidence for weak evidence scenario"
-    assert (
-        result.confidence == ConfidenceLevel.LOW
-    ), f"Expected LOW confidence, got {result.confidence.value}"
+    assert result.confidence == ConfidenceLevel.LOW, f"Expected LOW confidence, got {result.confidence.value}"
 
 
 # ---------------------------------------------------------------------------
@@ -259,9 +256,7 @@ def test_sem_evidencia_suficiente() -> None:
     result = compute_defensibility_score(profile, classification, evidence)
 
     assert isinstance(result, DefensibilityScoreResult)
-    assert (
-        result.total_score <= 20
-    ), f"No-evidence startup should score very low, got {result.total_score}"
+    assert result.total_score <= 20, f"No-evidence startup should score very low, got {result.total_score}"
     assert len(result.missing_evidence) >= 3
     assert result.confidence == ConfidenceLevel.LOW
 

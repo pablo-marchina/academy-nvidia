@@ -325,10 +325,7 @@ def build_per_gap_recommendation(
 
     missing: list[str] = []
     if gap.evidence_tag == EvidenceTag.INFERRED:
-        missing.append(
-            f"Gap '{gap.gap.value}' detected by inference only — "
-            "collect direct evidence to confirm."
-        )
+        missing.append(f"Gap '{gap.gap.value}' detected by inference only — " "collect direct evidence to confirm.")
 
     experiment = None
     if action == RecommendedNextAction.APPROACH_NOW and tech_names:
@@ -355,9 +352,7 @@ def build_per_gap_recommendation(
         detected=gap.detected,
         recommended_nvidia_technologies=tech_names,
         technical_justification=_build_technical_justification(gap, tech_names),
-        business_justification=_build_business_justification(
-            gap, profile, classification, recommended_motion
-        ),
+        business_justification=_build_business_justification(gap, profile, classification, recommended_motion),
         priority=priority,
         implementation_complexity=max_complexity,
         suggested_experiment=experiment,
@@ -387,9 +382,7 @@ def build_recommendations(
 
     for gap in gap_diagnosis.diagnosed_gaps:
         tech_names = [
-            c.technology_name
-            for c in gap_diagnosis.nvidia_technology_candidates
-            if c.addresses_gap == gap.gap
+            c.technology_name for c in gap_diagnosis.nvidia_technology_candidates if c.addresses_gap == gap.gap
         ]
 
         rec = build_per_gap_recommendation(
@@ -557,13 +550,10 @@ def _lookup_calibration_group(
                 validation = validate_decision_for_production(rec)
                 if not validation.passed:
                     blockers.append(
-                        f"Decision '{decision_id}' blocked for production: "
-                        f"{'; '.join(validation.reasons)}"
+                        f"Decision '{decision_id}' blocked for production: " f"{'; '.join(validation.reasons)}"
                     )
                 elif rec.calibration_status.value in ("uncalibrated", "blocked"):
-                    blockers.append(
-                        f"Decision '{decision_id}' is {rec.calibration_status.value}"
-                    )
+                    blockers.append(f"Decision '{decision_id}' is {rec.calibration_status.value}")
                 else:
                     values[decision_id] = rec.current_value
                 break
@@ -608,6 +598,24 @@ def _compute_weighted_score(
     raw = sum(weights.get(k, 0.0) * v for k, v in features.items() if k in weights)
     raw /= weight_sum
     return max(0.0, min(1.0, raw))
+
+
+def _invalid_calibration_blockers(
+    weights: dict[str, float] | None,
+    values: dict[str, float | None],
+) -> list[str]:
+    blockers: list[str] = []
+    if weights is None:
+        blockers.append("Decision 'recommendation.priority_score_weights' current_value is not a dict.")
+    elif not weights:
+        blockers.append("Decision 'recommendation.priority_score_weights' current_value is empty.")
+    elif sum(weights.values()) <= 0.0:
+        blockers.append("Decision 'recommendation.priority_score_weights' weight sum is zero.")
+
+    for decision_id, value in values.items():
+        if value is None:
+            blockers.append(f"Decision '{decision_id}' current_value is not numeric.")
+    return blockers
 
 
 def _get_business_impact(gap_type: str) -> float:
@@ -710,9 +718,7 @@ def rank_recommendations_from_mappings(
         }
 
     # ── 3. Validate recommendation calibration decisions ──────────────
-    cal_values, cal_ok, cal_blockers = _lookup_calibration_group(
-        REQUIRED_RECOMMENDATION_DECISIONS, inventory=inventory
-    )
+    cal_values, cal_ok, cal_blockers = _lookup_calibration_group(REQUIRED_RECOMMENDATION_DECISIONS, inventory=inventory)
 
     if not cal_ok:
         metrics = NvidiaRecommendationMetrics(
@@ -734,11 +740,44 @@ def rank_recommendations_from_mappings(
 
     # ── 4. Extract calibrated parameters ──────────────────────────────
     ps_weights = _lookup_weight_dict("recommendation.priority_score_weights", cal_values)
-    production_threshold = _lookup_float("recommendation.production_threshold", cal_values) or 0.5
-    confidence_threshold = _lookup_float("recommendation.confidence_threshold", cal_values) or 0.5
-    uncertainty_penalty = _lookup_float("recommendation.uncertainty_penalty", cal_values) or 0.1
-    min_mapping_confidence = _lookup_float("recommendation.minimum_mapping_confidence", cal_values) or 0.3
-    min_evidence_support = _lookup_float("recommendation.minimum_evidence_support", cal_values) or 0.0
+    production_threshold = _lookup_float("recommendation.production_threshold", cal_values)
+    confidence_threshold = _lookup_float("recommendation.confidence_threshold", cal_values)
+    uncertainty_penalty = _lookup_float("recommendation.uncertainty_penalty", cal_values)
+    min_mapping_confidence = _lookup_float("recommendation.minimum_mapping_confidence", cal_values)
+    min_evidence_support = _lookup_float("recommendation.minimum_evidence_support", cal_values)
+
+    invalid_blockers = _invalid_calibration_blockers(
+        ps_weights,
+        {
+            "recommendation.production_threshold": production_threshold,
+            "recommendation.confidence_threshold": confidence_threshold,
+            "recommendation.uncertainty_penalty": uncertainty_penalty,
+            "recommendation.minimum_mapping_confidence": min_mapping_confidence,
+            "recommendation.minimum_evidence_support": min_evidence_support,
+        },
+    )
+    if invalid_blockers:
+        metrics = NvidiaRecommendationMetrics(
+            mapping_count=len(nvidia_technology_mappings),
+            recommendation_count=0,
+            blocked_recommendation_count=len(nvidia_technology_mappings),
+            missing_recommendation_calibration_count=len(invalid_blockers),
+        )
+        return {
+            "run_id": run_id,
+            "nvidia_recommendations": [],
+            "nvidia_recommendation_metrics": metrics.model_dump(mode="json"),
+            "ranking_status": RecommendationRankingStatus.BLOCKED_UNCALIBRATED_RECOMMENDATION.value,
+            "production_allowed": False,
+            "blockers": invalid_blockers,
+        }
+
+    assert ps_weights is not None
+    assert production_threshold is not None
+    assert confidence_threshold is not None
+    assert uncertainty_penalty is not None
+    assert min_mapping_confidence is not None
+    assert min_evidence_support is not None
 
     # ── 5. Build recommendations from mappings ────────────────────────
     recommendations: list[NvidiaRecommendationRecord] = []
@@ -785,10 +824,6 @@ def rank_recommendations_from_mappings(
         rec_production_allowed = mapping_prod_allowed
         rec_blockers = list(mapping_blockers)
 
-        if ps_weights is None:
-            rec_production_allowed = False
-            rec_blockers.append("Recommendation priority_score_weights not calibrated.")
-
         if mapping_score < production_threshold:
             rec_production_allowed = False
             rec_blockers.append(
@@ -812,7 +847,7 @@ def rank_recommendations_from_mappings(
             mapping_confidence_val * (1.0 - uncertainty_penalty * uncertainty),
         )
 
-        action = _determine_recommendation_action(
+        _determine_recommendation_action(
             production_allowed=rec_production_allowed,
             mapping_score=mapping_score,
             mapping_confidence=mapping_confidence_val,
@@ -904,7 +939,8 @@ def compute_recommendation_metrics(
     total = len(recommendations)
     prod_allowed = sum(1 for r in recommendations if r.production_allowed)
     blocked = sum(
-        1 for r in recommendations
+        1
+        for r in recommendations
         if not r.production_allowed
         and any("calibrat" in b.lower() or "uncalibrat" in b.lower() or "not found" in b.lower() for b in r.blockers)
     )
@@ -916,12 +952,8 @@ def compute_recommendation_metrics(
     conf_scores = [r.confidence for r in recommendations]
     uncertainties = [r.uncertainty for r in recommendations]
 
-    ev_supported = sum(
-        1 for r in recommendations if len(r.supporting_evidence_ids) > 0
-    )
-    rag_supported = sum(
-        1 for r in recommendations if len(r.supporting_rag_context_ids) > 0
-    )
+    ev_supported = sum(1 for r in recommendations if len(r.supporting_evidence_ids) > 0)
+    rag_supported = sum(1 for r in recommendations if len(r.supporting_rag_context_ids) > 0)
 
     return NvidiaRecommendationMetrics(
         mapping_count=total,

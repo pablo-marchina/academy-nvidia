@@ -31,11 +31,7 @@ def _empty_text() -> str:
 
 
 def _text_with_no_ai() -> str:
-    return (
-        "CleanTech Solutions\n\n"
-        "We sell physical water filters for residential use. "
-        "Founded by Carlos Souza."
-    )
+    return "CleanTech Solutions\n\n" "We sell physical water filters for residential use. " "Founded by Carlos Souza."
 
 
 def _text_with_title_tag() -> str:

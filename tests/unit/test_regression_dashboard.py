@@ -250,9 +250,7 @@ def test_answer_quality_junit_failure_generates_fail(tmp_path: Path) -> None:
     assert dashboard.metrics["answer_quality_errors"] == 0
     assert dashboard.metrics["answer_quality_failed_cases"] == 1
     assert dashboard.metrics["answer_quality_status"] == STATUS_FAIL
-    assert dashboard.failed_cases["answer_quality"] == [
-        "tests.evals.test_answer_quality_golden.test_failure"
-    ]
+    assert dashboard.failed_cases["answer_quality"] == ["tests.evals.test_answer_quality_golden.test_failure"]
     assert "unsupported_claim_count=1" in dashboard.failure_details["answer_quality"][0]
 
 
@@ -275,9 +273,7 @@ def test_answer_quality_junit_error_generates_fail(tmp_path: Path) -> None:
     assert dashboard.metrics["answer_quality_passed"] is False
     assert dashboard.metrics["answer_quality_failures"] == 0
     assert dashboard.metrics["answer_quality_errors"] == 1
-    assert dashboard.failed_cases["answer_quality"] == [
-        "tests.evals.test_answer_quality_golden.test_error"
-    ]
+    assert dashboard.failed_cases["answer_quality"] == ["tests.evals.test_answer_quality_golden.test_error"]
     assert "RuntimeError" in dashboard.failure_details["answer_quality"][0]
 
 

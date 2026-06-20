@@ -749,9 +749,7 @@ def _detect_healthcare_compliance(
     return GapWithEvidence(
         gap=gap,
         detected=True,
-        confidence=(
-            conf if evidence else ConfidenceLevel.HIGH if in_health else ConfidenceLevel.MEDIUM
-        ),
+        confidence=(conf if evidence else ConfidenceLevel.HIGH if in_health else ConfidenceLevel.MEDIUM),
         evidence_tag=tag,
         reasoning="; ".join(reasons) + f". Gap: {gap.value}.",
         evidence_used=evidence,
@@ -851,14 +849,9 @@ def diagnose_gaps(
         all_evidence.extend(result.evidence_used)
 
         if result.detected and result.evidence_tag == EvidenceTag.INFERRED:
-            missing.append(
-                f"Gap '{gap.value}' detected by inference only — "
-                "collect direct evidence to confirm."
-            )
+            missing.append(f"Gap '{gap.value}' detected by inference only — " "collect direct evidence to confirm.")
 
-    conf_factors = [
-        _CONFIDENCE_TO_FACTOR.get(g.confidence, 0.4) for g in detected_gaps if g.detected
-    ]
+    conf_factors = [_CONFIDENCE_TO_FACTOR.get(g.confidence, 0.4) for g in detected_gaps if g.detected]
     if conf_factors:
         avg_conf = sum(conf_factors) / len(conf_factors)
         if avg_conf >= 0.8:

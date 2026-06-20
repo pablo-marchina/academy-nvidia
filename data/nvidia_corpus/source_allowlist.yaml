@@ -2,7 +2,7 @@ allowlist_version: "1.0"
 sources:
   - source_id: nim
     title: "NVIDIA NIM"
-    url: "https://docs.nvidia.com/nim/latest/"
+    url: "https://docs.nvidia.com/nim/"
     product: "NVIDIA NIM"
     gap_types: ["external_api_dependency", "high_inference_cost", "high_latency"]
     version: "1.0"
@@ -17,7 +17,7 @@ sources:
 
   - source_id: tensorrt_llm
     title: "TensorRT-LLM"
-    url: "https://docs.nvidia.com/deeplearning/tensorrt-llm/"
+    url: "https://nvidia.github.io/TensorRT-LLM/"
     product: "TensorRT-LLM"
     gap_types: ["high_inference_cost", "high_latency"]
     version: "1.0"

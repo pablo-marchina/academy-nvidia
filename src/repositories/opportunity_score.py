@@ -128,9 +128,7 @@ class OpportunityScoreRepository:
         self,
         analysis_run_id: str,
     ) -> None:
-        statement = select(OpportunityScoreRecord).where(
-            OpportunityScoreRecord.analysis_run_id == analysis_run_id
-        )
+        statement = select(OpportunityScoreRecord).where(OpportunityScoreRecord.analysis_run_id == analysis_run_id)
         records = list(self.session.scalars(statement))
         for r in records:
             self.session.delete(r)

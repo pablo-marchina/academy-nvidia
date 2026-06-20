@@ -68,9 +68,7 @@ def diagnose_gaps(
     production_readiness: ProductionReadinessResult | None = None
     if production_readiness_raw is not None:
         try:
-            production_readiness = ProductionReadinessResult.model_validate(
-                production_readiness_raw
-            )
+            production_readiness = ProductionReadinessResult.model_validate(production_readiness_raw)
         except Exception:
             pass
 
@@ -161,9 +159,7 @@ def rank_recommendations(
     production_readiness: ProductionReadinessResult | None = None
     if production_readiness_raw is not None:
         try:
-            production_readiness = ProductionReadinessResult.model_validate(
-                production_readiness_raw
-            )
+            production_readiness = ProductionReadinessResult.model_validate(production_readiness_raw)
         except Exception:
             pass
 
@@ -173,18 +169,15 @@ def rank_recommendations(
         composite_score = float(scores_raw["composite"])
         try:
             from src.extraction.schemas import ConfidenceLevel
+
             composite = CompositeResult(
                 startup_id=startup_name,
                 composite_score=composite_score,
                 defensibility_score=float(scores_raw.get("defensibility", 0)),
                 inception_fit_score=float(scores_raw.get("inception_fit", 0)),
-                production_readiness_score=float(
-                    scores_raw.get("production_readiness", 0)
-                ),
+                production_readiness_score=float(scores_raw.get("production_readiness", 0)),
                 classification_score=0.0,
-                confidence=ConfidenceLevel(
-                    scores_raw.get("composite_confidence", "low")
-                ),
+                confidence=ConfidenceLevel(scores_raw.get("composite_confidence", "low")),
                 confidence_penalty_applied=0.0,
                 reasoning="",
             )

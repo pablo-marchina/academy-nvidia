@@ -236,10 +236,7 @@ def render_markdown(dashboard: Dashboard) -> str:
         "| Metric | Value |",
         "|---|---:|",
         f"| answer_quality_passed | {_format_value(metrics['answer_quality_passed'])} |",
-        (
-            "| answer_quality_junit_present | "
-            f"{_format_value(metrics['answer_quality_junit_present'])} |"
-        ),
+        ("| answer_quality_junit_present | " f"{_format_value(metrics['answer_quality_junit_present'])} |"),
         f"| answer_quality_tests | {metrics['answer_quality_tests']} |",
         f"| answer_quality_failures | {metrics['answer_quality_failures']} |",
         f"| answer_quality_errors | {metrics['answer_quality_errors']} |",
@@ -264,20 +261,11 @@ def render_markdown(dashboard: Dashboard) -> str:
         f"| llm_judge_error_cases | {metrics['llm_judge_error_cases']} |",
         f"| llm_judge_mean_score | {metrics['llm_judge_mean_score']} |",
         f"| llm_judge_mean_faithfulness_score | {metrics['llm_judge_mean_faithfulness_score']} |",
-        (
-            "| llm_judge_mean_answer_relevancy_score | "
-            f"{metrics['llm_judge_mean_answer_relevancy_score']} |"
-        ),
+        ("| llm_judge_mean_answer_relevancy_score | " f"{metrics['llm_judge_mean_answer_relevancy_score']} |"),
         f"| llm_judge_mean_groundedness_score | {metrics['llm_judge_mean_groundedness_score']} |",
         f"| llm_judge_mean_completeness_score | {metrics['llm_judge_mean_completeness_score']} |",
-        (
-            "| llm_judge_mean_uncertainty_honesty_score | "
-            f"{metrics['llm_judge_mean_uncertainty_honesty_score']} |"
-        ),
-        (
-            "| llm_judge_mean_executive_usefulness_score | "
-            f"{metrics['llm_judge_mean_executive_usefulness_score']} |"
-        ),
+        ("| llm_judge_mean_uncertainty_honesty_score | " f"{metrics['llm_judge_mean_uncertainty_honesty_score']} |"),
+        ("| llm_judge_mean_executive_usefulness_score | " f"{metrics['llm_judge_mean_executive_usefulness_score']} |"),
         "",
         "## Warnings",
         "",
@@ -429,9 +417,7 @@ def _read_eval_junit(
     if (path is None or not path.is_file()) and fallback_path is not None:
         path = fallback_path if fallback_path.is_file() else path
     if path is None or not path.is_file():
-        dashboard.inputs.append(
-            DashboardInput(metric_prefix, str(path) if path else None, "missing")
-        )
+        dashboard.inputs.append(DashboardInput(metric_prefix, str(path) if path else None, "missing"))
         if warn_when_missing:
             dashboard.warnings.append(f"{filename} not found.")
         if metric_prefix == "answer_quality":
@@ -464,9 +450,7 @@ def _read_eval_junit(
         dashboard.metrics["unsupported_claim_count"] = int(parsed["unsupported_claim_count"])
         dashboard.metrics["required_sections_missing"] = int(parsed["required_sections_missing"])
         dashboard.metrics["citation_coverage"] = parsed["citation_coverage"]
-        dashboard.metrics["answer_quality_status"] = (
-            STATUS_PASS if failed_count == 0 else STATUS_FAIL
-        )
+        dashboard.metrics["answer_quality_status"] = STATUS_PASS if failed_count == 0 else STATUS_FAIL
     dashboard.metrics["missing_context_count"] = max(
         int(dashboard.metrics["missing_context_count"] or 0),
         int(parsed["missing_context_count"]),
@@ -483,12 +467,8 @@ def _derive_action_brief_checks(dashboard: Dashboard) -> None:
         dashboard.metrics["action_brief_required_sections_passed"] = None
         return
     failed_cases = dashboard.failed_cases["golden_eval"]
-    action_brief_failures = [
-        case for case in failed_cases if "action_brief" in case.lower() or "brief" in case.lower()
-    ]
-    dashboard.metrics["action_brief_required_sections_passed"] = (
-        golden_passed is True and not action_brief_failures
-    )
+    action_brief_failures = [case for case in failed_cases if "action_brief" in case.lower() or "brief" in case.lower()]
+    dashboard.metrics["action_brief_required_sections_passed"] = golden_passed is True and not action_brief_failures
 
 
 def _read_optional_llm_judge_report(
@@ -513,9 +493,7 @@ def _read_optional_llm_judge_report(
         return
 
     data = _load_json_file(path)
-    dashboard.inputs.append(
-        DashboardInput("answer_quality_llm_judge", str(path), "found", "optional report")
-    )
+    dashboard.inputs.append(DashboardInput("answer_quality_llm_judge", str(path), "found", "optional report"))
     dashboard.metrics["llm_judge_report_present"] = True
     dashboard.metrics["llm_judge_status"] = "INFO"
     if data is None:

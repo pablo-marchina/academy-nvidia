@@ -34,25 +34,15 @@ def upgrade() -> None:
         sa.Column("degraded_reason", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["action_brief_id"], ["action_brief_records.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["action_brief_id"], ["action_brief_records.id"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(["analysis_run_id"], ["analysis_runs.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(
-            ["dossier_id"], ["activation_dossier_records.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["dossier_id"], ["activation_dossier_records.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("product_quality_runs", schema=None) as batch_op:
-        batch_op.create_index(
-            batch_op.f("ix_product_quality_runs_analysis_run_id"), ["analysis_run_id"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_product_quality_runs_status"), ["status"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_product_quality_runs_created_at"), ["created_at"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_product_quality_runs_analysis_run_id"), ["analysis_run_id"], unique=False)
+        batch_op.create_index(batch_op.f("ix_product_quality_runs_status"), ["status"], unique=False)
+        batch_op.create_index(batch_op.f("ix_product_quality_runs_created_at"), ["created_at"], unique=False)
         batch_op.create_index("ix_quality_run_analysis_run_id", ["analysis_run_id"], unique=False)
 
     op.create_table(
@@ -67,9 +57,7 @@ def upgrade() -> None:
         sa.Column("details_json", sa.JSON(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["quality_run_id"], ["product_quality_runs.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["quality_run_id"], ["product_quality_runs.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("product_quality_metrics", schema=None) as batch_op:
@@ -78,15 +66,9 @@ def upgrade() -> None:
             ["quality_run_id"],
             unique=False,
         )
-        batch_op.create_index(
-            batch_op.f("ix_product_quality_metrics_metric_name"), ["metric_name"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_product_quality_metrics_passed"), ["passed"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_product_quality_metrics_severity"), ["severity"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_product_quality_metrics_metric_name"), ["metric_name"], unique=False)
+        batch_op.create_index(batch_op.f("ix_product_quality_metrics_passed"), ["passed"], unique=False)
+        batch_op.create_index(batch_op.f("ix_product_quality_metrics_severity"), ["severity"], unique=False)
 
 
 def downgrade() -> None:

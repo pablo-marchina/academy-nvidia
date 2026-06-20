@@ -49,9 +49,7 @@ class TestHealthCheckExecutor:
         executor.invalidate()
         assert len(executor._cache) == 0
 
-    @patch(
-        "src.services.product.health_executor.HealthCheckExecutor._check_product_db"
-    )
+    @patch("src.services.product.health_executor.HealthCheckExecutor._check_product_db")
     def test_product_db_available(self, mock_check) -> None:
         mock_check.return_value = HealthCheckResult(
             status=CapabilityStatus.available,
@@ -62,9 +60,7 @@ class TestHealthCheckExecutor:
         assert result.status == CapabilityStatus.available
         assert "SELECT 1" in result.detail
 
-    @patch(
-        "src.services.product.health_executor.HealthCheckExecutor._check_product_db"
-    )
+    @patch("src.services.product.health_executor.HealthCheckExecutor._check_product_db")
     def test_product_db_unavailable(self, mock_check) -> None:
         mock_check.return_value = HealthCheckResult(
             status=CapabilityStatus.unavailable,
@@ -74,9 +70,7 @@ class TestHealthCheckExecutor:
         result = executor.check("product_db")
         assert result.status == CapabilityStatus.unavailable
 
-    @patch(
-        "src.services.product.health_executor.HealthCheckExecutor._check_qdrant"
-    )
+    @patch("src.services.product.health_executor.HealthCheckExecutor._check_qdrant")
     def test_qdrant_available(self, mock_check) -> None:
         mock_check.return_value = HealthCheckResult(
             status=CapabilityStatus.available,
@@ -87,9 +81,7 @@ class TestHealthCheckExecutor:
         assert result.status == CapabilityStatus.available
         assert "42" in result.detail
 
-    @patch(
-        "src.services.product.health_executor.HealthCheckExecutor._check_qdrant"
-    )
+    @patch("src.services.product.health_executor.HealthCheckExecutor._check_qdrant")
     def test_qdrant_unavailable(self, mock_check) -> None:
         mock_check.return_value = HealthCheckResult(
             status=CapabilityStatus.unavailable,
@@ -99,9 +91,7 @@ class TestHealthCheckExecutor:
         result = executor.check("qdrant")
         assert result.status == CapabilityStatus.unavailable
 
-    @patch(
-        "src.services.product.health_executor.HealthCheckExecutor._check_qdrant"
-    )
+    @patch("src.services.product.health_executor.HealthCheckExecutor._check_qdrant")
     def test_qdrant_empty_collection_is_degraded(self, mock_check) -> None:
         mock_check.return_value = HealthCheckResult(
             status=CapabilityStatus.degraded,
@@ -111,9 +101,7 @@ class TestHealthCheckExecutor:
         result = executor.check("qdrant")
         assert result.status == CapabilityStatus.degraded
 
-    @patch(
-        "src.services.product.health_executor.HealthCheckExecutor._check_rag_corpus"
-    )
+    @patch("src.services.product.health_executor.HealthCheckExecutor._check_rag_corpus")
     def test_rag_corpus_available(self, mock_check) -> None:
         mock_check.return_value = HealthCheckResult(
             status=CapabilityStatus.available,
@@ -123,9 +111,7 @@ class TestHealthCheckExecutor:
         result = executor.check("rag")
         assert result.status == CapabilityStatus.available
 
-    @patch(
-        "src.services.product.health_executor.HealthCheckExecutor._check_rag_corpus"
-    )
+    @patch("src.services.product.health_executor.HealthCheckExecutor._check_rag_corpus")
     def test_rag_corpus_missing_is_degraded(self, mock_check) -> None:
         mock_check.return_value = HealthCheckResult(
             status=CapabilityStatus.degraded,
@@ -140,9 +126,7 @@ class TestHealthCheckExecutor:
         result = executor.check("nonexistent_key")
         assert result.latency_ms >= 0.0
 
-    @patch(
-        "src.services.product.health_executor.HealthCheckExecutor._check_llm_judge"
-    )
+    @patch("src.services.product.health_executor.HealthCheckExecutor._check_llm_judge")
     def test_llm_judge_available(self, mock_check) -> None:
         mock_check.return_value = HealthCheckResult(
             status=CapabilityStatus.available,
@@ -153,9 +137,7 @@ class TestHealthCheckExecutor:
         assert result.status == CapabilityStatus.available
         assert "openai" in result.detail
 
-    @patch(
-        "src.services.product.health_executor.HealthCheckExecutor._check_llm_judge"
-    )
+    @patch("src.services.product.health_executor.HealthCheckExecutor._check_llm_judge")
     def test_llm_judge_unavailable(self, mock_check) -> None:
         mock_check.return_value = HealthCheckResult(
             status=CapabilityStatus.unavailable,

@@ -188,35 +188,34 @@ def analyze_weight_set(
             perturbed = [scorer(s, new_w) for s in startups]
             corr, _ = scipy.stats.spearmanr(baseline_ranks, _rank(perturbed))
 
-            results["perturbations"].append({
-                "weight_key": weight_key,
-                "original_weight": round(weights[weight_key], 4),
-                "delta": delta,
-                "new_weight": round(new_w[weight_key], 4),
-                "spearman_r": round(float(corr), 6),
-            })
+            results["perturbations"].append(
+                {
+                    "weight_key": weight_key,
+                    "original_weight": round(weights[weight_key], 4),
+                    "delta": delta,
+                    "new_weight": round(new_w[weight_key], 4),
+                    "spearman_r": round(float(corr), 6),
+                }
+            )
 
             if weight_key not in min_corrs or corr < min_corrs[weight_key]:
                 min_corrs[weight_key] = corr
 
-    results["min_correlation_per_weight"] = {
-        k: round(float(v), 6) for k, v in sorted(min_corrs.items())
-    }
+    results["min_correlation_per_weight"] = {k: round(float(v), 6) for k, v in sorted(min_corrs.items())}
     overall_min = min(min_corrs.values())
     results["overall_min_correlation"] = round(float(overall_min), 6)
 
     max_delta = max(abs(d) for d in DELTAS)
-    results["sensitivity_index"] = round(
-        float((1 - overall_min) / max_delta), 4
-    )
+    results["sensitivity_index"] = round(float((1 - overall_min) / max_delta), 4)
 
     return results
 
 
 def main() -> None:
     # Set encoding for console output
-    import sys
     import io
+    import sys
+
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
     print(f"Generating {N_STARTUPS} synthetic startup profiles...")
@@ -240,7 +239,7 @@ def main() -> None:
 
         print(f"  Overall min Spearman rho: {result['overall_min_correlation']:.6f}")
         print(f"  Sensitivity index: {result['sensitivity_index']:.4f}")
-        print(f"  Per-weight min rho:")
+        print("  Per-weight min rho:")
         for w_key, min_rho in sorted(result["min_correlation_per_weight"].items()):
             original = result["weights"][w_key]
             print(f"    {w_key:.<35s} {original:.2f}  ->  min rho = {min_rho:.6f}")

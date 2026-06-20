@@ -27,12 +27,12 @@ export default defineConfig({
     {
       command: "python -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000",
       cwd: repoRoot,
-      url: "http://127.0.0.1:8000/health",
+      url: "http://127.0.0.1:8000/health/product",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
     {
-      command: "npm run dev -- --host 127.0.0.1 --port 5173",
+      command: "node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5173",
       cwd: frontendRoot,
       url: "http://127.0.0.1:5173",
       reuseExistingServer: !process.env.CI,
@@ -44,7 +44,6 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        ...(process.env.CI ? {} : { channel: "chrome" }),
       },
     },
   ],

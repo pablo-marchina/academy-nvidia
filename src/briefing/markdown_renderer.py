@@ -19,9 +19,7 @@ def render_action_brief_markdown(brief: StartupActionBrief) -> str:
         lines.append("")
         if section.items:
             for item in section.items:
-                lines.append(
-                    f"- **[{item.tag}]** {item.claim} ({item.confidence}, {item.source_type})"
-                )
+                lines.append(f"- **[{item.tag}]** {item.claim} ({item.confidence}, {item.source_type})")
         if section.content:
             lines.append(section.content)
         lines.append("")

@@ -15,9 +15,7 @@ class DistritoScraper(SourceScraper):
         lines = [ln.strip() for ln in html.split("\n") if ln.strip()]
         current: dict[str, Any] = {}
         for line in lines:
-            name_match = re.search(
-                r"(startup|programa|aceleradora)\s*[:\-]\s*(.+)", line, re.IGNORECASE
-            )
+            name_match = re.search(r"(startup|programa|aceleradora)\s*[:\-]\s*(.+)", line, re.IGNORECASE)
             if name_match:
                 if current:
                     entries.append(current)
@@ -25,7 +23,8 @@ class DistritoScraper(SourceScraper):
                 continue
             if re.search(
                 r"(ai|ia|inteligencia artificial|machine learning|ml|llm)",
-                line, re.IGNORECASE,
+                line,
+                re.IGNORECASE,
             ):
                 current["ai_signal"] = True
         if current:

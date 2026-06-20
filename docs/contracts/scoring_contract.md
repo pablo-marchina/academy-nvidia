@@ -47,5 +47,9 @@
 - All dimensions must be float 0–100
 - `composite_ranking` always returns a `recommended_motion` even if data is sparse
 
+## Final Product Readiness Update - 2026-06-19
+
+Product scoring must be registry-backed. Weights, thresholds, confidence penalties, and recommendation gates used in productive decisions must come from the calibration registry and must be marked production-allowed. Uncalibrated, placeholder, synthetic-only, or disabled calibration entries can remain for tests or research reports, but cannot produce product recommendations, scores, or readiness success.
+
 ## Contract Version
 1.0 — June 2026

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -21,6 +22,7 @@ _GOLDEN_PATH = Path("data/eval/golden_scraping_baseline.json")
 @pytest.fixture
 def golden_set() -> list[ScrapingBaselineCase]:
     from src.evaluation.scraping_baseline import _load_golden_set
+
     return _load_golden_set(_GOLDEN_PATH)
 
 
@@ -202,9 +204,11 @@ class TestFullCalibration:
 class TestEmptyGoldenSet:
 
     def test_empty_set_returns_error(self) -> None:
-        from src.evaluation.scraping_baseline import run_full_calibration
+        import json
+        import tempfile
         from pathlib import Path
-        import json, tempfile
+
+        from src.evaluation.scraping_baseline import run_full_calibration
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump({"startups": [], "_meta": {}}, f)
@@ -221,11 +225,20 @@ class TestEmptyGoldenSet:
 def mock_collector() -> Any:
     class _MockCollector:
         def collect(self, startup_name: str, website_url: str) -> Any:
-            from src.scraping.collector import CollectionResult, CollectedSource
+            from src.scraping.collector import CollectedSource, CollectionResult
+
             sources = [
-                CollectedSource(url=website_url, category="official_website", rank=1, fetch_success=True, extraction_success=True, latency_ms=100),
+                CollectedSource(
+                    url=website_url,
+                    category="official_website",
+                    rank=1,
+                    fetch_success=True,
+                    extraction_success=True,
+                    latency_ms=100,
+                ),
             ]
             return CollectionResult(startup_name=startup_name, website_url=website_url, sources=sources)
+
     return _MockCollector()
 
 
@@ -233,6 +246,7 @@ class TestValidateCollectorCoverage:
 
     def test_validate_with_mock_collector(self, golden_set: list[ScrapingBaselineCase], mock_collector: Any) -> None:
         from src.evaluation.scraping_baseline import validate_collector_coverage
+
         validation = validate_collector_coverage(golden_set, collector=mock_collector)
         assert "collector_available" in validation
         assert "category_precision" in validation
@@ -241,6 +255,7 @@ class TestValidateCollectorCoverage:
 
     def test_validate_returns_metrics(self, golden_set: list[ScrapingBaselineCase], mock_collector: Any) -> None:
         from src.evaluation.scraping_baseline import validate_collector_coverage
+
         validation = validate_collector_coverage(golden_set, collector=mock_collector)
         assert 0.0 <= validation["category_f1"] <= 1.0
         assert "per_startup" in validation
@@ -256,6 +271,7 @@ class TestSourceCollector:
 
     def test_collector_creates_instance(self) -> None:
         from src.scraping.collector import SourceCollector, build_collector
+
         collector = SourceCollector()
         assert collector is not None
         collector2 = build_collector()
@@ -263,6 +279,7 @@ class TestSourceCollector:
 
     def test_collector_deduplicate_method(self) -> None:
         from src.scraping.collector import SourceCollector
+
         collector = SourceCollector()
         assert collector._deduplicate("https://example.com") is False
         assert collector._deduplicate("https://example.com/") is True
@@ -270,5 +287,6 @@ class TestSourceCollector:
 
     def test_build_collector(self) -> None:
         from src.scraping.collector import build_collector
+
         collector = build_collector()
         assert collector is not None

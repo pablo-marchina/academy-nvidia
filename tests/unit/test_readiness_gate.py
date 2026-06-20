@@ -42,12 +42,8 @@ class TestReadinessGate:
         gate = ReadinessGate()
         report = ProductReadinessReport(
             ready=False,
-            unavailable_capabilities=[
-                {"capability_id": "qdrant_vector_store", "reason": "QDRANT_URL not set"}
-            ],
-            degraded_capabilities=[
-                {"capability_id": "rag_retrieval", "reason": "RAG backend degraded"}
-            ],
+            unavailable_capabilities=[{"capability_id": "qdrant_vector_store", "reason": "QDRANT_URL not set"}],
+            degraded_capabilities=[{"capability_id": "rag_retrieval", "reason": "RAG backend degraded"}],
         )
         with patch(
             "src.services.product.readiness_service.ProductReadinessService.get_product_readiness",

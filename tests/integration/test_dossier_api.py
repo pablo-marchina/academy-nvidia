@@ -12,8 +12,11 @@ from src.main import app
 
 
 @pytest.fixture
-def client(tmp_path: Path):
+def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     db_url = f"sqlite:///{(tmp_path / 'dossier_api.db').as_posix()}"
+    monkeypatch.setenv("APP_MODE", "test")
+    monkeypatch.setenv("PRODUCT_DB_URL", db_url)
+    monkeypatch.setenv("ENABLE_PRODUCT_PERSISTENCE", "true")
     configure_product_database(db_url)
     with TestClient(app) as c:
         yield c

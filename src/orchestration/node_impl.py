@@ -6,6 +6,7 @@ Nodes do not access data/demo_runs.
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from typing import Any, cast
 
@@ -28,9 +29,7 @@ def _load_startup(session: Session, startup_id: str) -> Startup | None:
 
 def _load_candidate(session: Session, candidate_id: str) -> StartupDiscoveryCandidate | None:
     stmt = (
-        __import__("sqlalchemy")
-        .select(StartupDiscoveryCandidate)
-        .where(StartupDiscoveryCandidate.id == candidate_id)
+        __import__("sqlalchemy").select(StartupDiscoveryCandidate).where(StartupDiscoveryCandidate.id == candidate_id)
     )
     return cast(StartupDiscoveryCandidate | None, session.scalar(stmt))
 
@@ -75,9 +74,7 @@ def _save_readiness_check(
 # ---------------------------------------------------------------------------
 # Node 1: load_startup_or_candidate
 # ---------------------------------------------------------------------------
-@_register(
-    "load_startup_or_candidate", "Load startup or promote discovery candidate", critical=True
-)
+@_register("load_startup_or_candidate", "Load startup or promote discovery candidate", critical=True)
 def node_load_startup_or_candidate(state: ProductWorkflowState) -> NodeResult:
     session = cast(Session | None, state.metadata_json.get("_session"))
     if session is None:
@@ -96,9 +93,7 @@ def node_load_startup_or_candidate(state: ProductWorkflowState) -> NodeResult:
                 node_name="load_startup_or_candidate",
                 input_snapshot={"startup_id": startup_id, "discovery_candidate_id": candidate_id},
             )
-            return NodeResult(
-                status=NodeStatus.FAILED, error_message=f"Startup not found: {startup_id}"
-            )
+            return NodeResult(status=NodeStatus.FAILED, error_message=f"Startup not found: {startup_id}")
 
     if candidate_id and not startup_id:
         candidate = _load_candidate(session, candidate_id)
@@ -146,16 +141,12 @@ def node_collect_or_load_evidence(state: ProductWorkflowState) -> NodeResult:
 
     startup_id = state.startup_id
     if not startup_id:
-        return NodeResult(
-            status=NodeStatus.SKIPPED, error_message="No startup_id to load evidence for"
-        )
+        return NodeResult(status=NodeStatus.SKIPPED, error_message="No startup_id to load evidence for")
 
     repo = ProductRepository(session)
     startup = repo.get_startup(startup_id)
     if startup is None:
-        return NodeResult(
-            status=NodeStatus.FAILED, error_message=f"Startup not found: {startup_id}"
-        )
+        return NodeResult(status=NodeStatus.FAILED, error_message=f"Startup not found: {startup_id}")
 
     evidence_ids = [e.id for e in (startup.evidence or [])]
     return NodeResult(status=NodeStatus.COMPLETED, state_updates={"evidence_ids": evidence_ids})
@@ -182,27 +173,19 @@ def node_diagnose_gaps(state: ProductWorkflowState) -> NodeResult:
 
     analysis_run_id = state.analysis_run_id
     if not analysis_run_id:
-        return NodeResult(
-            status=NodeStatus.SKIPPED, error_message="No analysis_run_id for gap diagnosis"
-        )
+        return NodeResult(status=NodeStatus.SKIPPED, error_message="No analysis_run_id for gap diagnosis")
 
     from src.repositories.product import ProductRepository
 
     repo = ProductRepository(session)
     run = repo.get_analysis_run(analysis_run_id)
     if run is None:
-        return NodeResult(
-            status=NodeStatus.FAILED, error_message=f"AnalysisRun not found: {analysis_run_id}"
-        )
+        return NodeResult(status=NodeStatus.FAILED, error_message=f"AnalysisRun not found: {analysis_run_id}")
 
     output = run.output_snapshot_json or {}
-    gap_ids = list(
-        g.get("id", "") for g in output.get("gap_diagnosis", {}).get("gaps", []) if g.get("id")
-    )
+    gap_ids = list(g.get("id", "") for g in output.get("gap_diagnosis", {}).get("gaps", []) if g.get("id"))
     mapping_ids = list(
-        m.get("id", "")
-        for m in output.get("gap_diagnosis", {}).get("nvidia_mappings", [])
-        if m.get("id")
+        m.get("id", "") for m in output.get("gap_diagnosis", {}).get("nvidia_mappings", []) if m.get("id")
     )
 
     return NodeResult(
@@ -218,10 +201,15 @@ def node_diagnose_gaps(state: ProductWorkflowState) -> NodeResult:
 # ---------------------------------------------------------------------------
 # Node 5: retrieve_nvidia_context
 # ---------------------------------------------------------------------------
-@_register("retrieve_nvidia_context", "Retrieve NVIDIA RAG context (optional)")
+@_register("retrieve_nvidia_context", "Retrieve NVIDIA RAG context")
 def node_retrieve_nvidia_context(state: ProductWorkflowState) -> NodeResult:
     rag_available = state.metadata_json.get("_rag_available", False)
     if not rag_available:
+        if os.environ.get("APP_MODE", "").lower() == "product":
+            return NodeResult(
+                status=NodeStatus.FAILED,
+                error_message="APP_MODE=product requires NVIDIA RAG context retrieval.",
+            )
         return NodeResult(
             status=NodeStatus.DEGRADED,
             degraded_reason="RAG unavailable; skipping NVIDIA context retrieval",
@@ -235,9 +223,7 @@ def node_retrieve_nvidia_context(state: ProductWorkflowState) -> NodeResult:
 @_register("map_nvidia_technologies", "Map NVIDIA technologies to diagnosed gaps")
 def node_map_nvidia_technologies(state: ProductWorkflowState) -> NodeResult:
     if not state.gap_ids:
-        return NodeResult(
-            status=NodeStatus.SKIPPED, error_message="No gaps to map technologies from"
-        )
+        return NodeResult(status=NodeStatus.SKIPPED, error_message="No gaps to map technologies from")
     return NodeResult(status=NodeStatus.COMPLETED, state_updates={})
 
 
@@ -252,29 +238,21 @@ def node_generate_claims(state: ProductWorkflowState) -> NodeResult:
 
     analysis_run_id = state.analysis_run_id
     if not analysis_run_id:
-        return NodeResult(
-            status=NodeStatus.SKIPPED, error_message="No analysis_run_id for claim generation"
-        )
+        return NodeResult(status=NodeStatus.SKIPPED, error_message="No analysis_run_id for claim generation")
 
     from src.repositories.product import ProductRepository
 
     repo = ProductRepository(session)
     run = repo.get_analysis_run(analysis_run_id)
     if run is None:
-        return NodeResult(
-            status=NodeStatus.FAILED, error_message=f"AnalysisRun not found: {analysis_run_id}"
-        )
+        return NodeResult(status=NodeStatus.FAILED, error_message=f"AnalysisRun not found: {analysis_run_id}")
 
     try:
         ledger = ClaimLedgerService(session)
         ledger.persist_claims_for_run(run)
         from src.database.models import ClaimRecord
 
-        stmt = (
-            __import__("sqlalchemy")
-            .select(ClaimRecord)
-            .where(ClaimRecord.analysis_run_id == analysis_run_id)
-        )
+        stmt = __import__("sqlalchemy").select(ClaimRecord).where(ClaimRecord.analysis_run_id == analysis_run_id)
         claims = list(session.scalars(stmt))
         claim_ids = [c.id for c in claims]
         return NodeResult(status=NodeStatus.COMPLETED, state_updates={"claim_ids": claim_ids})
@@ -297,17 +275,13 @@ def node_match_activation_playbooks(state: ProductWorkflowState) -> NodeResult:
 
     analysis_run_id = state.analysis_run_id
     if not analysis_run_id:
-        return NodeResult(
-            status=NodeStatus.SKIPPED, error_message="No analysis_run_id for playbook matching"
-        )
+        return NodeResult(status=NodeStatus.SKIPPED, error_message="No analysis_run_id for playbook matching")
 
     try:
         act_service = ActivationPlaybookService(session)
         recs = act_service.generate_recommendations_for_run(analysis_run_id)
         if recs:
-            act_service.activation_repo.replace_recommendations_for_analysis_run(
-                analysis_run_id, recs
-            )
+            act_service.activation_repo.replace_recommendations_for_analysis_run(analysis_run_id, recs)
             rec_ids = [r.get("id", "") for r in recs if r.get("id")]
         else:
             rec_ids = []
@@ -317,9 +291,7 @@ def node_match_activation_playbooks(state: ProductWorkflowState) -> NodeResult:
                 degraded_reason="No activation playbooks matched",
                 state_updates={"activation_recommendation_ids": []},
             )
-        return NodeResult(
-            status=NodeStatus.COMPLETED, state_updates={"activation_recommendation_ids": rec_ids}
-        )
+        return NodeResult(status=NodeStatus.COMPLETED, state_updates={"activation_recommendation_ids": rec_ids})
     except Exception as exc:
         return NodeResult(
             status=NodeStatus.DEGRADED,
@@ -367,9 +339,7 @@ def node_run_product_quality(state: ProductWorkflowState) -> NodeResult:
 
     analysis_run_id = state.analysis_run_id
     if not analysis_run_id:
-        return NodeResult(
-            status=NodeStatus.SKIPPED, error_message="No analysis_run_id for quality run"
-        )
+        return NodeResult(status=NodeStatus.SKIPPED, error_message="No analysis_run_id for quality run")
 
     try:
         from src.quality.service import ProductQualityService

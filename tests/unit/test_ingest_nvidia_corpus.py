@@ -94,7 +94,7 @@ class TestLoadSourcesRaw:
     def test_loads_yaml_with_new_fields(self) -> None:
         sources = load_sources_raw()
         assert "nim" in sources
-        assert sources["nim"].get("version") == "1.0"
+        assert sources["nim"].get("version") == "1.1"
         assert sources["nim"].get("document_type") == "nvidia_corpus"
         assert sources["nim"].get("product") == "NVIDIA NIM"
 
@@ -172,13 +172,13 @@ class TestPayload:
                 "--backend",
                 "in_memory",
                 "--source-id",
-                "nim",
+                "nemo_guardrails",
             ]
         )
         report = run_ingestion(args)
         assert report.documents_seen == 1
         assert report.documents_valid == 1
-        assert report.chunks_created >= 1  # nim.md has multiple sections
+        assert report.chunks_created >= 1  # nemo_guardrails.md has multiple sections
 
 
 # ---------------------------------------------------------------------------

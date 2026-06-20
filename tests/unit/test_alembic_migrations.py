@@ -27,6 +27,13 @@ def test_alembic_metadata_imports() -> None:
     )
 
 
+def test_alembic_env_prefers_product_db_url_over_ini_default() -> None:
+    env_source = (PROJECT_ROOT / "migrations" / "env.py").read_text(encoding="utf-8")
+    product_env_pos = env_source.index('os.getenv("PRODUCT_DB_URL")')
+    ini_default_pos = env_source.index('config.get_main_option("sqlalchemy.url")')
+    assert product_env_pos < ini_default_pos
+
+
 def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
     db_path = tmp_path / "test_migrate.db"
     db_url = f"sqlite:///{db_path.as_posix()}"
@@ -40,8 +47,7 @@ def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
     command.upgrade(config, "head")
     engine = None
     try:
-        from sqlalchemy import create_engine, inspect as sa_inspect
-        from sqlalchemy import text
+        from sqlalchemy import create_engine, text
 
         engine = create_engine(db_url)
         tables = inspect(engine).get_table_names()
@@ -66,7 +72,13 @@ def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
         # Verify new columns exist at head
         with engine.connect() as conn:
             rd_cols = {row[1] for row in conn.execute(text("PRAGMA table_info('review_decisions')"))}
-        for col in ("startup_id", "thread_id", "review_payload_snapshot", "status_before_resume", "status_after_resume"):
+        for col in (
+            "startup_id",
+            "thread_id",
+            "review_payload_snapshot",
+            "status_before_resume",
+            "status_after_resume",
+        ):
             assert col in rd_cols, f"Column {col} should exist at head"
 
         tables_before_opportunity_migration = {
@@ -92,7 +104,13 @@ def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
         command.downgrade(config, "-1")
         with engine.connect() as conn:
             rd_cols_after = {row[1] for row in conn.execute(text("PRAGMA table_info('review_decisions')"))}
-        for col in ("startup_id", "thread_id", "review_payload_snapshot", "status_before_resume", "status_after_resume"):
+        for col in (
+            "startup_id",
+            "thread_id",
+            "review_payload_snapshot",
+            "status_before_resume",
+            "status_after_resume",
+        ):
             assert col not in rd_cols_after, f"Column {col} should have been removed by downgrade"
 
         tables_after = inspect(engine).get_table_names()

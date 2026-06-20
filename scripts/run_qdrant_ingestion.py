@@ -31,22 +31,24 @@ def _make_vector_entries(
     now_iso = datetime.now(UTC).isoformat()
     entries: list[VectorEntry] = []
     for chunk, emb in zip(chunks, embeddings, strict=False):
-        entries.append(VectorEntry(
-            chunk_id=chunk.chunk_id,
-            source_id=chunk.source_id,
-            title=chunk.title,
-            content=chunk.content,
-            product=chunk.product,
-            gap_types=list(chunk.gap_types),
-            url=chunk.url,
-            embedding=emb,
-            version=chunk.version,
-            document_type=chunk.document_type or "nvidia_corpus",
-            content_hash=chunk.content_hash,
-            collected_at=now_iso,
-            is_active=chunk.is_active if hasattr(chunk, "is_active") else True,
-            ingestion_run_id=run_id,
-        ))
+        entries.append(
+            VectorEntry(
+                chunk_id=chunk.chunk_id,
+                source_id=chunk.source_id,
+                title=chunk.title,
+                content=chunk.content,
+                product=chunk.product,
+                gap_types=list(chunk.gap_types),
+                url=chunk.url,
+                embedding=emb,
+                version=chunk.version,
+                document_type=chunk.document_type or "nvidia_corpus",
+                content_hash=chunk.content_hash,
+                collected_at=now_iso,
+                is_active=chunk.is_active if hasattr(chunk, "is_active") else True,
+                ingestion_run_id=run_id,
+            )
+        )
     return entries
 
 
@@ -118,8 +120,7 @@ def main() -> None:
     parser.add_argument("--collection", default="nvidia_corpus", help="Qdrant collection name")
     parser.add_argument("--vector-size", type=int, default=384, help="Embedding dimension")
     parser.add_argument("--api-key", default=None, help="Qdrant API key")
-    parser.add_argument("--clear", action="store_true",
-                        help="Clear existing collection before ingest")
+    parser.add_argument("--clear", action="store_true", help="Clear existing collection before ingest")
     parser.add_argument("--batch-size", type=int, default=100, help="Upsert batch size")
     args = parser.parse_args()
 

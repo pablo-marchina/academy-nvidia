@@ -52,37 +52,61 @@ def fixture_populated_store() -> InMemoryVectorStore:
 
 
 class TestModeEvalReranked:
-    def test_hybrid_reranked_returns_results(self) -> None:
-        result = run_mode_eval(RetrievalMode.HYBRID_RERANKED)
+    def test_hybrid_reranked_returns_results(self, populated_store: InMemoryVectorStore) -> None:
+        emb = MockEmbeddingProvider()
+        result = run_mode_eval(
+            RetrievalMode.HYBRID_RERANKED,
+            vector_store=populated_store,
+            embedding_model=emb,
+        )
         assert result.total_cases > 0
         assert result.mode == RetrievalMode.HYBRID_RERANKED
 
-    def test_hybrid_reranked_has_quality_gates(self) -> None:
-        result = run_mode_eval(RetrievalMode.HYBRID_RERANKED)
+    def test_hybrid_reranked_has_quality_gates(self, populated_store: InMemoryVectorStore) -> None:
+        emb = MockEmbeddingProvider()
+        result = run_mode_eval(
+            RetrievalMode.HYBRID_RERANKED,
+            vector_store=populated_store,
+            embedding_model=emb,
+        )
         assert len(result.gates) >= 2
 
-    def test_hybrid_reranked_with_config(self) -> None:
+    def test_hybrid_reranked_with_config(self, populated_store: InMemoryVectorStore) -> None:
+        emb = MockEmbeddingProvider()
         cfg = RerankingConfig(boost_gap_match=0.0)
-        result = run_mode_eval(RetrievalMode.HYBRID_RERANKED, reranking_config=cfg)
+        result = run_mode_eval(
+            RetrievalMode.HYBRID_RERANKED,
+            vector_store=populated_store,
+            embedding_model=emb,
+            reranking_config=cfg,
+        )
         assert result.total_cases > 0
 
 
 class TestModeEvalPacked:
-    def test_hybrid_packed_returns_results(self) -> None:
-        result = run_mode_eval(RetrievalMode.HYBRID_RERANKED_PACKED)
+    def test_hybrid_packed_returns_results(self, populated_store: InMemoryVectorStore) -> None:
+        emb = MockEmbeddingProvider()
+        result = run_mode_eval(
+            RetrievalMode.HYBRID_RERANKED_PACKED,
+            vector_store=populated_store,
+            embedding_model=emb,
+        )
         assert result.total_cases > 0
         assert result.mode == RetrievalMode.HYBRID_RERANKED_PACKED
 
-    def test_hybrid_packed_metrics_present(self) -> None:
-        result = run_mode_eval(RetrievalMode.HYBRID_RERANKED_PACKED)
+    def test_hybrid_packed_metrics_present(self, populated_store: InMemoryVectorStore) -> None:
+        emb = MockEmbeddingProvider()
+        result = run_mode_eval(
+            RetrievalMode.HYBRID_RERANKED_PACKED,
+            vector_store=populated_store,
+            embedding_model=emb,
+        )
         for r in result.results:
             assert hasattr(r.metrics, "packed_context_count")
             assert hasattr(r.metrics, "dropped_context_count")
             assert hasattr(r.metrics, "noise_reduction_score")
 
-    def test_hybrid_packed_runs_with_populated_store(
-        self, populated_store: InMemoryVectorStore
-    ) -> None:
+    def test_hybrid_packed_runs_with_populated_store(self, populated_store: InMemoryVectorStore) -> None:
         emb = MockEmbeddingProvider()
         idx = build_default_index()
         packed = run_mode_eval(
@@ -96,16 +120,24 @@ class TestModeEvalPacked:
 
 
 class TestComparison:
-    def test_comparison_has_five_modes(self) -> None:
-        comparison = run_comparison_eval()
+    def test_comparison_has_five_modes(self, populated_store: InMemoryVectorStore) -> None:
+        emb = MockEmbeddingProvider()
+        comparison = run_comparison_eval(
+            vector_store=populated_store,
+            embedding_model=emb,
+        )
         assert comparison.lexical.mode == RetrievalMode.LEXICAL
         assert comparison.semantic.mode == RetrievalMode.SEMANTIC
         assert comparison.hybrid.mode == RetrievalMode.HYBRID
         assert comparison.hybrid_reranked.mode == RetrievalMode.HYBRID_RERANKED
         assert comparison.hybrid_reranked_packed.mode == RetrievalMode.HYBRID_RERANKED_PACKED
 
-    def test_comparison_format_summary_includes_modes(self) -> None:
-        comparison = run_comparison_eval()
+    def test_comparison_format_summary_includes_modes(self, populated_store: InMemoryVectorStore) -> None:
+        emb = MockEmbeddingProvider()
+        comparison = run_comparison_eval(
+            vector_store=populated_store,
+            embedding_model=emb,
+        )
         summary = format_comparison_summary(comparison)
         assert "LEXICAL" in summary
         assert "SEMANTIC" in summary
@@ -113,13 +145,15 @@ class TestComparison:
         assert "HYBRID_RERANKED" in summary
         assert "HYBRID_RERANKED_PACKED" in summary
 
-    def test_comparison_critical_regressions_empty(self) -> None:
-        comparison = run_comparison_eval()
+    def test_comparison_critical_regressions_empty(self, populated_store: InMemoryVectorStore) -> None:
+        emb = MockEmbeddingProvider()
+        comparison = run_comparison_eval(
+            vector_store=populated_store,
+            embedding_model=emb,
+        )
         assert isinstance(comparison.critical_regressions, list)
 
-    def test_comparison_regression_detection_works(
-        self, populated_store: InMemoryVectorStore
-    ) -> None:
+    def test_comparison_regression_detection_works(self, populated_store: InMemoryVectorStore) -> None:
         emb = MockEmbeddingProvider()
         idx = build_default_index()
         comparison = run_comparison_eval(

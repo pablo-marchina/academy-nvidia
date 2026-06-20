@@ -1,5 +1,18 @@
 ﻿# ROADMAP -- Status Real (Junho 2026)
 
+## Final Product Readiness - 2026-06-19
+
+- [x] Product branch established for strict local production readiness.
+- [x] Demo routes, demo scripts, demo sample input, and demo integration tests removed from the active product path.
+- [x] Product readiness now blocks mutating product and workflow routes before persistence/orchestration when mandatory dependencies are missing.
+- [x] PostgreSQL, Qdrant, real RAG embeddings, LangGraph, fresh corpus, and productive calibration are documented as required for product readiness.
+- [x] Python lint, format, typecheck, targeted product/integration/acceptance tests, frontend install, and frontend build were made green in the readiness branch.
+- [x] Docker Compose acceptance with live PostgreSQL + Qdrant was executed; product readiness and health endpoints returned ready/healthy.
+- [x] Product Playwright E2E passed against the live local backend and screenshots were stored under `docs/screenshots/`.
+- [x] Magic-value audit now blocks unregistered productive values and reports zero unregistered findings.
+- [x] Full `pytest -q --basetemp .pytest_tmp_full` passed (`2085 passed`, `27 skipped`, `166 warnings`).
+- [x] Refreshed NVIDIA `nim`, `tensorrt_llm`, and `triton` sources are chunkable markdown with official source URLs and current content hashes.
+
 ## Concluídos
 
 ### Epic 0 -- Case Consolidation (concluído)

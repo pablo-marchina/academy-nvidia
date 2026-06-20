@@ -1,4 +1,4 @@
-.PHONY: test test-unit test-integration test-acceptance test-e2e test-slow test-optional lint format-check typecheck validate validate-fast validate-full validate-backend validate-frontend validate-docs validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e ui-e2e-product demo-acceptance demo-full-check demo-full demo-cli demo-cli-offline demo-cli-rag db-upgrade db-downgrade db-migrate db-current db-history acceptance acceptance-backend prepare-release product-readiness-report ui-lint ui-lint-fix validate-no-demo
+.PHONY: test test-unit test-integration test-acceptance test-e2e test-slow test-optional lint format-check typecheck validate validate-fast validate-full validate-backend validate-frontend validate-docs validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e ui-e2e-product product-ui-acceptance db-upgrade db-downgrade db-migrate db-current db-history acceptance acceptance-backend prepare-release product-readiness-report ui-lint ui-lint-fix validate-no-demo
 
 test:
 	python -m pytest -m "not (integration or acceptance or e2e or slow or optional or external_service)" --tb=short
@@ -112,10 +112,10 @@ api-dev:
 	uvicorn src.api.main:app --reload
 
 api-test:
-	python -m pytest tests/integration/test_api_demo.py tests/integration/test_demo_acceptance.py -v
+	python -m pytest tests/integration/test_product_api.py tests/integration/test_product_workflow_api.py -v --basetemp .pytest_tmp_api
 
 ui-install:
-	cd frontend && npm install --no-package-lock
+	cd frontend && npm ci
 
 ui-dev:
 	cd frontend && npm run dev
@@ -135,9 +135,7 @@ ui-e2e:
 ui-e2e-product:
 	cd frontend && npm run test:e2e:product
 
-demo-acceptance: api-test ui-install ui-build ui-e2e
-
-demo-full-check: demo-acceptance
+product-ui-acceptance: ui-install ui-build ui-e2e-product
 
 acceptance:
 	python -m pytest tests/acceptance/ -m acceptance --tb=short --basetemp .pytest_tmp_acceptance
@@ -149,17 +147,3 @@ prepare-release: validate-full acceptance
 
 product-readiness-report:
 	python scripts/product_acceptance_report.py --api-url http://localhost:8000
-
-demo-full:
-	@echo "Run the local demo in two terminals:"
-	@echo "  make api-dev"
-	@echo "  make ui-dev"
-
-demo-cli:
-	python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json
-
-demo-cli-offline:
-	python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json --offline
-
-demo-cli-rag:
-	python scripts/run_startup_radar_demo.py --input examples/demo/sample_startup_input.json --use-rag --rag-backend local

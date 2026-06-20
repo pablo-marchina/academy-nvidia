@@ -25,10 +25,7 @@ def validate_evidence(
 
     validated = validate_evidence_batch(evidence_objects)
 
-    claims = [
-        f"[{v.evidence_kind.value}] {v.claim}: {v.quote_or_evidence}"
-        for v in validated
-    ]
+    claims = [f"[{v.evidence_kind.value}] {v.claim}: {v.quote_or_evidence}" for v in validated]
 
     kind_rank: dict[str, int] = {
         "fact": 0,

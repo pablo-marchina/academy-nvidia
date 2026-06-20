@@ -13,8 +13,17 @@ from src.extraction.schemas import (
     StartupProfile,
     TechnicalGap,
 )
+from src.quality.decision_calibration_registry import (
+    CalibrationStatus,
+    DecisionCalibrationRecord,
+    DecisionType,
+)
 from src.rag.schemas import RagPipelineOutput
+from src.recommendation.nvidia_technology_mapping import REQUIRED_MAPPING_DECISIONS
 from src.recommendation.recommendation_engine import (
+    REQUIRED_RECOMMENDATION_DECISIONS,
+    NvidiaRecommendationRecord,
+    RecommendationRankingStatus,
     _compute_overall_confidence,
     _compute_overall_priority,
     _determine_action,
@@ -22,6 +31,8 @@ from src.recommendation.recommendation_engine import (
     _suggest_experiment,
     build_per_gap_recommendation,
     build_recommendations,
+    compute_recommendation_metrics,
+    rank_recommendations_from_mappings,
 )
 from src.recommendation.schemas import (
     RecommendedNextAction,
@@ -356,9 +367,7 @@ class TestBuildRecommendations:
             rag_context=_make_rag_context(),
         )
         assert len(result.recommendations) == 2
-        approach = [
-            r for r in result.recommendations if r.action == RecommendedNextAction.APPROACH_NOW
-        ]
+        approach = [r for r in result.recommendations if r.action == RecommendedNextAction.APPROACH_NOW]
         assert len(approach) == 2
 
     def test_reasoning_contains_startup_name_and_gap_count(self) -> None:
@@ -411,26 +420,6 @@ class TestBuildRecommendations:
 # =========================================================================
 # Mapping-based recommendation tests
 # =========================================================================
-
-from src.quality.decision_calibration_registry import (
-    CalibrationStatus,
-    DecisionCalibrationRecord,
-    DecisionType,
-    DecisionValidationResult,
-)
-
-from src.recommendation.recommendation_engine import (
-    NvidiaRecommendationMetrics,
-    NvidiaRecommendationRecord,
-    RecommendationRankingStatus,
-    REQUIRED_RECOMMENDATION_DECISIONS,
-    compute_recommendation_metrics,
-    rank_recommendations_from_mappings,
-)
-from src.recommendation.nvidia_technology_mapping import (
-    GAP_TECHNOLOGY_CANDIDATES,
-    REQUIRED_MAPPING_DECISIONS,
-)
 
 
 def _make_calibrated_inventory() -> list[DecisionCalibrationRecord]:
@@ -889,9 +878,7 @@ class TestComputeRecommendationMetrics:
         assert metrics.evidence_supported_recommendation_rate == 0.5
         assert metrics.rag_supported_recommendation_rate == 0.5
         assert metrics.recommendation_uncertainty_mean == 0.55
-        assert metrics.missing_recommendation_calibration_count == len(
-            REQUIRED_RECOMMENDATION_DECISIONS
-        )
+        assert metrics.missing_recommendation_calibration_count == len(REQUIRED_RECOMMENDATION_DECISIONS)
 
 
 class TestRankFromMappingsCalibrationValidation:
@@ -1133,6 +1120,7 @@ class TestNewMetricsFields:
         inventory = _make_calibrated_inventory()
         mappings = [_make_sample_mapping()]
         import sys as _sys
+
         before = set(_sys.modules.keys())
         rank_recommendations_from_mappings(
             run_id="test-1",

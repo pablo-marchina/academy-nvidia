@@ -65,10 +65,7 @@ def _build_uncertainties(result: PipelineResult) -> list[BriefUncertainty]:
                     BriefUncertainty(
                         description=f"Gap '{gap.gap.value}' detected as {gap.evidence_tag.value}",
                         source="gap_diagnosis",
-                        impact=(
-                            "Recommendation reliability is reduced; "
-                            "collect direct evidence to confirm."
-                        ),
+                        impact=("Recommendation reliability is reduced; " "collect direct evidence to confirm."),
                     )
                 )
     return uncertainties
@@ -132,8 +129,7 @@ def build_action_brief(
     if diag:
         for tc in diag.nvidia_technology_candidates:
             tech_lines.append(
-                f"- **{tc.technology_name}** addresses **{tc.addresses_gap.value}**"
-                f"\n  {tc.justification}"
+                f"- **{tc.technology_name}** addresses **{tc.addresses_gap.value}**" f"\n  {tc.justification}"
             )
 
     exp_lines: list[str] = []
@@ -180,9 +176,7 @@ def build_action_brief(
                 f"Priority Score: {result.final_priority_score}/100 | "
                 f"Motion: {motion} | "
                 f"Confidence: {confidence.value}",
-                f"Gaps detected: {total_gaps} | "
-                f"Evidence items: {evidence_count} | "
-                f"Next action: {next_action}",
+                f"Gaps detected: {total_gaps} | " f"Evidence items: {evidence_count} | " f"Next action: {next_action}",
             ],
         ),
         _build_section(
@@ -266,10 +260,7 @@ def build_action_brief(
                 [
                     f"Total evidence items: {len(evidence_items)}",
                 ]
-                + [
-                    f"- **[{e.tag}]** {e.claim} ({e.confidence}, {e.source_type})"
-                    for e in evidence_items
-                ]
+                + [f"- **[{e.tag}]** {e.claim} ({e.confidence}, {e.source_type})" for e in evidence_items]
                 if evidence_items
                 else ["No evidence collected."]
             ),
@@ -308,10 +299,7 @@ def build_action_brief(
         sections.append(
             _build_section(
                 "Uncertainties / Limitations",
-                [
-                    f"- **{u.description}**\n  Source: {u.source}\n  Impact: {u.impact}"
-                    for u in uncertainties
-                ],
+                [f"- **{u.description}**\n  Source: {u.source}\n  Impact: {u.impact}" for u in uncertainties],
             )
         )
 

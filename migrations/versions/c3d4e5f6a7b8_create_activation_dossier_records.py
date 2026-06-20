@@ -45,9 +45,7 @@ def upgrade() -> None:
             ["analysis_run_id"],
             unique=False,
         )
-        batch_op.create_index(
-            "ix_dossier_run_latest", ["analysis_run_id", "is_latest"], unique=False
-        )
+        batch_op.create_index("ix_dossier_run_latest", ["analysis_run_id", "is_latest"], unique=False)
         batch_op.create_index("ix_dossier_recommended_motion", ["recommended_motion"], unique=False)
 
 

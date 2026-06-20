@@ -220,9 +220,7 @@ class TestCandidates:
             sector="Old Sector",
         )
         repository.session.commit()
-        updated = repository.update_candidate_fields(
-            c.id, {"sector": "New Sector", "confidence": "high"}
-        )
+        updated = repository.update_candidate_fields(c.id, {"sector": "New Sector", "confidence": "high"})
         repository.session.commit()
         assert updated is not None
         assert updated.sector == "New Sector"

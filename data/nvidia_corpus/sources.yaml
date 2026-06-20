@@ -1,331 +1,385 @@
 sources:
   nim:
-    title: "NVIDIA NIM"
-    url: "https://docs.nvidia.com/nim/latest/"
-    product: "NVIDIA NIM"
-    gap_types: ["external_api_dependency", "high_inference_cost", "high_latency"]
-    version: "1.0"
-    document_type: "nvidia_corpus"
-    content_hash: "6cb050ab67d9343a0acadc3f8f2b49ff"
-    previous_content_hash: null
-    collected_at: "2026-06-10T00:00:00Z"
-    last_checked_at: "2026-06-10T00:00:00Z"
-    valid_from: "2026-06-10T00:00:00Z"
+    title: NVIDIA NIM
+    url: https://docs.nvidia.com/nim/
+    product: NVIDIA NIM
+    gap_types:
+    - external_api_dependency
+    - high_inference_cost
+    - high_latency
+    version: '1.1'
+    document_type: nvidia_corpus
+    content_hash: 934758cf3e136e39bef9553b89bdd01b
+    previous_content_hash: 6cb050ab67d9343a0acadc3f8f2b49ff
+    collected_at: '2026-06-19T16:58:27.627458+00:00'
+    last_checked_at: '2026-06-19T16:58:27.627458+00:00'
+    valid_from: '2026-06-19T16:58:27.627458+00:00'
     valid_until: null
-    freshness_policy: "weekly"
+    freshness_policy: weekly
     stale_after_days: 7
     is_active: true
     deprecated_at: null
     superseded_by: null
     deprecation_reason: null
     versions:
-      - version: "1.0"
-        content_hash: "6cb050ab67d9343a0acadc3f8f2b49ff"
-        previous_content_hash: null
-        collected_at: "2026-06-10T00:00:00Z"
-        last_checked_at: "2026-06-10T00:00:00Z"
-        valid_from: "2026-06-10T00:00:00Z"
-        valid_until: null
-        freshness_policy: "weekly"
-        stale_after_days: 7
-        is_active: true
-        deprecated_at: null
-        superseded_by: null
-        deprecation_reason: null
+    - version: '1.0'
+      content_hash: 6cb050ab67d9343a0acadc3f8f2b49ff
+      previous_content_hash: null
+      collected_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-06-10T00:00:00Z'
+      valid_from: '2026-06-10T00:00:00Z'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: false
+      deprecated_at: '2026-06-19T16:58:27.627458+00:00'
+      superseded_by: '1.1'
+      deprecation_reason: superseded_by_new_content_hash
+    - version: '1.1'
+      content_hash: 934758cf3e136e39bef9553b89bdd01b
+      previous_content_hash: 6cb050ab67d9343a0acadc3f8f2b49ff
+      collected_at: '2026-06-19T16:58:27.627458+00:00'
+      last_checked_at: '2026-06-19T16:58:27.627458+00:00'
+      valid_from: '2026-06-19T16:58:27.627458+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
   tensorrt_llm:
-    title: "TensorRT-LLM"
-    url: "https://docs.nvidia.com/deeplearning/tensorrt-llm/"
-    product: "TensorRT-LLM"
-    gap_types: ["high_inference_cost", "high_latency"]
-    version: "1.0"
-    document_type: "nvidia_corpus"
-    content_hash: "65b92f8fa896e6f56d5a52ca55c485d8"
-    previous_content_hash: null
-    collected_at: "2026-06-10T00:00:00Z"
-    last_checked_at: "2026-06-10T00:00:00Z"
-    valid_from: "2026-06-10T00:00:00Z"
+    title: TensorRT-LLM
+    url: https://nvidia.github.io/TensorRT-LLM/
+    product: TensorRT-LLM
+    gap_types:
+    - high_inference_cost
+    - high_latency
+    version: '1.1'
+    document_type: nvidia_corpus
+    content_hash: 0b4d8b96e2293299647b32d274747bfc
+    previous_content_hash: 65b92f8fa896e6f56d5a52ca55c485d8
+    collected_at: '2026-06-19T16:58:30.040376+00:00'
+    last_checked_at: '2026-06-19T16:58:30.040376+00:00'
+    valid_from: '2026-06-19T16:58:30.040376+00:00'
     valid_until: null
-    freshness_policy: "weekly"
+    freshness_policy: weekly
     stale_after_days: 7
     is_active: true
     deprecated_at: null
     superseded_by: null
     deprecation_reason: null
     versions:
-      - version: "1.0"
-        content_hash: "65b92f8fa896e6f56d5a52ca55c485d8"
-        previous_content_hash: null
-        collected_at: "2026-06-10T00:00:00Z"
-        last_checked_at: "2026-06-10T00:00:00Z"
-        valid_from: "2026-06-10T00:00:00Z"
-        valid_until: null
-        freshness_policy: "weekly"
-        stale_after_days: 7
-        is_active: true
-        deprecated_at: null
-        superseded_by: null
-        deprecation_reason: null
+    - version: '1.0'
+      content_hash: 65b92f8fa896e6f56d5a52ca55c485d8
+      previous_content_hash: null
+      collected_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-06-10T00:00:00Z'
+      valid_from: '2026-06-10T00:00:00Z'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: false
+      deprecated_at: '2026-06-19T16:58:30.040376+00:00'
+      superseded_by: '1.1'
+      deprecation_reason: superseded_by_new_content_hash
+    - version: '1.1'
+      content_hash: 0b4d8b96e2293299647b32d274747bfc
+      previous_content_hash: 65b92f8fa896e6f56d5a52ca55c485d8
+      collected_at: '2026-06-19T16:58:30.040376+00:00'
+      last_checked_at: '2026-06-19T16:58:30.040376+00:00'
+      valid_from: '2026-06-19T16:58:30.040376+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
   triton:
-    title: "Triton Inference Server"
-    url: "https://docs.nvidia.com/deeplearning/triton-inference-server/"
-    product: "Triton Inference Server"
-    gap_types: ["high_inference_cost", "high_latency"]
-    version: "1.0"
-    document_type: "nvidia_corpus"
-    content_hash: "a42425f50118898cf2a7d3e5d1b75767"
-    previous_content_hash: null
-    collected_at: "2026-06-10T00:00:00Z"
-    last_checked_at: "2026-06-10T00:00:00Z"
-    valid_from: "2026-06-10T00:00:00Z"
+    title: Triton Inference Server
+    url: https://docs.nvidia.com/deeplearning/triton-inference-server/
+    product: Triton Inference Server
+    gap_types:
+    - high_inference_cost
+    - high_latency
+    version: '1.1'
+    document_type: nvidia_corpus
+    content_hash: 179efdb66c06c42034d635efbc6f0392
+    previous_content_hash: a42425f50118898cf2a7d3e5d1b75767
+    collected_at: '2026-06-19T16:57:44.699490+00:00'
+    last_checked_at: '2026-06-19T16:57:44.699490+00:00'
+    valid_from: '2026-06-19T16:57:44.699490+00:00'
     valid_until: null
-    freshness_policy: "weekly"
+    freshness_policy: weekly
     stale_after_days: 7
     is_active: true
     deprecated_at: null
     superseded_by: null
     deprecation_reason: null
     versions:
-      - version: "1.0"
-        content_hash: "a42425f50118898cf2a7d3e5d1b75767"
-        previous_content_hash: null
-        collected_at: "2026-06-10T00:00:00Z"
-        last_checked_at: "2026-06-10T00:00:00Z"
-        valid_from: "2026-06-10T00:00:00Z"
-        valid_until: null
-        freshness_policy: "weekly"
-        stale_after_days: 7
-        is_active: true
-        deprecated_at: null
-        superseded_by: null
-        deprecation_reason: null
+    - version: '1.0'
+      content_hash: a42425f50118898cf2a7d3e5d1b75767
+      previous_content_hash: null
+      collected_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-06-10T00:00:00Z'
+      valid_from: '2026-06-10T00:00:00Z'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: false
+      deprecated_at: '2026-06-19T16:57:44.699490+00:00'
+      superseded_by: '1.1'
+      deprecation_reason: superseded_by_new_content_hash
+    - version: '1.1'
+      content_hash: 179efdb66c06c42034d635efbc6f0392
+      previous_content_hash: a42425f50118898cf2a7d3e5d1b75767
+      collected_at: '2026-06-19T16:57:44.699490+00:00'
+      last_checked_at: '2026-06-19T16:57:44.699490+00:00'
+      valid_from: '2026-06-19T16:57:44.699490+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
   nemo_guardrails:
-    title: "NeMo Guardrails"
-    url: "https://docs.nvidia.com/nemo/guardrails/"
-    product: "NeMo Guardrails"
-    gap_types: ["agent_governance_gap"]
-    version: "1.0"
-    document_type: "nvidia_corpus"
-    content_hash: "b48cc8958f973ccd3d805d8591428460"
+    title: NeMo Guardrails
+    url: https://docs.nvidia.com/nemo/guardrails/
+    product: NeMo Guardrails
+    gap_types:
+    - agent_governance_gap
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: b48cc8958f973ccd3d805d8591428460
     previous_content_hash: null
-    collected_at: "2026-06-10T00:00:00Z"
-    last_checked_at: "2026-06-10T00:00:00Z"
-    valid_from: "2026-06-10T00:00:00Z"
+    collected_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-06-10T00:00:00Z'
+    valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
-    freshness_policy: "monthly"
+    freshness_policy: monthly
     stale_after_days: 30
     is_active: true
     deprecated_at: null
     superseded_by: null
     deprecation_reason: null
     versions:
-      - version: "1.0"
-        content_hash: "b48cc8958f973ccd3d805d8591428460"
-        previous_content_hash: null
-        collected_at: "2026-06-10T00:00:00Z"
-        last_checked_at: "2026-06-10T00:00:00Z"
-        valid_from: "2026-06-10T00:00:00Z"
-        valid_until: null
-        freshness_policy: "monthly"
-        stale_after_days: 30
-        is_active: true
-        deprecated_at: null
-        superseded_by: null
-        deprecation_reason: null
+    - version: '1.0'
+      content_hash: b48cc8958f973ccd3d805d8591428460
+      previous_content_hash: null
+      collected_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-06-10T00:00:00Z'
+      valid_from: '2026-06-10T00:00:00Z'
+      valid_until: null
+      freshness_policy: monthly
+      stale_after_days: 30
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
   rapids:
-    title: "NVIDIA RAPIDS"
-    url: "https://docs.rapids.ai/"
-    product: "NVIDIA RAPIDS"
-    gap_types: ["slow_data_pipeline", "heavy_tabular_processing"]
-    version: "1.0"
-    document_type: "nvidia_corpus"
-    content_hash: "c32ef3e9aa7fd84fd1d8dff584671ac4"
+    title: NVIDIA RAPIDS
+    url: https://docs.rapids.ai/
+    product: NVIDIA RAPIDS
+    gap_types:
+    - slow_data_pipeline
+    - heavy_tabular_processing
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: c32ef3e9aa7fd84fd1d8dff584671ac4
     previous_content_hash: null
-    collected_at: "2026-06-10T00:00:00Z"
-    last_checked_at: "2026-06-10T00:00:00Z"
-    valid_from: "2026-06-10T00:00:00Z"
+    collected_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-06-10T00:00:00Z'
+    valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
-    freshness_policy: "monthly"
+    freshness_policy: monthly
     stale_after_days: 30
     is_active: true
     deprecated_at: null
     superseded_by: null
     deprecation_reason: null
     versions:
-      - version: "1.0"
-        content_hash: "c32ef3e9aa7fd84fd1d8dff584671ac4"
-        previous_content_hash: null
-        collected_at: "2026-06-10T00:00:00Z"
-        last_checked_at: "2026-06-10T00:00:00Z"
-        valid_from: "2026-06-10T00:00:00Z"
-        valid_until: null
-        freshness_policy: "monthly"
-        stale_after_days: 30
-        is_active: true
-        deprecated_at: null
-        superseded_by: null
-        deprecation_reason: null
+    - version: '1.0'
+      content_hash: c32ef3e9aa7fd84fd1d8dff584671ac4
+      previous_content_hash: null
+      collected_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-06-10T00:00:00Z'
+      valid_from: '2026-06-10T00:00:00Z'
+      valid_until: null
+      freshness_policy: monthly
+      stale_after_days: 30
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
   riva:
-    title: "NVIDIA Riva"
-    url: "https://docs.nvidia.com/deeplearning/riva/"
-    product: "NVIDIA Riva"
-    gap_types: ["voice_need"]
-    version: "1.0"
-    document_type: "nvidia_corpus"
-    content_hash: "ecfd08eb211cb6fde0573846c166332f"
+    title: NVIDIA Riva
+    url: https://docs.nvidia.com/deeplearning/riva/
+    product: NVIDIA Riva
+    gap_types:
+    - voice_need
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: ecfd08eb211cb6fde0573846c166332f
     previous_content_hash: null
-    collected_at: "2026-06-10T00:00:00Z"
-    last_checked_at: "2026-06-10T00:00:00Z"
-    valid_from: "2026-06-10T00:00:00Z"
+    collected_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-06-10T00:00:00Z'
+    valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
-    freshness_policy: "monthly"
+    freshness_policy: monthly
     stale_after_days: 30
     is_active: true
     deprecated_at: null
     superseded_by: null
     deprecation_reason: null
     versions:
-      - version: "1.0"
-        content_hash: "ecfd08eb211cb6fde0573846c166332f"
-        previous_content_hash: null
-        collected_at: "2026-06-10T00:00:00Z"
-        last_checked_at: "2026-06-10T00:00:00Z"
-        valid_from: "2026-06-10T00:00:00Z"
-        valid_until: null
-        freshness_policy: "monthly"
-        stale_after_days: 30
-        is_active: true
-        deprecated_at: null
-        superseded_by: null
-        deprecation_reason: null
+    - version: '1.0'
+      content_hash: ecfd08eb211cb6fde0573846c166332f
+      previous_content_hash: null
+      collected_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-06-10T00:00:00Z'
+      valid_from: '2026-06-10T00:00:00Z'
+      valid_until: null
+      freshness_policy: monthly
+      stale_after_days: 30
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
   omniverse:
-    title: "NVIDIA Omniverse"
-    url: "https://docs.omniverse.nvidia.com/"
-    product: "NVIDIA Omniverse"
-    gap_types: ["simulation_need"]
-    version: "1.0"
-    document_type: "nvidia_corpus"
-    content_hash: "ff13c5417c071774f3ec9cc643d3f2ac"
+    title: NVIDIA Omniverse
+    url: https://docs.omniverse.nvidia.com/
+    product: NVIDIA Omniverse
+    gap_types:
+    - simulation_need
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: ff13c5417c071774f3ec9cc643d3f2ac
     previous_content_hash: null
-    collected_at: "2026-06-10T00:00:00Z"
-    last_checked_at: "2026-06-10T00:00:00Z"
-    valid_from: "2026-06-10T00:00:00Z"
+    collected_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-06-10T00:00:00Z'
+    valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
-    freshness_policy: "monthly"
+    freshness_policy: monthly
     stale_after_days: 30
     is_active: true
     deprecated_at: null
     superseded_by: null
     deprecation_reason: null
     versions:
-      - version: "1.0"
-        content_hash: "ff13c5417c071774f3ec9cc643d3f2ac"
-        previous_content_hash: null
-        collected_at: "2026-06-10T00:00:00Z"
-        last_checked_at: "2026-06-10T00:00:00Z"
-        valid_from: "2026-06-10T00:00:00Z"
-        valid_until: null
-        freshness_policy: "monthly"
-        stale_after_days: 30
-        is_active: true
-        deprecated_at: null
-        superseded_by: null
-        deprecation_reason: null
+    - version: '1.0'
+      content_hash: ff13c5417c071774f3ec9cc643d3f2ac
+      previous_content_hash: null
+      collected_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-06-10T00:00:00Z'
+      valid_from: '2026-06-10T00:00:00Z'
+      valid_until: null
+      freshness_policy: monthly
+      stale_after_days: 30
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
   isaac:
-    title: "NVIDIA Isaac"
-    url: "https://docs.isaac.robot.nvidia.com/"
-    product: "NVIDIA Isaac"
-    gap_types: ["robotics_need"]
-    version: "1.0"
-    document_type: "nvidia_corpus"
-    content_hash: "b21c24b16a375bb50ae4a37af7c2ef6a"
+    title: NVIDIA Isaac
+    url: https://docs.isaac.robot.nvidia.com/
+    product: NVIDIA Isaac
+    gap_types:
+    - robotics_need
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: b21c24b16a375bb50ae4a37af7c2ef6a
     previous_content_hash: null
-    collected_at: "2026-06-10T00:00:00Z"
-    last_checked_at: "2026-06-10T00:00:00Z"
-    valid_from: "2026-06-10T00:00:00Z"
+    collected_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-06-10T00:00:00Z'
+    valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
-    freshness_policy: "monthly"
+    freshness_policy: monthly
     stale_after_days: 30
     is_active: true
     deprecated_at: null
     superseded_by: null
     deprecation_reason: null
     versions:
-      - version: "1.0"
-        content_hash: "b21c24b16a375bb50ae4a37af7c2ef6a"
-        previous_content_hash: null
-        collected_at: "2026-06-10T00:00:00Z"
-        last_checked_at: "2026-06-10T00:00:00Z"
-        valid_from: "2026-06-10T00:00:00Z"
-        valid_until: null
-        freshness_policy: "monthly"
-        stale_after_days: 30
-        is_active: true
-        deprecated_at: null
-        superseded_by: null
-        deprecation_reason: null
+    - version: '1.0'
+      content_hash: b21c24b16a375bb50ae4a37af7c2ef6a
+      previous_content_hash: null
+      collected_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-06-10T00:00:00Z'
+      valid_from: '2026-06-10T00:00:00Z'
+      valid_until: null
+      freshness_policy: monthly
+      stale_after_days: 30
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
   clara_monai:
-    title: "Clara / MONAI"
-    url: "https://docs.nvidia.com/clara/"
-    product: "Clara / MONAI"
-    gap_types: ["healthcare_compliance_need"]
-    version: "1.0"
-    document_type: "nvidia_corpus"
-    content_hash: "c4d415d9d8041ae032b7524c1aad9561"
+    title: Clara / MONAI
+    url: https://docs.nvidia.com/clara/
+    product: Clara / MONAI
+    gap_types:
+    - healthcare_compliance_need
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: c4d415d9d8041ae032b7524c1aad9561
     previous_content_hash: null
-    collected_at: "2026-06-10T00:00:00Z"
-    last_checked_at: "2026-06-10T00:00:00Z"
-    valid_from: "2026-06-10T00:00:00Z"
+    collected_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-06-10T00:00:00Z'
+    valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
-    freshness_policy: "monthly"
+    freshness_policy: monthly
     stale_after_days: 30
     is_active: true
     deprecated_at: null
     superseded_by: null
     deprecation_reason: null
     versions:
-      - version: "1.0"
-        content_hash: "c4d415d9d8041ae032b7524c1aad9561"
-        previous_content_hash: null
-        collected_at: "2026-06-10T00:00:00Z"
-        last_checked_at: "2026-06-10T00:00:00Z"
-        valid_from: "2026-06-10T00:00:00Z"
-        valid_until: null
-        freshness_policy: "monthly"
-        stale_after_days: 30
-        is_active: true
-        deprecated_at: null
-        superseded_by: null
-        deprecation_reason: null
+    - version: '1.0'
+      content_hash: c4d415d9d8041ae032b7524c1aad9561
+      previous_content_hash: null
+      collected_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-06-10T00:00:00Z'
+      valid_from: '2026-06-10T00:00:00Z'
+      valid_until: null
+      freshness_policy: monthly
+      stale_after_days: 30
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
   morpheus:
-    title: "NVIDIA Morpheus"
-    url: "https://docs.nvidia.com/morpheus/"
-    product: "NVIDIA Morpheus"
-    gap_types: ["ai_cybersecurity_need"]
-    version: "1.0"
-    document_type: "nvidia_corpus"
-    content_hash: "1bc28284be938d0d207cf2c9751a060f"
+    title: NVIDIA Morpheus
+    url: https://docs.nvidia.com/morpheus/
+    product: NVIDIA Morpheus
+    gap_types:
+    - ai_cybersecurity_need
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: 1bc28284be938d0d207cf2c9751a060f
     previous_content_hash: null
-    collected_at: "2026-06-10T00:00:00Z"
-    last_checked_at: "2026-06-10T00:00:00Z"
-    valid_from: "2026-06-10T00:00:00Z"
+    collected_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-06-10T00:00:00Z'
+    valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
-    freshness_policy: "monthly"
+    freshness_policy: monthly
     stale_after_days: 30
     is_active: true
     deprecated_at: null
     superseded_by: null
     deprecation_reason: null
     versions:
-      - version: "1.0"
-        content_hash: "1bc28284be938d0d207cf2c9751a060f"
-        previous_content_hash: null
-        collected_at: "2026-06-10T00:00:00Z"
-        last_checked_at: "2026-06-10T00:00:00Z"
-        valid_from: "2026-06-10T00:00:00Z"
-        valid_until: null
-        freshness_policy: "monthly"
-        stale_after_days: 30
-        is_active: true
-        deprecated_at: null
-        superseded_by: null
-        deprecation_reason: null
+    - version: '1.0'
+      content_hash: 1bc28284be938d0d207cf2c9751a060f
+      previous_content_hash: null
+      collected_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-06-10T00:00:00Z'
+      valid_from: '2026-06-10T00:00:00Z'
+      valid_until: null
+      freshness_policy: monthly
+      stale_after_days: 30
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null

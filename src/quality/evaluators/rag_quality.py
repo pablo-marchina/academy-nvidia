@@ -33,15 +33,9 @@ def evaluate_rag_retrieval(result: RagEvidenceChunkList) -> dict[str, Any]:
     source_coverage = round(with_url / total, 4) if total > 0 else 0.0
 
     # Average scores
-    dense_scores = [
-        c.score_dense for c in chunks if c.score_dense is not None and c.score_dense > 0
-    ]
-    sparse_scores = [
-        c.score_sparse for c in chunks if c.score_sparse is not None and c.score_sparse > 0
-    ]
-    fused_scores = [
-        c.score_fused for c in chunks if c.score_fused is not None and c.score_fused > 0
-    ]
+    dense_scores = [c.score_dense for c in chunks if c.score_dense is not None and c.score_dense > 0]
+    sparse_scores = [c.score_sparse for c in chunks if c.score_sparse is not None and c.score_sparse > 0]
+    fused_scores = [c.score_fused for c in chunks if c.score_fused is not None and c.score_fused > 0]
 
     avg_dense = round(sum(dense_scores) / len(dense_scores), 4) if dense_scores else 0.0
     avg_sparse = round(sum(sparse_scores) / len(sparse_scores), 4) if sparse_scores else 0.0

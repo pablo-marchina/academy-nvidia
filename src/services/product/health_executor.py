@@ -9,7 +9,9 @@ from __future__ import annotations
 import os
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from src.services.product.capability_registry import CapabilityStatus
 
@@ -104,9 +106,19 @@ class HealthCheckExecutor:
             )
 
     def _check_qdrant(self) -> HealthCheckResult:
-        url = os.environ.get("QDRANT_URL", "http://localhost:6333")
+        url = os.environ.get("QDRANT_URL", "")
+        if not url:
+            return HealthCheckResult(
+                status=CapabilityStatus.unavailable,
+                detail="QDRANT_URL is not set",
+            )
         api_key = os.environ.get("QDRANT_API_KEY") or None
-        collection = os.environ.get("QDRANT_COLLECTION", "nvidia_corpus")
+        collection = os.environ.get("QDRANT_COLLECTION", "")
+        if not collection:
+            return HealthCheckResult(
+                status=CapabilityStatus.unavailable,
+                detail="QDRANT_COLLECTION is not set",
+            )
         min_points = int(os.environ.get("QDRANT_MIN_POINTS", "10"))
         try:
             from qdrant_client import QdrantClient
@@ -168,6 +180,12 @@ class HealthCheckExecutor:
                 status=CapabilityStatus.degraded,
                 detail="Corpus files found but sources.yaml is missing",
             )
+        freshness_error = _check_sources_freshness(sources_file)
+        if freshness_error:
+            return HealthCheckResult(
+                status=CapabilityStatus.degraded,
+                detail=freshness_error,
+            )
         return HealthCheckResult(
             status=CapabilityStatus.available,
             detail=f"Corpus found with {len(md_files)} document(s)",
@@ -200,3 +218,48 @@ class HealthCheckExecutor:
             status=CapabilityStatus.degraded,
             detail=f"Unknown LLM_PROVIDER={provider}",
         )
+
+
+def _check_sources_freshness(sources_file: Path) -> str:
+    try:
+        import yaml
+    except ImportError:
+        return "PyYAML is not installed; cannot audit corpus freshness"
+
+    try:
+        payload: dict[str, Any] = yaml.safe_load(sources_file.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        return f"Failed to read corpus freshness metadata: {exc}"
+
+    now = datetime.now(UTC)
+    stale: list[str] = []
+    expired: list[str] = []
+    for source_id, item in (payload.get("sources") or {}).items():
+        if not isinstance(item, dict) or item.get("is_active") is False:
+            continue
+        valid_until = item.get("valid_until")
+        if valid_until:
+            try:
+                expiry = datetime.fromisoformat(str(valid_until).replace("Z", "+00:00"))
+            except ValueError:
+                expired.append(str(source_id))
+            else:
+                if expiry < now:
+                    expired.append(str(source_id))
+        last_checked = item.get("last_checked_at") or item.get("collected_at")
+        stale_after = item.get("stale_after_days")
+        if last_checked and stale_after is not None:
+            try:
+                checked_at = datetime.fromisoformat(str(last_checked).replace("Z", "+00:00"))
+                stale_days = int(stale_after)
+            except (TypeError, ValueError):
+                stale.append(str(source_id))
+            else:
+                if (now - checked_at).days > stale_days:
+                    stale.append(str(source_id))
+
+    if expired:
+        return f"Corpus has expired active source(s): {', '.join(sorted(expired))}"
+    if stale:
+        return f"Corpus has stale active source(s): {', '.join(sorted(stale))}"
+    return ""

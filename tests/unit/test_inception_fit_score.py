@@ -90,10 +90,7 @@ def test_alto_fit_nvidia_evidencia_forte() -> None:
             "AI signal: generative ai",
             "AI signal: gpt",
         ],
-        product_summary=(
-            "Our AI platform uses deep learning and computer vision "
-            "for real-time quality inspection."
-        ),
+        product_summary=("Our AI platform uses deep learning and computer vision " "for real-time quality inspection."),
         description=(
             "An AI-native company with computer vision and LLM inference "
             "deployed in production at enterprise customers."
@@ -145,8 +142,7 @@ def test_ai_native_promissora_evidencia_fraca() -> None:
         ],
         product_summary=("Our AI platform uses deep learning and LLMs for document analysis."),
         description=(
-            "An AI-native company building document intelligence with "
-            "computer vision and language models."
+            "An AI-native company building document intelligence with " "computer vision and language models."
         ),
         tech_stack_signals=["Tech stack: pytorch"],
         customers=["ACME Corp"],
@@ -242,9 +238,7 @@ def test_fit_setorial_forte_mas_baixa_maturidade() -> None:
     profile = _make_profile(
         ai_signals=[],
         product_summary="Healthcare records management system.",
-        description=(
-            "A platform for managing patient health records with basic reporting features."
-        ),
+        description=("A platform for managing patient health records with basic reporting features."),
         tech_stack_signals=["Tech stack: python", "Tech stack: aws"],
         customers=["Local hospital"],
         funding_signals=["Seed: $500K"],

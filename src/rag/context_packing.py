@@ -68,10 +68,7 @@ def pack_contexts(
             query.technology
             if (
                 query.technology
-                and (
-                    query.technology.lower() in ctx.product.lower()
-                    or query.technology.lower() in ctx.content.lower()
-                )
+                and (query.technology.lower() in ctx.product.lower() or query.technology.lower() in ctx.content.lower())
             )
             else None
         )
@@ -202,9 +199,7 @@ def build_supporting_contexts(packing_result: PackingResult) -> list[SupportingN
 
     result: list[SupportingNvidiaContext] = []
     for (gap, tech), contexts in by_gap_tech.items():
-        dropped_count = sum(
-            1 for d in packing_result.dropped if d.chunk_id in {c.chunk_id for c in contexts}
-        )
+        dropped_count = sum(1 for d in packing_result.dropped if d.chunk_id in {c.chunk_id for c in contexts})
         result.append(
             SupportingNvidiaContext(
                 gap_type=gap,

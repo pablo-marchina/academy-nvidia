@@ -219,9 +219,7 @@ def test_matched_gap_types_are_recorded(
     analysis_run: AnalysisRun,
 ) -> None:
     _add_gap(db_session, analysis_run.id, "slow_data_pipeline", detected=True, confidence="high")
-    _add_gap(
-        db_session, analysis_run.id, "heavy_tabular_processing", detected=True, confidence="medium"
-    )
+    _add_gap(db_session, analysis_run.id, "heavy_tabular_processing", detected=True, confidence="medium")
     db_session.commit()
 
     service = ActivationPlaybookService(db_session)

@@ -93,8 +93,6 @@ _PRIORITY_SECTORS: list[str] = [
 ]
 
 
-
-
 # ---------------------------------------------------------------------------
 # Models
 # ---------------------------------------------------------------------------
@@ -511,24 +509,12 @@ def compute_defensibility_score(
     """
     scores: dict[str, DimensionScore] = {}
 
-    scores["ai_core_dependency"] = _score_ai_core_dependency(
-        profile, classification, validated_evidence
-    )
-    scores["proprietary_data"] = _score_proprietary_data(
-        profile, classification, validated_evidence
-    )
-    scores["workflow_integration"] = _score_workflow_integration(
-        profile, classification, validated_evidence
-    )
-    scores["real_usage_learning"] = _score_real_usage_learning(
-        profile, classification, validated_evidence
-    )
-    scores["replication_complexity"] = _score_replication_complexity(
-        profile, classification, validated_evidence
-    )
-    scores["nvidia_fit_potential"] = _score_nvidia_fit_potential(
-        profile, classification, validated_evidence
-    )
+    scores["ai_core_dependency"] = _score_ai_core_dependency(profile, classification, validated_evidence)
+    scores["proprietary_data"] = _score_proprietary_data(profile, classification, validated_evidence)
+    scores["workflow_integration"] = _score_workflow_integration(profile, classification, validated_evidence)
+    scores["real_usage_learning"] = _score_real_usage_learning(profile, classification, validated_evidence)
+    scores["replication_complexity"] = _score_replication_complexity(profile, classification, validated_evidence)
+    scores["nvidia_fit_potential"] = _score_nvidia_fit_potential(profile, classification, validated_evidence)
 
     total = sum(s.adjusted_score * s.weight for s in scores.values())
     total = round(total, 1)
@@ -540,9 +526,7 @@ def compute_defensibility_score(
         if not ds.evidence_used:
             missing.append(f"No evidence for dimension: {name}")
         elif ds.confidence == ConfidenceLevel.LOW:
-            missing.append(
-                f"Weak evidence for dimension: {name} (confidence: {ds.confidence.value})"
-            )
+            missing.append(f"Weak evidence for dimension: {name} (confidence: {ds.confidence.value})")
 
     conf_factors = [CONFIDENCE_SCORE_FACTORS.get(s.confidence.value, 0.4) for s in scores.values()]
     avg_conf = sum(conf_factors) / len(conf_factors)

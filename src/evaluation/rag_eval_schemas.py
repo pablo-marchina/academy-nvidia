@@ -104,14 +104,10 @@ class RagEvalComparison(BaseModel):
     semantic: ModeEvalResult
     hybrid: ModeEvalResult
     hybrid_reranked: ModeEvalResult = Field(
-        default_factory=lambda: ModeEvalResult(
-            mode=RetrievalMode.HYBRID_RERANKED, results=[], gates=[]
-        )
+        default_factory=lambda: ModeEvalResult(mode=RetrievalMode.HYBRID_RERANKED, results=[], gates=[])
     )
     hybrid_reranked_packed: ModeEvalResult = Field(
-        default_factory=lambda: ModeEvalResult(
-            mode=RetrievalMode.HYBRID_RERANKED_PACKED, results=[], gates=[]
-        )
+        default_factory=lambda: ModeEvalResult(mode=RetrievalMode.HYBRID_RERANKED_PACKED, results=[], gates=[])
     )
     critical_regressions: list[str] = Field(default_factory=list)
     """Case IDs where semantic or hybrid regressed vs lexical on a critical query."""

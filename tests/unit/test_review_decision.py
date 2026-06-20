@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 
-from src.database.models import AnalysisRun, Startup
 from src.database.session import configure_product_database, reset_product_database_runtime
 from src.repositories.product import ProductRepository
 from src.repositories.review import ReviewDecisionRepository
@@ -213,6 +212,7 @@ def test_stores_status_before_and_after_resume(
 
 def test_invalid_decision_not_persisted() -> None:
     from pydantic import ValidationError
+
     from src.api.product_schemas import WorkflowReviewDecisionCreate
 
     with pytest.raises(ValidationError):
@@ -266,5 +266,5 @@ def test_does_not_store_secrets(
     review_repo.session.commit()
 
     json_str = str(record.metadata_json)
-    for secret_word in ("token", "secret", "password", "key", "Traceback", "File \""):
+    for secret_word in ("token", "secret", "password", "key", "Traceback", 'File "'):
         assert secret_word not in json_str.lower(), f"Secret word found: {secret_word}"

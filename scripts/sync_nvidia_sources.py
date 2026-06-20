@@ -387,9 +387,7 @@ def update_sources_yaml(
         current["url"] = entry.get("url", current.get("url", ""))
         current["product"] = entry.get("product", current.get("product", ""))
         current["gap_types"] = entry.get("gap_types", current.get("gap_types", []))
-        current["document_type"] = entry.get(
-            "document_type", current.get("document_type", "nvidia_corpus")
-        )
+        current["document_type"] = entry.get("document_type", current.get("document_type", "nvidia_corpus"))
         current["freshness_policy"] = entry.get(
             "freshness_policy", current.get("freshness_policy", entry.get("update_frequency"))
         )
@@ -402,9 +400,7 @@ def update_sources_yaml(
         active = _find_active_version(versions)
         active_hash = active.get("content_hash") if active else current.get("content_hash")
         if content_hash and active_hash and content_hash != active_hash:
-            previous_version = (
-                str(active.get("version", current.get("version", "1.0"))) if active else "1.0"
-            )
+            previous_version = str(active.get("version", current.get("version", "1.0"))) if active else "1.0"
             new_version = _next_version(previous_version)
             if active is not None:
                 active["is_active"] = False
@@ -554,9 +550,7 @@ def run_sync(args: argparse.Namespace) -> SyncReport:
     # Filter by product
     if args.product:
         valid_entries = [
-            e
-            for e in valid_entries
-            if any(p.lower() in e.get("product", "").lower() for p in args.product)
+            e for e in valid_entries if any(p.lower() in e.get("product", "").lower() for p in args.product)
         ]
         print(f"  Filtered by product: {args.product}")
 

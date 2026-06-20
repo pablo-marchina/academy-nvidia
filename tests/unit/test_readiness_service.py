@@ -105,22 +105,46 @@ class TestProductReadinessService:
             svc = ProductReadinessService()
             report = svc.get_product_readiness()
             assert isinstance(report.ready, bool)
-            product_db_health = [
-                h for h in report.health_checks
-                if h.get("health_check_key") == "product_db"
-            ]
+            product_db_health = [h for h in report.health_checks if h.get("health_check_key") == "product_db"]
             if product_db_health:
                 assert product_db_health[0]["status"] == "unavailable"
                 assert product_db_health[0]["detail"] == "Mocked unavailable"
 
-    def test_rag_not_blocking_by_default(self) -> None:
-        svc = ProductReadinessService()
-        report = svc.get_product_readiness()
-        rag_blocking = [
-            b for b in report.blocking_missing_config
-            if "qdrant" in b.get("capability_id", "")
-        ]
+    def test_rag_not_blocking_in_test_mode_when_not_required(self) -> None:
+        import os
+        from unittest.mock import patch
+
+        with patch.dict(
+            os.environ,
+            {"APP_MODE": "test", "RAG_REQUIRED_FOR_PRODUCT": "false"},
+        ):
+            svc = ProductReadinessService()
+            report = svc.get_product_readiness()
+        rag_blocking = [b for b in report.blocking_missing_config if "qdrant" in b.get("capability_id", "")]
         assert len(rag_blocking) == 0
+
+    def test_product_mode_blocks_sqlite_non_qdrant_and_missing_langgraph_flag(self) -> None:
+        import os
+        from unittest.mock import patch
+
+        with patch.dict(
+            os.environ,
+            {
+                "APP_MODE": "product",
+                "PRODUCT_DB_URL": "sqlite:///tmp/product.db",
+                "RAG_VECTOR_BACKEND": "in_memory",
+                "RAG_REQUIRED_FOR_PRODUCT": "false",
+                "AGENT_ORCHESTRATION_ENABLED": "false",
+            },
+        ):
+            svc = ProductReadinessService()
+            report = svc.get_product_readiness()
+
+        reasons = " ".join(str(b.get("reason", "")) for b in report.blocking_missing_config)
+        assert "requires PostgreSQL" in reasons
+        assert "RAG_VECTOR_BACKEND=qdrant" in reasons
+        assert "RAG_REQUIRED_FOR_PRODUCT=true" in reasons
+        assert "AGENT_ORCHESTRATION_ENABLED=true" in reasons
 
     def test_rag_blocking_when_rag_required(self) -> None:
         import os
@@ -130,11 +154,35 @@ class TestProductReadinessService:
             svc = ProductReadinessService()
             report = svc.get_product_readiness()
             rag_blocking = [
-                b for b in report.blocking_missing_config
-                if b.get("capability_id") == "qdrant_vector_store"
+                b for b in report.blocking_missing_config if b.get("capability_id") == "qdrant_vector_store"
             ]
             assert len(rag_blocking) > 0
-            assert any(
-                "QDRANT_URL" in b.get("reason", "")
-                for b in rag_blocking
-            )
+            assert any("QDRANT_URL" in b.get("reason", "") for b in rag_blocking)
+
+    def test_product_mode_does_not_block_optional_external_reranker(self) -> None:
+        import os
+        from unittest.mock import patch
+
+        with patch.dict(
+            os.environ,
+            {
+                "APP_MODE": "product",
+                "PRODUCT_DB_URL": "postgresql://postgres:postgres@localhost:5432/startup_radar",
+                "RAG_VECTOR_BACKEND": "qdrant",
+                "QDRANT_URL": "http://localhost:6333",
+                "QDRANT_COLLECTION": "nvidia_corpus",
+                "RAG_EMBEDDING_MODEL": "all-MiniLM-L6-v2",
+                "RAG_RETRIEVAL_MODE": "hybrid_with_rerank",
+                "RERANKER_PROVIDER": "local_cross_encoder",
+                "RAG_REQUIRED_FOR_PRODUCT": "true",
+                "AGENT_ORCHESTRATION_ENABLED": "true",
+            },
+            clear=True,
+        ):
+            svc = ProductReadinessService()
+            report = svc.get_product_readiness()
+
+        blocking_ids = {b.get("capability_id") for b in report.blocking_missing_config}
+        optional_ids = {b.get("capability_id") for b in report.optional_missing_config}
+        assert "optional_external_reranker" not in blocking_ids
+        assert "optional_external_reranker" in optional_ids

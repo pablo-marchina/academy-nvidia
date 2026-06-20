@@ -84,15 +84,11 @@ class ActivationDossierRepository:
         return current.version + 1
 
     def delete_for_analysis_run(self, analysis_run_id: str) -> None:
-        statement = select(ActivationDossierRecord).where(
-            ActivationDossierRecord.analysis_run_id == analysis_run_id
-        )
+        statement = select(ActivationDossierRecord).where(ActivationDossierRecord.analysis_run_id == analysis_run_id)
         for record in self.session.scalars(statement):
             self.session.delete(record)
         self.session.flush()
 
     def count_for_analysis_run(self, analysis_run_id: str) -> int:
-        statement = select(ActivationDossierRecord).where(
-            ActivationDossierRecord.analysis_run_id == analysis_run_id
-        )
+        statement = select(ActivationDossierRecord).where(ActivationDossierRecord.analysis_run_id == analysis_run_id)
         return len(list(self.session.scalars(statement)))

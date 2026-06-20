@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+
 from src.agents.graph import _run_quality_gates
 
 
@@ -267,6 +268,7 @@ class TestQualityGatesMissingCalibration:
 class TestQualityGatesNoExternalCalls:
     def test_no_llm_qdrant_scraping_imported(self) -> None:
         import sys as _sys
+
         before = set(_sys.modules.keys())
         state = _make_state()
         result = _run_quality_gates(state)

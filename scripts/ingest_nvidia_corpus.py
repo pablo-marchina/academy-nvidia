@@ -152,8 +152,7 @@ def build_embedding_provider(mock: bool = False) -> Any:
         return provider
     except ImportError:
         print(
-            "  WARNING: sentence-transformers not installed. "
-            "Falling back to MockEmbeddingProvider.",
+            "  WARNING: sentence-transformers not installed. " "Falling back to MockEmbeddingProvider.",
             file=sys.stderr,
         )
         return MockEmbeddingProvider()
@@ -221,10 +220,7 @@ def run_ingestion(args: argparse.Namespace) -> IngestionReport:
         md_files = [
             f
             for f in md_files
-            if any(
-                p.lower() in raw_sources.get(f.stem, {}).get("product", "").lower()
-                for p in args.product
-            )
+            if any(p.lower() in raw_sources.get(f.stem, {}).get("product", "").lower() for p in args.product)
         ]
 
     print(f"  Found {len(md_files)} document(s) to process")

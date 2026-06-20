@@ -27,7 +27,7 @@ def service(tmp_path: Path) -> ClaimLedgerService:
 def test_confidence_to_float() -> None:
     assert _confidence_to_float("high") == 1.0
     assert _confidence_to_float("medium") == 0.6
-    assert _confidence_to_float("low") == 0.2
+    assert _confidence_to_float("low") == 0.3
     assert _confidence_to_float("unknown") == 0.0
 
 

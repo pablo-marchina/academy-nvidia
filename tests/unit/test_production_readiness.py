@@ -76,9 +76,7 @@ def high_readiness_profile() -> StartupProfile:
         funding=["Series A $5M", "Seed $1M"],
         tech_stack=["PyTorch", "Kubernetes", "Docker", "Kafka", "PostgreSQL"],
         ai_signals=["low latency", "real-time inference", "data pipeline", "compliance"],
-        description=(
-            "Production-deployed AI for healthcare with real-time inference and data pipelines"
-        ),
+        description=("Production-deployed AI for healthcare with real-time inference and data pipelines"),
         product_summary="Real-time inference for medical imaging with controlled deployment",
     )
 
@@ -188,9 +186,7 @@ class TestComputeProductionReadiness:
             _make_evidence("Substantial funding round", ConfidenceLevel.HIGH),
             _make_evidence("Production deployment with GPU inference", ConfidenceLevel.HIGH),
         ]
-        result = compute_production_readiness(
-            profile, _make_result(AINativeLevel.AI_NATIVE), evidence
-        )
+        result = compute_production_readiness(profile, _make_result(AINativeLevel.AI_NATIVE), evidence)
         for name, dim in result.score_breakdown.items():
             assert dim.raw_score >= 0, f"{name} raw_score negative"
             assert dim.raw_score <= 100, f"{name} raw_score > 100"

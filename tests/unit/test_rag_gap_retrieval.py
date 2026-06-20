@@ -11,10 +11,7 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from src.diagnosis.schemas import (
-    GAP_TECH_MAP,
     GapConfidenceFeatures,
     GapDiagnosisFeatures,
     GapDiagnosisMetrics,
@@ -27,10 +24,8 @@ from src.diagnosis.schemas import (
 from src.quality.decision_calibration_registry import (
     CalibrationStatus,
     DecisionCalibrationRecord,
-    DecisionType,
     get_project_decision_inventory,
 )
-
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -400,9 +395,14 @@ class TestContextAssociatedWithGap:
                     url="https://example.com/tensorrt",
                     relevance_score=0.85,
                     gap_types=["computer_vision_need"],
-                    version="1.0", valid_from=None, valid_until=None,
-                    freshness_policy=None, stale_after_days=None,
-                    is_active=True, deprecated_at=None, superseded_by=None,
+                    version="1.0",
+                    valid_from=None,
+                    valid_until=None,
+                    freshness_policy=None,
+                    stale_after_days=None,
+                    is_active=True,
+                    deprecated_at=None,
+                    superseded_by=None,
                 ),
             ]
             mock_build.return_value = idx
@@ -445,11 +445,22 @@ class TestRagContextsByGapPopulated:
             idx.chunks = [MagicMock(), MagicMock()]
             idx.retrieve.return_value = [
                 MagicMock(
-                    chunk_id="c1", source_id="s1", title="T", content="C",
-                    product="NVIDIA NIM", url="https://x.com", relevance_score=0.5,
-                    gap_types=[], version="1.0", valid_from=None, valid_until=None,
-                    freshness_policy=None, stale_after_days=None,
-                    is_active=True, deprecated_at=None, superseded_by=None,
+                    chunk_id="c1",
+                    source_id="s1",
+                    title="T",
+                    content="C",
+                    product="NVIDIA NIM",
+                    url="https://x.com",
+                    relevance_score=0.5,
+                    gap_types=[],
+                    version="1.0",
+                    valid_from=None,
+                    valid_until=None,
+                    freshness_policy=None,
+                    stale_after_days=None,
+                    is_active=True,
+                    deprecated_at=None,
+                    superseded_by=None,
                 ),
             ]
             mock_build.return_value = idx
@@ -486,18 +497,40 @@ class TestContextCountByGapMetrics:
             idx.chunks = [MagicMock(), MagicMock()]
             idx.retrieve.return_value = [
                 MagicMock(
-                    chunk_id="c1", source_id="s1", title="T", content="C",
-                    product="NVIDIA NIM", url="https://x.com", relevance_score=0.5,
-                    gap_types=[], version="1.0", valid_from=None, valid_until=None,
-                    freshness_policy=None, stale_after_days=None,
-                    is_active=True, deprecated_at=None, superseded_by=None,
+                    chunk_id="c1",
+                    source_id="s1",
+                    title="T",
+                    content="C",
+                    product="NVIDIA NIM",
+                    url="https://x.com",
+                    relevance_score=0.5,
+                    gap_types=[],
+                    version="1.0",
+                    valid_from=None,
+                    valid_until=None,
+                    freshness_policy=None,
+                    stale_after_days=None,
+                    is_active=True,
+                    deprecated_at=None,
+                    superseded_by=None,
                 ),
                 MagicMock(
-                    chunk_id="c2", source_id="s2", title="T2", content="C2",
-                    product="TensorRT-LLM", url="https://y.com", relevance_score=0.6,
-                    gap_types=[], version="1.0", valid_from=None, valid_until=None,
-                    freshness_policy=None, stale_after_days=None,
-                    is_active=True, deprecated_at=None, superseded_by=None,
+                    chunk_id="c2",
+                    source_id="s2",
+                    title="T2",
+                    content="C2",
+                    product="TensorRT-LLM",
+                    url="https://y.com",
+                    relevance_score=0.6,
+                    gap_types=[],
+                    version="1.0",
+                    valid_from=None,
+                    valid_until=None,
+                    freshness_policy=None,
+                    stale_after_days=None,
+                    is_active=True,
+                    deprecated_at=None,
+                    superseded_by=None,
                 ),
             ]
             mock_build.return_value = idx
@@ -596,7 +629,10 @@ class TestRagError:
         summary = _make_summary()
 
         with (
-            patch("src.agents.nvidia_rag_agent.build_default_index", side_effect=RuntimeError("corpus corrupt")),
+            patch(
+                "src.agents.nvidia_rag_agent.build_default_index",
+                side_effect=RuntimeError("corpus corrupt"),
+            ),
             patch("src.agents.nvidia_rag_agent.get_project_decision_inventory") as mock_inv,
         ):
             mock_inv.return_value = _calibrated_rag_inventory()
@@ -689,11 +725,22 @@ class TestRetrievalMetricsComplete:
             idx.chunks = [MagicMock(), MagicMock()]
             idx.retrieve.return_value = [
                 MagicMock(
-                    chunk_id="c1", source_id="s1", title="T", content="C",
-                    product="NVIDIA NIM", url="https://x.com", relevance_score=0.5,
-                    gap_types=[], version="1.0", valid_from=None, valid_until=None,
-                    freshness_policy=None, stale_after_days=None,
-                    is_active=True, deprecated_at=None, superseded_by=None,
+                    chunk_id="c1",
+                    source_id="s1",
+                    title="T",
+                    content="C",
+                    product="NVIDIA NIM",
+                    url="https://x.com",
+                    relevance_score=0.5,
+                    gap_types=[],
+                    version="1.0",
+                    valid_from=None,
+                    valid_until=None,
+                    freshness_policy=None,
+                    stale_after_days=None,
+                    is_active=True,
+                    deprecated_at=None,
+                    superseded_by=None,
                 ),
             ]
             mock_build.return_value = idx
@@ -745,11 +792,22 @@ class TestCalibrationDecisionIds:
             idx.chunks = [MagicMock(), MagicMock()]
             idx.retrieve.return_value = [
                 MagicMock(
-                    chunk_id="c1", source_id="s1", title="T", content="C",
-                    product="NVIDIA TensorRT", url="https://x.com", relevance_score=0.7,
-                    gap_types=[], version="1.0", valid_from=None, valid_until=None,
-                    freshness_policy=None, stale_after_days=None,
-                    is_active=True, deprecated_at=None, superseded_by=None,
+                    chunk_id="c1",
+                    source_id="s1",
+                    title="T",
+                    content="C",
+                    product="NVIDIA TensorRT",
+                    url="https://x.com",
+                    relevance_score=0.7,
+                    gap_types=[],
+                    version="1.0",
+                    valid_from=None,
+                    valid_until=None,
+                    freshness_policy=None,
+                    stale_after_days=None,
+                    is_active=True,
+                    deprecated_at=None,
+                    superseded_by=None,
                 ),
             ]
             mock_build.return_value = idx
@@ -799,8 +857,10 @@ class TestSemanticCalibrationsRequired:
             assert values == {}
 
     def test_validate_semantic_calibrations_returns_values_when_calibrated(self) -> None:
-        from src.rag.rag_service_factory import _validate_semantic_calibrations
-        from src.rag.rag_service_factory import REQUIRED_SEMANTIC_DECISIONS
+        from src.rag.rag_service_factory import (
+            REQUIRED_SEMANTIC_DECISIONS,
+            _validate_semantic_calibrations,
+        )
 
         base = get_project_decision_inventory()
         overrides: dict[str, DecisionCalibrationRecord] = {}

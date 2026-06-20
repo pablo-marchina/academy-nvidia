@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Iterator
+import inspect
+from collections.abc import Iterator
+from typing import Any
 
 import pytest
 
+import src.scraping.source_registry as source_registry_module
 from src.scraping.rate_limit_policy import load_rate_limit_policies, reset_policy_cache
 from src.scraping.source_registry import (
     SourceRecord,
@@ -16,7 +19,6 @@ from src.scraping.source_registry import (
     summarize_source_coverage,
     validate_source_for_production,
 )
-
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -324,19 +326,18 @@ class TestSafety:
             socket.socket.connect = original  # type: ignore[assignment]
 
     def test_registry_does_not_use_httpx(self) -> None:
-        with pytest.raises(ImportError):
-            from src.scraping.source_registry import httpx  # type: ignore[attr-defined]  # noqa: F811
-        assert True
+        source = inspect.getsource(source_registry_module).lower()
+        assert "httpx" not in source
 
     def test_registry_does_not_use_qdrant(self) -> None:
-        with pytest.raises(ImportError):
-            from src.scraping.source_registry import qdrant_client  # type: ignore[attr-defined]  # noqa: F811
-        assert True
+        source = inspect.getsource(source_registry_module).lower()
+        assert "qdrant" not in source
 
     def test_registry_does_not_import_llm(self) -> None:
-        with pytest.raises(ImportError):
-            from src.scraping.source_registry import openai  # type: ignore[attr-defined]  # noqa: F811
-        assert True
+        source = inspect.getsource(source_registry_module).lower()
+        assert "openai" not in source
+        assert "anthropic" not in source
+        assert "instructor" not in source
 
 
 # ── All sources use valid rate limit policies ─────────────────────────────
@@ -346,9 +347,9 @@ class TestRateLimitPolicyReferences:
     def test_all_sources_use_known_policies(self) -> None:
         policies = load_rate_limit_policies()
         for src in list_sources():
-            assert src.rate_limit_policy_id in policies, (
-                f"{src.source_id} uses unknown policy '{src.rate_limit_policy_id}'"
-            )
+            assert (
+                src.rate_limit_policy_id in policies
+            ), f"{src.source_id} uses unknown policy '{src.rate_limit_policy_id}'"
 
 
 # ── Cleanup for tests that modify cache ────────────────────────────────────

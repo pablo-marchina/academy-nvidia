@@ -136,6 +136,7 @@ class AnalysisRunDetailResponse(BaseModel):
     recommendation_metrics: dict[str, Any] = Field(default_factory=dict)
     brief_metrics: dict[str, Any] = Field(default_factory=dict)
     action_brief: ActionBriefRead | None = None
+    dossier_summary: ActivationDossierSummaryRead | None = None
     review_required: bool = False
     review_payload: dict[str, Any] | None = None
 
@@ -213,9 +214,7 @@ class ActionBriefExportMetadata(BaseModel):
     run_id: str
     exported_at: datetime
     export_format: Literal["json"] = "json"
-    source: Literal["persisted_analysis_run_action_brief"] = (
-        "persisted_analysis_run_action_brief"
-    )
+    source: Literal["persisted_analysis_run_action_brief"] = "persisted_analysis_run_action_brief"
     schema_version: str
 
 

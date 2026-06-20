@@ -28,8 +28,7 @@ class ScoreService(Protocol):
         dict[str, Any],
         dict[str, Any],
         list[str],
-    ]:
-        ...
+    ]: ...
 
 
 @runtime_checkable
@@ -51,8 +50,7 @@ class RagService(Protocol):
         claims: list[dict[str, Any]],
         ai_native_score: float | None,
         nvidia_fit_score: float | None,
-    ) -> dict[str, Any]:
-        ...
+    ) -> dict[str, Any]: ...
 
 
 @runtime_checkable
@@ -71,8 +69,7 @@ class DiagnoseGapsService(Protocol):
         defensibility_raw: dict[str, Any] | None,
         inception_fit_raw: dict[str, Any] | None,
         production_readiness_raw: dict[str, Any] | None,
-    ) -> tuple[list[str], dict[str, Any], list[str]]:
-        ...
+    ) -> tuple[list[str], dict[str, Any], list[str]]: ...
 
 
 @runtime_checkable
@@ -94,8 +91,7 @@ class RankRecommendationsService(Protocol):
         scores_raw: dict[str, Any] | None,
         gap_diagnosis_raw: dict[str, Any] | None,
         rag_contexts: list[str],
-    ) -> tuple[list[str], list[str]]:
-        ...
+    ) -> tuple[list[str], list[str]]: ...
 
 
 @runtime_checkable
@@ -133,5 +129,4 @@ class GenerateBriefService(Protocol):
         gap_diagnosis_raw: dict[str, Any] | None,
         recommendations: list[str],
         rag_contexts: list[str],
-    ) -> tuple[str, list[str]]:
-        ...
+    ) -> tuple[str, list[str]]: ...

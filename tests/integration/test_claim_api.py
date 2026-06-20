@@ -12,18 +12,18 @@ from src.database.session import configure_product_database, reset_product_datab
 
 @pytest.fixture
 def client_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
-    monkeypatch.setenv("APP_MODE", "product")
+    monkeypatch.setenv("APP_MODE", "test")
     monkeypatch.setenv("ENABLE_PRODUCT_PERSISTENCE", "true")
     monkeypatch.setenv("QDRANT_URL", "")
-    configure_product_database(f"sqlite:///{(tmp_path / 'claim_api.db').as_posix()}")
+    db_url = f"sqlite:///{(tmp_path / 'claim_api.db').as_posix()}"
+    monkeypatch.setenv("PRODUCT_DB_URL", db_url)
+    configure_product_database(db_url)
     with TestClient(app) as test_client:
         yield test_client
     reset_product_database_runtime()
 
 
-def _setup_startup_with_run(
-    client: TestClient, startup_name: str = "Claim API Startup"
-) -> tuple[TestClient, str, str]:
+def _setup_startup_with_run(client: TestClient, startup_name: str = "Claim API Startup") -> tuple[TestClient, str, str]:
     resp = client.post(
         "/startups",
         json={

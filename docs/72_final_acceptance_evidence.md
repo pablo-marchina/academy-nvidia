@@ -1,5 +1,44 @@
 # Final Acceptance Evidence — NVIDIA Startup AI Radar
 
+## Readiness Branch Update - 2026-06-19
+
+This file keeps the historical 2026-06-13 evidence below. The `codex/final-product-readiness` branch has moved the target from demo-capable acceptance to strict local production acceptance.
+
+Current verified results in the branch:
+
+- `ruff check .`: PASS
+- `black --check .`: PASS
+- `mypy src`: PASS
+- Full `pytest -q --basetemp .pytest_tmp_full`: PASS (`2085 passed`, `27 skipped`, `166 warnings`)
+- Targeted product pytest battery: PASS (`1585 passed, 124 warnings`)
+- Focused regression runs after review/resume and RAG fixture fixes:
+  - `tests/acceptance`: PASS (`33 passed`)
+  - `tests/integration/test_workflow_api.py`: PASS (`26 passed`)
+  - `tests/integration/test_product_workflow_api.py`: PASS (`23 passed`)
+  - `tests/unit/test_workflow_runner.py`: PASS (`16 passed`)
+  - `tests/evals/test_pipeline_golden.py`: PASS (`38 passed`)
+  - `tests/evals/test_answer_quality_golden.py`: PASS (`9 passed`)
+  - `tests/unit/test_ingest_nvidia_corpus.py`: PASS (`17 passed`)
+- `python scripts/check_no_demo_dependency.py`: PASS
+- `python scripts/check_docs_closure.py`: PASS
+- `python scripts/check_scope.py`: PASS
+- `python scripts/scan_magic_values.py --check`: PASS (`60 hits`, `44 registered`, `16 classified non-product`, `0 unregistered`)
+- `npm ci` and `npm run build` in `frontend`: PASS
+- Docker Compose PostgreSQL + Qdrant live validation: PASS
+  - PostgreSQL migrations applied using `PRODUCT_DB_URL=postgresql://postgres:postgres@localhost:5432/startup_radar`
+  - Qdrant corpus ingestion completed with real `all-MiniLM-L6-v2` embeddings
+  - Collection `nvidia_corpus` populated with 53 points
+  - `/product/readiness`, `/health/product`, and `/health/dependencies` returned healthy/product-ready responses
+- Product Playwright E2E against live local backend: PASS (`6 passed`)
+- Screenshots captured:
+  - `docs/screenshots/product_startups_2026-06-19.png`
+  - `docs/screenshots/product_capabilities_2026-06-19.png`
+  - `docs/screenshots/product_create_startup_2026-06-19.png`
+
+Not yet release evidence:
+
+- `make validate-full` could not be executed directly on this Windows environment because `make` is unavailable; equivalent commands were run individually.
+
 **Versão:** 1.0
 **Data da execução:** 2026-06-13
 **Commit hash:** 1b35911 (HEAD)

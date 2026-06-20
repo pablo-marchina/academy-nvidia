@@ -102,9 +102,7 @@ class ClaimLedgerService:
                     {
                         "startup_id": startup_id,
                         "analysis_run_id": run_id,
-                        "claim_text": (
-                            f"{s.score_type} score = {s.value} (confidence: {s.confidence})"
-                        ),
+                        "claim_text": (f"{s.score_type} score = {s.value} (confidence: {s.confidence})"),
                         "claim_type": claim_type,
                         "support_level": support,
                         "confidence": s.confidence,
@@ -125,9 +123,7 @@ class ClaimLedgerService:
                         {
                             "startup_id": startup_id,
                             "analysis_run_id": run_id,
-                            "claim_text": (
-                                f"Missing evidence for {s.score_type}: {', '.join(missing)}"
-                            ),
+                            "claim_text": (f"Missing evidence for {s.score_type}: {', '.join(missing)}"),
                             "claim_type": ClaimType.uncertainty_claim.value,
                             "support_level": SupportLevel.unsupported.value,
                             "confidence": "low",
@@ -153,10 +149,7 @@ class ClaimLedgerService:
                 {
                     "startup_id": startup_id,
                     "analysis_run_id": run_id,
-                    "claim_text": (
-                        f"Gap: {gap.gap_type} (detected={gap.detected}, "
-                        f"confidence={gap.confidence})"
-                    ),
+                    "claim_text": (f"Gap: {gap.gap_type} (detected={gap.detected}, " f"confidence={gap.confidence})"),
                     "claim_type": ClaimType.gap_claim.value,
                     "support_level": support,
                     "confidence": gap.confidence,
@@ -180,9 +173,7 @@ class ClaimLedgerService:
                 {
                     "startup_id": startup_id,
                     "analysis_run_id": run_id,
-                    "claim_text": (
-                        f"NVIDIA {mapping.technology_name} addresses {mapping.addresses_gap}"
-                    ),
+                    "claim_text": (f"NVIDIA {mapping.technology_name} addresses {mapping.addresses_gap}"),
                     "claim_type": ClaimType.nvidia_fit_claim.value,
                     "support_level": support,
                     "confidence": "medium",
@@ -269,9 +260,7 @@ class ClaimLedgerService:
                 {
                     "code": "UNSUPPORTED_CRITICAL_CLAIM",
                     "severity": "error",
-                    "detail": (
-                        f"{len(unsupported_critical)} critical claim(s) without evidence support."
-                    ),
+                    "detail": (f"{len(unsupported_critical)} critical claim(s) without evidence support."),
                     "claim_ids": [c.id for c in unsupported_critical],
                 }
             )

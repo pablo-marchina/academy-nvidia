@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any
 
 from pydantic import HttpUrl
@@ -22,7 +22,6 @@ from src.diagnosis.schemas import (
     GapDiagnosisResult,
     GapDiagnosisStatus,
     GapSeverityFeatures,
-    GapType,
     GapWithEvidence,
 )
 from src.extraction.schemas import (
@@ -407,7 +406,7 @@ def _find_gap(result: GapDiagnosisResult, gap_value: str) -> GapWithEvidence | N
 
 def _make_calibrated_gap_diagnosis_decisions() -> list[DecisionCalibrationRecord]:
     """Create calibrated decision records for gap diagnosis testing."""
-    now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+    now = datetime(2026, 6, 18, tzinfo=UTC)
     return [
         DecisionCalibrationRecord(
             decision_id="gap_diagnosis.severity_weights",
@@ -643,9 +642,7 @@ class TestGapDiagnosisQuantitative:
     def test_blocks_when_minimum_evidence_coverage_missing(self) -> None:
         """Missing minimum_evidence_coverage blocks diagnosis."""
         calibrated = _make_calibrated_gap_diagnosis_decisions()
-        inventory = [
-            d for d in calibrated if d.decision_id != "gap_diagnosis.minimum_evidence_coverage"
-        ]
+        inventory = [d for d in calibrated if d.decision_id != "gap_diagnosis.minimum_evidence_coverage"]
 
         result = diagnose_gaps_quantitative(
             run_id="test-run-5",
@@ -723,9 +720,7 @@ class TestGapDiagnosisQuantitative:
 
         result = diagnose_gaps_quantitative(
             run_id="test-run-8",
-            evidence_items=[
-                _make_evidence_dict(claim="AI startup description", evidence_id="ev-1")
-            ],
+            evidence_items=[_make_evidence_dict(claim="AI startup description", evidence_id="ev-1")],
             claims=[_make_claim_dict(claim_id="cl-1")],
             inventory=inventory,
         )
@@ -877,10 +872,7 @@ class TestGapDiagnosisQuantitative:
 
         # Severity should be >= when rejected evidence present
         for i, _ in enumerate(ALL_GAP_TYPES):
-            assert (
-                result_with_reject.gaps[i].severity_score
-                >= result_no_reject.gaps[i].severity_score
-            )
+            assert result_with_reject.gaps[i].severity_score >= result_no_reject.gaps[i].severity_score
 
     def test_all_gap_types_present(self) -> None:
         """All 12 gap types are diagnosed."""

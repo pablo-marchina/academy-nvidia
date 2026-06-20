@@ -209,8 +209,7 @@ def test_classify_ai_native_service() -> None:
             "with fine-tuned language models trained on exclusive legal content."
         ),
         description=(
-            "We integrate with enterprise workflow systems to automate "
-            "legal document review using custom AI models."
+            "We integrate with enterprise workflow systems to automate " "legal document review using custom AI models."
         ),
         tech_stack_signals=["Tech stack: pytorch", "Tech stack: langchain"],
         confidence_score=0.7,

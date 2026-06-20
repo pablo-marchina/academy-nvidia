@@ -116,9 +116,7 @@ def _rrf_fuse(
     fused = [contexts[cid] for cid in sorted_ids[:top_k]]
 
     for ctx in fused:
-        ctx.relevance_score = round(
-            min(max(rrf_scores.get(ctx.chunk_id, 0.0) / (_RRF_K + 1), 0.0), 1.0), 2
-        )
+        ctx.relevance_score = round(min(max(rrf_scores.get(ctx.chunk_id, 0.0) / (_RRF_K + 1), 0.0), 1.0), 2)
 
     return fused
 

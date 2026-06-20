@@ -23,7 +23,7 @@ from src.quality.decision_calibration_registry import (
 )
 from src.rag.embeddings import EmbeddingProvider
 from src.rag.ingestion import load_and_chunk_corpus
-from src.rag.qdrant_store import QdrantConnectionError, QdrantStore
+from src.rag.qdrant_store import QdrantConnectionError
 from src.rag.schemas import RagChunk
 from src.rag.vector_store import VectorEntry, VectorStore
 
@@ -121,10 +121,7 @@ def _check_ingestion_calibrations() -> tuple[dict[str, Any], list[str]]:
                 found = True
                 validation = validate_decision_for_production(rec)
                 if not validation.passed:
-                    blockers.append(
-                        f"Ingestion decision '{decision_id}' blocked: "
-                        f"{'; '.join(validation.reasons)}"
-                    )
+                    blockers.append(f"Ingestion decision '{decision_id}' blocked: " f"{'; '.join(validation.reasons)}")
                 elif rec.calibration_status in (
                     CalibrationStatus.UNCALIBRATED,
                     CalibrationStatus.BLOCKED,
@@ -296,10 +293,7 @@ def run_ingestion_pipeline(
 
     report.ingestion_status = "completed"
     if report.payload_schema_invalid_count > 0:
-        blockers.append(
-            f"{report.payload_schema_invalid_count} point(s) have missing "
-            f"payload fields after upsert"
-        )
+        blockers.append(f"{report.payload_schema_invalid_count} point(s) have missing " f"payload fields after upsert")
 
     report.blockers = blockers
     report.finished_at = datetime.now(UTC).isoformat()
@@ -421,9 +415,7 @@ def check_corpus_readiness(
                 first = entries[0]
                 result.embedding_dimension_actual = len(first.embedding)
                 result.embedding_dimension_expected = expected_dimension or len(first.embedding)
-                result.dimension_match = (
-                    result.embedding_dimension_actual == result.embedding_dimension_expected
-                )
+                result.dimension_match = result.embedding_dimension_actual == result.embedding_dimension_expected
                 result.corpus_version_found = first.corpus_version
                 result.corpus_version_valid = first.corpus_version == CORPUS_VERSION
 
@@ -475,18 +467,14 @@ def check_corpus_readiness(
             if rec.production_allowed and min_docs is not None:
                 result.min_docs_met = result.actual_document_count >= min_docs
                 if not result.min_docs_met:
-                    blockers.append(
-                        f"Min documents not met: {result.actual_document_count} < {min_docs}"
-                    )
+                    blockers.append(f"Min documents not met: {result.actual_document_count} < {min_docs}")
         elif rec.decision_id == "rag.min_corpus_chunks":
             result.min_chunks_calibrated = rec.production_allowed
             min_chunks = _optional_int(rec.current_value)
             if rec.production_allowed and min_chunks is not None:
                 result.min_chunks_met = result.actual_chunk_count >= min_chunks
                 if not result.min_chunks_met:
-                    blockers.append(
-                        f"Min chunks not met: {result.actual_chunk_count} < {min_chunks}"
-                    )
+                    blockers.append(f"Min chunks not met: {result.actual_chunk_count} < {min_chunks}")
 
     if not result.min_docs_calibrated:
         blockers.append("min_corpus_documents not calibrated")

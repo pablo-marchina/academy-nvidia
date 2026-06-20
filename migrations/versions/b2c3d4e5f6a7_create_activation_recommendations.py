@@ -48,22 +48,16 @@ def upgrade() -> None:
             ["analysis_run_id"],
             unique=False,
         )
-        batch_op.create_index(
-            batch_op.f("ix_activation_recommendations_playbook_id"), ["playbook_id"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_activation_recommendations_playbook_id"), ["playbook_id"], unique=False)
         batch_op.create_index(
             batch_op.f("ix_activation_recommendations_recommended_motion"),
             ["recommended_motion"],
             unique=False,
         )
-        batch_op.create_index(
-            batch_op.f("ix_activation_recommendations_priority"), ["priority"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_activation_recommendations_priority"), ["priority"], unique=False)
         batch_op.create_index("ix_activation_run_id", ["analysis_run_id"], unique=False)
         batch_op.create_index("ix_activation_playbook_id", ["playbook_id"], unique=False)
-        batch_op.create_index(
-            "ix_activation_recommended_motion", ["recommended_motion"], unique=False
-        )
+        batch_op.create_index("ix_activation_recommended_motion", ["recommended_motion"], unique=False)
         batch_op.create_index("ix_activation_priority", ["priority"], unique=False)
 
 

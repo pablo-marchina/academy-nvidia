@@ -28,7 +28,13 @@ _runtime: ProductDatabaseRuntime | None = None
 
 
 def get_product_db_url() -> str:
-    return os.getenv("PRODUCT_DB_URL", DEFAULT_PRODUCT_DB_URL)
+    value = os.getenv("PRODUCT_DB_URL")
+    if value:
+        return value
+    if os.getenv("APP_MODE", "product").lower() == "product":
+        msg = "PRODUCT_DB_URL is required when APP_MODE=product"
+        raise RuntimeError(msg)
+    return DEFAULT_PRODUCT_DB_URL
 
 
 def sanitize_database_url(database_url: str) -> str:
@@ -45,10 +51,12 @@ def _ensure_sqlite_directory(database_url: str) -> None:
 
 def build_product_database(database_url: str | None = None) -> ProductDatabaseRuntime:
     url = database_url or get_product_db_url()
+    backend = make_url(url).get_backend_name()
+    if os.getenv("APP_MODE", "").lower() == "product" and not backend.startswith("postgresql"):
+        msg = "APP_MODE=product requires PRODUCT_DB_URL to use PostgreSQL"
+        raise RuntimeError(msg)
     _ensure_sqlite_directory(url)
-    connect_args = (
-        {"check_same_thread": False} if make_url(url).get_backend_name() == "sqlite" else {}
-    )
+    connect_args = {"check_same_thread": False} if backend == "sqlite" else {}
     engine = create_engine(url, future=True, pool_pre_ping=True, connect_args=connect_args)
     factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, class_=Session)
     return ProductDatabaseRuntime(url=url, engine=engine, session_factory=factory)

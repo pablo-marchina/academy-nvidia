@@ -9,7 +9,6 @@ import pytest
 from src.evaluation.recommendation_baseline import (
     CANDIDATE_PRIORITY_WEIGHTS,
     HumanLabeledRecommendation,
-    RecommendationBaselineMetrics,
     RecommendationCalibrationResult,
     RecommendationGoldenEntry,
     WeightCandidateResult,
@@ -168,27 +167,33 @@ class TestCheckLabelsExist:
 
 class TestCheckLabelsAreReal:
     def test_synthetic_labels_detected(self) -> None:
-        entry = _make_entry(labels=[
-            _make_label(label_source="derived_from_synthetic_reference"),
-        ])
+        entry = _make_entry(
+            labels=[
+                _make_label(label_source="derived_from_synthetic_reference"),
+            ]
+        )
         real, issues = check_recommendation_labels_are_real([entry])
         assert not real
         assert len(issues) >= 1
         assert "synthetic" in issues[0].lower()
 
     def test_real_labels_pass(self) -> None:
-        entry = _make_entry(labels=[
-            _make_label(label_source="human-reviewer-1"),
-        ])
+        entry = _make_entry(
+            labels=[
+                _make_label(label_source="human-reviewer-1"),
+            ]
+        )
         real, issues = check_recommendation_labels_are_real([entry])
         assert real
         assert issues == []
 
     def test_mixed_labels(self) -> None:
-        entry = _make_entry(labels=[
-            _make_label(label_source="human-reviewer-1"),
-            _make_label(label_source="derived_from_synthetic_reference"),
-        ])
+        entry = _make_entry(
+            labels=[
+                _make_label(label_source="human-reviewer-1"),
+                _make_label(label_source="derived_from_synthetic_reference"),
+            ]
+        )
         real, issues = check_recommendation_labels_are_real([entry])
         assert real  # at least one real
         assert len(issues) >= 1
@@ -299,12 +304,24 @@ class TestSpearman:
 
 class TestExtractPriorityFeatures:
     def test_extracts_correct_keys(self) -> None:
-        mapping = _make_mapping(tech="CUDA", mapping_score=0.8, mapping_confidence=0.7,
-                                 gap_severity=0.6, gap_confidence=0.9)
+        mapping = _make_mapping(
+            tech="CUDA",
+            mapping_score=0.8,
+            mapping_confidence=0.7,
+            gap_severity=0.6,
+            gap_confidence=0.9,
+        )
         features = _extract_priority_features(mapping)
-        for key in ("mapping_score", "mapping_confidence", "gap_severity_score",
-                     "gap_confidence_score", "evidence_support", "rag_support",
-                     "business_impact", "implementation_complexity_inverse"):
+        for key in (
+            "mapping_score",
+            "mapping_confidence",
+            "gap_severity_score",
+            "gap_confidence_score",
+            "evidence_support",
+            "rag_support",
+            "business_impact",
+            "implementation_complexity_inverse",
+        ):
             assert key in features
         assert features["mapping_score"] == 0.8
         assert features["mapping_confidence"] == 0.7
@@ -321,7 +338,9 @@ class TestComputePriorityScores:
     def test_uncertainty_penalty_reduces_score(self) -> None:
         high_uncertainty = _make_mapping("CUDA", mapping_score=0.8, uncertainty=0.5)
         scores = _compute_priority_scores_for_mappings(
-            [high_uncertainty], CANDIDATE_PRIORITY_WEIGHTS[0], uncertainty_penalty=0.2,
+            [high_uncertainty],
+            CANDIDATE_PRIORITY_WEIGHTS[0],
+            uncertainty_penalty=0.2,
         )
         assert scores[0] < 0.8
 
@@ -355,7 +374,9 @@ class TestComputeRankingMetrics:
         mappings_techs = ["CUDA", "TensorRT"]
         metrics = _compute_ranking_metrics([0.8, 0.3], labels, mappings_techs)
         assert metrics is not None
-        assert metrics.mrr == 0.5  # TensorRT (relevant, rel=0.9) is 2nd in predicted ranking; CUDA (rel=0.3) is below threshold
+        assert (
+            metrics.mrr == 0.5
+        )  # TensorRT (relevant, rel=0.9) is 2nd in predicted ranking; CUDA (rel=0.3) is below threshold
 
     def test_precision_at_k(self) -> None:
         labels = [
@@ -672,9 +693,12 @@ class TestMakeBaselineRecords:
             has_human_labels=False,
             has_real_labels=False,
             synthetic_label_issues=[],
-            label_coverage={"total_entries_with_labels": 0,
-                            "total_recommendation_labels": 0,
-                            "technology_coverage": {}, "gap_type_coverage": {}},
+            label_coverage={
+                "total_entries_with_labels": 0,
+                "total_recommendation_labels": 0,
+                "technology_coverage": {},
+                "gap_type_coverage": {},
+            },
             production_blockers=["Empty"],
         )
         records = make_recommendation_baseline_records(result)
@@ -692,9 +716,12 @@ class TestMakeBaselineRecords:
             has_human_labels=False,
             has_real_labels=False,
             synthetic_label_issues=[],
-            label_coverage={"total_entries_with_labels": 0,
-                            "total_recommendation_labels": 0,
-                            "technology_coverage": {}, "gap_type_coverage": {}},
+            label_coverage={
+                "total_entries_with_labels": 0,
+                "total_recommendation_labels": 0,
+                "technology_coverage": {},
+                "gap_type_coverage": {},
+            },
         )
         records = make_recommendation_baseline_records(result)
         ids = {r.decision_id for r in records}
@@ -716,9 +743,12 @@ class TestMakeBaselineRecords:
             has_human_labels=False,
             has_real_labels=False,
             synthetic_label_issues=[],
-            label_coverage={"total_entries_with_labels": 0,
-                            "total_recommendation_labels": 0,
-                            "technology_coverage": {}, "gap_type_coverage": {}},
+            label_coverage={
+                "total_entries_with_labels": 0,
+                "total_recommendation_labels": 0,
+                "technology_coverage": {},
+                "gap_type_coverage": {},
+            },
         )
         records = make_recommendation_baseline_records(result)
         for r in records:
@@ -733,9 +763,12 @@ class TestMakeBaselineRecords:
             has_human_labels=False,
             has_real_labels=False,
             synthetic_label_issues=[],
-            label_coverage={"total_entries_with_labels": 0,
-                            "total_recommendation_labels": 0,
-                            "technology_coverage": {}, "gap_type_coverage": {}},
+            label_coverage={
+                "total_entries_with_labels": 0,
+                "total_recommendation_labels": 0,
+                "technology_coverage": {},
+                "gap_type_coverage": {},
+            },
         )
         records = make_recommendation_baseline_records(result)
         for r in records:
@@ -750,9 +783,12 @@ class TestMakeBaselineRecords:
             has_human_labels=False,
             has_real_labels=False,
             synthetic_label_issues=[],
-            label_coverage={"total_entries_with_labels": 0,
-                            "total_recommendation_labels": 0,
-                            "technology_coverage": {}, "gap_type_coverage": {}},
+            label_coverage={
+                "total_entries_with_labels": 0,
+                "total_recommendation_labels": 0,
+                "technology_coverage": {},
+                "gap_type_coverage": {},
+            },
         )
         records = make_recommendation_baseline_records(result)
         for r in records:
@@ -784,8 +820,12 @@ class TestRunCalibration:
         entries = generate_synthetic_recommendation_golden_set(count=30)
         path = Path("data/eval/_test_synthetic_rec_golden.json")
         path.write_text(
-            json.dumps({"entries": [e.model_dump(mode="json") for e in entries],
-                        "metadata": {"notes": "SYNTHETIC"}}),
+            json.dumps(
+                {
+                    "entries": [e.model_dump(mode="json") for e in entries],
+                    "metadata": {"notes": "SYNTHETIC"},
+                }
+            ),
             encoding="utf-8",
         )
         try:
@@ -807,7 +847,8 @@ class TestRunCalibration:
         )
         try:
             result = run_recommendation_baseline_calibration(
-                golden_path=path, auto_generate_synthetic=False,
+                golden_path=path,
+                auto_generate_synthetic=False,
             )
             assert result.calibration_status == "baseline_dataset_insufficient"
             assert not result.production_allowed

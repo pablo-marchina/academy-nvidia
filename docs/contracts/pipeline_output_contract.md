@@ -65,5 +65,14 @@ assert result.recommendation is not None
 assert len(result.recommendation.recommendations) >= 1
 ```
 
+## Final Product Readiness Update - 2026-06-19
+
+The library pipeline can still be exercised in isolated tests, but the product path is strict:
+
+- Product API analysis runs require the readiness gate before persistence or orchestration.
+- In `APP_MODE=product`, RAG is not optional; Qdrant, a real embedding model, a fresh populated corpus, and productive calibration are required before analysis.
+- Lexical-only, in-memory, mock, fixture, or synthetic inputs are allowed only in explicit tests and cannot satisfy product readiness.
+- Product outputs must preserve provenance and separate fact, inference, and hypothesis through the downstream brief, recommendation, dossier, and quality contracts.
+
 ## Contract Version
 3.0 — June 2026 (integration of RAG reranking + context packing)

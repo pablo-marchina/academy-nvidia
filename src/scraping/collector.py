@@ -161,9 +161,7 @@ class SourceCollector:
 
             if result.status is not None and result.status >= 500:
                 source.error = f"HTTP {result.status} (attempt {attempt})"
-                logger.warning(
-                    "FETCH_SERVER_ERR  %s  HTTP %d (attempt %d)", url, result.status, attempt
-                )
+                logger.warning("FETCH_SERVER_ERR  %s  HTTP %d (attempt %d)", url, result.status, attempt)
                 if attempt < max_retries:
                     time.sleep(2**attempt)
                 continue
@@ -229,9 +227,7 @@ class SourceCollector:
         results: list[CollectedSource] = []
         name = startup_name.lower().replace(" ", "-").replace(".", "-")
         for src in sources:
-            search_url = (
-                f"{src.base_url}/search/repositories?q={name}+in:name&sort=stars&per_page=3"
-            )
+            search_url = f"{src.base_url}/search/repositories?q={name}+in:name&sort=stars&per_page=3"
             collected = self._fetch_with_retry(search_url, src.rate_limit_policy_id)
             results.append(collected)
             logger.info("CATEGORY github_or_code: source=%s url=%s", src.source_id, search_url)

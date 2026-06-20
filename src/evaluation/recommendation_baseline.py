@@ -25,7 +25,6 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from src.quality.decision_calibration_registry import (
-    _CALIBRATION_TS,
     CalibrationMethod,
     CalibrationStatus,
     DecisionCalibrationRecord,
@@ -202,11 +201,24 @@ def _spearman(xs: list[float], ys: list[float]) -> float:
 def _distribution(values: list[float]) -> dict[str, float]:
     n = len(values)
     if n == 0:
-        return {"count": 0, "mean": 0.0, "min": 0.0, "max": 0.0,
-                "p1": 0.0, "p5": 0.0, "p10": 0.0, "p25": 0.0,
-                "p50": 0.0, "p75": 0.0, "p95": 0.0}
+        return {
+            "count": 0,
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "p1": 0.0,
+            "p5": 0.0,
+            "p10": 0.0,
+            "p25": 0.0,
+            "p50": 0.0,
+            "p75": 0.0,
+            "p95": 0.0,
+        }
     sorted_v = sorted(values)
-    idx_fn = lambda p: max(0, min(n - 1, int(n * p / 100)))
+
+    def idx_fn(p: float) -> int:
+        return max(0, min(n - 1, int(n * p / 100)))
+
     return {
         "count": n,
         "mean": round(sum(values) / n, 4),
@@ -378,9 +390,7 @@ def count_labeled_recommendations(
         for rec in e.expected_recommendations:
             tech_counts[rec.nvidia_technology] = tech_counts.get(rec.nvidia_technology, 0) + 1
     return {
-        "total_entries_with_labels": sum(
-            1 for e in entries if len(e.expected_recommendations) > 0
-        ),
+        "total_entries_with_labels": sum(1 for e in entries if len(e.expected_recommendations) > 0),
         "total_recommendation_labels": total_labels,
         "technology_coverage": tech_counts,
         "gap_type_coverage": gap_type_counts,
@@ -455,55 +465,65 @@ def generate_synthetic_recommendation_golden_set(
             rag_ids = [f"synth-rag-{i}-{j}-{k}" for k in range(rng.randint(0, 3))]
 
             priority_rank = j + 1
-            relevance = max(0.0, min(1.0, mapping_score * 0.7 + mapping_confidence * 0.3 +
-                                      rng.gauss(0, 0.05)))
-            actionability = max(0.0, min(1.0,
-                                         0.3 * (1.0 if len(ev_ids) > 0 else 0.0) +
-                                         0.3 * (1.0 if len(rag_ids) > 0 else 0.0) +
-                                         0.4 * relevance +
-                                         rng.gauss(0, 0.05)))
+            relevance = max(0.0, min(1.0, mapping_score * 0.7 + mapping_confidence * 0.3 + rng.gauss(0, 0.05)))
+            actionability = max(
+                0.0,
+                min(
+                    1.0,
+                    0.3 * (1.0 if len(ev_ids) > 0 else 0.0)
+                    + 0.3 * (1.0 if len(rag_ids) > 0 else 0.0)
+                    + 0.4 * relevance
+                    + rng.gauss(0, 0.05),
+                ),
+            )
 
-            mappings.append({
-                "mapping_id": f"synth-map-{i}-{j}",
-                "gap_type": gap_type,
-                "nvidia_technology": tech,
-                "mapping_score": mapping_score,
-                "mapping_confidence": mapping_confidence,
-                "uncertainty": uncertainty,
-                "features": {
-                    "gap_severity_score": round(rng.uniform(0.3, 0.9), 4),
-                    "gap_confidence_score": round(rng.uniform(0.3, 0.9), 4),
-                },
-                "supporting_rag_context_ids": rag_ids,
-                "supporting_evidence_ids": ev_ids,
-                "production_allowed": True,
-                "blockers": [],
-                "calibration_decision_ids": [],
-            })
+            mappings.append(
+                {
+                    "mapping_id": f"synth-map-{i}-{j}",
+                    "gap_type": gap_type,
+                    "nvidia_technology": tech,
+                    "mapping_score": mapping_score,
+                    "mapping_confidence": mapping_confidence,
+                    "uncertainty": uncertainty,
+                    "features": {
+                        "gap_severity_score": round(rng.uniform(0.3, 0.9), 4),
+                        "gap_confidence_score": round(rng.uniform(0.3, 0.9), 4),
+                    },
+                    "supporting_rag_context_ids": rag_ids,
+                    "supporting_evidence_ids": ev_ids,
+                    "production_allowed": True,
+                    "blockers": [],
+                    "calibration_decision_ids": [],
+                }
+            )
 
-            expected_recs.append(HumanLabeledRecommendation(
-                nvidia_technology=tech,
-                human_label_relevance=round(relevance, 4),
-                human_label_priority_rank=priority_rank,
-                human_label_actionability=round(actionability, 4),
-                supporting_evidence_ids=ev_ids,
-                supporting_rag_context_ids=rag_ids,
-                reviewer_id="synthetic-generator",
-                label_source="derived_from_synthetic_reference",
-                label_notes=f"Synthetic label for {tech} on {gap_type} (rank={priority_rank})",
-            ))
+            expected_recs.append(
+                HumanLabeledRecommendation(
+                    nvidia_technology=tech,
+                    human_label_relevance=round(relevance, 4),
+                    human_label_priority_rank=priority_rank,
+                    human_label_actionability=round(actionability, 4),
+                    supporting_evidence_ids=ev_ids,
+                    supporting_rag_context_ids=rag_ids,
+                    reviewer_id="synthetic-generator",
+                    label_source="derived_from_synthetic_reference",
+                    label_notes=f"Synthetic label for {tech} on {gap_type} (rank={priority_rank})",
+                )
+            )
 
-        entries.append(RecommendationGoldenEntry(
-            eval_id=f"synth-rec-{i:04d}",
-            startup_id=f"synth-startup-{i:04d}",
-            startup_name=f"SynthRecommendation {i:04d}",
-            gap_id=f"synth-gap-{i:04d}",
-            gap_type=gap_type,
-            nvidia_technology_mappings_snapshot=mappings,
-            rag_contexts_by_gap_snapshot={gap_type: []},
-            accepted_evidence_items_snapshot=[],
-            expected_recommendations=expected_recs,
-        ))
+        entries.append(
+            RecommendationGoldenEntry(
+                eval_id=f"synth-rec-{i:04d}",
+                startup_id=f"synth-startup-{i:04d}",
+                startup_name=f"SynthRecommendation {i:04d}",
+                gap_id=f"synth-gap-{i:04d}",
+                gap_type=gap_type,
+                nvidia_technology_mappings_snapshot=mappings,
+                rag_contexts_by_gap_snapshot={gap_type: []},
+                accepted_evidence_items_snapshot=[],
+                expected_recommendations=expected_recs,
+            )
+        )
 
     return entries
 
@@ -546,10 +566,8 @@ def _compute_ranking_metrics(
         return None
 
     relevance_threshold = 0.5
-    label_map: dict[str, float] = {r.nvidia_technology: r.human_label_relevance
-                                    for r in human_labels}
-    label_ranks: dict[str, int] = {r.nvidia_technology: r.human_label_priority_rank
-                                    for r in human_labels}
+    label_map: dict[str, float] = {r.nvidia_technology: r.human_label_relevance for r in human_labels}
+    {r.nvidia_technology: r.human_label_priority_rank for r in human_labels}
 
     paired = list(zip(predicted_scores, mapping_technologies, strict=True))
     paired.sort(key=lambda x: -x[0])
@@ -641,14 +659,12 @@ def _compute_support_metrics(
 
     total = len(relevant_maps)
     unsupported = sum(
-        1 for m in relevant_maps
-        if not m.get("supporting_evidence_ids") and not m.get("supporting_rag_context_ids")
+        1 for m in relevant_maps if not m.get("supporting_evidence_ids") and not m.get("supporting_rag_context_ids")
     )
     ev_supported = sum(1 for m in relevant_maps if m.get("supporting_evidence_ids"))
     rag_supported = sum(1 for m in relevant_maps if m.get("supporting_rag_context_ids"))
     both_supported = sum(
-        1 for m in relevant_maps
-        if m.get("supporting_evidence_ids") and m.get("supporting_rag_context_ids")
+        1 for m in relevant_maps if m.get("supporting_evidence_ids") and m.get("supporting_rag_context_ids")
     )
 
     return SupportMetrics(
@@ -680,20 +696,21 @@ def _compute_correlation_metrics(
         predicted_confidence = float(m.get("mapping_confidence", 0.0))
         predicted_actionability = _compute_actionability_proxy(m)
 
-        pairs.append((
-            predicted_actionability,
-            predicted_priority,
-            predicted_confidence,
-            rec.human_label_actionability,
-            rec.human_label_relevance,
-            rec.human_label_priority_rank,
-        ))
+        pairs.append(
+            (
+                predicted_actionability,
+                predicted_priority,
+                predicted_confidence,
+                rec.human_label_actionability,
+                rec.human_label_relevance,
+                rec.human_label_priority_rank,
+            )
+        )
 
     if len(pairs) < 3:
         return None
 
-    pred_action, pred_priority, pred_conf, \
-        human_action, human_relevance, human_rank = zip(*pairs, strict=True)
+    pred_action, pred_priority, pred_conf, human_action, human_relevance, human_rank = zip(*pairs, strict=True)
 
     # Actionability correlation: human_label_actionability vs proxy
     actionability_corr = _spearman(list(pred_action), list(human_action))
@@ -732,8 +749,7 @@ def _compute_calibration_error_metrics(
     if len(predicted_scores) < 3 or not human_labels:
         return None
 
-    label_relevance: dict[str, float] = {r.nvidia_technology: r.human_label_relevance
-                                          for r in human_labels}
+    label_relevance: dict[str, float] = {r.nvidia_technology: r.human_label_relevance for r in human_labels}
     paired: list[tuple[float, float]] = []
     for score, tech in zip(predicted_scores, mapping_technologies, strict=True):
         h_rel = label_relevance.get(tech)
@@ -809,10 +825,15 @@ def _evaluate_weight_candidates(
             entry_metrics.append(rm)
 
         if len(all_predicted) < 3:
-            results.append(WeightCandidateResult(
-                candidate_index=idx, weights=dict(weights),
-                spearman=None, mae=None, rmse=None,
-            ))
+            results.append(
+                WeightCandidateResult(
+                    candidate_index=idx,
+                    weights=dict(weights),
+                    spearman=None,
+                    mae=None,
+                    rmse=None,
+                )
+            )
             continue
 
         correlation = _spearman(all_predicted, all_human)
@@ -833,19 +854,22 @@ def _evaluate_weight_candidates(
         avg_ndcg3 = sum(ndcg3_list) / len(ndcg3_list) if ndcg3_list else None
         avg_fp = sum(fp_list) / len(fp_list) if fp_list else None
 
-        results.append(WeightCandidateResult(
-            candidate_index=idx, weights=dict(weights),
-            spearman=round(correlation, 4),
-            mae=round(mae_val, 4),
-            rmse=round(rmse_val, 4),
-            ranking_precision_at_3=round(avg_prec3, 4) if avg_prec3 is not None else None,
-            ranking_recall_at_3=round(avg_rec3, 4) if avg_rec3 is not None else None,
-            mrr=round(avg_mrr, 4) if avg_mrr is not None else None,
-            ndcg_at_3=round(avg_ndcg3, 4) if avg_ndcg3 is not None else None,
-            fp_rate=round(avg_fp, 4) if avg_fp is not None else None,
-            predicted_scores=all_predicted,
-            human_labels=all_human,
-        ))
+        results.append(
+            WeightCandidateResult(
+                candidate_index=idx,
+                weights=dict(weights),
+                spearman=round(correlation, 4),
+                mae=round(mae_val, 4),
+                rmse=round(rmse_val, 4),
+                ranking_precision_at_3=round(avg_prec3, 4) if avg_prec3 is not None else None,
+                ranking_recall_at_3=round(avg_rec3, 4) if avg_rec3 is not None else None,
+                mrr=round(avg_mrr, 4) if avg_mrr is not None else None,
+                ndcg_at_3=round(avg_ndcg3, 4) if avg_ndcg3 is not None else None,
+                fp_rate=round(avg_fp, 4) if avg_fp is not None else None,
+                predicted_scores=all_predicted,
+                human_labels=all_human,
+            )
+        )
 
     results.sort(key=lambda r: (-(r.spearman or 0.0), r.mae if r.mae is not None else 1.0))
     return results
@@ -874,7 +898,10 @@ def _calibrate_threshold_from_scores(
         return {"threshold": None, "method": "insufficient_data", "distribution": {}}
 
     sorted_scores = sorted(predicted_scores)
-    idx_fn = lambda p: max(0, min(n - 1, int(n * p / 100)))
+
+    def idx_fn(p: float) -> int:
+        return max(0, min(n - 1, int(n * p / 100)))
+
     distribution = {
         "count": n,
         "mean": round(sum(predicted_scores) / n, 4),
@@ -914,21 +941,20 @@ def _calibrate_uncertainty_penalty_from_scores(
 
     results: list[dict[str, Any]] = []
     for penalty in penalty_candidates:
-        adjusted = [
-            max(0.0, min(1.0, p - u * penalty))
-            for p, u in zip(predicted_scores, uncertainties, strict=True)
-        ]
+        adjusted = [max(0.0, min(1.0, p - u * penalty)) for p, u in zip(predicted_scores, uncertainties, strict=True)]
         abs_errors = [abs(a - h) for a, h in zip(adjusted, human_labels, strict=True)]
         mae_val = sum(abs_errors) / n
         sq_errors = [(a - h) ** 2 for a, h in zip(adjusted, human_labels, strict=True)]
         rmse_val = math.sqrt(sum(sq_errors) / n)
         max_error = max(abs_errors)
-        results.append({
-            "penalty": penalty,
-            "mae": round(mae_val, 4),
-            "rmse": round(rmse_val, 4),
-            "max_error": round(max_error, 4),
-        })
+        results.append(
+            {
+                "penalty": penalty,
+                "mae": round(mae_val, 4),
+                "rmse": round(rmse_val, 4),
+                "max_error": round(max_error, 4),
+            }
+        )
 
     results.sort(key=lambda r: (r["mae"], r["max_error"]))
     best = results[0]
@@ -985,10 +1011,7 @@ def _recommend_minimum_evidence_support(
     ratios: list[float] = []
     for e in entries:
         n_maps = len(e.nvidia_technology_mappings_snapshot) or 1
-        has_evidence = sum(
-            1 for m in e.nvidia_technology_mappings_snapshot
-            if m.get("supporting_evidence_ids")
-        )
+        has_evidence = sum(1 for m in e.nvidia_technology_mappings_snapshot if m.get("supporting_evidence_ids"))
         ratios.append(has_evidence / n_maps)
 
     if not ratios:
@@ -1037,35 +1060,23 @@ def _check_recommendation_production_ready(
         blockers.append(f"Synthetic labels in dataset: {len(synthetic_issues)} entries affected.")
 
     if labeled_entry_count < MIN_LABELED_ENTRIES:
-        blockers.append(
-            f"Labeled entries ({labeled_entry_count}) < minimum ({MIN_LABELED_ENTRIES})"
-        )
+        blockers.append(f"Labeled entries ({labeled_entry_count}) < minimum ({MIN_LABELED_ENTRIES})")
     if label_count < MIN_LABELED_ENTRIES:
-        blockers.append(
-            f"Recommendation labels ({label_count}) < minimum ({MIN_LABELED_ENTRIES})"
-        )
+        blockers.append(f"Recommendation labels ({label_count}) < minimum ({MIN_LABELED_ENTRIES})")
 
     if spearman is not None and spearman < MIN_SPEARMAN:
-        blockers.append(
-            f"Spearman correlation ({spearman:.4f}) < minimum ({MIN_SPEARMAN})"
-        )
+        blockers.append(f"Spearman correlation ({spearman:.4f}) < minimum ({MIN_SPEARMAN})")
     if mae is not None and mae > MAX_MAE:
-        blockers.append(
-            f"MAE ({mae:.4f}) > maximum ({MAX_MAE})"
-        )
+        blockers.append(f"MAE ({mae:.4f}) > maximum ({MAX_MAE})")
     if fp_rate is not None and fp_rate > MAX_FP_RATE:
-        blockers.append(
-            f"False positive rate ({fp_rate:.4f}) > maximum ({MAX_FP_RATE})"
-        )
+        blockers.append(f"False positive rate ({fp_rate:.4f}) > maximum ({MAX_FP_RATE})")
 
     if coverage_by_tech:
         tech_present = sum(1 for c in coverage_by_tech.values() if c > 0)
         total_tech = max(1, len(coverage_by_tech))
         coverage_ratio = tech_present / total_tech
         if coverage_ratio < MIN_CALIBRATION_COVERAGE:
-            blockers.append(
-                f"Technology coverage ({coverage_ratio:.2f}) < minimum ({MIN_CALIBRATION_COVERAGE})"
-            )
+            blockers.append(f"Technology coverage ({coverage_ratio:.2f}) < minimum ({MIN_CALIBRATION_COVERAGE})")
 
     return len(blockers) == 0, blockers
 
@@ -1169,23 +1180,39 @@ def _compute_entry_level_metrics(
         k_values = [1, 3, 5]
         ranking_metrics = RankingMetrics(
             precision_at_k={
-                k: round(sum(rm.precision_at_k.get(k, 0.0) for rm in agg_rankings if rm.precision_at_k) / len(agg_rankings), 4)
+                k: round(
+                    sum(rm.precision_at_k.get(k, 0.0) for rm in agg_rankings if rm.precision_at_k) / len(agg_rankings),
+                    4,
+                )
                 for k in k_values
             },
             recall_at_k={
-                k: round(sum(rm.recall_at_k.get(k, 0.0) for rm in agg_rankings if rm.recall_at_k) / len(agg_rankings), 4)
+                k: round(
+                    sum(rm.recall_at_k.get(k, 0.0) for rm in agg_rankings if rm.recall_at_k) / len(agg_rankings),
+                    4,
+                )
                 for k in k_values
             },
             mrr=round(sum(rm.mrr or 0.0 for rm in agg_rankings) / len(agg_rankings), 4),
             ndcg_at_k={
-                k: round(sum(rm.ndcg_at_k.get(k, 0.0) for rm in agg_rankings if rm.ndcg_at_k) / len(agg_rankings), 4)
+                k: round(
+                    sum(rm.ndcg_at_k.get(k, 0.0) for rm in agg_rankings if rm.ndcg_at_k) / len(agg_rankings),
+                    4,
+                )
                 for k in k_values
             },
             false_positive_rate=round(sum(rm.false_positive_rate or 0.0 for rm in agg_rankings) / len(agg_rankings), 4),
             false_negative_rate=round(sum(rm.false_negative_rate or 0.0 for rm in agg_rankings) / len(agg_rankings), 4),
         )
 
-    return all_predicted, all_human, ranking_metrics, support_metrics, correlation_metrics, calibration_metrics
+    return (
+        all_predicted,
+        all_human,
+        ranking_metrics,
+        support_metrics,
+        correlation_metrics,
+        calibration_metrics,
+    )
 
 
 def _format_report(result: RecommendationCalibrationResult) -> str:
@@ -1311,14 +1338,18 @@ def run_recommendation_baseline_calibration(
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             json.dump(
-                {"entries": [e.model_dump(mode="json") for e in entries],
-                 "metadata": {
-                     "created_at": datetime.now(UTC).isoformat(),
-                     "total_entries": len(entries),
-                     "generated_by": "run_recommendation_baseline_calibration",
-                     "notes": "SYNTHETIC — for structural testing only. Not for production calibration.",
-                 }},
-                f, indent=2, ensure_ascii=False,
+                {
+                    "entries": [e.model_dump(mode="json") for e in entries],
+                    "metadata": {
+                        "created_at": datetime.now(UTC).isoformat(),
+                        "total_entries": len(entries),
+                        "generated_by": "run_recommendation_baseline_calibration",
+                        "notes": "SYNTHETIC — for structural testing only. Not for production calibration.",
+                    },
+                },
+                f,
+                indent=2,
+                ensure_ascii=False,
             )
         logger.info(f"Saved {len(entries)} synthetic entries to {path}")
         entries = load_recommendation_golden_set(path)
@@ -1331,8 +1362,12 @@ def run_recommendation_baseline_calibration(
             has_human_labels=False,
             has_real_labels=False,
             synthetic_label_issues=[],
-            label_coverage={"total_entries_with_labels": 0, "total_recommendation_labels": 0,
-                            "technology_coverage": {}, "gap_type_coverage": {}},
+            label_coverage={
+                "total_entries_with_labels": 0,
+                "total_recommendation_labels": 0,
+                "technology_coverage": {},
+                "gap_type_coverage": {},
+            },
             production_blockers=["Golden set is empty. Add human-labeled recommendation entries."],
         )
         result.report = _format_report(result)
@@ -1391,10 +1426,16 @@ def run_recommendation_baseline_calibration(
     if best_idx is not None:
         best_weights = candidates[best_idx].weights
 
-    (all_predicted, all_human,
-     ranking_metrics, support_metrics,
-     correlation_metrics, calibration_metrics) = _compute_entry_level_metrics(
-        entries, best_weights,
+    (
+        all_predicted,
+        all_human,
+        ranking_metrics,
+        support_metrics,
+        correlation_metrics,
+        calibration_metrics,
+    ) = _compute_entry_level_metrics(
+        entries,
+        best_weights,
     )
 
     uncertainties = _extract_uncertainties(
@@ -1410,12 +1451,13 @@ def run_recommendation_baseline_calibration(
     uncertainty_penalty = None
     if len(all_predicted) >= 3 and len(uncertainties) >= 3:
         uncertainty_penalty = _calibrate_uncertainty_penalty_from_scores(
-            all_predicted, all_human, uncertainties,
+            all_predicted,
+            all_human,
+            uncertainties,
         )
 
     conf_threshold = _recommend_minimum_mapping_confidence(
-        [float(m.get("mapping_confidence", 0.0))
-         for e in entries for m in e.nvidia_technology_mappings_snapshot],
+        [float(m.get("mapping_confidence", 0.0)) for e in entries for m in e.nvidia_technology_mappings_snapshot],
     )
 
     min_ev_support = _recommend_minimum_evidence_support(entries)
@@ -1489,7 +1531,6 @@ def make_recommendation_baseline_records(
 
     is_insufficient = result.calibration_status == "baseline_dataset_insufficient"
     is_blocked = result.calibration_status == "baseline_measured_blocked"
-    is_measured = result.calibration_status == "baseline_measured"
 
     cal_status: CalibrationStatus
     if is_insufficient:
@@ -1529,7 +1570,7 @@ def make_recommendation_baseline_records(
     evidence_source = "\n".join(evidence_source_lines)
 
     # Report path
-    report_path = _GOLDEN_SET_PATH.parent / f"report_recommendation_baseline_{eval_id}.txt"
+    _GOLDEN_SET_PATH.parent / f"report_recommendation_baseline_{eval_id}.txt"
 
     notes_template = (
         "Calibrated via recommendation_baseline_eval. "
@@ -1549,121 +1590,133 @@ def make_recommendation_baseline_records(
     else:
         current_value = None
 
-    records.append(DecisionCalibrationRecord(
-        decision_id="recommendation.priority_score_weights",
-        decision_name="Recommendation: Per-Feature Weights for priority_score",
-        decision_type=DecisionType.WEIGHT,
-        current_value=current_value,
-        metric_name="recommendation_priority_score_weights",
-        value_origin=base_value_origin,
-        calibration_status=cal_status,
-        calibration_method=cal_method,
-        production_allowed=result.production_allowed,
-        evidence_source=evidence_source,
-        owner="team-recommendation",
-        last_calibrated_at=now if not is_insufficient else None,
-        notes=f"{notes_template}\nWeights: {result.best_weights if result.best_weights else 'None — insufficient data'}",
-    ))
+    records.append(
+        DecisionCalibrationRecord(
+            decision_id="recommendation.priority_score_weights",
+            decision_name="Recommendation: Per-Feature Weights for priority_score",
+            decision_type=DecisionType.WEIGHT,
+            current_value=current_value,
+            metric_name="recommendation_priority_score_weights",
+            value_origin=base_value_origin,
+            calibration_status=cal_status,
+            calibration_method=cal_method,
+            production_allowed=result.production_allowed,
+            evidence_source=evidence_source,
+            owner="team-recommendation",
+            last_calibrated_at=now if not is_insufficient else None,
+            notes=f"{notes_template}\nWeights: {result.best_weights if result.best_weights else 'None — insufficient data'}",
+        )
+    )
 
     # --- 2. production_threshold ---
     pt_value = None
     if result.production_threshold and result.production_threshold.get("threshold") is not None:
         pt_value = result.production_threshold["threshold"]
-    records.append(DecisionCalibrationRecord(
-        decision_id="recommendation.production_threshold",
-        decision_name="Recommendation: Minimum priority_score for Production",
-        decision_type=DecisionType.THRESHOLD,
-        current_value=pt_value,
-        metric_name="recommendation_production_threshold",
-        value_origin=base_value_origin,
-        calibration_status=cal_status,
-        calibration_method=CalibrationMethod.PERCENTILE_RULE if not is_insufficient else cal_method,
-        production_allowed=result.production_allowed,
-        evidence_source=evidence_source,
-        owner="team-recommendation",
-        last_calibrated_at=now if not is_insufficient else None,
-        notes=f"{notes_template}\nThreshold: {pt_value}",
-    ))
+    records.append(
+        DecisionCalibrationRecord(
+            decision_id="recommendation.production_threshold",
+            decision_name="Recommendation: Minimum priority_score for Production",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=pt_value,
+            metric_name="recommendation_production_threshold",
+            value_origin=base_value_origin,
+            calibration_status=cal_status,
+            calibration_method=(CalibrationMethod.PERCENTILE_RULE if not is_insufficient else cal_method),
+            production_allowed=result.production_allowed,
+            evidence_source=evidence_source,
+            owner="team-recommendation",
+            last_calibrated_at=now if not is_insufficient else None,
+            notes=f"{notes_template}\nThreshold: {pt_value}",
+        )
+    )
 
     # --- 3. confidence_threshold ---
     ct_value = None
     if result.confidence_threshold and result.confidence_threshold.get("recommended_min") is not None:
         ct_value = result.confidence_threshold["recommended_min"]
-    records.append(DecisionCalibrationRecord(
-        decision_id="recommendation.confidence_threshold",
-        decision_name="Recommendation: Minimum mapping_confidence for Recommendation confidence",
-        decision_type=DecisionType.THRESHOLD,
-        current_value=ct_value,
-        metric_name="recommendation_confidence_threshold",
-        value_origin=base_value_origin,
-        calibration_status=cal_status,
-        calibration_method=CalibrationMethod.PERCENTILE_RULE if not is_insufficient else cal_method,
-        production_allowed=result.production_allowed,
-        evidence_source=evidence_source,
-        owner="team-recommendation",
-        last_calibrated_at=now if not is_insufficient else None,
-        notes=f"{notes_template}\nConfidence threshold: {ct_value}",
-    ))
+    records.append(
+        DecisionCalibrationRecord(
+            decision_id="recommendation.confidence_threshold",
+            decision_name="Recommendation: Minimum mapping_confidence for Recommendation confidence",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=ct_value,
+            metric_name="recommendation_confidence_threshold",
+            value_origin=base_value_origin,
+            calibration_status=cal_status,
+            calibration_method=(CalibrationMethod.PERCENTILE_RULE if not is_insufficient else cal_method),
+            production_allowed=result.production_allowed,
+            evidence_source=evidence_source,
+            owner="team-recommendation",
+            last_calibrated_at=now if not is_insufficient else None,
+            notes=f"{notes_template}\nConfidence threshold: {ct_value}",
+        )
+    )
 
     # --- 4. uncertainty_penalty ---
     up_value = None
     if result.uncertainty_penalty and result.uncertainty_penalty.get("best_penalty") is not None:
         up_value = result.uncertainty_penalty["best_penalty"]
-    records.append(DecisionCalibrationRecord(
-        decision_id="recommendation.uncertainty_penalty",
-        decision_name="Recommendation: Uncertainty Penalty Multiplier",
-        decision_type=DecisionType.FALLBACK_POLICY,
-        current_value=up_value,
-        metric_name="recommendation_uncertainty_penalty",
-        value_origin=base_value_origin,
-        calibration_status=cal_status,
-        calibration_method=CalibrationMethod.SENSITIVITY_ANALYSIS if not is_insufficient else cal_method,
-        production_allowed=result.production_allowed,
-        evidence_source=evidence_source,
-        owner="team-recommendation",
-        last_calibrated_at=now if not is_insufficient else None,
-        notes=f"{notes_template}\nUncertainty penalty: {up_value}",
-    ))
+    records.append(
+        DecisionCalibrationRecord(
+            decision_id="recommendation.uncertainty_penalty",
+            decision_name="Recommendation: Uncertainty Penalty Multiplier",
+            decision_type=DecisionType.FALLBACK_POLICY,
+            current_value=up_value,
+            metric_name="recommendation_uncertainty_penalty",
+            value_origin=base_value_origin,
+            calibration_status=cal_status,
+            calibration_method=(CalibrationMethod.SENSITIVITY_ANALYSIS if not is_insufficient else cal_method),
+            production_allowed=result.production_allowed,
+            evidence_source=evidence_source,
+            owner="team-recommendation",
+            last_calibrated_at=now if not is_insufficient else None,
+            notes=f"{notes_template}\nUncertainty penalty: {up_value}",
+        )
+    )
 
     # --- 5. minimum_mapping_confidence ---
     mmc_value = None
     if result.minimum_mapping_confidence and result.minimum_mapping_confidence.get("recommended_min") is not None:
         mmc_value = result.minimum_mapping_confidence["recommended_min"]
-    records.append(DecisionCalibrationRecord(
-        decision_id="recommendation.minimum_mapping_confidence",
-        decision_name="Recommendation: Minimum mapping_confidence for Recommendation",
-        decision_type=DecisionType.THRESHOLD,
-        current_value=mmc_value,
-        metric_name="recommendation_minimum_mapping_confidence",
-        value_origin=base_value_origin,
-        calibration_status=cal_status,
-        calibration_method=CalibrationMethod.PERCENTILE_RULE if not is_insufficient else cal_method,
-        production_allowed=result.production_allowed,
-        evidence_source=evidence_source,
-        owner="team-recommendation",
-        last_calibrated_at=now if not is_insufficient else None,
-        notes=f"{notes_template}\nMin mapping confidence: {mmc_value}",
-    ))
+    records.append(
+        DecisionCalibrationRecord(
+            decision_id="recommendation.minimum_mapping_confidence",
+            decision_name="Recommendation: Minimum mapping_confidence for Recommendation",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=mmc_value,
+            metric_name="recommendation_minimum_mapping_confidence",
+            value_origin=base_value_origin,
+            calibration_status=cal_status,
+            calibration_method=(CalibrationMethod.PERCENTILE_RULE if not is_insufficient else cal_method),
+            production_allowed=result.production_allowed,
+            evidence_source=evidence_source,
+            owner="team-recommendation",
+            last_calibrated_at=now if not is_insufficient else None,
+            notes=f"{notes_template}\nMin mapping confidence: {mmc_value}",
+        )
+    )
 
     # --- 6. minimum_evidence_support ---
     mes_value = None
     if result.minimum_evidence_support and result.minimum_evidence_support.get("recommended_min") is not None:
         mes_value = result.minimum_evidence_support["recommended_min"]
-    records.append(DecisionCalibrationRecord(
-        decision_id="recommendation.minimum_evidence_support",
-        decision_name="Recommendation: Minimum Evidence Support Rate",
-        decision_type=DecisionType.THRESHOLD,
-        current_value=mes_value,
-        metric_name="recommendation_minimum_evidence_support",
-        value_origin=base_value_origin,
-        calibration_status=cal_status,
-        calibration_method=CalibrationMethod.PERCENTILE_RULE if not is_insufficient else cal_method,
-        production_allowed=result.production_allowed,
-        evidence_source=evidence_source,
-        owner="team-recommendation",
-        last_calibrated_at=now if not is_insufficient else None,
-        notes=f"{notes_template}\nMin evidence support: {mes_value}",
-    ))
+    records.append(
+        DecisionCalibrationRecord(
+            decision_id="recommendation.minimum_evidence_support",
+            decision_name="Recommendation: Minimum Evidence Support Rate",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=mes_value,
+            metric_name="recommendation_minimum_evidence_support",
+            value_origin=base_value_origin,
+            calibration_status=cal_status,
+            calibration_method=(CalibrationMethod.PERCENTILE_RULE if not is_insufficient else cal_method),
+            production_allowed=result.production_allowed,
+            evidence_source=evidence_source,
+            owner="team-recommendation",
+            last_calibrated_at=now if not is_insufficient else None,
+            notes=f"{notes_template}\nMin evidence support: {mes_value}",
+        )
+    )
 
     return records
 
@@ -1698,8 +1751,10 @@ if __name__ == "__main__":
     records = make_recommendation_baseline_records(result)
     print(f"\nGenerated {len(records)} DecisionCalibrationRecords:")
     for r in records:
-        print(f"  [{r.calibration_status.value}] {r.decision_id} = {r.current_value} "
-              f"(production_allowed={r.production_allowed})")
+        print(
+            f"  [{r.calibration_status.value}] {r.decision_id} = {r.current_value} "
+            f"(production_allowed={r.production_allowed})"
+        )
 
     errors = 0
     for r in records:

@@ -76,8 +76,10 @@ export function StartupListView({ onSelectStartup }: StartupListViewProps) {
           <div className="panel-body create-form">
             <h3>Create Startup</h3>
             <div className="form-field">
-              <label>Name *</label>
+              <label htmlFor="startup-name">Name *</label>
               <input
+                id="startup-name"
+                name="name"
                 type="text"
                 value={createName}
                 onChange={(e) => setCreateName(e.target.value)}
@@ -85,8 +87,10 @@ export function StartupListView({ onSelectStartup }: StartupListViewProps) {
               />
             </div>
             <div className="form-field">
-              <label>Website *</label>
+              <label htmlFor="startup-website">Website *</label>
               <input
+                id="startup-website"
+                name="website"
                 type="url"
                 value={createWebsite}
                 onChange={(e) => setCreateWebsite(e.target.value)}
@@ -94,8 +98,10 @@ export function StartupListView({ onSelectStartup }: StartupListViewProps) {
               />
             </div>
             <div className="form-field">
-              <label>Sector *</label>
+              <label htmlFor="startup-sector">Sector *</label>
               <input
+                id="startup-sector"
+                name="sector"
                 type="text"
                 value={createSector}
                 onChange={(e) => setCreateSector(e.target.value)}

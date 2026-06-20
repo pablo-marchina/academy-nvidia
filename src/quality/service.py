@@ -329,9 +329,7 @@ class ProductQualityService:
             "info_failures": info_count,
             "export_readiness_score": export_readiness,
             "review_readiness_score": review_readiness,
-            "overall_status": (
-                "degraded" if error_count > 0 else "warn" if warn_count > 0 else "pass"
-            ),
+            "overall_status": ("degraded" if error_count > 0 else "warn" if warn_count > 0 else "pass"),
         }
 
     def evaluate_dossier(self, analysis_run_id: str) -> dict[str, Any]:
@@ -389,12 +387,8 @@ class ProductQualityService:
             for m in metrics
         }
         summary = run.summary_json or self._build_summary(metrics)
-        export_readiness = summary.get("export_readiness_score") or metric_dict.get(
-            METRIC_EXPORT_READINESS_SCORE
-        )
-        review_readiness = summary.get("review_readiness_score") or metric_dict.get(
-            METRIC_REVIEW_READINESS_SCORE
-        )
+        export_readiness = summary.get("export_readiness_score") or metric_dict.get(METRIC_EXPORT_READINESS_SCORE)
+        review_readiness = summary.get("review_readiness_score") or metric_dict.get(METRIC_REVIEW_READINESS_SCORE)
 
         return {
             "analysis_run_id": analysis_run_id,

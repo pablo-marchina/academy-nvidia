@@ -55,10 +55,7 @@ def _validate_rag_calibrations() -> tuple[dict[str, Any], list[str]]:
                 found = True
                 validation = validate_decision_for_production(rec)
                 if not validation.passed:
-                    blockers.append(
-                        f"RAG decision '{decision_id}' blocked: "
-                        f"{'; '.join(validation.reasons)}"
-                    )
+                    blockers.append(f"RAG decision '{decision_id}' blocked: " f"{'; '.join(validation.reasons)}")
                 elif rec.calibration_status.value in ("uncalibrated", "blocked"):
                     blockers.append(
                         f"RAG decision '{decision_id}' is {rec.calibration_status} "
@@ -75,20 +72,111 @@ def _validate_rag_calibrations() -> tuple[dict[str, Any], list[str]]:
 
 # ── Deterministic query builder per gap ─────────────────────────────────────
 
-_STOPWORDS: frozenset[str] = frozenset({
-    "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
-    "have", "has", "had", "do", "does", "did", "will", "would", "could",
-    "should", "may", "might", "shall", "can", "to", "of", "in", "for",
-    "on", "with", "at", "by", "from", "as", "into", "through", "during",
-    "before", "after", "above", "below", "between", "out", "off", "over",
-    "under", "again", "further", "then", "once", "here", "there", "when",
-    "where", "why", "how", "all", "each", "every", "both", "few", "more",
-    "most", "other", "some", "such", "no", "nor", "not", "only", "own",
-    "same", "so", "than", "too", "very", "just", "because", "but", "and",
-    "or", "if", "while", "that", "this", "these", "those", "it", "its",
-    "you", "your", "we", "our", "they", "their", "what", "which", "who",
-    "whom", "about", "up",
-})
+_STOPWORDS: frozenset[str] = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "have",
+        "has",
+        "had",
+        "do",
+        "does",
+        "did",
+        "will",
+        "would",
+        "could",
+        "should",
+        "may",
+        "might",
+        "shall",
+        "can",
+        "to",
+        "of",
+        "in",
+        "for",
+        "on",
+        "with",
+        "at",
+        "by",
+        "from",
+        "as",
+        "into",
+        "through",
+        "during",
+        "before",
+        "after",
+        "above",
+        "below",
+        "between",
+        "out",
+        "off",
+        "over",
+        "under",
+        "again",
+        "further",
+        "then",
+        "once",
+        "here",
+        "there",
+        "when",
+        "where",
+        "why",
+        "how",
+        "all",
+        "each",
+        "every",
+        "both",
+        "few",
+        "more",
+        "most",
+        "other",
+        "some",
+        "such",
+        "no",
+        "nor",
+        "not",
+        "only",
+        "own",
+        "same",
+        "so",
+        "than",
+        "too",
+        "very",
+        "just",
+        "because",
+        "but",
+        "and",
+        "or",
+        "if",
+        "while",
+        "that",
+        "this",
+        "these",
+        "those",
+        "it",
+        "its",
+        "you",
+        "your",
+        "we",
+        "our",
+        "they",
+        "their",
+        "what",
+        "which",
+        "who",
+        "whom",
+        "about",
+        "up",
+    }
+)
 
 
 def _tokenize(text: str) -> list[str]:
@@ -213,7 +301,11 @@ def _retrieve_for_gap(
     for rq in retrieval_queries:
         if vector_store is not None and embedding_model is not None and vector_store.size > 0:
             results = hybrid_retrieve(
-                rq, idx, embedding_model, vector_store, top_k=gap_query_top_k,
+                rq,
+                idx,
+                embedding_model,
+                vector_store,
+                top_k=gap_query_top_k,
                 gap_type=gap.gap_type.value,
             )
         else:
@@ -225,21 +317,23 @@ def _retrieve_for_gap(
                 continue
             seen_chunks.add(ctx.chunk_id)
             citation_ready = bool(ctx.source_id and ctx.url)
-            contexts.append({
-                "context_id": ctx.chunk_id,
-                "gap_id": gap.gap_id,
-                "source_id": ctx.source_id,
-                "nvidia_technology": ctx.product,
-                "title": ctx.title,
-                "snippet": ctx.content,
-                "url": ctx.url or "",
-                "retrieval_score": ctx.relevance_score,
-                "rerank_score": None,
-                "relevance_score": ctx.relevance_score,
-                "citation_ready": citation_ready,
-                "retrieved_at": now_iso,
-                "calibration_decision_ids": list(gap.calibration_decision_ids),
-            })
+            contexts.append(
+                {
+                    "context_id": ctx.chunk_id,
+                    "gap_id": gap.gap_id,
+                    "source_id": ctx.source_id,
+                    "nvidia_technology": ctx.product,
+                    "title": ctx.title,
+                    "snippet": ctx.content,
+                    "url": ctx.url or "",
+                    "retrieval_score": ctx.relevance_score,
+                    "rerank_score": None,
+                    "relevance_score": ctx.relevance_score,
+                    "citation_ready": citation_ready,
+                    "retrieved_at": now_iso,
+                    "calibration_decision_ids": list(gap.calibration_decision_ids),
+                }
+            )
 
     return contexts, len(seen_chunks)
 
@@ -327,9 +421,7 @@ def retrieve_nvidia_context(
 
     # ── 4. Filter gaps by production_allowed=False → blocked ─────────────
     #    and production_allowed=True → calibrated
-    calibrated_gaps: list[GapDiagnosisResultItem] = [
-        g for g in gap_items if g.production_allowed
-    ]
+    calibrated_gaps: list[GapDiagnosisResultItem] = [g for g in gap_items if g.production_allowed]
 
     if not calibrated_gaps:
         return {
@@ -349,7 +441,9 @@ def retrieve_nvidia_context(
 
     # ── 5. Build RAG queries per gap (deterministic, no LLM) ────────────
     rag_queries_by_gap = _build_gap_queries(
-        calibrated_gaps, startup_profile, accepted_evidence_items,
+        calibrated_gaps,
+        startup_profile,
+        accepted_evidence_items,
     )
 
     # ── 6. Build ChunkIndex and retrieve ─────────────────────────────────
@@ -396,7 +490,10 @@ def retrieve_nvidia_context(
 
     for gap in calibrated_gaps:
         gap_contexts, _ = _retrieve_for_gap(
-            gap, idx, gap_query_top_k, relevance_threshold,
+            gap,
+            idx,
+            gap_query_top_k,
+            relevance_threshold,
             vector_store=vector_store,
             embedding_model=embedding_model,
         )
@@ -407,35 +504,19 @@ def retrieve_nvidia_context(
     gap_count = len(gap_items)
     calibrated_gap_count = len(calibrated_gaps)
     retrieved_context_count = len(all_contexts)
-    context_count_by_gap: dict[str, int] = {
-        gid: len(ctxs) for gid, ctxs in contexts_by_gap.items()
-    }
-    gaps_with_min_contexts = sum(
-        1 for gid, ctxs in contexts_by_gap.items()
-        if len(ctxs) >= min_contexts_per_gap
-    )
-    gaps_without_context = sum(
-        1 for ctxs in contexts_by_gap.values()
-        if len(ctxs) == 0
-    )
+    context_count_by_gap: dict[str, int] = {gid: len(ctxs) for gid, ctxs in contexts_by_gap.items()}
+    gaps_with_min_contexts = sum(1 for gid, ctxs in contexts_by_gap.items() if len(ctxs) >= min_contexts_per_gap)
+    gaps_without_context = sum(1 for ctxs in contexts_by_gap.values() if len(ctxs) == 0)
 
     retrieval_scores = [
-        c["retrieval_score"] for c in all_contexts
-        if isinstance(c.get("retrieval_score"), (int, float))
+        c["retrieval_score"] for c in all_contexts if isinstance(c.get("retrieval_score"), (int, float))
     ]
-    average_retrieval_score = (
-        sum(retrieval_scores) / len(retrieval_scores) if retrieval_scores else 0.0
-    )
+    average_retrieval_score = sum(retrieval_scores) / len(retrieval_scores) if retrieval_scores else 0.0
     relevance_scores = [
-        c["relevance_score"] for c in all_contexts
-        if isinstance(c.get("relevance_score"), (int, float))
+        c["relevance_score"] for c in all_contexts if isinstance(c.get("relevance_score"), (int, float))
     ]
-    average_relevance_score = (
-        sum(relevance_scores) / len(relevance_scores) if relevance_scores else 0.0
-    )
-    citation_ready_context_count = sum(
-        1 for c in all_contexts if c.get("citation_ready")
-    )
+    average_relevance_score = sum(relevance_scores) / len(relevance_scores) if relevance_scores else 0.0
+    citation_ready_context_count = sum(1 for c in all_contexts if c.get("citation_ready"))
 
     rag_blocker_count = len(blockers)
 
@@ -473,9 +554,7 @@ def retrieve_nvidia_context(
         review_required = False
 
     # ── 9. Build rag_contexts as list[str] for backward compat ──────────
-    rag_contexts_str: list[str] = [
-        c["snippet"] for c in all_contexts
-    ]
+    rag_contexts_str: list[str] = [c["snippet"] for c in all_contexts]
 
     return {
         "rag_queries_by_gap": rag_queries_by_gap,

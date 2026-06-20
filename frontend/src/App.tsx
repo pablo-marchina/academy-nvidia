@@ -39,17 +39,17 @@ export default function App() {
     try {
       const r = await getProductReadiness();
       setReady(r.ready);
-      if (r.ready && activeView === "setup") {
-        setActiveView("startups");
+      if (r.ready) {
+        setActiveView((current) => (current === "setup" ? "startups" : current));
       }
     } catch {
       setReady(false);
     }
-  }, [activeView]);
+  }, []);
 
   useEffect(() => {
     checkReadiness();
-  }, []);
+  }, [checkReadiness]);
 
   function navigateTo(view: string) {
     if (view === "setup" || view === "capabilities" || view === "discovery" || view === "startups" || view === "opportunities" || view === "workflow" || view === "exportDelivery" || view === "quality" || view === "humanReview") {

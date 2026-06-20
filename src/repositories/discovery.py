@@ -120,9 +120,7 @@ class DiscoveryRepository:
         limit: int = 50,
         status: str | None = None,
     ) -> list[DiscoveryRun]:
-        statement: Select[tuple[DiscoveryRun]] = select(DiscoveryRun).order_by(
-            DiscoveryRun.created_at.desc()
-        )
+        statement: Select[tuple[DiscoveryRun]] = select(DiscoveryRun).order_by(DiscoveryRun.created_at.desc())
         if status:
             statement = statement.where(DiscoveryRun.status == status)
         statement = statement.offset(offset).limit(limit)
@@ -215,9 +213,9 @@ class DiscoveryRepository:
         has_website: bool | None = None,
         ai_native_signal: bool | None = None,
     ) -> list[StartupDiscoveryCandidate]:
-        statement: Select[tuple[StartupDiscoveryCandidate]] = select(
-            StartupDiscoveryCandidate
-        ).order_by(StartupDiscoveryCandidate.created_at.desc())
+        statement: Select[tuple[StartupDiscoveryCandidate]] = select(StartupDiscoveryCandidate).order_by(
+            StartupDiscoveryCandidate.created_at.desc()
+        )
         if status:
             statement = statement.where(StartupDiscoveryCandidate.status == status)
         if source_id:
@@ -230,9 +228,7 @@ class DiscoveryRepository:
             if confidence_min >= 0.7:
                 statement = statement.where(StartupDiscoveryCandidate.confidence == "high")
             elif confidence_min >= 0.4:
-                statement = statement.where(
-                    StartupDiscoveryCandidate.confidence.in_(["high", "medium"])
-                )
+                statement = statement.where(StartupDiscoveryCandidate.confidence.in_(["high", "medium"]))
         if has_website is not None:
             if has_website:
                 statement = statement.where(StartupDiscoveryCandidate.website != "")
@@ -337,9 +333,7 @@ class DiscoveryRepository:
         from src.repositories.product import normalize_startup_name
 
         norm = normalize_startup_name(normalized_name)
-        statement = select(Startup).where(
-            (Startup.normalized_name == norm) | (Startup.website == website)
-        )
+        statement = select(Startup).where((Startup.normalized_name == norm) | (Startup.website == website))
         statement = statement.limit(1)
         return self.session.scalar(statement)
 

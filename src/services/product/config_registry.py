@@ -67,12 +67,13 @@ def _reg(
 # ---------------------------------------------------------------------------
 _reg(
     key="PRODUCT_DB_URL",
-    description="Database URL for product records (SQLite or PostgreSQL)",
+    description="PostgreSQL database URL for product records",
     required=True,
     required_for=["product_database", "product_api"],
-    default="sqlite:///data/product/product.db",
-    example="sqlite:///data/product/product.db",
-    user_message="Set PRODUCT_DB_URL to point to your product database.",
+    default="",
+    example="postgresql://postgres:postgres@localhost:5432/startup_radar",
+    validation_rule="APP_MODE=product requires a postgresql:// or postgresql+psycopg:// URL.",
+    user_message="Set PRODUCT_DB_URL to a reachable PostgreSQL database.",
 )
 _reg(
     key="APP_MODE",
@@ -113,16 +114,16 @@ _reg(
 _reg(
     key="RAG_REQUIRED_FOR_PRODUCT",
     description="Whether RAG is required for product analysis runs",
-    required=False,
+    required=True,
     default="true",
     example="true",
 )
 _reg(
     key="RAG_EMBEDDING_MODEL",
     description="Sentence-transformer model name for embeddings",
-    required=False,
+    required=True,
     required_for=["sentence_transformer_embeddings"],
-    default="sentence-transformers/all-MiniLM-L6-v2",
+    default="",
     example="sentence-transformers/all-MiniLM-L6-v2",
 )
 
@@ -217,9 +218,9 @@ _reg(
 _reg(
     key="QDRANT_URL",
     description="Qdrant server URL",
-    required=False,
+    required=True,
     required_for=["qdrant_vector_store"],
-    default="http://localhost:6333",
+    default="",
     example="http://localhost:6333",
 )
 _reg(
@@ -233,9 +234,9 @@ _reg(
 _reg(
     key="QDRANT_COLLECTION",
     description="Qdrant collection name",
-    required=False,
+    required=True,
     required_for=["qdrant_vector_store"],
-    default="nvidia_corpus",
+    default="",
     example="nvidia_corpus",
 )
 _reg(
@@ -369,6 +370,8 @@ def resolve_config_values(items: list[ConfigItem] | None = None) -> list[ConfigI
 def is_extra_installed(extra: str) -> bool:
     """Check whether an optional extra package is installed."""
     extra_map: dict[str, str] = {
+        "agent-orchestration": "langgraph",
+        "eval": "ragas",
         "rag": "sentence_transformers",
         "llm-judge": "instructor",
     }

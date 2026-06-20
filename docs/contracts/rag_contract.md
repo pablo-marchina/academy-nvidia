@@ -255,3 +255,12 @@ steps without changing retrieval behavior.
 5. Source promotion requires explicit `--promote-sources`.
 6. Scheduled GitHub Actions runs must keep `run_ingestion=false` and `promote_sources=false`.
 7. Reports are written under `reports/corpus-maintenance/<run-id>/` and uploaded as GitHub Actions artifacts.
+
+## Final Product Readiness Update - 2026-06-19
+
+RAG is mandatory for product readiness:
+
+- `APP_MODE=product` requires `RAG_VECTOR_BACKEND=qdrant`, `QDRANT_URL`, `QDRANT_COLLECTION`, and `RAG_EMBEDDING_MODEL`.
+- Readiness is blocked when Qdrant is unavailable, empty, stale, or populated only with test fixtures.
+- In-memory vector stores, mock embedding providers, and lexical-only retrieval remain valid only for explicit tests.
+- Product recommendations and dossiers must include RAG support, source provenance, confidence, and clear separation of fact, inference, and hypothesis.

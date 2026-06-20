@@ -8,16 +8,36 @@ from fastapi.testclient import TestClient
 
 from src.api.main import app
 from src.database.models import WorkflowRun
-from src.database.session import configure_product_database, get_db_session, reset_product_database_runtime
+from src.database.session import (
+    configure_product_database,
+    get_db_session,
+    reset_product_database_runtime,
+)
 from src.orchestration.state import WorkflowStatus
+
+
+@pytest.fixture(autouse=True)
+def _mock_product_readiness(monkeypatch: pytest.MonkeyPatch) -> None:
+    from src.services.product.readiness_service import ProductReadinessReport, ProductReadinessService
+
+    def ready_report(self: ProductReadinessService) -> ProductReadinessReport:
+        return ProductReadinessReport(ready=True)
+
+    monkeypatch.setattr(ProductReadinessService, "get_product_readiness", ready_report)
+    monkeypatch.setattr("src.orchestration.runner._try_build_agent_graph", lambda **_: None)
 
 
 @pytest.fixture
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
-    monkeypatch.setenv("APP_MODE", "product")
+    monkeypatch.setenv("APP_MODE", "test")
     monkeypatch.setenv("ENABLE_PRODUCT_PERSISTENCE", "true")
     monkeypatch.setenv("QDRANT_URL", "")
-    configure_product_database(f"sqlite:///{(tmp_path / 'workflow_api.db').as_posix()}")
+    monkeypatch.delenv("RAG_VECTOR_BACKEND", raising=False)
+    monkeypatch.delenv("RAG_EMBEDDING_MODEL", raising=False)
+    monkeypatch.delenv("QDRANT_COLLECTION", raising=False)
+    db_url = f"sqlite:///{(tmp_path / 'workflow_api.db').as_posix()}"
+    monkeypatch.setenv("PRODUCT_DB_URL", db_url)
+    configure_product_database(db_url)
     with TestClient(app) as test_client:
         yield test_client
     reset_product_database_runtime()
@@ -60,7 +80,14 @@ def test_create_product_workflow_run(client: TestClient, startup_id: str) -> Non
     data = resp.json()
     assert data["id"] is not None
     assert data["startup_id"] == startup_id
-    assert data["status"] in ("queued", "running", "completed", "degraded", "failed")
+    assert data["status"] in (
+        "queued",
+        "running",
+        "awaiting_review",
+        "completed",
+        "degraded",
+        "failed",
+    )
 
 
 def test_create_product_workflow_run_without_startup(client: TestClient) -> None:
@@ -126,9 +153,7 @@ def test_get_workflow_nodes_not_found(client: TestClient) -> None:
 
 
 def test_analysis_run_workflow_link(client: TestClient, startup_id: str) -> None:
-    resp = client.post(
-        "/workflows/product-runs", json={"startup_id": startup_id, "analysis_run_id": "ar-1"}
-    )
+    resp = client.post("/workflows/product-runs", json={"startup_id": startup_id, "analysis_run_id": "ar-1"})
     assert resp.status_code == 201
 
     resp = client.get("/analysis-runs/ar-1/workflow")
@@ -257,7 +282,11 @@ def test_submit_review_request_more_evidence(client: TestClient) -> None:
     workflow_id = _create_workflow_with_review_payload(client)
     resp = client.post(
         f"/workflows/{workflow_id}/review",
-        json={"decision": "request_more_evidence", "reviewer": "analyst", "notes": "Need more sources"},
+        json={
+            "decision": "request_more_evidence",
+            "reviewer": "analyst",
+            "notes": "Need more sources",
+        },
     )
     assert resp.status_code == 201
     assert resp.json()["decision"] == "request_more_evidence"
@@ -312,10 +341,17 @@ def _create_awaiting_review_workflow(session, startup_id: str, analysis_run_id: 
         graph_version="1.0",
         state_json={
             "completed_nodes": [
-                "preflight_configuration_check", "plan_search", "collect_sources",
-                "extract_profile", "validate_evidence", "score_startup",
-                "diagnose_gaps", "retrieve_nvidia_context", "rank_recommendations",
-                "generate_brief", "run_quality_gates",
+                "preflight_configuration_check",
+                "plan_search",
+                "collect_sources",
+                "extract_profile",
+                "validate_evidence",
+                "score_startup",
+                "diagnose_gaps",
+                "retrieve_nvidia_context",
+                "rank_recommendations",
+                "generate_brief",
+                "run_quality_gates",
             ],
             "failed_nodes": [],
             "degraded_nodes": [],
@@ -339,8 +375,10 @@ def _create_awaiting_review_workflow(session, startup_id: str, analysis_run_id: 
 
 
 def _create_startup_record(session) -> str:
-    from src.database.models import Startup
     import uuid
+
+    from src.database.models import Startup
+
     sid = str(uuid.uuid4())
     startup = Startup(
         id=sid,
@@ -381,13 +419,10 @@ def test_resume_workflow_invalid_decision_returns_422(client: TestClient) -> Non
     assert resp.status_code == 422
 
 
-def test_resume_workflow_approve_returns_200(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from src.orchestration.service import WorkflowOrchestrationService
+def test_resume_workflow_approve_returns_200(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "src.orchestration.service.WorkflowOrchestrationService.submit_review",
-        lambda self, workflow_id, *, decision, reviewer, notes: {
+        lambda self, workflow_id, *, decision, reviewer, notes, resume=False: {
             "workflow_id": workflow_id,
             "decision": decision,
             "reviewer": reviewer,
@@ -413,13 +448,10 @@ def test_resume_workflow_approve_returns_200(
     assert data["status"] == "awaiting_review"
 
 
-def test_resume_workflow_request_more_evidence_returns_200(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from src.orchestration.service import WorkflowOrchestrationService
+def test_resume_workflow_request_more_evidence_returns_200(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "src.orchestration.service.WorkflowOrchestrationService.submit_review",
-        lambda self, workflow_id, *, decision, reviewer, notes: {
+        lambda self, workflow_id, *, decision, reviewer, notes, resume=False: {
             "workflow_id": workflow_id,
             "decision": decision,
             "reviewer": reviewer,
@@ -447,13 +479,10 @@ def test_resume_workflow_request_more_evidence_returns_200(
     assert data["id"] == wf_id
 
 
-def test_resume_workflow_persists_review_decision(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from src.orchestration.service import WorkflowOrchestrationService
+def test_resume_workflow_persists_review_decision(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "src.orchestration.service.WorkflowOrchestrationService.submit_review",
-        lambda self, workflow_id, *, decision, reviewer, notes: {
+        lambda self, workflow_id, *, decision, reviewer, notes, resume=False: {
             "workflow_id": workflow_id,
             "decision": decision,
             "reviewer": reviewer,

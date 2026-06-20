@@ -12,10 +12,8 @@ import pytest
 
 from src.briefing.action_brief import build_action_brief
 from src.briefing.markdown_renderer import render_action_brief_markdown
-from src.pipeline.run_pipeline import run_full_pipeline
 from src.rag.embeddings import MockEmbeddingProvider
 from src.rag.retrieval import build_default_index
-from src.rag.schemas import PackingConfig, RerankingConfig
 from src.rag.vector_store import InMemoryVectorStore
 from tests.evals.helpers import (
     GoldenCase,
@@ -148,9 +146,7 @@ class TestGoldenNonAi:
         result = run_pipeline_on_case(self.CASE)
         assert result.recommendation is not None
         detected = [r for r in result.recommendation.recommendations if r.detected]
-        assert len(detected) == 0, (
-            f"Expected zero detected recommendations, " f"got {len(detected)}"
-        )
+        assert len(detected) == 0, f"Expected zero detected recommendations, " f"got {len(detected)}"
 
     def test_no_tech_without_gap(self):
         result = run_pipeline_on_case(self.CASE)
@@ -176,9 +172,7 @@ class TestGoldenNoRagContext:
 
     def test_missing_context_when_no_index(self):
         result = run_pipeline_on_case(self.CASE)
-        assert (
-            result.rag_output is not None
-        ), "Pipeline should auto-build a default index when chunk_index is None"
+        assert result.rag_output is not None, "Pipeline should auto-build a default index when chunk_index is None"
 
     def test_motion_within_allowed(self):
         result = run_pipeline_on_case(self.CASE)
@@ -199,9 +193,7 @@ class TestGoldenRagSupported:
     def test_rag_context_in_brief(self):
         _, result_with_rag = run_pipeline_with_rag(self.CASE)
         brief = build_action_brief(result_with_rag)
-        assert (
-            len(brief.supporting_nvidia_context) > 0
-        ), "Expected supporting NVIDIA context in brief"
+        assert len(brief.supporting_nvidia_context) > 0, "Expected supporting NVIDIA context in brief"
         assert len(brief.packed_rag_contexts) > 0
 
     def test_rag_context_not_in_evidence_used(self):
@@ -277,8 +269,7 @@ def test_all_golden_cases_have_expected_outputs():
         case_ids_from_files.add(raw["case_id"])
 
     assert case_ids_from_files == case_ids_in_expected, (
-        f"Mismatch: golden files have {case_ids_from_files}, "
-        f"expected_outputs has {case_ids_in_expected}"
+        f"Mismatch: golden files have {case_ids_from_files}, " f"expected_outputs has {case_ids_in_expected}"
     )
 
 
@@ -293,19 +284,7 @@ def test_golden_evals_run_offline():
 def test_offline_rag_with_mock_embeddings():
     """RAG golden cases work with MockEmbeddingProvider (no sentence-transformers)."""
     case = _load("startup_rag_supported")
-    chunk_index = build_default_index()
-    embedding = MockEmbeddingProvider()
-    vector_store = InMemoryVectorStore()
-    result = run_full_pipeline(
-        startup_name=case.case_id,
-        profile=case.build_profile(),
-        evidence_list=case.build_evidence(),
-        chunk_index=chunk_index,
-        embedding_model=embedding,
-        vector_store=vector_store,
-        reranking_config=RerankingConfig(),
-        packing_config=PackingConfig(),
-    )
+    _, result = run_pipeline_with_rag(case)
     assert result.rag_output is not None
     brief = build_action_brief(result)
     assert len(brief.supporting_nvidia_context) > 0

@@ -10,8 +10,6 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from src.diagnosis.schemas import (
     GapConfidenceFeatures,
     GapDiagnosisFeatures,
@@ -25,14 +23,12 @@ from src.diagnosis.schemas import (
 from src.quality.decision_calibration_registry import (
     CalibrationStatus,
     DecisionCalibrationRecord,
-    DecisionType,
     get_project_decision_inventory,
 )
 from src.rag.embeddings import MockEmbeddingProvider
-from src.rag.qdrant_store import QdrantConnectionError
 from src.rag.rag_service_factory import (
-    QdrantRagService,
     REQUIRED_SEMANTIC_DECISIONS,
+    QdrantRagService,
     build_qdrant_rag_service,
     build_rag_service,
 )
@@ -144,10 +140,14 @@ def _calibrated_semantic_inventory() -> list[DecisionCalibrationRecord]:
     result: list[DecisionCalibrationRecord] = []
     for rec in base:
         if rec.decision_id in calibrated_ids:
-            result.append(rec.model_copy(update={
-                "calibration_status": CalibrationStatus.BASELINE_MEASURED,
-                "production_allowed": True,
-            }))
+            result.append(
+                rec.model_copy(
+                    update={
+                        "calibration_status": CalibrationStatus.BASELINE_MEASURED,
+                        "production_allowed": True,
+                    }
+                )
+            )
         else:
             result.append(rec)
     return result
@@ -352,10 +352,16 @@ class TestQdrantRagServiceSemanticRetrieval:
         with (
             patch(
                 "src.rag.rag_service_factory._validate_semantic_calibrations",
-                return_value=({"rag.semantic_top_k": 3, "rag.min_contexts_per_gap": 1,
-                               "rag.context_relevance_threshold": 0.3,
-                               "rag.citation_precision_threshold": 0.95,
-                               "rag.unsupported_claim_rate_threshold": 0.1}, []),
+                return_value=(
+                    {
+                        "rag.semantic_top_k": 3,
+                        "rag.min_contexts_per_gap": 1,
+                        "rag.context_relevance_threshold": 0.3,
+                        "rag.citation_precision_threshold": 0.95,
+                        "rag.unsupported_claim_rate_threshold": 0.1,
+                    },
+                    [],
+                ),
             ),
             patch(
                 "src.rag.rag_service_factory.semantic_retrieve",
@@ -369,9 +375,14 @@ class TestQdrantRagServiceSemanticRetrieval:
                         url="https://example.com",
                         relevance_score=0.85,
                         gap_types=["inference_performance_gap"],
-                        version="1.0", valid_from=None, valid_until=None,
-                        freshness_policy=None, stale_after_days=None,
-                        is_active=True, deprecated_at=None, superseded_by=None,
+                        version="1.0",
+                        valid_from=None,
+                        valid_until=None,
+                        freshness_policy=None,
+                        stale_after_days=None,
+                        is_active=True,
+                        deprecated_at=None,
+                        superseded_by=None,
                     ),
                 ],
             ) as mock_semantic,
@@ -397,10 +408,16 @@ class TestQdrantRagServiceSemanticRetrieval:
 
         with patch(
             "src.rag.rag_service_factory._validate_semantic_calibrations",
-            return_value=({"rag.semantic_top_k": 3, "rag.min_contexts_per_gap": 1,
-                           "rag.context_relevance_threshold": 0.3,
-                           "rag.citation_precision_threshold": 0.95,
-                           "rag.unsupported_claim_rate_threshold": 0.1}, []),
+            return_value=(
+                {
+                    "rag.semantic_top_k": 3,
+                    "rag.min_contexts_per_gap": 1,
+                    "rag.context_relevance_threshold": 0.3,
+                    "rag.citation_precision_threshold": 0.95,
+                    "rag.unsupported_claim_rate_threshold": 0.1,
+                },
+                [],
+            ),
         ):
             result = svc(
                 run_id="test-payload",
@@ -484,10 +501,16 @@ class TestQdrantRagServiceEdgeCases:
 
         with patch(
             "src.rag.rag_service_factory._validate_semantic_calibrations",
-            return_value=({"rag.semantic_top_k": 3, "rag.min_contexts_per_gap": 1,
-                           "rag.context_relevance_threshold": 0.3,
-                           "rag.citation_precision_threshold": 0.95,
-                           "rag.unsupported_claim_rate_threshold": 0.1}, []),
+            return_value=(
+                {
+                    "rag.semantic_top_k": 3,
+                    "rag.min_contexts_per_gap": 1,
+                    "rag.context_relevance_threshold": 0.3,
+                    "rag.citation_precision_threshold": 0.95,
+                    "rag.unsupported_claim_rate_threshold": 0.1,
+                },
+                [],
+            ),
         ):
             result = svc(
                 run_id="test-bad-summary",

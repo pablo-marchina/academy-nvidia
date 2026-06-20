@@ -7,9 +7,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parent.parent.parent / "scripts"
 CHECK_CLOSURE = SCRIPTS_DIR / "check_docs_closure.py"
 
 
-def run_check_closure(
-    args: list[str] | None = None, cwd: Path | None = None
-) -> subprocess.CompletedProcess:
+def run_check_closure(args: list[str] | None = None, cwd: Path | None = None) -> subprocess.CompletedProcess:
     cmd = ["python", str(CHECK_CLOSURE)]
     if cwd:
         cmd.extend(["--repo-path", str(cwd)])

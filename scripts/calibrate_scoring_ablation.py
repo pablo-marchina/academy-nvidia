@@ -18,7 +18,6 @@ from typing import Any
 
 import scipy.stats
 
-from src.extraction.schemas import ConfidenceLevel
 from src.quantitative.params import (
     CLASSIFICATION_TO_BASE_SCORE,
     DEFENSIBILITY_WEIGHTS,
@@ -126,12 +125,13 @@ def spearman(x: list[float], y: list[float]) -> float:
 
 
 def reclassify_rate(before: list[str], after: list[str]) -> float:
-    return sum(1 for b, a in zip(before, after) if b != a) / len(before)
+    return sum(1 for b, a in zip(before, after, strict=False) if b != a) / len(before)
 
 
 # ═══════════════════════════════════════════════════════════════════════
 #  1. CLASSIFICATION BASE SCORES — ablation
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def study_classification(startups: list[dict[str, Any]]) -> dict[str, Any]:
     base_scores = [composite(s) for s in startups]
@@ -158,25 +158,25 @@ def study_classification(startups: list[dict[str, Any]]) -> dict[str, Any]:
 
         # Also measure score change for affected startups only
         affected_deltas = [
-            base_scores[i] - ablated[i]
-            for i in range(len(startups))
-            if startups[i]["classification_label"] == cls_name
+            base_scores[i] - ablated[i] for i in range(len(startups)) if startups[i]["classification_label"] == cls_name
         ]
         avg_delta = sum(affected_deltas) / len(affected_deltas) if affected_deltas else 0.0
 
         # Ablation: set ALL classifications to 0
         all_zero = [dict(s) | {"classification_score": 0.0} for s in startups]
         all_zero_scores = [composite(m) for m in all_zero]
-        rho_all = spearman(base_ranks, _rank(all_zero_scores))
+        spearman(base_ranks, _rank(all_zero_scores))
 
-        results["ablations"].append({
-            "class": cls_name,
-            "original_score": orig_score,
-            "ablated_to": 0.0,
-            "n_affected": len(affected_deltas),
-            "avg_score_drop": round(avg_delta, 4),
-            "spearman_rho": round(rho, 6),
-        })
+        results["ablations"].append(
+            {
+                "class": cls_name,
+                "original_score": orig_score,
+                "ablated_to": 0.0,
+                "n_affected": len(affected_deltas),
+                "avg_score_drop": round(avg_delta, 4),
+                "spearman_rho": round(rho, 6),
+            }
+        )
 
     # Full ablation: remove classification entirely
     no_class = [dict(s) | {"classification_score": 0.0} for s in startups]
@@ -187,9 +187,7 @@ def study_classification(startups: list[dict[str, Any]]) -> dict[str, Any]:
         "description": "All classification scores set to 0",
         "spearman_rho": round(rho_no_class, 6),
     }
-    results["min_spearman_rho"] = round(min(
-        a["spearman_rho"] for a in results["ablations"]
-    ), 6)
+    results["min_spearman_rho"] = round(min(a["spearman_rho"] for a in results["ablations"]), 6)
 
     return results
 
@@ -197,6 +195,7 @@ def study_classification(startups: list[dict[str, Any]]) -> dict[str, Any]:
 # ═══════════════════════════════════════════════════════════════════════
 #  2. SOURCE QUALITY SCORES — ablation
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def study_source_quality() -> dict[str, Any]:
     # Source quality is used in discovery confidence, not composite ranking.
@@ -208,13 +207,15 @@ def study_source_quality() -> dict[str, Any]:
     for i in range(len(sorted_scores) - 1):
         curr_name, curr_val = sorted_scores[i]
         next_name, next_val = sorted_scores[i + 1]
-        gaps.append({
-            "higher": curr_name,
-            "higher_score": curr_val,
-            "lower": next_name,
-            "lower_score": next_val,
-            "gap": round(curr_val - next_val, 2),
-        })
+        gaps.append(
+            {
+                "higher": curr_name,
+                "higher_score": curr_val,
+                "lower": next_name,
+                "lower_score": next_val,
+                "gap": round(curr_val - next_val, 2),
+            }
+        )
 
     total_range = sorted_scores[0][1] - sorted_scores[-1][1]
     n_sources = len(scores)
@@ -223,7 +224,7 @@ def study_source_quality() -> dict[str, Any]:
     # Ablation: if all sources scored equally at 1.0 (no differentiation)
     # This would reduce the confidence signal to have no quality weighting
     uniform = {k: 1.0 for k in scores}
-    uniform_mean = sum(uniform.values()) / len(uniform)
+    sum(uniform.values()) / len(uniform)
 
     return {
         "group": "source_quality",
@@ -245,6 +246,7 @@ def study_source_quality() -> dict[str, Any]:
 # ═══════════════════════════════════════════════════════════════════════
 #  3. MOTION THRESHOLDS — boundary sensitivity
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def study_motion_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any]:
     scores = [composite(s) for s in startups]
@@ -268,12 +270,12 @@ def study_motion_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any]:
             shifted = dict(thresholds)
             shifted[name] = round(thresholds[name] * (1 + shift))
 
-            def _motion_shifted(s: float) -> str:
-                if s >= shifted["immediate_outreach"]:
+            def _motion_shifted(s: float, thresholds_: dict[str, int] = shifted) -> str:
+                if s >= thresholds_["immediate_outreach"]:
                     return "immediate_outreach"
-                if s >= shifted["high_priority_outreach"]:
+                if s >= thresholds_["high_priority_outreach"]:
                     return "high_priority_outreach"
-                if s >= shifted["monitor_and_nurture"]:
+                if s >= thresholds_["monitor_and_nurture"]:
                     return "monitor_and_nurture"
                 return "lack_evidence_more_research"
 
@@ -281,15 +283,17 @@ def study_motion_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any]:
             reclass = reclassify_rate(base_motions, new_motions)
             new_dist = Counter(new_motions)
 
-            perturbations.append({
-                "threshold": name,
-                "original": thresholds[name],
-                "shift": shift,
-                "shifted_to": shifted[name],
-                "reclassification_rate": round(reclass, 4),
-                "original_distribution": dict(base_dist),
-                "new_distribution": dict(new_dist),
-            })
+            perturbations.append(
+                {
+                    "threshold": name,
+                    "original": thresholds[name],
+                    "shift": shift,
+                    "shifted_to": shifted[name],
+                    "reclassification_rate": round(reclass, 4),
+                    "original_distribution": dict(base_dist),
+                    "new_distribution": dict(new_dist),
+                }
+            )
 
     results: dict[str, Any] = {
         "group": "motion_thresholds",
@@ -309,12 +313,12 @@ def study_motion_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any]:
         elif name == "monitor_and_nurture":
             removed[name] = 0  # merge into lower
 
-        def _motion_ablated(s: float) -> str:
-            if s >= removed["immediate_outreach"]:
+        def _motion_ablated(s: float, thresholds_: dict[str, int] = removed) -> str:
+            if s >= thresholds_["immediate_outreach"]:
                 return "immediate_outreach"
-            if s >= removed["high_priority_outreach"]:
+            if s >= thresholds_["high_priority_outreach"]:
                 return "high_priority_outreach"
-            if s >= removed["monitor_and_nurture"]:
+            if s >= thresholds_["monitor_and_nurture"]:
                 return "monitor_and_nurture"
             return "lack_evidence_more_research"
 
@@ -331,6 +335,7 @@ def study_motion_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any]:
 # ═══════════════════════════════════════════════════════════════════════
 #  4. CONFIDENCE THRESHOLDS — ablation
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def study_confidence_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any]:
     base_levels = [confidence_level(s["confidence_penalty"], s["avg_val"]) for s in startups]
@@ -357,11 +362,13 @@ def study_confidence_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any
         return "high"
 
     new_l = [_ablate_low_penalty(s["confidence_penalty"], s["avg_val"]) for s in startups]
-    results["ablations"].append({
-        "ablation": "Remove LOW penalty threshold (penalty >= 0.4 never triggers)",
-        "reclassification_rate": round(reclassify_rate(base_levels, new_l), 4),
-        "new_distribution": dict(Counter(new_l)),
-    })
+    results["ablations"].append(
+        {
+            "ablation": "Remove LOW penalty threshold (penalty >= 0.4 never triggers)",
+            "reclassification_rate": round(reclassify_rate(base_levels, new_l), 4),
+            "new_distribution": dict(Counter(new_l)),
+        }
+    )
 
     # Ablation 2: remove MEDIUM penalty threshold (set to 1.0)
     def _ablate_medium_penalty(p: float, a: float) -> str:
@@ -372,11 +379,13 @@ def study_confidence_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any
         return "high"
 
     new_m = [_ablate_medium_penalty(s["confidence_penalty"], s["avg_val"]) for s in startups]
-    results["ablations"].append({
-        "ablation": "Remove MEDIUM penalty threshold (penalty >= 0.2 never triggers)",
-        "reclassification_rate": round(reclassify_rate(base_levels, new_m), 4),
-        "new_distribution": dict(Counter(new_m)),
-    })
+    results["ablations"].append(
+        {
+            "ablation": "Remove MEDIUM penalty threshold (penalty >= 0.2 never triggers)",
+            "reclassification_rate": round(reclassify_rate(base_levels, new_m), 4),
+            "new_distribution": dict(Counter(new_m)),
+        }
+    )
 
     # Ablation 3: remove avg_val < 25 from LOW
     def _ablate_low_avg(p: float, a: float) -> str:
@@ -387,11 +396,13 @@ def study_confidence_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any
         return "high"
 
     new_a = [_ablate_low_avg(s["confidence_penalty"], s["avg_val"]) for s in startups]
-    results["ablations"].append({
-        "ablation": "Remove avg_val < 25 from LOW (only penalty triggers LOW)",
-        "reclassification_rate": round(reclassify_rate(base_levels, new_a), 4),
-        "new_distribution": dict(Counter(new_a)),
-    })
+    results["ablations"].append(
+        {
+            "ablation": "Remove avg_val < 25 from LOW (only penalty triggers LOW)",
+            "reclassification_rate": round(reclassify_rate(base_levels, new_a), 4),
+            "new_distribution": dict(Counter(new_a)),
+        }
+    )
 
     # Ablation 4: remove avg_val < 50 from MEDIUM
     def _ablate_medium_avg(p: float, a: float) -> str:
@@ -402,11 +413,13 @@ def study_confidence_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any
         return "high"
 
     new_a2 = [_ablate_medium_avg(s["confidence_penalty"], s["avg_val"]) for s in startups]
-    results["ablations"].append({
-        "ablation": "Remove avg_val < 50 from MEDIUM (only penalty triggers MEDIUM)",
-        "reclassification_rate": round(reclassify_rate(base_levels, new_a2), 4),
-        "new_distribution": dict(Counter(new_a2)),
-    })
+    results["ablations"].append(
+        {
+            "ablation": "Remove avg_val < 50 from MEDIUM (only penalty triggers MEDIUM)",
+            "reclassification_rate": round(reclassify_rate(base_levels, new_a2), 4),
+            "new_distribution": dict(Counter(new_a2)),
+        }
+    )
 
     # Ablation 5: confidence thresholds 0.7/0.4 (for confidence level classification)
     # Original: high >= 0.7, medium >= 0.4
@@ -419,7 +432,7 @@ def study_confidence_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any
 
     conv_vals = [random.random() for _ in range(N)]
     conv_base = [_conf_levels_conventional(v) for v in conv_vals]
-    conv_dist = Counter(conv_base)
+    Counter(conv_base)
 
     # Ablate: shift 0.7 -> 0.6, 0.4 -> 0.3
     def _conf_levels_shifted(val: float, high_t: float, med_t: float) -> str:
@@ -436,11 +449,13 @@ def study_confidence_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any
     ]:
         shifted = [_conf_levels_shifted(v, high_t, med_t) for v in conv_vals]
         rate = reclassify_rate(conv_base, shifted) if label != "Baseline 0.7/0.4" else 0.0
-        results.setdefault("confidence_map_analysis", []).append({
-            "thresholds": f"high>={high_t}, medium>={med_t}",
-            "distribution": dict(Counter(shifted)),
-            "reclassification_from_baseline": round(rate, 4) if label != "Baseline 0.7/0.4" else 0.0,
-        })
+        results.setdefault("confidence_map_analysis", []).append(
+            {
+                "thresholds": f"high>={high_t}, medium>={med_t}",
+                "distribution": dict(Counter(shifted)),
+                "reclassification_from_baseline": (round(rate, 4) if label != "Baseline 0.7/0.4" else 0.0),
+            }
+        )
 
     return results
 
@@ -448,6 +463,7 @@ def study_confidence_thresholds(startups: list[dict[str, Any]]) -> dict[str, Any
 # ═══════════════════════════════════════════════════════════════════════
 #  MAIN
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def main() -> None:
     startups = [_startup() for _ in range(N)]
@@ -463,8 +479,10 @@ def main() -> None:
     print(f"  Full ablation (all classification=0): Spearman rho = {r1['full_ablation']['spearman_rho']:.6f}")
     print(f"  Min per-class ablation rho: {r1['min_spearman_rho']:.6f}")
     for a in r1["ablations"]:
-        print(f"    {a['class']:.<25s} score={a['original_score']:g} -> 0:  "
-              f"rho={a['spearman_rho']:.6f}, avg_drop={a['avg_score_drop']:.2f}")
+        print(
+            f"    {a['class']:.<25s} score={a['original_score']:g} -> 0:  "
+            f"rho={a['spearman_rho']:.6f}, avg_drop={a['avg_score_drop']:.2f}"
+        )
     print()
 
     print("=" * 60)
@@ -474,7 +492,9 @@ def main() -> None:
     all_results["source_quality"] = r2
     print(f"  {r2['n_sources']} sources, range=[{r2['min_score']}, {r2['max_score']}]")
     for g in r2["gaps"]:
-        print(f"    {g['higher']:.<25s} {g['higher_score']:g} -> {g['lower']:.<25s} {g['lower_score']:g}  gap={g['gap']:g}")
+        print(
+            f"    {g['higher']:.<25s} {g['higher_score']:g} -> {g['lower']:.<25s} {g['lower_score']:g}  gap={g['gap']:g}"
+        )
     print()
 
     print("=" * 60)
@@ -483,11 +503,17 @@ def main() -> None:
     r3 = study_motion_thresholds(startups)
     all_results["motion_thresholds"] = r3
     print(f"  Baseline distribution: {r3['baseline_distribution']}")
-    print(f"  Threshold perturbations:")
+    print("  Threshold perturbations:")
     for p in r3["perturbations"]:
-        print(f"    {p['threshold']:.<30s} {p['original']:g} -> {p['shifted_to']:g} "
-              f"(shift={p['shift']:+.0%}): reclass={p['reclassification_rate']:.2%}")
-    for key in ["ablation_remove_immediate_outreach", "ablation_remove_high_priority_outreach", "ablation_remove_monitor_and_nurture"]:
+        print(
+            f"    {p['threshold']:.<30s} {p['original']:g} -> {p['shifted_to']:g} "
+            f"(shift={p['shift']:+.0%}): reclass={p['reclassification_rate']:.2%}"
+        )
+    for key in [
+        "ablation_remove_immediate_outreach",
+        "ablation_remove_high_priority_outreach",
+        "ablation_remove_monitor_and_nurture",
+    ]:
         print(f"    {r3[key]['description']:.<65s} reclass={r3[key]['reclassification_rate']:.2%}")
     print()
 
@@ -499,9 +525,11 @@ def main() -> None:
     print(f"  Baseline distribution: {r4['baseline_distribution']}")
     for a in r4["ablations"]:
         print(f"    {a['ablation']:.<70s} reclass={a['reclassification_rate']:.2%}")
-    print(f"  Confidence level mapping analysis:")
+    print("  Confidence level mapping analysis:")
     for c in r4["confidence_map_analysis"]:
-        print(f"    {c['thresholds']:.<30s} dist={c['distribution']}  reclass={c['reclassification_from_baseline']:.2%}")
+        print(
+            f"    {c['thresholds']:.<30s} dist={c['distribution']}  reclass={c['reclassification_from_baseline']:.2%}"
+        )
 
     output = json.dumps(all_results, indent=2, ensure_ascii=False)
     print("\n" + "-" * 60)

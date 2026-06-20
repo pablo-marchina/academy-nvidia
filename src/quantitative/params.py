@@ -238,12 +238,18 @@ GAP_BUSINESS_IMPACT_MAP: dict[str, float] = {
 GAP_KEYWORD_DICT: dict[str, list[str]] = {
     "external_api_dependency": ["gpt", "openai", "api dependency", "api wrapper", "llm api"],
     "high_inference_cost": [
-        "high volume inference", "inference cost", "gpu cost", "expensive inference"
+        "high volume inference",
+        "inference cost",
+        "gpu cost",
+        "expensive inference",
     ],
     "high_latency": ["low latency", "real-time", "throughput", "latency"],
     "agent_governance_gap": ["agent", "autonomous", "multi-agent", "ai agent", "agentic"],
     "privacy_or_controlled_deployment_gap": [
-        "privacy", "on-prem", "controlled deployment", "data residency"
+        "privacy",
+        "on-prem",
+        "controlled deployment",
+        "data residency",
     ],
     "ai_cybersecurity_need": ["cybersecurity", "threat detection", "security"],
     "healthcare_compliance_need": ["healthcare", "compliance", "hipaa"],
@@ -376,8 +382,5 @@ def validate_all_weight_sets() -> dict[str, float]:
         total = sum(weights.values())
         results[name] = round(total, 6)
         if abs(total - 1.0) > 1e-6:
-            raise ValueError(
-                f"Weight set '{name}' sums to {total}, expected 1.0. "
-                f"Values: {weights}"
-            )
+            raise ValueError(f"Weight set '{name}' sums to {total}, expected 1.0. " f"Values: {weights}")
     return results

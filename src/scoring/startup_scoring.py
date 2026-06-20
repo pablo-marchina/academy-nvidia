@@ -40,145 +40,336 @@ REQUIRED_DECISIONS_NVIDIA_FIT: list[str] = [
     NVIDIA_FIT_UNCERTAINTY_DECISION_ID,
 ]
 
-REQUIRED_CALIBRATION_DECISIONS: list[str] = list(
-    set(REQUIRED_DECISIONS_AI_NATIVE + REQUIRED_DECISIONS_NVIDIA_FIT)
-)
+REQUIRED_CALIBRATION_DECISIONS: list[str] = list(set(REQUIRED_DECISIONS_AI_NATIVE + REQUIRED_DECISIONS_NVIDIA_FIT))
 
 # ── Keyword lists for ai_native features ─────────────────────────────────────
 
 _AI_SIGNAL_KEYWORDS: list[str] = [
-    "inteligencia artificial", "inteligência artificial", "ia", "machine learning",
-    "aprendizado de maquina", "aprendizado de máquina", "aprendizagem de máquina",
-    "deep learning", "aprendizado profundo", "deep learning",
-    "neural network", "rede neural", "redes neurais",
-    "nlp", "natural language", "processamento de linguagem natural",
-    "pln", "computer vision", "visao computacional", "visão computacional",
-    "modelo de linguagem", "language model", "llm", "gpt",
-    "transformer", "bert", "diffusion",
-    "generative ai", "ia generativa", "genai",
-    "rag", "retrieval augmented",
-    "fine-tuning", "fine tuning", "transfer learning",
-    "treinamento", "inferencia", "inferência", "inference",
-    "embedding", "vector database", "banco vetorial",
-    "similaridade semantica", "similaridade semântica", "semantic similarity",
-    "agente de ia", "ai agent", "autonomo", "autonomous ai",
-    "modelo proprietario", "modelo próprio",
+    "inteligencia artificial",
+    "inteligência artificial",
+    "ia",
+    "machine learning",
+    "aprendizado de maquina",
+    "aprendizado de máquina",
+    "aprendizagem de máquina",
+    "deep learning",
+    "aprendizado profundo",
+    "deep learning",
+    "neural network",
+    "rede neural",
+    "redes neurais",
+    "nlp",
+    "natural language",
+    "processamento de linguagem natural",
+    "pln",
+    "computer vision",
+    "visao computacional",
+    "visão computacional",
+    "modelo de linguagem",
+    "language model",
+    "llm",
+    "gpt",
+    "transformer",
+    "bert",
+    "diffusion",
+    "generative ai",
+    "ia generativa",
+    "genai",
+    "rag",
+    "retrieval augmented",
+    "fine-tuning",
+    "fine tuning",
+    "transfer learning",
+    "treinamento",
+    "inferencia",
+    "inferência",
+    "inference",
+    "embedding",
+    "vector database",
+    "banco vetorial",
+    "similaridade semantica",
+    "similaridade semântica",
+    "semantic similarity",
+    "agente de ia",
+    "ai agent",
+    "autonomo",
+    "autonomous ai",
+    "modelo proprietario",
+    "modelo próprio",
 ]
 
 _TECHNICAL_AI_TERMS: list[str] = [
-    "pytorch", "tensorflow", "jax", "keras",
-    "scikit-learn", "sklearn", "hugging face", "transformers",
-    "xgboost", "xgb", "lightgbm", "catboost",
-    "onnx", "tensorrt", "cuda", "cudnn",
-    "triton", "mlflow", "kubeflow", "ray", "dask",
-    "weaviate", "pinecone", "qdrant", "chroma", "milvus",
-    "langchain", "llamaindex", "haystack",
-    "spacy", "nltk", "opencv",
-    "yolo", "detectron", "stable diffusion",
-    "whisper", "t5", "llama", "mistral", "falcon", "gemma",
-    "sentence-transformers", "tokenizer",
+    "pytorch",
+    "tensorflow",
+    "jax",
+    "keras",
+    "scikit-learn",
+    "sklearn",
+    "hugging face",
+    "transformers",
+    "xgboost",
+    "xgb",
+    "lightgbm",
+    "catboost",
+    "onnx",
+    "tensorrt",
+    "cuda",
+    "cudnn",
+    "triton",
+    "mlflow",
+    "kubeflow",
+    "ray",
+    "dask",
+    "weaviate",
+    "pinecone",
+    "qdrant",
+    "chroma",
+    "milvus",
+    "langchain",
+    "llamaindex",
+    "haystack",
+    "spacy",
+    "nltk",
+    "opencv",
+    "yolo",
+    "detectron",
+    "stable diffusion",
+    "whisper",
+    "t5",
+    "llama",
+    "mistral",
+    "falcon",
+    "gemma",
+    "sentence-transformers",
+    "tokenizer",
 ]
 
 _PRODUCT_AI_CLAIM_KEYWORDS: list[str] = [
-    "produto baseado em ia", "ai-powered", "ai-native", "ia nativa",
-    "plataforma de ia", "ai platform", "solucao de ia", "solução de ia",
-    "ai solution", "saas com ia", "ai saas",
-    "automacao inteligente", "automação inteligente",
-    "intelligent automation", "analise preditiva", "análise preditiva",
-    "predictive analytics", "recomendacao inteligente",
-    "recomendação inteligente", "assistente virtual",
-    "chatbot inteligente", "analise inteligente",
-    "our ai", "nossa ia",
+    "produto baseado em ia",
+    "ai-powered",
+    "ai-native",
+    "ia nativa",
+    "plataforma de ia",
+    "ai platform",
+    "solucao de ia",
+    "solução de ia",
+    "ai solution",
+    "saas com ia",
+    "ai saas",
+    "automacao inteligente",
+    "automação inteligente",
+    "intelligent automation",
+    "analise preditiva",
+    "análise preditiva",
+    "predictive analytics",
+    "recomendacao inteligente",
+    "recomendação inteligente",
+    "assistente virtual",
+    "chatbot inteligente",
+    "analise inteligente",
+    "our ai",
+    "nossa ia",
 ]
 
 _MODEL_ML_INFRA_KEYWORDS: list[str] = [
-    "gpu", "tpu", "a100", "h100", "v100", "t4", "l4",
-    "cluster", "treinamento distribuido", "treinamento distribuído",
-    "distributed training", "mlops", "ci/cd for ml",
-    "model registry", "feature store",
-    "data pipeline", "etl", "data lake", "data warehouse",
-    "model serving", "inference server", "model deployment",
-    "kubernetes", "k8s", "docker", "container",
-    "escalabilidade", "scalability",
+    "gpu",
+    "tpu",
+    "a100",
+    "h100",
+    "v100",
+    "t4",
+    "l4",
+    "cluster",
+    "treinamento distribuido",
+    "treinamento distribuído",
+    "distributed training",
+    "mlops",
+    "ci/cd for ml",
+    "model registry",
+    "feature store",
+    "data pipeline",
+    "etl",
+    "data lake",
+    "data warehouse",
+    "model serving",
+    "inference server",
+    "model deployment",
+    "kubernetes",
+    "k8s",
+    "docker",
+    "container",
+    "escalabilidade",
+    "scalability",
 ]
 
 # ── Keyword lists for nvidia_fit features ────────────────────────────────────
 
 _NVIDIA_GPU_KEYWORDS: list[str] = [
-    "gpu", "a100", "h100", "v100", "t4", "l4",
-    "rtx", "quadro", "tesla", "nvidia gpu",
-    "placa de video", "placa de vídeo", "aceleracao grafica",
+    "gpu",
+    "a100",
+    "h100",
+    "v100",
+    "t4",
+    "l4",
+    "rtx",
+    "quadro",
+    "tesla",
+    "nvidia gpu",
+    "placa de video",
+    "placa de vídeo",
+    "aceleracao grafica",
     "aceleração gráfica",
 ]
 
 _NVIDIA_CUDA_KEYWORDS: list[str] = [
-    "cuda", "cudnn", "tensorrt",
-    "nvidia", "triton inference server",
-    "rapids", "cudf", "cuml", "cugraph",
-    "nvidia nim", "nvidia ai enterprise",
-    "nemo", "nemo guardrails",
-    "nvidia riva", "nvidia morpheus",
-    "nvidia isaac", "nvidia omniverse",
+    "cuda",
+    "cudnn",
+    "tensorrt",
+    "nvidia",
+    "triton inference server",
+    "rapids",
+    "cudf",
+    "cuml",
+    "cugraph",
+    "nvidia nim",
+    "nvidia ai enterprise",
+    "nemo",
+    "nemo guardrails",
+    "nvidia riva",
+    "nvidia morpheus",
+    "nvidia isaac",
+    "nvidia omniverse",
 ]
 
 _NVIDIA_INFERENCE_KEYWORDS: list[str] = [
-    "inferencia", "inferência", "inference",
-    "treinamento", "training",
-    "batch inference", "tempo real", "real-time",
-    "baixa latencia", "baixa latência", "low latency",
-    "alta taxa", "high throughput",
-    "model serving", "triton",
+    "inferencia",
+    "inferência",
+    "inference",
+    "treinamento",
+    "training",
+    "batch inference",
+    "tempo real",
+    "real-time",
+    "baixa latencia",
+    "baixa latência",
+    "low latency",
+    "alta taxa",
+    "high throughput",
+    "model serving",
+    "triton",
 ]
 
 _NVIDIA_CV_KEYWORDS: list[str] = [
-    "computer vision", "visao computacional", "visão computacional",
-    "image recognition", "reconhecimento de imagem",
-    "object detection", "deteccao de objetos", "detecção de objetos",
-    "video analytics", "analise de video", "análise de vídeo",
-    "face recognition", "reconhecimento facial",
-    "ocr", "optical character",
-    "yolo", "detectron", "opencv",
-    "classificacao de imagem", "classificação de imagem",
-    "segmentacao", "segmentação",
+    "computer vision",
+    "visao computacional",
+    "visão computacional",
+    "image recognition",
+    "reconhecimento de imagem",
+    "object detection",
+    "deteccao de objetos",
+    "detecção de objetos",
+    "video analytics",
+    "analise de video",
+    "análise de vídeo",
+    "face recognition",
+    "reconhecimento facial",
+    "ocr",
+    "optical character",
+    "yolo",
+    "detectron",
+    "opencv",
+    "classificacao de imagem",
+    "classificação de imagem",
+    "segmentacao",
+    "segmentação",
 ]
 
 _NVIDIA_GENAI_LLM_KEYWORDS: list[str] = [
-    "llm", "large language model", "modelo de linguagem",
-    "gpt", "generative ai", "ia generativa",
-    "genai", "text generation", "geracao de texto",
-    "geração de texto", "chatbot", "assistente virtual",
-    "sumarizacao", "sumarização", "summarization",
-    "traducao automatica", "tradução automática", "machine translation",
-    "rag", "retrieval augmented",
-    "fine-tuning", "instrucao", "instrução",
+    "llm",
+    "large language model",
+    "modelo de linguagem",
+    "gpt",
+    "generative ai",
+    "ia generativa",
+    "genai",
+    "text generation",
+    "geracao de texto",
+    "geração de texto",
+    "chatbot",
+    "assistente virtual",
+    "sumarizacao",
+    "sumarização",
+    "summarization",
+    "traducao automatica",
+    "tradução automática",
+    "machine translation",
+    "rag",
+    "retrieval augmented",
+    "fine-tuning",
+    "instrucao",
+    "instrução",
 ]
 
 _NVIDIA_DATA_KEYWORDS: list[str] = [
-    "data pipeline", "etl",
-    "data lake", "data warehouse",
-    "streaming", "kafka", "spark",
-    "data processing", "processamento de dados",
-    "analise de dados", "análise de dados", "data analytics",
-    "big data", "banco de dados vetorial", "vector database",
-    "data integration", "integracao de dados", "integração de dados",
+    "data pipeline",
+    "etl",
+    "data lake",
+    "data warehouse",
+    "streaming",
+    "kafka",
+    "spark",
+    "data processing",
+    "processamento de dados",
+    "analise de dados",
+    "análise de dados",
+    "data analytics",
+    "big data",
+    "banco de dados vetorial",
+    "vector database",
+    "data integration",
+    "integracao de dados",
+    "integração de dados",
 ]
 
 _NVIDIA_KEYWORD_KEYWORDS: list[str] = [
-    "nvidia", "nvidia gpu", "nvidia cuda",
-    "tensorrt", "nvidia ai",
-    "nvidia enterprise", "nvidia nim",
+    "nvidia",
+    "nvidia gpu",
+    "nvidia cuda",
+    "tensorrt",
+    "nvidia ai",
+    "nvidia enterprise",
+    "nvidia nim",
 ]
 
 _NVIDIA_INDUSTRY_KEYWORDS: list[str] = [
-    "autonomous vehicles", "carro autonomo", "carro autônomo",
-    "healthcare ai", "ia em saude", "ia na saúde", "ia para saúde",
-    "fintech ia", "ia fintech",
-    "agtech", "agritech", "ia no agro", "ia agro",
-    "robotics", "robotica", "robótica",
-    "autonomous machines", "maquinas autonomas", "máquinas autônomas",
-    "digital twin", "simulation", "simulacao", "simulação",
-    "cybersecurity", "ciberseguranca", "cibersegurança",
-    "ia para industrias", "industrial ai",
+    "autonomous vehicles",
+    "carro autonomo",
+    "carro autônomo",
+    "healthcare ai",
+    "ia em saude",
+    "ia na saúde",
+    "ia para saúde",
+    "fintech ia",
+    "ia fintech",
+    "agtech",
+    "agritech",
+    "ia no agro",
+    "ia agro",
+    "robotics",
+    "robotica",
+    "robótica",
+    "autonomous machines",
+    "maquinas autonomas",
+    "máquinas autônomas",
+    "digital twin",
+    "simulation",
+    "simulacao",
+    "simulação",
+    "cybersecurity",
+    "ciberseguranca",
+    "cibersegurança",
+    "ia para industrias",
+    "industrial ai",
 ]
 
 _EMPTY_BLOCKING_WEIGHTS: dict[str, float] = {}
@@ -314,9 +505,7 @@ def extract_ai_native_features(
             text = str(item.get("text", "") or item.get("snippet", ""))
             if _text_contains_any(text, _AI_SIGNAL_KEYWORDS):
                 source_ids_with_signal.add(sid)
-    ai_signal_source_coverage = (
-        len(source_ids_with_signal) / len(all_source_ids) if all_source_ids else 0.0
-    )
+    ai_signal_source_coverage = len(source_ids_with_signal) / len(all_source_ids) if all_source_ids else 0.0
 
     technical_ai_term_count = _count_keyword_matches(all_texts, _TECHNICAL_AI_TERMS)
 
@@ -336,9 +525,7 @@ def extract_ai_native_features(
             ai_claims_total += 1
             if c.get("support_status") == "supported":
                 ai_claims_supported += 1
-    ai_claim_support_ratio = (
-        ai_claims_supported / ai_claims_total if ai_claims_total > 0 else 0.0
-    )
+    ai_claim_support_ratio = ai_claims_supported / ai_claims_total if ai_claims_total > 0 else 0.0
 
     for item in evidence_items:
         text = str(item.get("text", "") or item.get("snippet", ""))
@@ -355,9 +542,7 @@ def extract_ai_native_features(
 
     technical_depth_signal_count = _count_keyword_matches(all_texts, _MODEL_ML_INFRA_KEYWORDS)
 
-    model_or_ml_infrastructure_signal_count = _count_keyword_matches(
-        all_texts, _MODEL_ML_INFRA_KEYWORDS
-    )
+    model_or_ml_infrastructure_signal_count = _count_keyword_matches(all_texts, _MODEL_ML_INFRA_KEYWORDS)
 
     uncertainty_penalty = _compute_uncertainty(
         evidence_count=ai_claims_total,
@@ -398,9 +583,7 @@ def extract_nvidia_fit_features(
 
     cuda_or_acceleration_signal_count = _count_keyword_matches(all_texts, _NVIDIA_CUDA_KEYWORDS)
 
-    inference_or_training_signal_count = _count_keyword_matches(
-        all_texts, _NVIDIA_INFERENCE_KEYWORDS
-    )
+    inference_or_training_signal_count = _count_keyword_matches(all_texts, _NVIDIA_INFERENCE_KEYWORDS)
 
     computer_vision_signal_count = _count_keyword_matches(all_texts, _NVIDIA_CV_KEYWORDS)
 
@@ -410,9 +593,7 @@ def extract_nvidia_fit_features(
 
     nvidia_keyword_signal_count = _count_keyword_matches(all_texts, _NVIDIA_KEYWORD_KEYWORDS)
 
-    nvidia_relevant_industry_signal_count = _count_keyword_matches(
-        all_texts, _NVIDIA_INDUSTRY_KEYWORDS
-    )
+    nvidia_relevant_industry_signal_count = _count_keyword_matches(all_texts, _NVIDIA_INDUSTRY_KEYWORDS)
 
     accepted_nvidia_fit_evidence_count = _count_keyword_matches(ac_ev_texts, _NVIDIA_CUDA_KEYWORDS)
 
@@ -454,9 +635,7 @@ def extract_nvidia_fit_features(
         nvidia_relevant_industry_signal_count=nvidia_relevant_industry_signal_count,
         accepted_nvidia_fit_evidence_count=accepted_nvidia_fit_evidence_count,
         rag_context_alignment_count=rag_context_alignment_count,
-        evidence_confidence_mean_for_nvidia_claims=round(
-            evidence_confidence_mean_for_nvidia_claims, 4
-        ),
+        evidence_confidence_mean_for_nvidia_claims=round(evidence_confidence_mean_for_nvidia_claims, 4),
         implementation_complexity_proxy=round(implementation_complexity_proxy, 4),
         uncertainty_penalty=round(uncertainty_penalty, 4),
     )
@@ -532,13 +711,10 @@ def _lookup_calibration_group(
                 validation = validate_decision_for_production(rec)
                 if not validation.passed:
                     blockers.append(
-                        f"Decision '{decision_id}' blocked for production: "
-                        f"{'; '.join(validation.reasons)}"
+                        f"Decision '{decision_id}' blocked for production: " f"{'; '.join(validation.reasons)}"
                     )
                 elif rec.calibration_status.value in ("uncalibrated", "blocked"):
-                    blockers.append(
-                        f"Decision '{decision_id}' is {rec.calibration_status.value}"
-                    )
+                    blockers.append(f"Decision '{decision_id}' is {rec.calibration_status.value}")
                 else:
                     values[decision_id] = rec.current_value
                 break
@@ -562,6 +738,21 @@ def _lookup_weight_dict(
             if isinstance(val, (int, float)):
                 result[k] = float(val)
         return result
+    return None
+
+
+def _weight_blocker(decision_id: str, weights: dict[str, float] | None) -> str | None:
+    if weights is None:
+        return f"Decision '{decision_id}' current_value is not a dict"
+    if not weights:
+        return f"Decision '{decision_id}' current_value is empty"
+    if any(value < 0 for value in weights.values()):
+        return f"Decision '{decision_id}' has negative weights"
+    total = sum(weights.values())
+    if total <= 0.0:
+        return f"Decision '{decision_id}' weight sum is zero"
+    if abs(total - 1.0) > 0.001:
+        return f"Decision '{decision_id}' weights must sum to 1.0; observed {round(total, 6)}"
     return None
 
 
@@ -595,9 +786,7 @@ def compute_startup_scoring(
         claims, accepted_evidence_items, evidence_items, rag_contexts=rag_contexts
     )
 
-    ai_cal_values, ai_cal_ok, ai_blockers = _lookup_calibration_group(
-        REQUIRED_DECISIONS_AI_NATIVE, inventory=inventory
-    )
+    ai_cal_values, ai_cal_ok, ai_blockers = _lookup_calibration_group(REQUIRED_DECISIONS_AI_NATIVE, inventory=inventory)
     nv_cal_values, nv_cal_ok, nv_blockers = _lookup_calibration_group(
         REQUIRED_DECISIONS_NVIDIA_FIT, inventory=inventory
     )
@@ -605,12 +794,8 @@ def compute_startup_scoring(
     ai_is_blocked = not ai_cal_ok
     nv_is_blocked = not nv_cal_ok
 
-    ai_component = _build_ai_native_component(
-        ai_features, ai_cal_values, ai_is_blocked, ai_blockers
-    )
-    nv_component = _build_nvidia_fit_component(
-        nv_features, nv_cal_values, nv_is_blocked, nv_blockers
-    )
+    ai_component = _build_ai_native_component(ai_features, ai_cal_values, ai_is_blocked, ai_blockers)
+    nv_component = _build_nvidia_fit_component(nv_features, nv_cal_values, nv_is_blocked, nv_blockers)
 
     return StartupScoreResult(ai_native=ai_component, nvidia_fit=nv_component)
 
@@ -644,7 +829,14 @@ def _build_ai_native_component(
     threshold = _lookup_float(AI_NATIVE_THRESHOLD_DECISION_ID, cal_values)
     uncertainty_penalty_mult = _lookup_float(AI_NATIVE_UNCERTAINTY_DECISION_ID, cal_values)
 
-    if weights is None:
+    weight_blocker = _weight_blocker(AI_NATIVE_WEIGHTS_DECISION_ID, weights)
+    required_float_blockers = []
+    if threshold is None:
+        required_float_blockers.append(f"Decision '{AI_NATIVE_THRESHOLD_DECISION_ID}' current_value is not numeric")
+    if uncertainty_penalty_mult is None:
+        required_float_blockers.append(f"Decision '{AI_NATIVE_UNCERTAINTY_DECISION_ID}' current_value is not numeric")
+
+    if weight_blocker or required_float_blockers:
         return ScoreComponent(
             score_name="ai_native_score",
             score_value=0.0,
@@ -656,24 +848,25 @@ def _build_ai_native_component(
             calibration_status="uncalibrated",
             production_allowed=False,
             uncertainty=1.0,
-            blockers=blockers
-            + [f"Decision '{AI_NATIVE_WEIGHTS_DECISION_ID}' current_value is not a dict"],
-            explanation="ai_native_score blocked: weights decision has invalid type.",
+            blockers=blockers + [b for b in [weight_blocker] if b] + required_float_blockers,
+            explanation="ai_native_score blocked: calibration values are invalid.",
         )
 
+    assert weights is not None
+    assert threshold is not None
+    assert uncertainty_penalty_mult is not None
     raw_score = _compute_weighted_score(feature_dict, weights)
 
-    uncertainty_penalty_value = features.uncertainty_penalty * (uncertainty_penalty_mult or 0.15)
+    uncertainty_penalty_value = features.uncertainty_penalty * uncertainty_penalty_mult
     final_score = max(0.0, min(1.0, raw_score - uncertainty_penalty_value))
 
     calibration_status = "calibrated"
     production_allowed = True
     thresholds: dict[str, float] = {}
-    if threshold is not None:
-        thresholds["production_threshold"] = threshold
+    thresholds["production_threshold"] = threshold
 
     score_status: ScoreStatus
-    if threshold is not None and final_score < threshold:
+    if final_score < threshold:
         score_status = ScoreStatus.FAILED
     else:
         score_status = ScoreStatus.PASSED
@@ -727,7 +920,14 @@ def _build_nvidia_fit_component(
     threshold = _lookup_float(NVIDIA_FIT_THRESHOLD_DECISION_ID, cal_values)
     uncertainty_penalty_mult = _lookup_float(NVIDIA_FIT_UNCERTAINTY_DECISION_ID, cal_values)
 
-    if weights is None:
+    weight_blocker = _weight_blocker(NVIDIA_FIT_WEIGHTS_DECISION_ID, weights)
+    required_float_blockers = []
+    if threshold is None:
+        required_float_blockers.append(f"Decision '{NVIDIA_FIT_THRESHOLD_DECISION_ID}' current_value is not numeric")
+    if uncertainty_penalty_mult is None:
+        required_float_blockers.append(f"Decision '{NVIDIA_FIT_UNCERTAINTY_DECISION_ID}' current_value is not numeric")
+
+    if weight_blocker or required_float_blockers:
         return ScoreComponent(
             score_name="nvidia_fit_score",
             score_value=0.0,
@@ -739,24 +939,25 @@ def _build_nvidia_fit_component(
             calibration_status="uncalibrated",
             production_allowed=False,
             uncertainty=1.0,
-            blockers=blockers
-            + [f"Decision '{NVIDIA_FIT_WEIGHTS_DECISION_ID}' current_value is not a dict"],
-            explanation="nvidia_fit_score blocked: weights decision has invalid type.",
+            blockers=blockers + [b for b in [weight_blocker] if b] + required_float_blockers,
+            explanation="nvidia_fit_score blocked: calibration values are invalid.",
         )
 
+    assert weights is not None
+    assert threshold is not None
+    assert uncertainty_penalty_mult is not None
     raw_score = _compute_weighted_score(feature_dict, weights)
 
-    uncertainty_penalty_value = features.uncertainty_penalty * (uncertainty_penalty_mult or 0.15)
+    uncertainty_penalty_value = features.uncertainty_penalty * uncertainty_penalty_mult
     final_score = max(0.0, min(1.0, raw_score - uncertainty_penalty_value))
 
     calibration_status = "calibrated"
     production_allowed = True
     thresholds: dict[str, float] = {}
-    if threshold is not None:
-        thresholds["production_threshold"] = threshold
+    thresholds["production_threshold"] = threshold
 
     score_status: ScoreStatus
-    if threshold is not None and final_score < threshold:
+    if final_score < threshold:
         score_status = ScoreStatus.FAILED
     else:
         score_status = ScoreStatus.PASSED
@@ -828,13 +1029,9 @@ def build_scoring_summary(
     else:
         missing_calibration_count += len(REQUIRED_DECISIONS_NVIDIA_FIT)
 
-    ai_feature_count = sum(
-        1 for v in ai.features.values() if isinstance(v, (int, float)) and v > 0
-    )
+    ai_feature_count = sum(1 for v in ai.features.values() if isinstance(v, (int, float)) and v > 0)
     ai_feature_total = max(1, len(ai.features))
-    nv_feature_count = sum(
-        1 for v in nv.features.values() if isinstance(v, (int, float)) and v > 0
-    )
+    nv_feature_count = sum(1 for v in nv.features.values() if isinstance(v, (int, float)) and v > 0)
     nv_feature_total = max(1, len(nv.features))
 
     score_metrics: dict[str, Any] = {
@@ -846,9 +1043,7 @@ def build_scoring_summary(
         "unsupported_critical_claims_count": unsupported_critical_claims_count,
         "average_evidence_confidence": round(average_evidence_confidence, 4),
         "average_source_quality": round(average_source_quality, 4),
-        "scoring_uncertainty": round(
-            max(ai.uncertainty, nv.uncertainty), 4
-        ),
+        "scoring_uncertainty": round(max(ai.uncertainty, nv.uncertainty), 4),
         "calibrated_decision_count": calibrated_decision_count,
         "missing_calibration_count": missing_calibration_count,
     }
@@ -858,9 +1053,7 @@ def build_scoring_summary(
         score_metrics=score_metrics,
         ai_native_score=ai.score_value,
         nvidia_fit_score=nv.score_value,
-        calibration_status=(
-            "calibrated" if calibrated_decision_count > 0 else "uncalibrated"
-        ),
+        calibration_status=("calibrated" if calibrated_decision_count > 0 else "uncalibrated"),
         production_allowed=production_allowed,
         blockers=all_blockers,
     )

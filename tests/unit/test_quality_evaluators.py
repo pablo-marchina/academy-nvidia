@@ -376,6 +376,7 @@ def test_review_readiness_evaluator_with_review(
         ReviewDecision(
             id="review-1",
             analysis_run_id=analysis_run.id,
+            startup_id=startup.id,
             decision="approve",
             reviewer="Test Reviewer",
             notes="Looks good",

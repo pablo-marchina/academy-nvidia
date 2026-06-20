@@ -72,9 +72,7 @@ DEGRADED_STATES: dict[str, DegradedStateDefinition] = {
         code="WEAK_NVIDIA_FIT_EVIDENCE",
         severity="warning",
         user_message="NVIDIA fit claims have weak or missing evidence.",
-        recommended_action=(
-            "Collect additional evidence linking the startup to NVIDIA technologies."
-        ),
+        recommended_action=("Collect additional evidence linking the startup to NVIDIA technologies."),
     ),
     "BRIEF_HAS_UNSUPPORTED_CLAIM": DegradedStateDefinition(
         code="BRIEF_HAS_UNSUPPORTED_CLAIM",
@@ -92,25 +90,20 @@ DEGRADED_STATES: dict[str, DegradedStateDefinition] = {
         code="NO_ACTIVATION_PLAYBOOK_MATCH",
         severity="warning",
         user_message="No activation playbook matched the diagnosed gaps.",
-        recommended_action=(
-            "Review gap diagnosis and collect additional evidence " "to enable a playbook match."
-        ),
+        recommended_action=("Review gap diagnosis and collect additional evidence " "to enable a playbook match."),
     ),
     "PLAYBOOK_LOW_EVIDENCE_SUPPORT": DegradedStateDefinition(
         code="PLAYBOOK_LOW_EVIDENCE_SUPPORT",
         severity="warning",
         user_message="Activation playbook match has low evidence support.",
-        recommended_action=(
-            "Collect additional evidence to increase confidence " "in the recommended playbook."
-        ),
+        recommended_action=("Collect additional evidence to increase confidence " "in the recommended playbook."),
     ),
     "PLAYBOOK_UNSUPPORTED_CLAIMS": DegradedStateDefinition(
         code="PLAYBOOK_UNSUPPORTED_CLAIMS",
         severity="error",
         user_message="Activation playbook matched but critical claims are unsupported.",
         recommended_action=(
-            "Review unsupported critical claims and strengthen evidence "
-            "before proceeding with the playbook."
+            "Review unsupported critical claims and strengthen evidence " "before proceeding with the playbook."
         ),
     ),
     "DOSSIER_LOW_EVIDENCE_COVERAGE": DegradedStateDefinition(
@@ -178,17 +171,14 @@ DEGRADED_STATES: dict[str, DegradedStateDefinition] = {
         severity="warning",
         user_message="Quality evaluation found recommendations with low actionability.",
         recommended_action=(
-            "Review recommendations and ensure motion, next step, "
-            "experiment, and metrics are defined."
+            "Review recommendations and ensure motion, next step, " "experiment, and metrics are defined."
         ),
     ),
     "QUALITY_LOW_EXPORT_READINESS": DegradedStateDefinition(
         code="QUALITY_LOW_EXPORT_READINESS",
         severity="warning",
         user_message="Quality evaluation shows low export readiness score.",
-        recommended_action=(
-            "Improve dossier quality, evidence coverage, " "and reduce unsupported claims."
-        ),
+        recommended_action=("Improve dossier quality, evidence coverage, " "and reduce unsupported claims."),
     ),
     "QUALITY_LOW_REVIEW_READINESS": DegradedStateDefinition(
         code="QUALITY_LOW_REVIEW_READINESS",
@@ -200,9 +190,7 @@ DEGRADED_STATES: dict[str, DegradedStateDefinition] = {
         code="PLAYBOOK_MISSING_SUCCESS_METRICS",
         severity="warning",
         user_message="Activation playbook is missing defined success metrics.",
-        recommended_action=(
-            "Ensure success metrics are defined " "before starting the playbook experiment."
-        ),
+        recommended_action=("Ensure success metrics are defined " "before starting the playbook experiment."),
     ),
     "STRUCTURED_OUTPUT_INVALID": DegradedStateDefinition(
         code="STRUCTURED_OUTPUT_INVALID",
@@ -280,9 +268,7 @@ DEGRADED_STATES: dict[str, DegradedStateDefinition] = {
         code="OPPORTUNITY_LOW_CONFIDENCE",
         severity="info",
         user_message="Opportunity score has low confidence due to missing or weak evidence.",
-        recommended_action=(
-            "Collect additional evidence and rerun analysis before making decisions."
-        ),
+        recommended_action=("Collect additional evidence and rerun analysis before making decisions."),
     ),
     "OPPORTUNITY_HIGH_PENALTY": DegradedStateDefinition(
         code="OPPORTUNITY_HIGH_PENALTY",

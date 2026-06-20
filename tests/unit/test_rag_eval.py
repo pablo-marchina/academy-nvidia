@@ -45,9 +45,7 @@ class TestRunRagEval:
         """All golden queries pass when evaluated against the default index."""
         results = run_rag_eval()
         failures = [r for r in results if not r.passed]
-        assert (
-            len(failures) == 0
-        ), f"failed cases: {[(r.case_id, r.failure_reasons) for r in failures]}"
+        assert len(failures) == 0, f"failed cases: {[(r.case_id, r.failure_reasons) for r in failures]}"
 
     def test_critical_cases_have_hit_at_3(self) -> None:
         """All critical cases have hit_at_k=True."""
@@ -61,9 +59,7 @@ class TestRunRagEval:
         results = run_rag_eval()
         for r in results:
             if r.is_critical and r.expected_source_ids:
-                assert (
-                    r.metrics.top_1_expected_match
-                ), f"critical case {r.case_id}: top_1_expected_match=False"
+                assert r.metrics.top_1_expected_match, f"critical case {r.case_id}: top_1_expected_match=False"
 
     def test_known_query_zero_missing(self) -> None:
         """Known queries have all expected sources when top_k is large enough."""
@@ -107,9 +103,7 @@ class TestMetrics:
         results = run_rag_eval()
         for r in results:
             if r.expected_source_ids:
-                assert (
-                    r.metrics.context_precision == 1.0
-                ), f"case {r.case_id}: precision={r.metrics.context_precision}"
+                assert r.metrics.context_precision == 1.0, f"case {r.case_id}: precision={r.metrics.context_precision}"
 
     def test_irrelevant_context_detected(self) -> None:
         """A query that returns wrong-source chunks reports irrelevant context."""

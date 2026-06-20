@@ -18,6 +18,7 @@ def _normalize_startup_name(name: str) -> str:
 
 def _is_allowed_source(url: str) -> bool:
     from urllib.parse import urlparse
+
     parsed = urlparse(url)
     if parsed.scheme not in {"http", "https"}:
         return False
@@ -27,6 +28,7 @@ def _is_allowed_source(url: str) -> bool:
 
 def _classify_source(url: str) -> str:
     from urllib.parse import urlparse
+
     host = urlparse(url).netloc.lower()
     path = urlparse(url).path.lower()
     if "linkedin.com" in host:
@@ -53,27 +55,27 @@ def build_search_plan(startup_name: str) -> list[dict[str, str]]:
             return
         seen.add(url)
         if _is_allowed_source(url):
-            plan.append({
-                "url": url,
-                "source_type": _classify_source(url),
-                "reason": reason,
-            })
+            plan.append(
+                {
+                    "url": url,
+                    "source_type": _classify_source(url),
+                    "reason": reason,
+                }
+            )
 
     for source in list_enabled_sources():
         if source.base_url:
             _add(source.base_url, f"Configured source: {source.name}")
 
     direct_urls = [
-        (f"https://www.google.com/search?q={startup_name.replace(' ', '+')}+startup+AI+brasil",
-         "Google search for startup + AI + Brazil"),
-        (f"https://br.linkedin.com/company/{normalized}",
-         "LinkedIn company page"),
-        (f"https://{normalized}.com.br",
-         "Probable Brazilian domain"),
-        (f"https://www.{normalized}.com.br",
-         "Probable Brazilian domain (www)"),
-        (f"https://{normalized}.com",
-         "Probable .com domain"),
+        (
+            f"https://www.google.com/search?q={startup_name.replace(' ', '+')}+startup+AI+brasil",
+            "Google search for startup + AI + Brazil",
+        ),
+        (f"https://br.linkedin.com/company/{normalized}", "LinkedIn company page"),
+        (f"https://{normalized}.com.br", "Probable Brazilian domain"),
+        (f"https://www.{normalized}.com.br", "Probable Brazilian domain (www)"),
+        (f"https://{normalized}.com", "Probable .com domain"),
     ]
     for url, reason in direct_urls:
         _add(url, reason)

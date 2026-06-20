@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from typing import Any, Iterator
+from collections.abc import Iterator
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any
 from urllib.parse import urlparse
 
 import pytest
@@ -15,13 +16,12 @@ from src.scraping.http_collector import (
     build_http_collector,
     list_governed_sources,
 )
+from src.scraping.rate_limit_policy import reset_policy_cache
 from src.scraping.source_registry import (
     SourceRecord,
     list_production_enabled_sources,
     reset_source_registry_cache,
 )
-from src.scraping.rate_limit_policy import reset_policy_cache
-
 
 # ── Integration test server ──────────────────────────────────────────────
 
@@ -93,14 +93,12 @@ _INTEGRATION_LIMITS = {
 
 
 class TestGovernedCollectionFlow:
-    def test_governed_collection_uses_only_production_enabled(
-        self, integration_server: str
-    ) -> None:
+    def test_governed_collection_uses_only_production_enabled(self, integration_server: str) -> None:
         sources = list_governed_sources()
         assert all(s.production_enabled for s in sources)
 
     def test_full_collection_with_source_registry(self, integration_server: str) -> None:
-        sources = list_production_enabled_sources()
+        list_production_enabled_sources()
         # Filter to sources with a base_url we can test against
         test_source = SourceRecord(
             source_id="integration_official",
@@ -119,7 +117,7 @@ class TestGovernedCollectionFlow:
         )
 
         collector = build_http_collector()
-        request = type(
+        type(
             "Request",
             (object,),
             {

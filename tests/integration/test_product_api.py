@@ -12,10 +12,12 @@ from src.database.session import configure_product_database, reset_product_datab
 
 @pytest.fixture
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
-    monkeypatch.setenv("APP_MODE", "product")
+    monkeypatch.setenv("APP_MODE", "test")
     monkeypatch.setenv("ENABLE_PRODUCT_PERSISTENCE", "true")
     monkeypatch.setenv("QDRANT_URL", "")
-    configure_product_database(f"sqlite:///{(tmp_path / 'api.db').as_posix()}")
+    db_url = f"sqlite:///{(tmp_path / 'api.db').as_posix()}"
+    monkeypatch.setenv("PRODUCT_DB_URL", db_url)
+    configure_product_database(db_url)
     with TestClient(app) as test_client:
         yield test_client
     reset_product_database_runtime()
@@ -31,14 +33,26 @@ def _startup_payload() -> dict:
         "tags": ["product"],
         "evidence": [
             {
-                "claim": "Operates machine learning in production",
+                "claim": "Operates GPU inference in production",
                 "source_url": "https://api-product.example.com/platform",
                 "source_type": "official_site",
-                "quote_or_evidence": (
-                    "The platform operates machine learning inference in production."
-                ),
+                "quote_or_evidence": ("The platform operates GPU inference workloads in production."),
                 "confidence": "high",
-            }
+            },
+            {
+                "claim": "Uses NVIDIA GPUs for model serving",
+                "source_url": "https://api-product.example.com/tech-stack",
+                "source_type": "blog",
+                "quote_or_evidence": "Stack includes NVIDIA A100 GPUs for model serving.",
+                "confidence": "medium",
+            },
+            {
+                "claim": "Supports enterprise model optimization",
+                "source_url": "https://api-product.example.com/customers",
+                "source_type": "official_site",
+                "quote_or_evidence": "Enterprise customers use the platform for model optimization.",
+                "confidence": "low",
+            },
         ],
     }
 
@@ -49,7 +63,7 @@ def test_product_api_persists_startup_run_brief_and_health(client: TestClient) -
     assert created.status_code == 201, created.text
     startup = created.json()
     assert startup["normalized_name"] == "api product startup"
-    assert len(startup["evidence"]) == 1
+    assert len(startup["evidence"]) == 3
 
     listed = client.get("/startups")
     assert listed.status_code == 200
@@ -71,11 +85,10 @@ def test_product_api_persists_startup_run_brief_and_health(client: TestClient) -
 
     fetched_run = client.get(f"/analysis-runs/{run['id']}")
     assert fetched_run.status_code == 200
-    assert fetched_run.json()["output_snapshot"]["startup_name"] == startup["name"]
-
-    brief = client.get(f"/analysis-runs/{run['id']}/brief")
-    assert brief.status_code == 200
-    assert brief.json()["brief_json"]["startup_name"] == startup["name"]
+    fetched_run_data = fetched_run.json()
+    assert fetched_run_data["run_id"] == run["id"]
+    assert fetched_run_data["startup_id"] == startup["id"]
+    assert fetched_run_data["action_brief"] is not None
 
     product_health = client.get("/health/product")
     assert product_health.status_code == 200

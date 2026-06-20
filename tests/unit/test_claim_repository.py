@@ -62,9 +62,7 @@ def test_create_claim(repo: ClaimRepository) -> None:
         claim_type="ai_native_claim",
         support_level="strong",
         confidence="high",
-        evidence_refs=[
-            {"evidence_id": "e1", "source_url": "https://example.com", "claim": "AI used"}
-        ],
+        evidence_refs=[{"evidence_id": "e1", "source_url": "https://example.com", "claim": "AI used"}],
         used_in_score=True,
     )
     assert claim.id is not None
@@ -231,15 +229,9 @@ def test_list_unsupported_critical_claims(repo: ClaimRepository) -> None:
 
 
 def test_delete_claims_for_run(repo: ClaimRepository) -> None:
-    repo.create_claim(
-        startup_id="s1", analysis_run_id="r1", claim_text="C1", claim_type="ai_native_claim"
-    )
-    repo.create_claim(
-        startup_id="s1", analysis_run_id="r1", claim_text="C2", claim_type="gap_claim"
-    )
-    repo.create_claim(
-        startup_id="s2", analysis_run_id="r2", claim_text="C3", claim_type="market_claim"
-    )
+    repo.create_claim(startup_id="s1", analysis_run_id="r1", claim_text="C1", claim_type="ai_native_claim")
+    repo.create_claim(startup_id="s1", analysis_run_id="r1", claim_text="C2", claim_type="gap_claim")
+    repo.create_claim(startup_id="s2", analysis_run_id="r2", claim_text="C3", claim_type="market_claim")
 
     deleted = repo.delete_claims_for_run("r1")
     assert deleted == 2

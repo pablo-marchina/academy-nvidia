@@ -279,8 +279,9 @@ class TestRunnerInterruptResume:
     """Full E2E: run_workflow → interrupt at needs_review → cache checkpointer → resume_workflow → complete."""
 
     def _patched_build_agent_graph(self, *, checkpointer=None, analysis_repository=None):
-        from src.agents.graph import build_startup_radar_graph
         from unittest.mock import MagicMock
+
+        from src.agents.graph import build_startup_radar_graph
 
         return build_startup_radar_graph(
             checkpointer=checkpointer,
@@ -336,18 +337,24 @@ class TestRunnerInterruptResume:
                 "src.services.product.readiness_service.ProductReadinessService.get_product_readiness",
                 return_value=ready_report,
             ),
-            patch("src.agents.graph._run_quality_gates", return_value=self._needs_review_quality_result()),
+            patch(
+                "src.agents.graph._run_quality_gates",
+                return_value=self._needs_review_quality_result(),
+            ),
             patch("src.agents.search_planner.build_search_plan", return_value=[]),
             patch("src.agents.scraper_agent.collect_sources", return_value=([], [])),
             patch("src.agents.extractor_agent.extract_profiles", return_value=([], [], {}, [])),
-            patch("src.agents.evidence_validator_agent.validate_evidence", return_value=([], [], [], [])),
+            patch(
+                "src.agents.evidence_validator_agent.validate_evidence",
+                return_value=([], [], [], []),
+            ),
             patch("src.orchestration.runner._try_build_agent_graph", self._patched_build_agent_graph),
         ):
             result_state = runner.run_workflow(state)
 
-        assert result_state.status == WorkflowStatus.AWAITING_REVIEW, (
-            f"Expected AWAITING_REVIEW, got {result_state.status}"
-        )
+        assert (
+            result_state.status == WorkflowStatus.AWAITING_REVIEW
+        ), f"Expected AWAITING_REVIEW, got {result_state.status}"
         # _langgraph_thread_id is stored in the DB state_json, not on the returned state
         session.expire_all()
         wf_run = repo.get_workflow_run(run.id)
@@ -380,11 +387,17 @@ class TestRunnerInterruptResume:
                 "src.services.product.readiness_service.ProductReadinessService.get_product_readiness",
                 return_value=ready_report,
             ),
-            patch("src.agents.graph._run_quality_gates", return_value=self._needs_review_quality_result()),
+            patch(
+                "src.agents.graph._run_quality_gates",
+                return_value=self._needs_review_quality_result(),
+            ),
             patch("src.agents.search_planner.build_search_plan", return_value=[]),
             patch("src.agents.scraper_agent.collect_sources", return_value=([], [])),
             patch("src.agents.extractor_agent.extract_profiles", return_value=([], [], {}, [])),
-            patch("src.agents.evidence_validator_agent.validate_evidence", return_value=([], [], [], [])),
+            patch(
+                "src.agents.evidence_validator_agent.validate_evidence",
+                return_value=([], [], [], []),
+            ),
             patch("src.orchestration.runner._try_build_agent_graph", self._patched_build_agent_graph),
         ):
             result_state = runner.run_workflow(state)
@@ -399,14 +412,13 @@ class TestRunnerInterruptResume:
         state_data["current_node"] = wf_run.current_node
         resume_state = ProductWorkflowState(**state_data)
 
-        with (
-            patch("src.orchestration.runner._try_build_agent_graph", self._patched_build_agent_graph),
-        ):
+        with (patch("src.orchestration.runner._try_build_agent_graph", self._patched_build_agent_graph),):
             result2 = runner.resume_workflow(resume_state, decision="approve")
 
-        assert result2.status in ("human_review_approved", "persistence_failed"), (
-            f"Expected finished status, got {result2.status}"
-        )
+        assert result2.status in (
+            "human_review_approved",
+            "persistence_failed",
+        ), f"Expected finished status, got {result2.status}"
         assert result2.analysis_run_id == result_state.analysis_run_id
 
         # DB must mark the workflow as completed
@@ -416,7 +428,6 @@ class TestRunnerInterruptResume:
         assert wf_run2.status == "completed", f"DB status should be completed, got {wf_run2.status}"
 
     def test_resume_without_cached_checkpointer_raises(self, runner: WorkflowRunner, session) -> None:
-        from datetime import UTC, datetime
 
         from src.orchestration.runner import _CHECKPOINTER_CACHE
 

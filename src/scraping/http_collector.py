@@ -31,8 +31,7 @@ from src.scraping.source_registry import SourceRecord, list_production_enabled_s
 logger = logging.getLogger(__name__)
 
 _HTTP_COLLECTOR_USER_AGENT = (
-    "Mozilla/5.0 (compatible; NVIDIAStartupAIRadar-HttpCollector/0.1; "
-    "+https://github.com/nvidia/startup-ai-radar)"
+    "Mozilla/5.0 (compatible; NVIDIAStartupAIRadar-HttpCollector/0.1; " "+https://github.com/nvidia/startup-ai-radar)"
 )
 
 # ── Calibration Decision IDs ─────────────────────────────────────────────
@@ -399,9 +398,7 @@ class HttpSourceCollector:
                 source_url=url,
                 status="blocked",
                 error_code="rate_limit_policy_not_found",
-                error_message_sanitized=(
-                    f"Rate limit policy '{source.rate_limit_policy_id}' not found"
-                ),
+                error_message_sanitized=(f"Rate limit policy '{source.rate_limit_policy_id}' not found"),
             )
 
         last_error_msg: str | None = None
@@ -486,9 +483,7 @@ class HttpSourceCollector:
             http_status_code=last_http_status,
             fetched_at=fetched_at,
             error_code="fetch_failed",
-            error_message_sanitized=(
-                f"Fetch failed after {max_retries} attempt(s): {last_error_msg}"
-            ),
+            error_message_sanitized=(f"Fetch failed after {max_retries} attempt(s): {last_error_msg}"),
             compliance_status="compliant",
             robots_allowed=robots_checker.is_allowed(url),
             latency_ms=last_latency,

@@ -14,7 +14,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import random
 import statistics
@@ -24,7 +23,6 @@ import numpy as np
 from scipy.stats import spearmanr
 
 from src.evaluation.gap_diagnosis_baseline import (
-    generate_synthetic_gap_diagnosis_golden_set,
     make_gap_diagnosis_baseline_records,
     run_gap_diagnosis_baseline_calibration,
 )
@@ -237,25 +235,13 @@ _MAX_CONTRADICTIONS = 4.0
 
 def _generate_severity_features(rng: random.Random) -> dict[str, float]:
     return {
-        "missing_required_signal_count": round(
-            rng.randint(0, 12) / _MAX_MISSING_SIGNALS, 4
-        ),
-        "weak_evidence_count": round(
-            rng.randint(0, 8) / _MAX_WEAK_EVIDENCE, 4
-        ),
-        "rejected_evidence_count": round(
-            rng.randint(0, 5) / _MAX_REJECTED, 4
-        ),
-        "unsupported_claim_count": round(
-            rng.randint(0, 5) / _MAX_UNSUPPORTED, 4
-        ),
-        "low_confidence_evidence_count": round(
-            rng.randint(0, 8) / _MAX_LOW_CONFIDENCE, 4
-        ),
+        "missing_required_signal_count": round(rng.randint(0, 12) / _MAX_MISSING_SIGNALS, 4),
+        "weak_evidence_count": round(rng.randint(0, 8) / _MAX_WEAK_EVIDENCE, 4),
+        "rejected_evidence_count": round(rng.randint(0, 5) / _MAX_REJECTED, 4),
+        "unsupported_claim_count": round(rng.randint(0, 5) / _MAX_UNSUPPORTED, 4),
+        "low_confidence_evidence_count": round(rng.randint(0, 8) / _MAX_LOW_CONFIDENCE, 4),
         "relevant_signal_absence": round(rng.uniform(0.0, 1.0), 4),
-        "nvidia_fit_opportunity_signal_count": round(
-            rng.randint(0, 6) / _MAX_NVIDIA_OPPORTUNITY, 4
-        ),
+        "nvidia_fit_opportunity_signal_count": round(rng.randint(0, 6) / _MAX_NVIDIA_OPPORTUNITY, 4),
         "implementation_complexity_proxy": round(rng.uniform(0.0, 1.0), 4),
         "business_impact_proxy": round(rng.uniform(0.0, 1.0), 4),
         "uncertainty_penalty": round(rng.uniform(0.0, 1.0), 4),
@@ -264,20 +250,12 @@ def _generate_severity_features(rng: random.Random) -> dict[str, float]:
 
 def _generate_confidence_features(rng: random.Random) -> dict[str, float]:
     return {
-        "supporting_evidence_count": round(
-            rng.randint(0, 15) / _MAX_SUPPORTING_EVIDENCE, 4
-        ),
-        "supporting_source_count": round(
-            rng.randint(0, 8) / _MAX_SUPPORTING_SOURCES, 4
-        ),
+        "supporting_evidence_count": round(rng.randint(0, 15) / _MAX_SUPPORTING_EVIDENCE, 4),
+        "supporting_source_count": round(rng.randint(0, 8) / _MAX_SUPPORTING_SOURCES, 4),
         "average_evidence_confidence": round(rng.uniform(0.0, 1.0), 4),
         "average_source_quality": round(rng.uniform(0.0, 1.0), 4),
-        "cross_source_agreement_count": round(
-            rng.randint(0, 6) / _MAX_CROSS_AGREEMENT, 4
-        ),
-        "contradiction_count": round(
-            rng.randint(0, 4) / _MAX_CONTRADICTIONS, 4
-        ),
+        "cross_source_agreement_count": round(rng.randint(0, 6) / _MAX_CROSS_AGREEMENT, 4),
+        "contradiction_count": round(rng.randint(0, 4) / _MAX_CONTRADICTIONS, 4),
         "extraction_success_rate": round(rng.uniform(0.5, 1.0), 4),
         "source_category_coverage": round(rng.uniform(0.0, 1.0), 4),
     }
@@ -293,13 +271,15 @@ def _generate_legacy_synthetic_set(
         conf = _generate_confidence_features(rng)
         ref_sev = max(0.0, min(1.0, _compute_weighted_score(sev, _REFERENCE_SEVERITY_WEIGHTS)))
         ref_conf = max(0.0, min(1.0, _compute_weighted_score(conf, _REFERENCE_CONFIDENCE_WEIGHTS)))
-        entries.append({
-            "id": i,
-            "severity_features": sev,
-            "confidence_features": conf,
-            "reference_severity": round(ref_sev, 4),
-            "reference_confidence": round(ref_conf, 4),
-        })
+        entries.append(
+            {
+                "id": i,
+                "severity_features": sev,
+                "confidence_features": conf,
+                "reference_severity": round(ref_sev, 4),
+                "reference_confidence": round(ref_conf, 4),
+            }
+        )
     return entries
 
 
@@ -337,13 +317,15 @@ def _legacy_grid_search(
         rmse = (sum((p - a) ** 2 for p, a in zip(predicted, actual, strict=False)) / len(predicted)) ** 0.5
 
         if rho > best["spearman"]:
-            best.update({
-                "candidate_idx": idx,
-                "spearman": round(rho, 4),
-                "mae": round(mae, 4),
-                "rmse": round(rmse, 4),
-                "weights": candidate_norm,
-            })
+            best.update(
+                {
+                    "candidate_idx": idx,
+                    "spearman": round(rho, 4),
+                    "mae": round(mae, 4),
+                    "rmse": round(rmse, 4),
+                    "weights": candidate_norm,
+                }
+            )
 
     return best
 
@@ -395,11 +377,13 @@ def _legacy_calibrate_uncertainty_penalty(
         mae = sum(errors) / len(errors)
 
         if max_error < best["max_error"] or (max_error == best["max_error"] and penalty < best["penalty"]):
-            best.update({
-                "penalty": penalty,
-                "max_error": round(max_error, 4),
-                "mae": round(mae, 4),
-            })
+            best.update(
+                {
+                    "penalty": penalty,
+                    "max_error": round(max_error, 4),
+                    "mae": round(mae, 4),
+                }
+            )
 
     return best
 
@@ -451,7 +435,8 @@ def run_synthetic_calibration() -> dict[str, Any]:
     )
     sev_threshold = _legacy_calibrate_threshold(entries, "reference_severity")
     penalty_result = _legacy_calibrate_uncertainty_penalty(
-        entries=entries, reference_key="reference_severity",
+        entries=entries,
+        reference_key="reference_severity",
     )
     coverage_result = _legacy_calibrate_min_evidence_coverage()
 
@@ -468,12 +453,14 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     parser = argparse.ArgumentParser(description="Gap diagnosis calibration")
     parser.add_argument(
-        "--mode", choices=["synthetic", "baseline", "both"],
+        "--mode",
+        choices=["synthetic", "baseline", "both"],
         default="both",
         help="Calibration mode: synthetic (legacy), baseline (golden set), or both",
     )
     parser.add_argument(
-        "--check", action="store_true",
+        "--check",
+        action="store_true",
         help="Run baseline check only — no full calibration output",
     )
     args = parser.parse_args()
@@ -496,10 +483,14 @@ def main() -> None:
         print("GAP DIAGNOSIS — SYNTHETIC CALIBRATION (legacy)")
         print("=" * 72)
         syn = run_synthetic_calibration()
-        print(f"\nSeverity: candidate {syn['severity_weights']['candidate_idx']}, "
-              f"spearman={syn['severity_weights']['spearman']}")
-        print(f"Confidence: candidate {syn['confidence_weights']['candidate_idx']}, "
-              f"spearman={syn['confidence_weights']['spearman']}")
+        print(
+            f"\nSeverity: candidate {syn['severity_weights']['candidate_idx']}, "
+            f"spearman={syn['severity_weights']['spearman']}"
+        )
+        print(
+            f"Confidence: candidate {syn['confidence_weights']['candidate_idx']}, "
+            f"spearman={syn['confidence_weights']['spearman']}"
+        )
         print(f"Production threshold (P5): {syn['production_threshold']['p5_threshold']}")
         print(f"Uncertainty penalty: {syn['uncertainty_penalty']['penalty']}")
         print(f"Min evidence coverage: {syn['min_evidence_coverage']['recommended_min_coverage']}")
@@ -521,8 +512,9 @@ def main() -> None:
         result = run_gap_diagnosis_baseline_calibration()
         records = make_gap_diagnosis_baseline_records(result)
         for rec in records:
-            print(f"  {rec.decision_id}: {rec.calibration_status.value}, "
-                  f"production_allowed={rec.production_allowed}")
+            print(
+                f"  {rec.decision_id}: {rec.calibration_status.value}, " f"production_allowed={rec.production_allowed}"
+            )
         print()
 
     print("\nDone.")

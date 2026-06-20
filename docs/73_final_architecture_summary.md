@@ -1,5 +1,17 @@
 # Final Architecture Summary — NVIDIA Startup AI Radar
 
+## Readiness Branch Update - 2026-06-19
+
+The final product architecture is strict local production, not demo mode:
+
+- Product persistence requires PostgreSQL in `APP_MODE=product`; SQLite is restricted to explicit tests and non-product local use.
+- Product RAG requires Qdrant, a configured collection, real embeddings, a populated fresh NVIDIA corpus, and productive calibration.
+- Product orchestration requires LangGraph readiness; the sequential runner remains a non-product/test fallback only.
+- Demo routes and scripts are removed from the active API and UI path.
+- Mutating product and workflow routes are gated by readiness before persistence or orchestration.
+
+The historical diagram below still documents the older evolution of the project and should be superseded by a clean diagram after live acceptance screenshots are captured.
+
 **Versão:** 1.0
 **Data:** 2026-06-13
 **Épico:** 45

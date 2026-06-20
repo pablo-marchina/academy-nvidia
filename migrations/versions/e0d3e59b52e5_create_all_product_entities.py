@@ -62,15 +62,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("analysis_runs", schema=None) as batch_op:
-        batch_op.create_index(
-            batch_op.f("ix_analysis_runs_created_at"), ["created_at"], unique=False
-        )
-        batch_op.create_index(
-            "ix_analysis_runs_startup_created", ["startup_id", "created_at"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_analysis_runs_startup_id"), ["startup_id"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_analysis_runs_created_at"), ["created_at"], unique=False)
+        batch_op.create_index("ix_analysis_runs_startup_created", ["startup_id", "created_at"], unique=False)
+        batch_op.create_index(batch_op.f("ix_analysis_runs_startup_id"), ["startup_id"], unique=False)
         batch_op.create_index(batch_op.f("ix_analysis_runs_status"), ["status"], unique=False)
 
     op.create_table(
@@ -91,21 +85,11 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("startup_evidence", schema=None) as batch_op:
-        batch_op.create_index(
-            batch_op.f("ix_startup_evidence_created_at"), ["created_at"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_startup_evidence_evidence_kind"), ["evidence_kind"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_startup_evidence_source_url"), ["source_url"], unique=False
-        )
-        batch_op.create_index(
-            "ix_startup_evidence_startup_collected", ["startup_id", "collected_at"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_startup_evidence_startup_id"), ["startup_id"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_startup_evidence_created_at"), ["created_at"], unique=False)
+        batch_op.create_index(batch_op.f("ix_startup_evidence_evidence_kind"), ["evidence_kind"], unique=False)
+        batch_op.create_index(batch_op.f("ix_startup_evidence_source_url"), ["source_url"], unique=False)
+        batch_op.create_index("ix_startup_evidence_startup_collected", ["startup_id", "collected_at"], unique=False)
+        batch_op.create_index(batch_op.f("ix_startup_evidence_startup_id"), ["startup_id"], unique=False)
 
     op.create_table(
         "action_brief_records",
@@ -123,15 +107,9 @@ def upgrade() -> None:
         sa.UniqueConstraint("analysis_run_id", "version", name="uq_run_brief_version"),
     )
     with op.batch_alter_table("action_brief_records", schema=None) as batch_op:
-        batch_op.create_index(
-            batch_op.f("ix_action_brief_records_analysis_run_id"), ["analysis_run_id"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_action_brief_records_created_at"), ["created_at"], unique=False
-        )
-        batch_op.create_index(
-            "ix_action_brief_run_latest", ["analysis_run_id", "is_latest"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_action_brief_records_analysis_run_id"), ["analysis_run_id"], unique=False)
+        batch_op.create_index(batch_op.f("ix_action_brief_records_created_at"), ["created_at"], unique=False)
+        batch_op.create_index("ix_action_brief_run_latest", ["analysis_run_id", "is_latest"], unique=False)
 
     op.create_table(
         "gap_diagnosis_records",
@@ -156,9 +134,7 @@ def upgrade() -> None:
             ["analysis_run_id"],
             unique=False,
         )
-        batch_op.create_index(
-            batch_op.f("ix_gap_diagnosis_records_created_at"), ["created_at"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_gap_diagnosis_records_created_at"), ["created_at"], unique=False)
 
     op.create_table(
         "product_readiness_checks",
@@ -183,19 +159,11 @@ def upgrade() -> None:
             ["analysis_run_id"],
             unique=False,
         )
-        batch_op.create_index(
-            batch_op.f("ix_product_readiness_checks_code"), ["code"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_product_readiness_checks_created_at"), ["created_at"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_product_readiness_checks_status"), ["status"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_product_readiness_checks_code"), ["code"], unique=False)
+        batch_op.create_index(batch_op.f("ix_product_readiness_checks_created_at"), ["created_at"], unique=False)
+        batch_op.create_index(batch_op.f("ix_product_readiness_checks_status"), ["status"], unique=False)
         batch_op.create_index("ix_readiness_run_code", ["analysis_run_id", "code"], unique=False)
-        batch_op.create_index(
-            "ix_readiness_status_observed", ["status", "observed_at"], unique=False
-        )
+        batch_op.create_index("ix_readiness_status_observed", ["status", "observed_at"], unique=False)
 
     op.create_table(
         "review_decisions",
@@ -211,15 +179,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("review_decisions", schema=None) as batch_op:
-        batch_op.create_index(
-            batch_op.f("ix_review_decisions_analysis_run_id"), ["analysis_run_id"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_review_decisions_created_at"), ["created_at"], unique=False
-        )
-        batch_op.create_index(
-            "ix_review_run_created", ["analysis_run_id", "created_at"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_review_decisions_analysis_run_id"), ["analysis_run_id"], unique=False)
+        batch_op.create_index(batch_op.f("ix_review_decisions_created_at"), ["created_at"], unique=False)
+        batch_op.create_index("ix_review_run_created", ["analysis_run_id", "created_at"], unique=False)
 
     op.create_table(
         "score_records",
@@ -237,12 +199,8 @@ def upgrade() -> None:
         sa.UniqueConstraint("analysis_run_id", "score_type", name="uq_run_score_type"),
     )
     with op.batch_alter_table("score_records", schema=None) as batch_op:
-        batch_op.create_index(
-            batch_op.f("ix_score_records_analysis_run_id"), ["analysis_run_id"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_score_records_created_at"), ["created_at"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_score_records_analysis_run_id"), ["analysis_run_id"], unique=False)
+        batch_op.create_index(batch_op.f("ix_score_records_created_at"), ["created_at"], unique=False)
 
     op.create_table(
         "export_records",
@@ -256,22 +214,14 @@ def upgrade() -> None:
         sa.Column("error_message", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["action_brief_id"], ["action_brief_records.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["action_brief_id"], ["action_brief_records.id"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(["analysis_run_id"], ["analysis_runs.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("export_records", schema=None) as batch_op:
-        batch_op.create_index(
-            batch_op.f("ix_export_records_analysis_run_id"), ["analysis_run_id"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_export_records_created_at"), ["created_at"], unique=False
-        )
-        batch_op.create_index(
-            "ix_export_run_type", ["analysis_run_id", "export_type"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_export_records_analysis_run_id"), ["analysis_run_id"], unique=False)
+        batch_op.create_index(batch_op.f("ix_export_records_created_at"), ["created_at"], unique=False)
+        batch_op.create_index("ix_export_run_type", ["analysis_run_id", "export_type"], unique=False)
 
     op.create_table(
         "nvidia_mapping_records",
@@ -287,9 +237,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(["analysis_run_id"], ["analysis_runs.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(
-            ["gap_record_id"], ["gap_diagnosis_records.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["gap_record_id"], ["gap_diagnosis_records.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("nvidia_mapping_records", schema=None) as batch_op:
@@ -298,12 +246,8 @@ def upgrade() -> None:
             ["analysis_run_id"],
             unique=False,
         )
-        batch_op.create_index(
-            batch_op.f("ix_nvidia_mapping_records_created_at"), ["created_at"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_nvidia_mapping_records_gap_record_id"), ["gap_record_id"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_nvidia_mapping_records_created_at"), ["created_at"], unique=False)
+        batch_op.create_index(batch_op.f("ix_nvidia_mapping_records_gap_record_id"), ["gap_record_id"], unique=False)
         batch_op.create_index(
             "ix_nvidia_mapping_run_gap_technology",
             ["analysis_run_id", "addresses_gap", "technology_name"],

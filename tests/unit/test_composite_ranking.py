@@ -244,9 +244,7 @@ class TestComputeCompositeScore:
 
 
 class TestBuildRankedList:
-    def test_ranking_order(
-        self, high_defensibility, high_inception_fit, high_readiness, ai_native_classification
-    ):
+    def test_ranking_order(self, high_defensibility, high_inception_fit, high_readiness, ai_native_classification):
         scores = [
             compute_composite_score(
                 "a",
@@ -255,9 +253,7 @@ class TestBuildRankedList:
                 high_readiness,
                 ai_native_classification,
             ),
-            compute_composite_score(
-                "b", high_defensibility, high_inception_fit, None, ai_native_classification
-            ),
+            compute_composite_score("b", high_defensibility, high_inception_fit, None, ai_native_classification),
         ]
         names = {
             "a": ("Startup A", "HealthTech"),

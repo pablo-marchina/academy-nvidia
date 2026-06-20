@@ -93,13 +93,10 @@ def _lookup_calibration_group(
                 validation = validate_decision_for_production(rec)
                 if not validation.passed:
                     blockers.append(
-                        f"Decision '{decision_id}' blocked for production: "
-                        f"{'; '.join(validation.reasons)}"
+                        f"Decision '{decision_id}' blocked for production: " f"{'; '.join(validation.reasons)}"
                     )
                 elif rec.calibration_status.value in ("uncalibrated", "blocked"):
-                    blockers.append(
-                        f"Decision '{decision_id}' is {rec.calibration_status.value}"
-                    )
+                    blockers.append(f"Decision '{decision_id}' is {rec.calibration_status.value}")
                 else:
                     values[decision_id] = rec.current_value
                 break
@@ -191,7 +188,7 @@ def extract_gap_severity_features(
 ) -> GapSeverityFeatures:
     ev_texts = _extract_texts_from_items(evidence_items)
     ac_texts = _extract_texts_from_items(accepted_evidence_items)
-    rej_texts = _extract_texts_from_items(rejected_evidence_items)
+    _extract_texts_from_items(rejected_evidence_items)
     claim_texts = [str(c.get("claim_text", "")) for c in claims if isinstance(c, dict)]
     all_texts = ev_texts + ac_texts + claim_texts
 
@@ -204,33 +201,31 @@ def extract_gap_severity_features(
             missing_required_signal_count += 1
 
     weak_evidence_count = sum(
-        1 for item in evidence_items
+        1
+        for item in evidence_items
         if isinstance(item.get("evidence_confidence_score"), (int, float))
         and float(item["evidence_confidence_score"]) < 0.4
     )
 
     rejected_evidence_count = len(rejected_evidence_items)
 
-    unsupported_claim_count = sum(
-        1 for c in claims
-        if isinstance(c, dict) and c.get("support_status") == "unsupported"
-    )
+    unsupported_claim_count = sum(1 for c in claims if isinstance(c, dict) and c.get("support_status") == "unsupported")
 
     low_confidence_evidence_count = sum(
-        1 for item in evidence_items
-        if isinstance(item.get("confidence"), str)
-        and item["confidence"] in ("low",)
+        1 for item in evidence_items if isinstance(item.get("confidence"), str) and item["confidence"] in ("low",)
     )
 
-    relevant_signal_absence = (
-        missing_required_signal_count / max(1, len(related_keywords))
-        if related_keywords
-        else 0.0
-    )
+    relevant_signal_absence = missing_required_signal_count / max(1, len(related_keywords)) if related_keywords else 0.0
 
     nvidia_fit_keywords = [
-        "gpu", "cuda", "tensorrt", "nvidia", "triton",
-        "rapids", "cudf", "cuml",
+        "gpu",
+        "cuda",
+        "tensorrt",
+        "nvidia",
+        "triton",
+        "rapids",
+        "cudf",
+        "cuml",
     ]
     nvidia_fit_opportunity_signal_count = _count_by_keyword(all_texts, nvidia_fit_keywords)
 
@@ -257,21 +252,11 @@ def extract_gap_severity_features(
     _MAX_NVIDIA_OPPORTUNITY = 6.0
 
     return GapSeverityFeatures(
-        missing_required_signal_count=round(
-            min(1.0, missing_required_signal_count / _MAX_MISSING_SIGNALS), 4
-        ),
-        weak_evidence_count=round(
-            min(1.0, weak_evidence_count / _MAX_WEAK_EVIDENCE), 4
-        ),
-        rejected_evidence_count=round(
-            min(1.0, rejected_evidence_count / _MAX_REJECTED), 4
-        ),
-        unsupported_claim_count=round(
-            min(1.0, unsupported_claim_count / _MAX_UNSUPPORTED), 4
-        ),
-        low_confidence_evidence_count=round(
-            min(1.0, low_confidence_evidence_count / _MAX_LOW_CONFIDENCE), 4
-        ),
+        missing_required_signal_count=round(min(1.0, missing_required_signal_count / _MAX_MISSING_SIGNALS), 4),
+        weak_evidence_count=round(min(1.0, weak_evidence_count / _MAX_WEAK_EVIDENCE), 4),
+        rejected_evidence_count=round(min(1.0, rejected_evidence_count / _MAX_REJECTED), 4),
+        unsupported_claim_count=round(min(1.0, unsupported_claim_count / _MAX_UNSUPPORTED), 4),
+        low_confidence_evidence_count=round(min(1.0, low_confidence_evidence_count / _MAX_LOW_CONFIDENCE), 4),
         relevant_signal_absence=round(relevant_signal_absence, 4),
         nvidia_fit_opportunity_signal_count=round(
             min(1.0, nvidia_fit_opportunity_signal_count / _MAX_NVIDIA_OPPORTUNITY), 4
@@ -293,7 +278,7 @@ def extract_gap_confidence_features(
     ev_texts = _extract_texts_from_items(evidence_items)
     ac_texts = _extract_texts_from_items(accepted_evidence_items)
     claim_texts = [str(c.get("claim_text", "")) for c in claims if isinstance(c, dict)]
-    all_texts = ev_texts + ac_texts + claim_texts
+    ev_texts + ac_texts + claim_texts
 
     related_tech_gaps = GAP_TECH_MAP.get(gap_type, [])
     related_keywords = [t.value for t in related_tech_gaps]
@@ -341,10 +326,7 @@ def extract_gap_confidence_features(
             if source_claims[source_ids_list[i]] & source_claims[source_ids_list[j]]:
                 cross_source_agreement_count += 1
 
-    contradiction_count = sum(
-        1 for c in claims
-        if isinstance(c, dict) and c.get("support_status") == "contradicted"
-    )
+    contradiction_count = sum(1 for c in claims if isinstance(c, dict) and c.get("support_status") == "contradicted")
 
     extraction_success_rate = 1.0
     if extraction_metrics:
@@ -367,20 +349,12 @@ def extract_gap_confidence_features(
     _MAX_CONTRADICTIONS = 4.0
 
     return GapConfidenceFeatures(
-        supporting_evidence_count=round(
-            min(1.0, supporting_evidence_count / _MAX_SUPPORTING_EVIDENCE), 4
-        ),
-        supporting_source_count=round(
-            min(1.0, supporting_source_count / _MAX_SUPPORTING_SOURCES), 4
-        ),
+        supporting_evidence_count=round(min(1.0, supporting_evidence_count / _MAX_SUPPORTING_EVIDENCE), 4),
+        supporting_source_count=round(min(1.0, supporting_source_count / _MAX_SUPPORTING_SOURCES), 4),
         average_evidence_confidence=round(average_evidence_confidence, 4),
         average_source_quality=round(average_source_quality, 4),
-        cross_source_agreement_count=round(
-            min(1.0, cross_source_agreement_count / _MAX_CROSS_AGREEMENT), 4
-        ),
-        contradiction_count=round(
-            min(1.0, contradiction_count / _MAX_CONTRADICTIONS), 4
-        ),
+        cross_source_agreement_count=round(min(1.0, cross_source_agreement_count / _MAX_CROSS_AGREEMENT), 4),
+        contradiction_count=round(min(1.0, contradiction_count / _MAX_CONTRADICTIONS), 4),
         extraction_success_rate=round(extraction_success_rate, 4),
         source_category_coverage=round(source_category_coverage, 4),
     )
@@ -503,7 +477,10 @@ def _diagnose_single_gap(
         status = GapDiagnosisStatus.NEEDS_MORE_EVIDENCE
         prod_allowed = False
         gap_blockers.append("No evidence items available for gap diagnosis")
-    elif min_evidence_coverage is not None and confidence_features.supporting_evidence_count < min_evidence_coverage * len(evidence_items):
+    elif (
+        min_evidence_coverage is not None
+        and confidence_features.supporting_evidence_count < min_evidence_coverage * len(evidence_items)
+    ):
         status = GapDiagnosisStatus.NEEDS_MORE_EVIDENCE
         prod_allowed = False
         gap_blockers.append(
@@ -528,8 +505,7 @@ def _diagnose_single_gap(
             claim_ids.append(str(cid))
 
     explanation_parts: list[str] = [
-        f"Gap '{gap_type.value}': severity={round(final_severity, 4)}, "
-        f"confidence={round(final_confidence, 4)}",
+        f"Gap '{gap_type.value}': severity={round(final_severity, 4)}, " f"confidence={round(final_confidence, 4)}",
         f"Severity features: {severity_features.model_dump(mode='json')}",
         f"Confidence features: {confidence_features.model_dump(mode='json')}",
     ]
@@ -595,18 +571,15 @@ def diagnose_gaps_quantitative(
     claims = claims or []
 
     # ── Calibration gate ────────────────────────────────────────────────
-    cal_values, cal_ok, blockers = _lookup_calibration_group(
-        REQUIRED_CALIBRATION_DECISIONS, inventory=inventory
-    )
+    cal_values, cal_ok, blockers = _lookup_calibration_group(REQUIRED_CALIBRATION_DECISIONS, inventory=inventory)
 
     is_blocked = not cal_ok
 
     # ── Unsupported critical claims check ───────────────────────────────
     unsupported_critical_count = sum(
-        1 for c in claims
-        if isinstance(c, dict)
-        and c.get("support_status") == "unsupported"
-        and c.get("is_critical", False)
+        1
+        for c in claims
+        if isinstance(c, dict) and c.get("support_status") == "unsupported" and c.get("is_critical", False)
     )
     if unsupported_critical_count > 0:
         return GapDiagnosisSummary(
@@ -621,12 +594,8 @@ def diagnose_gaps_quantitative(
                 average_gap_confidence=0.0,
                 high_severity_gap_count=0,
                 evidence_coverage_gap_count=0,
-                missing_calibration_count=(
-                    len(REQUIRED_CALIBRATION_DECISIONS) if is_blocked else 0
-                ),
-                calibrated_decision_count=(
-                    0 if is_blocked else len(REQUIRED_CALIBRATION_DECISIONS)
-                ),
+                missing_calibration_count=(len(REQUIRED_CALIBRATION_DECISIONS) if is_blocked else 0),
+                calibrated_decision_count=(0 if is_blocked else len(REQUIRED_CALIBRATION_DECISIONS)),
                 gap_uncertainty_mean=0.0,
             ),
             calibration_status="uncalibrated" if is_blocked else "calibrated",
@@ -677,9 +646,7 @@ def diagnose_gaps_quantitative(
     avg_severity = _mean([g.severity_score for g in gap_results])
     avg_confidence = _mean([g.confidence_score for g in gap_results])
     high_severity_count = 0
-    evidence_coverage_count = sum(
-        1 for g in gap_results if g.gap_type == GapType.EVIDENCE_COVERAGE_GAP
-    )
+    evidence_coverage_count = sum(1 for g in gap_results if g.gap_type == GapType.EVIDENCE_COVERAGE_GAP)
     missing_cal = len(REQUIRED_CALIBRATION_DECISIONS) if is_blocked else 0
     cal_count = 0 if is_blocked else len(REQUIRED_CALIBRATION_DECISIONS)
     uncertainty_mean = _mean([g.uncertainty for g in gap_results])

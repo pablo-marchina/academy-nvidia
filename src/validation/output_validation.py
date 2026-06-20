@@ -223,10 +223,7 @@ def validate_dashboard_output(data: Mapping[str, Any]) -> OutputValidationResult
         result.add_check(
             "dashboard_answer_quality_metrics",
             OutputValidationStatus.WARN,
-            (
-                "Dashboard does not expose all answer quality detail metrics: "
-                + ", ".join(missing_answer_metrics)
-            ),
+            ("Dashboard does not expose all answer quality detail metrics: " + ", ".join(missing_answer_metrics)),
             severity=OutputValidationSeverity.WARN,
             field="metrics",
         )
@@ -373,10 +370,7 @@ def _check_nvidia_technology_ids(
         gap_id = recommendation.get("diagnosed_gap")
         if gap_id not in {gap.value for gap in TechnicalGap}:
             continue
-        allowed = {
-            candidate.technology_name
-            for candidate in map_gap_to_technologies(TechnicalGap(str(gap_id)))
-        }
+        allowed = {candidate.technology_name for candidate in map_gap_to_technologies(TechnicalGap(str(gap_id)))}
         for technology in recommendation.get("recommended_nvidia_technologies") or []:
             if technology not in allowed:
                 invalid.append(f"{technology} for {gap_id}")
@@ -385,17 +379,14 @@ def _check_nvidia_technology_ids(
         technology = candidate.get("technology_name")
         if gap_id not in {gap.value for gap in TechnicalGap}:
             continue
-        allowed = {
-            mapped.technology_name for mapped in map_gap_to_technologies(TechnicalGap(str(gap_id)))
-        }
+        allowed = {mapped.technology_name for mapped in map_gap_to_technologies(TechnicalGap(str(gap_id)))}
         if technology not in allowed:
             invalid.append(f"{technology} for {gap_id}")
     if invalid:
         result.add_check(
             "brief_valid_nvidia_technologies",
             OutputValidationStatus.FAIL,
-            "Action Brief has NVIDIA technologies outside the mapping matrix: "
-            + ", ".join(sorted(set(invalid))),
+            "Action Brief has NVIDIA technologies outside the mapping matrix: " + ", ".join(sorted(set(invalid))),
             field="recommendations",
         )
 

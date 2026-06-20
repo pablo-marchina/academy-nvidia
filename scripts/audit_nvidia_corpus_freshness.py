@@ -407,6 +407,8 @@ def _missing_metadata(record: SourceVersionRecord) -> list[str]:
 
 
 def _is_stale(record: SourceVersionRecord, now: datetime) -> bool:
+    if _is_deprecated(record):
+        return False
     checked_at = _parse_datetime(record.last_checked_at)
     if checked_at is None or record.stale_after_days is None:
         return False
@@ -414,6 +416,8 @@ def _is_stale(record: SourceVersionRecord, now: datetime) -> bool:
 
 
 def _is_expired(record: SourceVersionRecord, now: datetime) -> bool:
+    if _is_deprecated(record):
+        return False
     valid_until = _parse_datetime(record.valid_until)
     if valid_until is None:
         return False
@@ -457,9 +461,7 @@ def _build_recommendations(report: CorpusFreshnessAuditReport) -> list[str]:
     if report.missing_metadata:
         recommendations.append("Backfill missing freshness/versioning metadata.")
     if report.duplicate_active_versions:
-        recommendations.append(
-            "Deactivate superseded versions so each source_id has one active version."
-        )
+        recommendations.append("Deactivate superseded versions so each source_id has one active version.")
     if report.stale_sources:
         recommendations.append("Run source sync or manually review stale sources.")
     if report.expired_sources:

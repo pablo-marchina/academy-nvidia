@@ -45,9 +45,7 @@ from src.rag.retrieval import build_default_index  # noqa: E402
 from src.rag.schemas import PackingConfig, RerankingConfig  # noqa: E402
 from src.rag.vector_store import InMemoryVectorStore  # noqa: E402
 
-DEFAULT_CASES_PATH = (
-    PROJECT_ROOT / "examples" / "answer_quality" / "golden_answer_quality_cases.json"
-)
+DEFAULT_CASES_PATH = PROJECT_ROOT / "examples" / "answer_quality" / "golden_answer_quality_cases.json"
 DEFAULT_GOLDEN_DIR = PROJECT_ROOT / "examples" / "golden"
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "regression_reports"
 DEFAULT_JSON_REPORT = DEFAULT_OUTPUT_DIR / "answer_quality_llm_judge_report.json"

@@ -58,9 +58,7 @@ def upgrade() -> None:
             server_default=sa.func.now(),
             index=True,
         ),
-        sa.Column(
-            "updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
     op.create_index("ix_workflow_run_startup", "workflow_runs", ["startup_id"])
     op.create_index("ix_workflow_run_analysis_run", "workflow_runs", ["analysis_run_id"])
@@ -87,13 +85,9 @@ def upgrade() -> None:
         sa.Column("error_message", sa.Text, nullable=True),
         sa.Column("retry_count", sa.Integer, nullable=False, server_default="0"),
         sa.Column("metadata_json", sa.JSON, nullable=False, server_default="{}"),
-        sa.Column(
-            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
-    op.create_index(
-        "ix_workflow_node_run_workflow_node", "workflow_node_runs", ["workflow_run_id", "node_name"]
-    )
+    op.create_index("ix_workflow_node_run_workflow_node", "workflow_node_runs", ["workflow_run_id", "node_name"])
     op.create_index("ix_workflow_node_run_status", "workflow_node_runs", ["status"])
     op.create_index("ix_workflow_node_run_retry", "workflow_node_runs", ["retry_count"])
 

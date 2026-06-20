@@ -76,10 +76,7 @@ def compute_priority_score(
 
 
 def extract_features(m: dict[str, Any]) -> dict[str, float]:
-    return {
-        k: float(m.get(k, 0.0))
-        for k in FEATURE_KEYS
-    }
+    return {k: float(m.get(k, 0.0)) for k in FEATURE_KEYS}
 
 
 # ── Synthetic data generation ────────────────────────────────────────────
@@ -163,7 +160,7 @@ def evaluate_golden_set(data: dict[str, Any]) -> dict[str, Any]:
 
     # Per-sample Spearman
     spearmans: list[float] = []
-    for c, e in zip(all_computed, all_expected):
+    for c, e in zip(all_computed, all_expected, strict=False):
         if len(c) < 2:
             spearmans.append(1.0)
         else:
@@ -174,22 +171,24 @@ def evaluate_golden_set(data: dict[str, Any]) -> dict[str, Any]:
 
     # MAE across pooled
     if pooled_computed and pooled_expected:
-        mae = _mean([abs(c - e) for c, e in zip(pooled_computed, pooled_expected)])
+        mae = _mean([abs(c - e) for c, e in zip(pooled_computed, pooled_expected, strict=False)])
     else:
         mae = 0.0
 
     # Max error
-    max_err = max(abs(c - e) for c, e in zip(pooled_computed, pooled_expected)) if pooled_computed else 0.0
+    max_err = (
+        max(abs(c - e) for c, e in zip(pooled_computed, pooled_expected, strict=False)) if pooled_computed else 0.0
+    )
 
     # Per-sample MAE
     sample_maes: list[float] = []
-    for c, e in zip(all_computed, all_expected):
-        sample_maes.append(_mean([abs(cc - ee) for cc, ee in zip(c, e)]) if c else 0.0)
+    for c, e in zip(all_computed, all_expected, strict=False):
+        sample_maes.append(_mean([abs(cc - ee) for cc, ee in zip(c, e, strict=False)]) if c else 0.0)
 
     # Order accuracy: how often does computed order match expected?
     correct_order = 0
     total_pairs = 0
-    for c, e in zip(all_computed, all_expected):
+    for c, e in zip(all_computed, all_expected, strict=False):
         if len(c) < 2:
             correct_order += 1
             total_pairs += 1
@@ -266,20 +265,20 @@ def analyze_sensitivity(
                     corrs.append(1.0)
 
             mean_corr = _mean(corrs)
-            results["perturbations"].append({
-                "weight_key": weight_key,
-                "original_weight": round(PRIORITY_SCORE_WEIGHTS[weight_key], 4),
-                "delta": delta,
-                "new_weight": round(new_w[weight_key], 4),
-                "mean_spearman": round(mean_corr, 6),
-            })
+            results["perturbations"].append(
+                {
+                    "weight_key": weight_key,
+                    "original_weight": round(PRIORITY_SCORE_WEIGHTS[weight_key], 4),
+                    "delta": delta,
+                    "new_weight": round(new_w[weight_key], 4),
+                    "mean_spearman": round(mean_corr, 6),
+                }
+            )
 
             if weight_key not in min_corrs or mean_corr < min_corrs[weight_key]:
                 min_corrs[weight_key] = mean_corr
 
-    results["min_correlation_per_weight"] = {
-        k: round(float(v), 6) for k, v in sorted(min_corrs.items())
-    }
+    results["min_correlation_per_weight"] = {k: round(float(v), 6) for k, v in sorted(min_corrs.items())}
     overall_min = min(min_corrs.values())
     results["overall_min_correlation"] = round(float(overall_min), 6)
 
@@ -388,11 +387,13 @@ def calibrate_uncertainty_penalty(
                 corrs.append(1.0)
 
         mean_corr = _mean(corrs)
-        results.append({
-            "penalty": penalty,
-            "mean_spearman": round(mean_corr, 6),
-            "min_spearman": round(min(corrs), 6),
-        })
+        results.append(
+            {
+                "penalty": penalty,
+                "mean_spearman": round(mean_corr, 6),
+                "min_spearman": round(min(corrs), 6),
+            }
+        )
 
     best = max(results, key=lambda x: x["mean_spearman"])
     return {
@@ -450,27 +451,29 @@ def make_registry_records(result: dict[str, Any]) -> list[dict[str, Any]]:
         f"All weight perturbations show Spearman rho > {SPEARMAN_MIN}. "
         f"Weights are rank-stable under +/-20% perturbation."
     )
-    records.append({
-        "decision_id": "recommendation.priority_score_weights",
-        "decision_name": "Recommendation: Per-Feature Weights for priority_score",
-        "decision_type": "weight",
-        "current_value": PRIORITY_SCORE_WEIGHTS,
-        "metric_name": "recommendation_priority_score_weights",
-        "value_origin": "src/recommendation/recommendation_engine.py :: default weights, validated via golden set + sensitivity analysis",
-        "calibration_status": "baseline_measured",
-        "calibration_method": "sensitivity_analysis",
-        "production_allowed": True,
-        "evidence_source": (
-            f"Golden set evaluation: {golden.get('n_samples', 0)} samples, "
-            f"mean Spearman rho={golden.get('mean_spearman', 0.0):.4f}, "
-            f"MAE={golden.get('mae', 0.0):.4f}. "
-            f"Sensitivity analysis: {sensitivity.get('n_scenarios', 0)} scenarios, "
-            f"overall min rho={sensitivity.get('overall_min_correlation', 0.0):.4f}."
-        ),
-        "owner": "team-recommendation",
-        "last_calibrated_at": now,
-        "notes": notes_ps,
-    })
+    records.append(
+        {
+            "decision_id": "recommendation.priority_score_weights",
+            "decision_name": "Recommendation: Per-Feature Weights for priority_score",
+            "decision_type": "weight",
+            "current_value": PRIORITY_SCORE_WEIGHTS,
+            "metric_name": "recommendation_priority_score_weights",
+            "value_origin": "src/recommendation/recommendation_engine.py :: default weights, validated via golden set + sensitivity analysis",
+            "calibration_status": "baseline_measured",
+            "calibration_method": "sensitivity_analysis",
+            "production_allowed": True,
+            "evidence_source": (
+                f"Golden set evaluation: {golden.get('n_samples', 0)} samples, "
+                f"mean Spearman rho={golden.get('mean_spearman', 0.0):.4f}, "
+                f"MAE={golden.get('mae', 0.0):.4f}. "
+                f"Sensitivity analysis: {sensitivity.get('n_scenarios', 0)} scenarios, "
+                f"overall min rho={sensitivity.get('overall_min_correlation', 0.0):.4f}."
+            ),
+            "owner": "team-recommendation",
+            "last_calibrated_at": now,
+            "notes": notes_ps,
+        }
+    )
 
     # 2. production_threshold
     notes_pt = (
@@ -481,21 +484,23 @@ def make_registry_records(result: dict[str, Any]) -> list[dict[str, Any]]:
         f"Recommended threshold at P25 ({prod_th.get('recommended_threshold', '?')}) "
         f"filters lowest 25% of priority scores."
     )
-    records.append({
-        "decision_id": "recommendation.production_threshold",
-        "decision_name": "Recommendation: Minimum priority_score for Production",
-        "decision_type": "threshold",
-        "current_value": prod_th.get("recommended_threshold", 0.40),
-        "metric_name": "recommendation_production_threshold",
-        "value_origin": f"scripts/calibrate_recommendation_parameters.py :: calibrate_production_threshold (P25 over {N_SYNTHETIC + 20} scores)",
-        "calibration_status": "baseline_measured",
-        "calibration_method": "percentile_rule",
-        "production_allowed": True,
-        "evidence_source": f"Percentile analysis: P25={prod_th.get('p25', 0.0):.4f}, mean={prod_th.get('mean', 0.0):.4f}, median={prod_th.get('median', 0.0):.4f}, n={prod_th.get('n', 0)}.",
-        "owner": "team-recommendation",
-        "last_calibrated_at": now,
-        "notes": notes_pt,
-    })
+    records.append(
+        {
+            "decision_id": "recommendation.production_threshold",
+            "decision_name": "Recommendation: Minimum priority_score for Production",
+            "decision_type": "threshold",
+            "current_value": prod_th.get("recommended_threshold", 0.40),
+            "metric_name": "recommendation_production_threshold",
+            "value_origin": f"scripts/calibrate_recommendation_parameters.py :: calibrate_production_threshold (P25 over {N_SYNTHETIC + 20} scores)",
+            "calibration_status": "baseline_measured",
+            "calibration_method": "percentile_rule",
+            "production_allowed": True,
+            "evidence_source": f"Percentile analysis: P25={prod_th.get('p25', 0.0):.4f}, mean={prod_th.get('mean', 0.0):.4f}, median={prod_th.get('median', 0.0):.4f}, n={prod_th.get('n', 0)}.",
+            "owner": "team-recommendation",
+            "last_calibrated_at": now,
+            "notes": notes_pt,
+        }
+    )
 
     # 3. confidence_threshold
     notes_ct = (
@@ -504,21 +509,23 @@ def make_registry_records(result: dict[str, Any]) -> list[dict[str, Any]]:
         f"P10={conf_th.get('p10', '?'):.4f}. "
         f"Recommended at P20 ({conf_th.get('recommended_confidence_threshold', '?')})."
     )
-    records.append({
-        "decision_id": "recommendation.confidence_threshold",
-        "decision_name": "Recommendation: Minimum mapping_confidence for Recommendation confidence",
-        "decision_type": "threshold",
-        "current_value": conf_th.get("recommended_confidence_threshold", 0.50),
-        "metric_name": "recommendation_confidence_threshold",
-        "value_origin": f"scripts/calibrate_recommendation_parameters.py :: calibrate_mapping_confidence_threshold (P20 over {N_SYNTHETIC})",
-        "calibration_status": "baseline_measured",
-        "calibration_method": "percentile_rule",
-        "production_allowed": True,
-        "evidence_source": f"Percentile analysis: P10={conf_th.get('p10', 0.0):.4f}, P20={conf_th.get('p20', 0.0):.4f}, mean={conf_th.get('mean', 0.0):.4f}, n={conf_th.get('n', 0)}.",
-        "owner": "team-recommendation",
-        "last_calibrated_at": now,
-        "notes": notes_ct,
-    })
+    records.append(
+        {
+            "decision_id": "recommendation.confidence_threshold",
+            "decision_name": "Recommendation: Minimum mapping_confidence for Recommendation confidence",
+            "decision_type": "threshold",
+            "current_value": conf_th.get("recommended_confidence_threshold", 0.50),
+            "metric_name": "recommendation_confidence_threshold",
+            "value_origin": f"scripts/calibrate_recommendation_parameters.py :: calibrate_mapping_confidence_threshold (P20 over {N_SYNTHETIC})",
+            "calibration_status": "baseline_measured",
+            "calibration_method": "percentile_rule",
+            "production_allowed": True,
+            "evidence_source": f"Percentile analysis: P10={conf_th.get('p10', 0.0):.4f}, P20={conf_th.get('p20', 0.0):.4f}, mean={conf_th.get('mean', 0.0):.4f}, n={conf_th.get('n', 0)}.",
+            "owner": "team-recommendation",
+            "last_calibrated_at": now,
+            "notes": notes_ct,
+        }
+    )
 
     # 4. uncertainty_penalty
     notes_up = (
@@ -527,21 +534,23 @@ def make_registry_records(result: dict[str, Any]) -> list[dict[str, Any]]:
         f"Using conservative recommended_penalty={pen.get('recommended_penalty', 0.10)} "
         f"to balance uncertainty penalization with rank stability."
     )
-    records.append({
-        "decision_id": "recommendation.uncertainty_penalty",
-        "decision_name": "Recommendation: Uncertainty Penalty Multiplier",
-        "decision_type": "fallback_policy",
-        "current_value": pen.get("recommended_penalty", 0.10),
-        "metric_name": "recommendation_uncertainty_penalty",
-        "value_origin": f"scripts/calibrate_recommendation_parameters.py :: calibrate_uncertainty_penalty (grid search over {N_SYNTHETIC} scenarios)",
-        "calibration_status": "baseline_measured",
-        "calibration_method": "grid_search",
-        "production_allowed": True,
-        "evidence_source": f"Grid search: best penalty={pen.get('best_penalty', 0.10)} with mean Spearman={pen.get('best_mean_spearman', 0.0):.4f}. All candidates: {json.dumps(pen.get('candidates', []))}.",
-        "owner": "team-recommendation",
-        "last_calibrated_at": now,
-        "notes": notes_up,
-    })
+    records.append(
+        {
+            "decision_id": "recommendation.uncertainty_penalty",
+            "decision_name": "Recommendation: Uncertainty Penalty Multiplier",
+            "decision_type": "fallback_policy",
+            "current_value": pen.get("recommended_penalty", 0.10),
+            "metric_name": "recommendation_uncertainty_penalty",
+            "value_origin": f"scripts/calibrate_recommendation_parameters.py :: calibrate_uncertainty_penalty (grid search over {N_SYNTHETIC} scenarios)",
+            "calibration_status": "baseline_measured",
+            "calibration_method": "grid_search",
+            "production_allowed": True,
+            "evidence_source": f"Grid search: best penalty={pen.get('best_penalty', 0.10)} with mean Spearman={pen.get('best_mean_spearman', 0.0):.4f}. All candidates: {json.dumps(pen.get('candidates', []))}.",
+            "owner": "team-recommendation",
+            "last_calibrated_at": now,
+            "notes": notes_up,
+        }
+    )
 
     # 5. minimum_mapping_confidence
     notes_mmc = (
@@ -550,21 +559,23 @@ def make_registry_records(result: dict[str, Any]) -> list[dict[str, Any]]:
         f"Recommended at P10 ({conf_th.get('recommended_minimum_mapping_confidence', '?')}) "
         f"to block only the lowest 10% of mapping confidences."
     )
-    records.append({
-        "decision_id": "recommendation.minimum_mapping_confidence",
-        "decision_name": "Recommendation: Minimum mapping_confidence for Recommendation",
-        "decision_type": "threshold",
-        "current_value": conf_th.get("recommended_minimum_mapping_confidence", 0.30),
-        "metric_name": "recommendation_minimum_mapping_confidence",
-        "value_origin": f"scripts/calibrate_recommendation_parameters.py :: calibrate_mapping_confidence_threshold (P10 over {N_SYNTHETIC})",
-        "calibration_status": "baseline_measured",
-        "calibration_method": "percentile_rule",
-        "production_allowed": True,
-        "evidence_source": f"Percentile analysis: P10={conf_th.get('p10', 0.0):.4f}, mean={conf_th.get('mean', 0.0):.4f}, n={conf_th.get('n', 0)}.",
-        "owner": "team-recommendation",
-        "last_calibrated_at": now,
-        "notes": notes_mmc,
-    })
+    records.append(
+        {
+            "decision_id": "recommendation.minimum_mapping_confidence",
+            "decision_name": "Recommendation: Minimum mapping_confidence for Recommendation",
+            "decision_type": "threshold",
+            "current_value": conf_th.get("recommended_minimum_mapping_confidence", 0.30),
+            "metric_name": "recommendation_minimum_mapping_confidence",
+            "value_origin": f"scripts/calibrate_recommendation_parameters.py :: calibrate_mapping_confidence_threshold (P10 over {N_SYNTHETIC})",
+            "calibration_status": "baseline_measured",
+            "calibration_method": "percentile_rule",
+            "production_allowed": True,
+            "evidence_source": f"Percentile analysis: P10={conf_th.get('p10', 0.0):.4f}, mean={conf_th.get('mean', 0.0):.4f}, n={conf_th.get('n', 0)}.",
+            "owner": "team-recommendation",
+            "last_calibrated_at": now,
+            "notes": notes_mmc,
+        }
+    )
 
     # 6. minimum_evidence_support
     notes_mes = (
@@ -572,21 +583,23 @@ def make_registry_records(result: dict[str, Any]) -> list[dict[str, Any]]:
         f"P5 support ratio={ev.get('p5_support_ratio', '?'):.4f}. "
         f"Recommended at 0.0 — evidence support is already gated at mapping level."
     )
-    records.append({
-        "decision_id": "recommendation.minimum_evidence_support",
-        "decision_name": "Recommendation: Minimum Evidence Support Rate",
-        "decision_type": "threshold",
-        "current_value": ev.get("recommended_minimum_evidence_support", 0.0),
-        "metric_name": "recommendation_minimum_evidence_support",
-        "value_origin": f"scripts/calibrate_recommendation_parameters.py :: calibrate_evidence_support (P5 over {N_SYNTHETIC})",
-        "calibration_status": "baseline_measured",
-        "calibration_method": "percentile_rule",
-        "production_allowed": True,
-        "evidence_source": f"Support ratio analysis: P5={ev.get('p5_support_ratio', 0.0):.4f}, mean={ev.get('mean', 0.0):.4f}, n={ev.get('n', 0)}.",
-        "owner": "team-recommendation",
-        "last_calibrated_at": now,
-        "notes": notes_mes,
-    })
+    records.append(
+        {
+            "decision_id": "recommendation.minimum_evidence_support",
+            "decision_name": "Recommendation: Minimum Evidence Support Rate",
+            "decision_type": "threshold",
+            "current_value": ev.get("recommended_minimum_evidence_support", 0.0),
+            "metric_name": "recommendation_minimum_evidence_support",
+            "value_origin": f"scripts/calibrate_recommendation_parameters.py :: calibrate_evidence_support (P5 over {N_SYNTHETIC})",
+            "calibration_status": "baseline_measured",
+            "calibration_method": "percentile_rule",
+            "production_allowed": True,
+            "evidence_source": f"Support ratio analysis: P5={ev.get('p5_support_ratio', 0.0):.4f}, mean={ev.get('mean', 0.0):.4f}, n={ev.get('n', 0)}.",
+            "owner": "team-recommendation",
+            "last_calibrated_at": now,
+            "notes": notes_mes,
+        }
+    )
 
     return records
 
@@ -617,7 +630,9 @@ def main() -> None:
         print(f"    Sample {i:02d}: Spearman={s:.6f}  [{label}]")
 
     if args.check:
-        print(f"\n  {'PASS' if golden['mean_spearman'] >= SPEARMAN_MIN and golden['mae'] <= MAE_MAX else 'NEEDS REVIEW'}")
+        print(
+            f"\n  {'PASS' if golden['mean_spearman'] >= SPEARMAN_MIN and golden['mae'] <= MAE_MAX else 'NEEDS REVIEW'}"
+        )
         print("Check complete.\n")
         return
 
@@ -653,7 +668,9 @@ def main() -> None:
     print("\n  Uncertainty penalty grid search:")
     for c in pen["candidates"]:
         flag = "<= BEST" if c["penalty"] == pen["best_penalty"] else ""
-        print(f"    penalty={c['penalty']:.2f}  mean Spearman={c['mean_spearman']:.6f}  min={c['min_spearman']:.6f}  {flag}")
+        print(
+            f"    penalty={c['penalty']:.2f}  mean Spearman={c['mean_spearman']:.6f}  min={c['min_spearman']:.6f}  {flag}"
+        )
     print(f"    Recommended: {pen['recommended_penalty']:.2f}")
 
     ev = calibrate_evidence_support(N_SYNTHETIC)
@@ -675,9 +692,11 @@ def main() -> None:
     }
     records = make_registry_records(result)
     for rec in records:
-        print(f"  {rec['decision_id']}: {rec['calibration_status']}, "
-              f"production_allowed={rec['production_allowed']}, "
-              f"value={rec['current_value']}")
+        print(
+            f"  {rec['decision_id']}: {rec['calibration_status']}, "
+            f"production_allowed={rec['production_allowed']}, "
+            f"value={rec['current_value']}"
+        )
     print()
 
     # ── 6. Full report ─────────────────────────────────────────────────

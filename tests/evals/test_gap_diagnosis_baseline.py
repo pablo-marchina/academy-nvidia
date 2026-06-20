@@ -92,8 +92,13 @@ def _make_entry(
         startup_profile_snapshot={"sector": "Technology"},
         accepted_evidence_items_snapshot=evidence,
         accepted_claims_snapshot=[
-            {"id": f"cl-{startup_id}-0", "claim_id": f"cl-{startup_id}-0",
-             "claim_text": "Test claim", "support_status": "supported", "is_critical": False}
+            {
+                "id": f"cl-{startup_id}-0",
+                "claim_id": f"cl-{startup_id}-0",
+                "claim_text": "Test claim",
+                "support_status": "supported",
+                "is_critical": False,
+            }
         ],
         ai_native_score_snapshot=0.5,
         nvidia_fit_score_snapshot=0.5,
@@ -477,10 +482,21 @@ class TestCheckProductionReady:
         assert len(blockers) >= 1
 
     def test_blocked_when_metrics_below_minimum(self) -> None:
-        bad_sev = SeverityMetrics(correlation=0.1, mae=0.5, rmse=0.6, calibration_error=0.5,
-                                   high_severity_precision=0.0, high_severity_recall=0.0)
-        bad_conf = ConfidenceMetrics(correlation=0.2, mae=0.4, rmse=0.5, calibration_error=0.4,
-                                      uncertainty_error_relationship=0.0)
+        bad_sev = SeverityMetrics(
+            correlation=0.1,
+            mae=0.5,
+            rmse=0.6,
+            calibration_error=0.5,
+            high_severity_precision=0.0,
+            high_severity_recall=0.0,
+        )
+        bad_conf = ConfidenceMetrics(
+            correlation=0.2,
+            mae=0.4,
+            rmse=0.5,
+            calibration_error=0.4,
+            uncertainty_error_relationship=0.0,
+        )
         ready, blockers = _check_gap_diagnosis_production_ready(
             labeled_entry_count=30,
             gap_label_count=30,
@@ -493,10 +509,21 @@ class TestCheckProductionReady:
         assert any("MAE" in b for b in blockers)
 
     def test_passes_with_good_metrics(self) -> None:
-        good_sev = SeverityMetrics(correlation=0.8, mae=0.05, rmse=0.06, calibration_error=0.05,
-                                    high_severity_precision=0.9, high_severity_recall=0.8)
-        good_conf = ConfidenceMetrics(correlation=0.75, mae=0.08, rmse=0.09, calibration_error=0.08,
-                                       uncertainty_error_relationship=0.3)
+        good_sev = SeverityMetrics(
+            correlation=0.8,
+            mae=0.05,
+            rmse=0.06,
+            calibration_error=0.05,
+            high_severity_precision=0.9,
+            high_severity_recall=0.8,
+        )
+        good_conf = ConfidenceMetrics(
+            correlation=0.75,
+            mae=0.08,
+            rmse=0.09,
+            calibration_error=0.08,
+            uncertainty_error_relationship=0.3,
+        )
         ready, blockers = _check_gap_diagnosis_production_ready(
             labeled_entry_count=30,
             gap_label_count=30,
@@ -581,8 +608,11 @@ class TestMakeBaselineRecords:
             production_allowed=False,
             golden_set_size=0,
             has_human_labels=False,
-            label_coverage={"total_entries_with_labels": 0, "total_gap_labels": 0,
-                            "gap_type_coverage": {}},
+            label_coverage={
+                "total_entries_with_labels": 0,
+                "total_gap_labels": 0,
+                "gap_type_coverage": {},
+            },
             production_blockers=["Empty"],
         )
         records = make_gap_diagnosis_baseline_records(result)
@@ -598,8 +628,11 @@ class TestMakeBaselineRecords:
             production_allowed=False,
             golden_set_size=30,
             has_human_labels=True,
-            label_coverage={"total_entries_with_labels": 30, "total_gap_labels": 40,
-                            "gap_type_coverage": {"gap_a": 10}},
+            label_coverage={
+                "total_entries_with_labels": 30,
+                "total_gap_labels": 40,
+                "gap_type_coverage": {"gap_a": 10},
+            },
             production_blockers=["Severity spearman below minimum"],
         )
         records = make_gap_diagnosis_baseline_records(result)
@@ -613,8 +646,11 @@ class TestMakeBaselineRecords:
             production_allowed=False,
             golden_set_size=0,
             has_human_labels=False,
-            label_coverage={"total_entries_with_labels": 0, "total_gap_labels": 0,
-                            "gap_type_coverage": {}},
+            label_coverage={
+                "total_entries_with_labels": 0,
+                "total_gap_labels": 0,
+                "gap_type_coverage": {},
+            },
         )
         records = make_gap_diagnosis_baseline_records(result)
         ids = {r.decision_id for r in records}
@@ -633,32 +669,55 @@ class TestMakeBaselineRecords:
             production_allowed=True,
             golden_set_size=30,
             has_human_labels=True,
-            label_coverage={"total_entries_with_labels": 30, "total_gap_labels": 50,
-                            "gap_type_coverage": {"gap_a": 10}},
+            label_coverage={
+                "total_entries_with_labels": 30,
+                "total_gap_labels": 50,
+                "gap_type_coverage": {"gap_a": 10},
+            },
             severity_candidates=[
-                WeightCandidateResult(0, CANDIDATE_SEVERITY_WEIGHTS[0], "severity",
-                                      spearman=0.8, mae=0.1, rmse=0.12),
+                WeightCandidateResult(0, CANDIDATE_SEVERITY_WEIGHTS[0], "severity", spearman=0.8, mae=0.1, rmse=0.12),
             ],
             confidence_candidates=[
-                WeightCandidateResult(0, CANDIDATE_CONFIDENCE_WEIGHTS[0], "confidence",
-                                      spearman=0.75, mae=0.12, rmse=0.14),
+                WeightCandidateResult(
+                    0,
+                    CANDIDATE_CONFIDENCE_WEIGHTS[0],
+                    "confidence",
+                    spearman=0.75,
+                    mae=0.12,
+                    rmse=0.14,
+                ),
             ],
             best_severity_candidate_index=0,
             best_confidence_candidate_index=0,
             best_severity_metrics=SeverityMetrics(
-                correlation=0.8, mae=0.1, rmse=0.12, calibration_error=0.1,
-                high_severity_precision=0.8, high_severity_recall=0.7,
+                correlation=0.8,
+                mae=0.1,
+                rmse=0.12,
+                calibration_error=0.1,
+                high_severity_precision=0.8,
+                high_severity_recall=0.7,
             ),
             best_confidence_metrics=ConfidenceMetrics(
-                correlation=0.75, mae=0.12, rmse=0.14, calibration_error=0.12,
+                correlation=0.75,
+                mae=0.12,
+                rmse=0.14,
+                calibration_error=0.12,
                 uncertainty_error_relationship=0.3,
             ),
-            production_threshold={"threshold": 0.3, "method": "percentile_p5",
-                                  "percentile": 5.0, "distribution": {}},
-            uncertainty_penalty={"best_penalty": 0.02, "method": "sensitivity_analysis",
-                                  "results": [], "best_mae": 0.09, "best_max_error": 0.2},
-            min_evidence_coverage={"recommended_min_coverage": 0.15, "method": "p25",
-                                    "n": 50},
+            production_threshold={
+                "threshold": 0.3,
+                "method": "percentile_p5",
+                "percentile": 5.0,
+                "distribution": {},
+            },
+            uncertainty_penalty={
+                "best_penalty": 0.02,
+                "method": "sensitivity_analysis",
+                "results": [],
+                "best_mae": 0.09,
+                "best_max_error": 0.2,
+            },
+            min_evidence_coverage={"recommended_min_coverage": 0.15, "method": "p25", "n": 50},
         )
         records = make_gap_diagnosis_baseline_records(result)
         assert len(records) == 5
@@ -672,8 +731,11 @@ class TestMakeBaselineRecords:
             production_allowed=False,
             golden_set_size=0,
             has_human_labels=False,
-            label_coverage={"total_entries_with_labels": 0, "total_gap_labels": 0,
-                            "gap_type_coverage": {}},
+            label_coverage={
+                "total_entries_with_labels": 0,
+                "total_gap_labels": 0,
+                "gap_type_coverage": {},
+            },
         )
         records = make_gap_diagnosis_baseline_records(result)
         for r in records:
@@ -688,15 +750,23 @@ class TestMakeBaselineRecords:
             production_allowed=True,
             golden_set_size=30,
             has_human_labels=True,
-            label_coverage={"total_entries_with_labels": 30, "total_gap_labels": 50,
-                            "gap_type_coverage": {}},
+            label_coverage={
+                "total_entries_with_labels": 30,
+                "total_gap_labels": 50,
+                "gap_type_coverage": {},
+            },
             severity_candidates=[
-                WeightCandidateResult(0, CANDIDATE_SEVERITY_WEIGHTS[0], "severity",
-                                      spearman=0.8, mae=0.1, rmse=0.12),
+                WeightCandidateResult(0, CANDIDATE_SEVERITY_WEIGHTS[0], "severity", spearman=0.8, mae=0.1, rmse=0.12),
             ],
             confidence_candidates=[
-                WeightCandidateResult(0, CANDIDATE_CONFIDENCE_WEIGHTS[0], "confidence",
-                                      spearman=0.75, mae=0.12, rmse=0.14),
+                WeightCandidateResult(
+                    0,
+                    CANDIDATE_CONFIDENCE_WEIGHTS[0],
+                    "confidence",
+                    spearman=0.75,
+                    mae=0.12,
+                    rmse=0.14,
+                ),
             ],
             best_severity_candidate_index=0,
             best_confidence_candidate_index=0,
@@ -744,7 +814,8 @@ class TestRunCalibration:
                 assert result.production_threshold["threshold"] is not None
             else:
                 assert result.calibration_status in (
-                    "baseline_measured_blocked", "baseline_dataset_insufficient"
+                    "baseline_measured_blocked",
+                    "baseline_dataset_insufficient",
                 )
         finally:
             if path.exists():

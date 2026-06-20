@@ -120,9 +120,7 @@ class ProductService:
         )
         self.session.commit()
 
-        self.repository.update_analysis_run_status(
-            run.id, status="running", started_at=datetime.now(UTC)
-        )
+        self.repository.update_analysis_run_status(run.id, status="running", started_at=datetime.now(UTC))
         self.session.commit()
 
         degraded_codes: list[str] = []
@@ -150,9 +148,7 @@ class ProductService:
                         degraded_codes.append("QDRANT_UNAVAILABLE")
                         self._save_degraded_check(run.id, "QDRANT_UNAVAILABLE", qdrant_detail)
                         if self._env_bool("RAG_REQUIRED_FOR_PRODUCT", False):
-                            raise RuntimeError(
-                                qdrant_detail or "Qdrant is required but unavailable."
-                            ) from exc
+                            raise RuntimeError(qdrant_detail or "Qdrant is required but unavailable.") from exc
                     if vector_store is not None:
                         try:
                             embedding_model = self._build_embedding_model()
@@ -197,13 +193,10 @@ class ProductService:
                 act_service = ActivationPlaybookService(self.session)
                 playbook_recs = act_service.generate_recommendations_for_run(run.id)
                 if playbook_recs:
-                    act_service.activation_repo.replace_recommendations_for_analysis_run(
-                        run.id, playbook_recs
-                    )
+                    act_service.activation_repo.replace_recommendations_for_analysis_run(run.id, playbook_recs)
                     low_conf = any(r["confidence"] == "low" for r in playbook_recs)
                     has_unsupported = any(
-                        r["confidence"] == "low" and len(r.get("matched_gap_types", [])) > 0
-                        for r in playbook_recs
+                        r["confidence"] == "low" and len(r.get("matched_gap_types", [])) > 0 for r in playbook_recs
                     )
                     if low_conf:
                         degraded_codes.append("PLAYBOOK_LOW_EVIDENCE_SUPPORT")
@@ -478,16 +471,10 @@ class ProductService:
                 "detail": f"corpus_version={corpus_version}" if corpus_version else None,
             },
         ]
-        required_unavailable = any(
-            item["required"] and not item["available"] for item in dependencies
-        )
-        optional_unavailable = any(
-            item["configured"] and not item["available"] for item in dependencies
-        )
+        required_unavailable = any(item["required"] and not item["available"] for item in dependencies)
+        optional_unavailable = any(item["configured"] and not item["available"] for item in dependencies)
         return {
-            "status": (
-                "error" if required_unavailable else "degraded" if optional_unavailable else "ok"
-            ),
+            "status": ("error" if required_unavailable else "degraded" if optional_unavailable else "ok"),
             "corpus_version": corpus_version,
             "dependencies": dependencies,
         }
@@ -595,9 +582,7 @@ class ProductService:
 
             recommendations = {}
             if result.recommendation is not None:
-                recommendations = {
-                    item.diagnosed_gap.value: item for item in result.recommendation.recommendations
-                }
+                recommendations = {item.diagnosed_gap.value: item for item in result.recommendation.recommendations}
             for mapping in result.gap_diagnosis.nvidia_technology_candidates:
                 gap_type = mapping.addresses_gap.value
                 recommendation = recommendations.get(gap_type)
@@ -607,15 +592,9 @@ class ProductService:
                     technology_name=mapping.technology_name,
                     addresses_gap=gap_type,
                     justification=mapping.justification,
-                    recommendation_action=(
-                        recommendation.action.value if recommendation is not None else None
-                    ),
-                    priority=(
-                        recommendation.priority.value if recommendation is not None else None
-                    ),
-                    details=(
-                        recommendation.model_dump(mode="json") if recommendation is not None else {}
-                    ),
+                    recommendation_action=(recommendation.action.value if recommendation is not None else None),
+                    priority=(recommendation.priority.value if recommendation is not None else None),
+                    details=(recommendation.model_dump(mode="json") if recommendation is not None else {}),
                 )
 
         brief = build_action_brief(result)
@@ -734,11 +713,7 @@ class ProductService:
             from src.rag.ingestion import load_sources
 
             versions = sorted(
-                {
-                    source.version
-                    for source in load_sources().values()
-                    if source.is_active and source.version
-                }
+                {source.version for source in load_sources().values() if source.is_active and source.version}
             )
             return ",".join(versions) if versions else None
         except Exception:

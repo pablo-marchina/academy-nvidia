@@ -19,16 +19,13 @@ from src.agents.interfaces import (
     ScoreService,
 )
 from src.agents.state import StartupRadarState
-from src.extraction.schemas import SourceType
 from src.quantitative.params import (
     DISCOVERY_MAX_SOURCES,
     DISCOVERY_RATE_LIMIT,
     GAP_BUSINESS_IMPACT_MAP,
     MAX_SEARCH_DEPTH,
     PRIORITY_SCORE_WEIGHTS,
-    WORKFLOW_THRESHOLDS,
 )
-from src.scraping.source_policy import source_quality_score
 
 LANGGRAPH_AVAILABLE: bool
 _CHECKPOINTER_ENABLED: bool = False
@@ -225,19 +222,24 @@ def _plan_search(state: StartupRadarState) -> dict[str, Any]:
                 blockers.append(f"Search plan failed: {type(exc).__name__}")
         elif website_url:
             from urllib.parse import urlparse
+
             parsed = urlparse(website_url)
             host = parsed.netloc or website_url
-            queries.append({
-                "url": website_url,
-                "source_type": "official_website",
-                "reason": "Provided website URL",
-            })
+            queries.append(
+                {
+                    "url": website_url,
+                    "source_type": "official_website",
+                    "reason": "Provided website URL",
+                }
+            )
             domain = host.replace("www.", "")
-            queries.append({
-                "url": f"https://www.google.com/search?q=site:{domain}+startup+AI",
-                "source_type": "technical_docs",
-                "reason": "Google search for related content",
-            })
+            queries.append(
+                {
+                    "url": f"https://www.google.com/search?q=site:{domain}+startup+AI",
+                    "source_type": "technical_docs",
+                    "reason": "Google search for related content",
+                }
+            )
 
     # ── generated_from ─────────────────────────────────────────────
     generated_from: dict[str, bool] = {
@@ -345,21 +347,15 @@ def _collect_sources(state: StartupRadarState) -> dict[str, Any]:
                 validation_result = validate_decision_for_production(rec)
                 if not validation_result.passed:
                     blockers.append(
-                        f"Calibrated decision '{decision_id}' blocked: "
-                        f"{'; '.join(validation_result.reasons)}"
+                        f"Calibrated decision '{decision_id}' blocked: " f"{'; '.join(validation_result.reasons)}"
                     )
                 elif rec.calibration_status in ("UNCALIBRATED", "BLOCKED"):
-                    blockers.append(
-                        f"Calibrated decision '{decision_id}' is "
-                        f"{rec.calibration_status}"
-                    )
+                    blockers.append(f"Calibrated decision '{decision_id}' is " f"{rec.calibration_status}")
                 elif limit_key is not None:
                     calibrated_limits[limit_key] = rec.current_value
                 break
         if not found:
-            blockers.append(
-                f"Calibrated decision '{decision_id}' not found in registry"
-            )
+            blockers.append(f"Calibrated decision '{decision_id}' not found in registry")
 
     if blockers:
         return {
@@ -471,35 +467,37 @@ def _collect_sources(state: StartupRadarState) -> dict[str, Any]:
                 "extraction_status": sfr.extraction_status,
             }
             evidence_items.append(ev_item)
-            raw_evidence_candidates.append({
-                "source_id": sfr.source_id,
-                "source_url": sfr.source_url,
-                "text": sfr.extracted_text,
-                "source_category": sfr.metadata.get("source_category", ""),
-                "source_name": sfr.metadata.get("source_name", ""),
-                "collected_at": sfr.fetched_at.isoformat(),
-                "content_hash": sfr.content_hash,
-                "latency_ms": sfr.latency_ms,
-                "robots_allowed": sfr.robots_allowed,
-                "duplicate": False,
-            })
-        elif sfr.status == "duplicate" and sfr.extracted_text:
-            raw_evidence_candidates.append({
-                "source_id": sfr.source_id,
-                "source_url": sfr.source_url,
-                "text": sfr.extracted_text,
-                "source_category": sfr.metadata.get("source_category", ""),
-                "source_name": sfr.metadata.get("source_name", ""),
-                "collected_at": sfr.fetched_at.isoformat(),
-                "content_hash": sfr.content_hash,
-                "latency_ms": sfr.latency_ms,
-                "robots_allowed": sfr.robots_allowed,
-                "duplicate": True,
-            })
-        elif sfr.status in ("blocked", "failed"):
-            msg = (
-                f"{sfr.source_url}: {sfr.error_code or sfr.status}"
+            raw_evidence_candidates.append(
+                {
+                    "source_id": sfr.source_id,
+                    "source_url": sfr.source_url,
+                    "text": sfr.extracted_text,
+                    "source_category": sfr.metadata.get("source_category", ""),
+                    "source_name": sfr.metadata.get("source_name", ""),
+                    "collected_at": sfr.fetched_at.isoformat(),
+                    "content_hash": sfr.content_hash,
+                    "latency_ms": sfr.latency_ms,
+                    "robots_allowed": sfr.robots_allowed,
+                    "duplicate": False,
+                }
             )
+        elif sfr.status == "duplicate" and sfr.extracted_text:
+            raw_evidence_candidates.append(
+                {
+                    "source_id": sfr.source_id,
+                    "source_url": sfr.source_url,
+                    "text": sfr.extracted_text,
+                    "source_category": sfr.metadata.get("source_category", ""),
+                    "source_name": sfr.metadata.get("source_name", ""),
+                    "collected_at": sfr.fetched_at.isoformat(),
+                    "content_hash": sfr.content_hash,
+                    "latency_ms": sfr.latency_ms,
+                    "robots_allowed": sfr.robots_allowed,
+                    "duplicate": True,
+                }
+            )
+        elif sfr.status in ("blocked", "failed"):
+            msg = f"{sfr.source_url}: {sfr.error_code or sfr.status}"
             if sfr.error_message_sanitized:
                 msg += f" — {sfr.error_message_sanitized}"
             if msg not in fetch_errors:
@@ -585,22 +583,26 @@ def _build_structured_claims(
             url = ev.get("source_url") or ev.get("url", "")
             if url:
                 refs.append(str(url))
-            structured.append({
-                "claim_text": ev.get("claim", ""),
-                "criticality": "critical" if ev.get("source_type") == "official_site" else "normal",
-                "support_status": "insufficient_evidence",
-                "supporting_evidence_refs": refs,
-                "confidence": ev.get("confidence", "low"),
-            })
+            structured.append(
+                {
+                    "claim_text": ev.get("claim", ""),
+                    "criticality": ("critical" if ev.get("source_type") == "official_site" else "normal"),
+                    "support_status": "insufficient_evidence",
+                    "supporting_evidence_refs": refs,
+                    "confidence": ev.get("confidence", "low"),
+                }
+            )
     elif claims_str:
         for c in claims_str:
-            structured.append({
-                "claim_text": c,
-                "criticality": "normal",
-                "support_status": "unsupported",
-                "supporting_evidence_refs": [],
-                "confidence": "low",
-            })
+            structured.append(
+                {
+                    "claim_text": c,
+                    "criticality": "normal",
+                    "support_status": "unsupported",
+                    "supporting_evidence_refs": [],
+                    "confidence": "low",
+                }
+            )
     return structured
 
 
@@ -620,6 +622,7 @@ def _extract_profile(state: StartupRadarState) -> dict[str, Any]:
     # ── 1. Check extractor availability ─────────────────────────────────
     try:
         from src.extraction.extractor import extract_profile as _check_extractor
+
         _check_extractor("test", "https://test.com")
     except ImportError:
         return {
@@ -780,9 +783,7 @@ def _validate_evidence(state: StartupRadarState) -> dict[str, Any]:
     evidence_items = state.get("evidence_items", [])
     existing_claims = state.get("claims", [])
 
-    claims_str, items_with_meta, validated_evidence, errors = validate_evidence(
-        raw_evidence, evidence_items
-    )
+    claims_str, items_with_meta, validated_evidence, errors = validate_evidence(raw_evidence, evidence_items)
 
     evidence_items_count = len(items_with_meta)
     claims_count = len(validated_evidence)
@@ -802,36 +803,37 @@ def _validate_evidence(state: StartupRadarState) -> dict[str, Any]:
                 support_status = "insufficient_evidence"
             else:
                 support_status = "unsupported"
-            structured_claims.append({
-                "claim_text": v.get("claim", ""),
-                "criticality": "critical" if is_critical else "normal",
-                "support_status": support_status,
-                "supporting_evidence_refs": refs,
-                "confidence": v.get("confidence", "low"),
-            })
+            structured_claims.append(
+                {
+                    "claim_text": v.get("claim", ""),
+                    "criticality": "critical" if is_critical else "normal",
+                    "support_status": support_status,
+                    "supporting_evidence_refs": refs,
+                    "confidence": v.get("confidence", "low"),
+                }
+            )
     elif existing_claims:
         for c in existing_claims:
             if isinstance(c, dict):
                 structured_claims.append(c)
             elif isinstance(c, str):
-                structured_claims.append({
-                    "claim_text": c,
-                    "criticality": "normal",
-                    "support_status": "unsupported",
-                    "supporting_evidence_refs": [],
-                    "confidence": "low",
-                })
+                structured_claims.append(
+                    {
+                        "claim_text": c,
+                        "criticality": "normal",
+                        "support_status": "unsupported",
+                        "supporting_evidence_refs": [],
+                        "confidence": "low",
+                    }
+                )
 
     unsupported_kinds: set[str] = {"unsupported", "insufficient_evidence", "conflicting"}
     unsupported_critical_claims_count = sum(
-        1 for c in structured_claims
-        if c.get("criticality") == "critical"
-        and c.get("support_status") in unsupported_kinds
+        1
+        for c in structured_claims
+        if c.get("criticality") == "critical" and c.get("support_status") in unsupported_kinds
     )
-    supported_claims_count = sum(
-        1 for c in structured_claims
-        if c.get("support_status") == "supported"
-    )
+    supported_claims_count = sum(1 for c in structured_claims if c.get("support_status") == "supported")
 
     # ── 1. Check required calibration decisions ────────────────────────────
     REQUIRED_CALIBRATION_DECISIONS: list[tuple[str, str | None]] = [
@@ -852,21 +854,16 @@ def _validate_evidence(state: StartupRadarState) -> dict[str, Any]:
                 validation = validate_decision_for_production(rec)
                 if not validation.passed:
                     calibration_blockers.append(
-                        f"Calibrated decision '{decision_id}' blocked: "
-                        f"{'; '.join(validation.reasons)}"
+                        f"Calibrated decision '{decision_id}' blocked: " f"{'; '.join(validation.reasons)}"
                     )
                 elif value_key is not None:
                     if isinstance(rec.current_value, (int, float)):
                         calibrated_values[value_key] = float(rec.current_value)
                     else:
-                        calibration_blockers.append(
-                            f"Decision '{decision_id}' has non-numeric current_value"
-                        )
+                        calibration_blockers.append(f"Decision '{decision_id}' has non-numeric current_value")
                 break
         if not found:
-            calibration_blockers.append(
-                f"Calibrated decision '{decision_id}' not found in registry"
-            )
+            calibration_blockers.append(f"Calibrated decision '{decision_id}' not found in registry")
 
     sq_threshold = calibrated_values.get("sq_threshold", 0.65)
     ec_threshold = calibrated_values.get("ec_threshold", 0.55)
@@ -1000,8 +997,7 @@ def _validate_evidence(state: StartupRadarState) -> dict[str, Any]:
     production_ready_ratio = accepted_count / scored_count if scored_count > 0 else 0.0
 
     unsupported_claims_count = sum(
-        1 for c in structured_claims
-        if c.get("support_status") in ("unsupported", "insufficient_evidence")
+        1 for c in structured_claims if c.get("support_status") in ("unsupported", "insufficient_evidence")
     )
 
     evidence_validation_metrics: dict[str, Any] = {
@@ -1038,10 +1034,7 @@ def _validate_evidence(state: StartupRadarState) -> dict[str, Any]:
     if unsupported_critical_claims_count > 0:
         validation_status = "failed"
         top_status = "evidence_validation_failed"
-        msg = (
-            f"validate_evidence: {unsupported_critical_claims_count}"
-            " critical claim(s) without supported evidence"
-        )
+        msg = f"validate_evidence: {unsupported_critical_claims_count}" " critical claim(s) without supported evidence"
         if msg not in blockers:
             blockers.append(msg)
         review_required = False
@@ -1101,9 +1094,7 @@ def _validate_evidence(state: StartupRadarState) -> dict[str, Any]:
         existing = list(state.get("blockers", []))
         for e in errors:
             if e not in existing:
-                updates.setdefault("blockers", existing)[:] = existing + [
-                    e for e in errors if e not in existing
-                ]
+                updates.setdefault("blockers", existing)[:] = existing + [e for e in errors if e not in existing]
 
     return updates
 
@@ -1117,8 +1108,8 @@ def _score_startup(
         get_project_decision_inventory,
     )
     from src.scoring.startup_scoring import (
-        compute_startup_scoring,
         build_scoring_summary,
+        compute_startup_scoring,
     )
 
     run_id = state.get("run_id", "unknown")
@@ -1146,9 +1137,7 @@ def _score_startup(
 
     accepted_evidence_count = len(accepted_evidence_items)
     rejected_evidence_count = len(rejected_evidence_items)
-    accepted_claim_count = sum(
-        1 for c in claims if isinstance(c, dict) and c.get("support_status") == "supported"
-    )
+    accepted_claim_count = sum(1 for c in claims if isinstance(c, dict) and c.get("support_status") == "supported")
     average_evidence_confidence = ev_metrics.get("average_evidence_confidence_score", 0.0)
     average_source_quality = ev_metrics.get("average_source_quality_score", 0.0)
 
@@ -1168,7 +1157,8 @@ def _score_startup(
     if scoring_status == "failed":
         status_val = "startup_scoring_failed"
         review_required = False
-        msg = f"score_startup: {summary.score_metrics['unsupported_critical_claims_count']} critical claim(s) without supported evidence"
+        unsupported_count = summary.score_metrics["unsupported_critical_claims_count"]
+        msg = f"score_startup: {unsupported_count} critical claim(s) without supported evidence"
         if msg not in blockers:
             blockers.append(msg)
     elif scoring_status == "blocked_uncalibrated_scoring":
@@ -1197,9 +1187,14 @@ def _score_startup(
             from src.agents.classifier_agent import score_startup as svc
         profile_dict = state.get("startup_profile")
         validated_evidence_dicts = state.get("validated_evidence", [])
-        (legacy_scores, classification_result, defensibility_result,
-         inception_fit_result, production_readiness_result,
-         legacy_errors) = svc(profile_dict, validated_evidence_dicts, run_id)
+        (
+            legacy_scores,
+            classification_result,
+            defensibility_result,
+            inception_fit_result,
+            production_readiness_result,
+            legacy_errors,
+        ) = svc(profile_dict, validated_evidence_dicts, run_id)
         scores.update(legacy_scores)
     except Exception as exc:
         legacy_errors = [f"Legacy classifier error: {type(exc).__name__}"]
@@ -1292,9 +1287,7 @@ def _diagnose_gaps(
         "gap_diagnosis": gap_diagnosis,
         "gap_diagnosis_summary": q_summary.model_dump(mode="json"),
         "gap_diagnosis_status": q_summary.gap_diagnosis_status.value,
-        "gap_diagnosis_metrics": (
-            q_summary.metrics.model_dump(mode="json") if q_summary.metrics else None
-        ),
+        "gap_diagnosis_metrics": (q_summary.metrics.model_dump(mode="json") if q_summary.metrics else None),
         "executed_nodes": _append_node(state, "diagnose_gaps"),
     }
     if errors:
@@ -1327,10 +1320,11 @@ def _resolve_retriever_strategy() -> tuple[str | None, dict[str, Any] | None, li
         if rec.decision_id == "rag.retriever_strategy":
             validation = validate_decision_for_production(rec)
             if not validation.passed:
-                blockers.append(
-                    f"RAG retriever strategy blocked: {'; '.join(validation.reasons)}"
-                )
-            elif not rec.production_allowed or rec.calibration_status.value in ("uncalibrated", "blocked"):
+                blockers.append(f"RAG retriever strategy blocked: {'; '.join(validation.reasons)}")
+            elif not rec.production_allowed or rec.calibration_status.value in (
+                "uncalibrated",
+                "blocked",
+            ):
                 blockers.append(
                     f"RAG retriever strategy '{rec.current_value}' is "
                     f"{rec.calibration_status.value} (production_allowed={rec.production_allowed})"
@@ -1342,16 +1336,14 @@ def _resolve_retriever_strategy() -> tuple[str | None, dict[str, Any] | None, li
                     "decision_id": rec.decision_id,
                     "current_value": rec.current_value,
                     "calibration_status": rec.calibration_status.value,
-                    "calibration_method": rec.calibration_method.value if rec.calibration_method else None,
+                    "calibration_method": (rec.calibration_method.value if rec.calibration_method else None),
                     "evidence_source": rec.evidence_source,
                     "production_allowed": rec.production_allowed,
                 }
             break
 
     if strategy is None and not blockers:
-        blockers.append(
-            "rag.retriever_strategy not found in Decision Calibration Registry"
-        )
+        blockers.append("rag.retriever_strategy not found in Decision Calibration Registry")
 
     return strategy, ragas_ref, blockers
 
@@ -1376,9 +1368,7 @@ def _validate_hybrid_weights() -> tuple[dict[str, Any] | None, list[str]]:
         if rec.decision_id == "rag.hybrid_retrieval_weights":
             validation = validate_decision_for_production(rec)
             if not validation.passed:
-                blockers.append(
-                    f"Hybrid weights blocked: {'; '.join(validation.reasons)}"
-                )
+                blockers.append(f"Hybrid weights blocked: {'; '.join(validation.reasons)}")
             elif not rec.production_allowed:
                 blockers.append(
                     f"rag.hybrid_retrieval_weights is {rec.calibration_status.value} "
@@ -1388,15 +1378,11 @@ def _validate_hybrid_weights() -> tuple[dict[str, Any] | None, list[str]]:
                 weights = rec.current_value
                 if isinstance(weights, dict):
                     return weights, []
-                blockers.append(
-                    f"rag.hybrid_retrieval_weights has unexpected type: {type(weights).__name__}"
-                )
+                blockers.append(f"rag.hybrid_retrieval_weights has unexpected type: {type(weights).__name__}")
             break
 
     if not blockers:
-        blockers.append(
-            "rag.hybrid_retrieval_weights not found in Decision Calibration Registry"
-        )
+        blockers.append("rag.hybrid_retrieval_weights not found in Decision Calibration Registry")
     return None, blockers
 
 
@@ -1457,8 +1443,10 @@ def _retrieve_nvidia_context(
         if strategy == "lexical_baseline":
             return _blocked_rag_result(
                 "blocked_lexical_winner_not_productive",
-                ["lexical_baseline venceu a avaliação RAGAS mas não pode ser "
-                 "retriever produtivo — bloquear produção para revisão manual"],
+                [
+                    "lexical_baseline venceu a avaliação RAGAS mas não pode ser "
+                    "retriever produtivo — bloquear produção para revisão manual"
+                ],
                 strategy=strategy,
                 ragas_ref=ragas_ref,
             )
@@ -1541,13 +1529,16 @@ def _retrieve_nvidia_context(
         "selected_retriever_strategy": result.get("selected_retriever_strategy", ""),
         "ragas_eval_reference": result.get("ragas_eval_reference"),
         "rag_retrieval_metrics": result.get("rag_retrieval_metrics", _empty_rag_metrics()),
-        "rag_metrics": result.get("rag_metrics", {
-            "query_count": 0,
-            "retrieved_context_count": 0,
-            "min_required_contexts": 0,
-            "retrieval_status": result.get("rag_retrieval_status", "failed"),
-            "rag_required": True,
-        }),
+        "rag_metrics": result.get(
+            "rag_metrics",
+            {
+                "query_count": 0,
+                "retrieved_context_count": 0,
+                "min_required_contexts": 0,
+                "retrieval_status": result.get("rag_retrieval_status", "failed"),
+                "rag_required": True,
+            },
+        ),
         "review_required": result.get("review_required", False),
         "executed_nodes": _append_node(state, "retrieve_nvidia_context"),
     }
@@ -1575,7 +1566,7 @@ def _normalize_rag_result(result: Any) -> dict[str, Any]:
                 "retrieval_status": retrieval_status,
                 "rag_required": True,
             },
-            "status": f"rag_{retrieval_status}" if retrieval_status != "passed" else "nvidia_context_retrieved",
+            "status": (f"rag_{retrieval_status}" if retrieval_status != "passed" else "nvidia_context_retrieved"),
             "review_required": retrieval_status in ("needs_review", "failed"),
             "blockers": list(errors) if errors else None,
         }
@@ -1615,9 +1606,7 @@ def _build_technology_mappings(state: StartupRadarState) -> dict[str, Any]:
     )
 
     run_id = state.get("run_id", "unknown")
-    rag_contexts_by_gap: dict[str, list[dict[str, Any]]] = state.get(
-        "rag_contexts_by_gap", {}
-    )
+    rag_contexts_by_gap: dict[str, list[dict[str, Any]]] = state.get("rag_contexts_by_gap", {})
     gap_diagnosis_summary = state.get("gap_diagnosis_summary")
     gap_diagnosis_metrics = state.get("gap_diagnosis_metrics")
     evidence_items: list[dict[str, Any]] = state.get("evidence_items", [])
@@ -1630,6 +1619,7 @@ def _build_technology_mappings(state: StartupRadarState) -> dict[str, Any]:
             if isinstance(g, dict):
                 try:
                     from src.diagnosis.schemas import GapDiagnosisResultItem
+
                     item = GapDiagnosisResultItem.model_validate(g)
                     gap_results.append(item)
                 except Exception:
@@ -1637,6 +1627,7 @@ def _build_technology_mappings(state: StartupRadarState) -> dict[str, Any]:
     if gap_diagnosis_metrics and isinstance(gap_diagnosis_metrics, dict):
         try:
             from src.diagnosis.schemas import GapDiagnosisMetrics
+
             gap_metrics = GapDiagnosisMetrics.model_validate(gap_diagnosis_metrics)
         except Exception:
             pass
@@ -1659,9 +1650,7 @@ def _build_technology_mappings(state: StartupRadarState) -> dict[str, Any]:
     return {
         "nvidia_technology_mappings": mapping_result.get("nvidia_technology_mappings", []),
         "nvidia_mapping_metrics": mapping_result.get("nvidia_mapping_metrics", {}),
-        "nvidia_mapping_calibration_metrics": mapping_result.get(
-            "nvidia_mapping_calibration_metrics", {}
-        ),
+        "nvidia_mapping_calibration_metrics": mapping_result.get("nvidia_mapping_calibration_metrics", {}),
         "nvidia_mapping_summary": {
             "mapping_status": mapping_result.get("mapping_status", "failed"),
             "production_allowed": mapping_result.get("production_allowed", False),
@@ -1728,8 +1717,7 @@ def _compute_priority_score(
     return (
         PRIORITY_SCORE_WEIGHTS["confidence"] * confidence
         + PRIORITY_SCORE_WEIGHTS["business_impact"] * business_impact
-        + PRIORITY_SCORE_WEIGHTS["implementation_complexity_inverse"]
-        * max(0.0, 1.0 - implementation_complexity)
+        + PRIORITY_SCORE_WEIGHTS["implementation_complexity_inverse"] * max(0.0, 1.0 - implementation_complexity)
         + PRIORITY_SCORE_WEIGHTS["rag_support"] * rag_support
         + PRIORITY_SCORE_WEIGHTS["evidence_support"] * evidence_support
     )
@@ -1768,11 +1756,7 @@ def _build_rec_from_gap(
         else:
             ev_ids.append(f"ev_{i}")
     gap_keywords = gap.replace("_", " ").lower()
-    gap_claims = [
-        c
-        for c in claims
-        if isinstance(c, dict) and gap_keywords in c.get("claim_text", "").lower()
-    ]
+    gap_claims = [c for c in claims if isinstance(c, dict) and gap_keywords in c.get("claim_text", "").lower()]
     if gap_claims:
         supported = sum(1 for c in gap_claims if c.get("support_status") == "supported")
         confidence = supported / len(gap_claims)
@@ -1781,9 +1765,7 @@ def _build_rec_from_gap(
     business_impact = _get_impact_for_gap(gap)
     complexity = _get_complexity_numeric(tech)
     if rag_contexts:
-        matching_rag = sum(
-            1 for ctx in rag_contexts if isinstance(ctx, str) and gap_keywords in ctx.lower()
-        )
+        matching_rag = sum(1 for ctx in rag_contexts if isinstance(ctx, str) and gap_keywords in ctx.lower())
         rag_support = matching_rag / len(rag_contexts)
     else:
         rag_support = 0.0
@@ -1824,10 +1806,7 @@ def _build_rec_from_string(
     evidence_items: list[dict[str, Any]],
 ) -> dict[str, Any]:
     rag_ids = [f"rag_{i}" for i in range(len(rag_contexts))]
-    ev_ids = (
-        [item.get("id", f"ev_{i}") for i, item in enumerate(evidence_items)]
-        if evidence_items else []
-    )
+    ev_ids = [item.get("id", f"ev_{i}") for i, item in enumerate(evidence_items)] if evidence_items else []
     ev_qualities = [
         item.get("source_quality_score", 0.5)
         for item in evidence_items
@@ -1885,8 +1864,7 @@ def _rank_recommendations(
     # ── 1. Check critical claims ─────────────────────────────────────────
     if unsupported_critical_claims_count > 0:
         msg = (
-            f"rank_recommendations: {unsupported_critical_claims_count}"
-            " critical claim(s) without supported evidence"
+            f"rank_recommendations: {unsupported_critical_claims_count}" " critical claim(s) without supported evidence"
         )
         if msg not in blockers:
             blockers.append(msg)
@@ -1907,9 +1885,7 @@ def _rank_recommendations(
         }
 
     # ── 2. Get mappings from state ───────────────────────────────────────
-    nvidia_technology_mappings: list[dict[str, Any]] = state.get(
-        "nvidia_technology_mappings", []
-    )
+    nvidia_technology_mappings: list[dict[str, Any]] = state.get("nvidia_technology_mappings", [])
     nvidia_mapping_summary = state.get("nvidia_mapping_summary") or {}
     mapping_status: str = ""
 
@@ -1969,15 +1945,17 @@ def _rank_recommendations(
     recommendations: list[dict[str, Any]] = []
     for rec in nvidia_recommendations:
         if isinstance(rec, dict):
-            recommendations.append({
-                "technology_name": rec.get("nvidia_technology", ""),
-                "reason": rec.get("reason", ""),
-                "priority_score": rec.get("recommendation_priority_score", 0.0),
-                "confidence": rec.get("confidence", 0.0),
-                "next_best_action": rec.get("next_best_action", ""),
-                "supporting_rag_context_ids": rec.get("supporting_rag_context_ids", []),
-                "supporting_evidence_ids": rec.get("supporting_evidence_ids", []),
-            })
+            recommendations.append(
+                {
+                    "technology_name": rec.get("nvidia_technology", ""),
+                    "reason": rec.get("reason", ""),
+                    "priority_score": rec.get("recommendation_priority_score", 0.0),
+                    "confidence": rec.get("confidence", 0.0),
+                    "next_best_action": rec.get("next_best_action", ""),
+                    "supporting_rag_context_ids": rec.get("supporting_rag_context_ids", []),
+                    "supporting_evidence_ids": rec.get("supporting_evidence_ids", []),
+                }
+            )
 
     updates: dict[str, Any] = {
         "status": top_status,
@@ -2042,9 +2020,7 @@ def _run_quality_gates(state: StartupRadarState) -> dict[str, Any]:
     has_nvidia_recommendations = "nvidia_recommendations" in state
     legacy_recommendations: list[Any] = state.get("recommendations", [])
     brief_metrics_for_quality: dict[str, Any] = state.get("brief_metrics", {})
-    using_legacy_recommendations = (
-        not has_nvidia_recommendation_metrics and not has_nvidia_recommendations
-    )
+    using_legacy_recommendations = not has_nvidia_recommendation_metrics and not has_nvidia_recommendations
     ranking_metrics: dict[str, Any] = state.get("nvidia_recommendation_metrics", {})
     if ranking_metrics:
         ranking_status = ranking_metrics.get("ranking_status") or (
@@ -2064,9 +2040,7 @@ def _run_quality_gates(state: StartupRadarState) -> dict[str, Any]:
     scoring_status: str | None = scoring_summary.get("scoring_status") if scoring_summary else None
 
     mapping_summary: dict[str, Any] = state.get("nvidia_mapping_summary") or {}
-    mapping_status_raw = (
-        mapping_summary.get("mapping_status") if isinstance(mapping_summary, dict) else ""
-    )
+    mapping_status_raw = mapping_summary.get("mapping_status") if isinstance(mapping_summary, dict) else ""
     mapping_status = str(mapping_status_raw or "")
 
     # ── Recommendation data ─────────────────────────────────────────────
@@ -2074,27 +2048,18 @@ def _run_quality_gates(state: StartupRadarState) -> dict[str, Any]:
     recommendation_count = (
         int(brief_metrics_for_quality.get("recommendation_count", 0) or 0)
         if using_legacy_recommendations and not legacy_recommendations
-        else len(legacy_recommendations)
-        if using_legacy_recommendations
-        else len(nvidia_recommendations)
+        else (len(legacy_recommendations) if using_legacy_recommendations else len(nvidia_recommendations))
     )
-    recs_not_production_allowed = sum(
-        1 for r in nvidia_recommendations if not r.get("production_allowed", False)
-    )
+    recs_not_production_allowed = sum(1 for r in nvidia_recommendations if not r.get("production_allowed", False))
     recs_production_allowed = (
-        recommendation_count
-        if using_legacy_recommendations
-        else recommendation_count - recs_not_production_allowed
+        recommendation_count if using_legacy_recommendations else recommendation_count - recs_not_production_allowed
     )
 
     calibration_blocker_count = sum(
-        1 for r in nvidia_recommendations
+        1
+        for r in nvidia_recommendations
         if not r.get("production_allowed", False)
-        and any(
-            kw in str(b).lower()
-            for kw in ("calibrat", "uncalibrat", "not found")
-            for b in r.get("blockers", [])
-        )
+        and any(kw in str(b).lower() for kw in ("calibrat", "uncalibrat", "not found") for b in r.get("blockers", []))
     )
 
     # ── Gap metrics ─────────────────────────────────────────────────────
@@ -2118,9 +2083,7 @@ def _run_quality_gates(state: StartupRadarState) -> dict[str, Any]:
         missing_gap_calibration_count = gap_diagnosis_metrics.get("missing_calibration_count", 0)
         calibrated_gap_decision_count = gap_diagnosis_metrics.get("calibrated_decision_count", 0)
         gap_uncertainty_mean = gap_diagnosis_metrics.get("gap_uncertainty_mean", 0.0)
-        needs_more_evidence_gap_count = gap_diagnosis_metrics.get(
-            "evidence_coverage_gap_count", 0
-        )
+        needs_more_evidence_gap_count = gap_diagnosis_metrics.get("evidence_coverage_gap_count", 0)
 
     # ── Recommendation metrics ──────────────────────────────────────────
     rec_metrics = dict(ranking_metrics)
@@ -2204,9 +2167,7 @@ def _run_quality_gates(state: StartupRadarState) -> dict[str, Any]:
     # ── Recommendation calibration missing ──────────────────────────────
     missing_cal = rec_metrics.get("missing_recommendation_calibration_count", 0)
     if missing_cal > 0:
-        failed_checks.append(
-            f"missing_recommendation_calibration_count is {missing_cal}"
-        )
+        failed_checks.append(f"missing_recommendation_calibration_count is {missing_cal}")
 
     # ── Evidence validation ─────────────────────────────────────────────
     evidence_status = evidence_validation.get("status") if evidence_validation else None
@@ -2217,21 +2178,14 @@ def _run_quality_gates(state: StartupRadarState) -> dict[str, Any]:
 
     # ── Gap diagnosis ───────────────────────────────────────────────────
     if gap_diagnosis_status == "blocked_uncalibrated_gap_diagnosis":
-        failed_checks.append(
-            "gap_diagnosis_status is blocked_uncalibrated_gap_diagnosis"
-        )
+        failed_checks.append("gap_diagnosis_status is blocked_uncalibrated_gap_diagnosis")
     elif gap_diagnosis_status and gap_diagnosis_status not in ("passed", None):
         failed_checks.append(f"gap_diagnosis_status is {gap_diagnosis_status}")
 
     if total_gap_count > 0 and production_allowed_gap_count < total_gap_count:
-        failed_checks.append(
-            f"not all gaps allow production "
-            f"({production_allowed_gap_count}/{total_gap_count})"
-        )
+        failed_checks.append(f"not all gaps allow production " f"({production_allowed_gap_count}/{total_gap_count})")
     if missing_gap_calibration_count > 0:
-        failed_checks.append(
-            f"missing_gap_calibration_count is {missing_gap_calibration_count}"
-        )
+        failed_checks.append(f"missing_gap_calibration_count is {missing_gap_calibration_count}")
 
     # ── RAG retrieval ───────────────────────────────────────────────────
     if rag_retrieval_status in ("blocked_uncalibrated_rag", "blocked_no_calibrated_gaps", "failed"):
@@ -2257,13 +2211,9 @@ def _run_quality_gates(state: StartupRadarState) -> dict[str, Any]:
     top_status: str
 
     if failed_checks:
-        has_calibration_block = any(
-            "blocked_uncalibrated" in c or "missing" in c
-            for c in failed_checks
-        )
+        has_calibration_block = any("blocked_uncalibrated" in c or "missing" in c for c in failed_checks)
         has_rec_calibration_block = any(
-            "blocked_uncalibrated_recommendation" in c
-            or "missing_recommendation_calibration" in c
+            "blocked_uncalibrated_recommendation" in c or "missing_recommendation_calibration" in c
             for c in failed_checks
         )
         if has_rec_calibration_block:
@@ -2312,7 +2262,10 @@ def _run_quality_gates(state: StartupRadarState) -> dict[str, Any]:
 def _route_after_quality_gates(state: StartupRadarState) -> str:
     quality: dict[str, Any] = state.get("quality") or {}
     quality_status = quality.get("status")
-    if state.get("review_required") or quality_status in ("needs_review", "blocked_uncalibrated_gap_diagnosis"):
+    if state.get("review_required") or quality_status in (
+        "needs_review",
+        "blocked_uncalibrated_gap_diagnosis",
+    ):
         return "needs_review"
     if quality_status == "failed":
         return "finish"
@@ -2461,9 +2414,7 @@ def _route_after_review(state: StartupRadarState) -> str:
         rag_status: str = state.get("rag_retrieval_status") or "needs_review"
         mapping_summary = state.get("nvidia_mapping_summary")
         has_mappings = bool(
-            mapping_summary
-            and isinstance(mapping_summary, dict)
-            and mapping_summary.get("mapping_status")
+            mapping_summary and isinstance(mapping_summary, dict) and mapping_summary.get("mapping_status")
         )
         if rag_status in ("needs_review", "failed") and "build_technology_mappings" not in executed:
             return "build_technology_mappings"

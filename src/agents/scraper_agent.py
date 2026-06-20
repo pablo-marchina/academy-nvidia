@@ -60,9 +60,7 @@ def collect_sources(
             item: dict[str, Any] = {
                 "url": url,
                 "text": "",
-                "source_type": (
-                    entry.get("source_type", "unknown") if isinstance(entry, dict) else "unknown"
-                ),
+                "source_type": (entry.get("source_type", "unknown") if isinstance(entry, dict) else "unknown"),
                 "reason": (entry.get("reason", "") if isinstance(entry, dict) else ""),
                 "fetched_at": fetched_at,
                 "status_code": result.status,

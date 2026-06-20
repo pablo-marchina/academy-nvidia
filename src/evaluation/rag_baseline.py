@@ -115,9 +115,7 @@ def _compute_metrics_for_case(
             rr = 1.0 / rank
             break
 
-    citation_count = sum(
-        1 for ctx in top_k_ctx if ctx.source_id and ctx.url
-    )
+    citation_count = sum(1 for ctx in top_k_ctx if ctx.source_id and ctx.url)
     citation_prec = citation_count / retrieved_count if retrieved_count > 0 else 1.0
 
     unsupported_count = max(0, expected_count - relevant_unique_count)
@@ -151,7 +149,10 @@ def _retrieve_for_baseline(
     if vector_store is not None and embedding_model is not None:
         gap_type = case.query.gap_type
         return semantic_retrieve(
-            case.query, embedding_model, vector_store, top_k=top_k,
+            case.query,
+            embedding_model,
+            vector_store,
+            top_k=top_k,
             gap_type=gap_type,
         )
     idx = index if index is not None else build_default_index()
@@ -171,7 +172,9 @@ def evaluate_baseline(
 
     results: list[RagBaselineResult] = []
     for case in cases:
-        retrieved = _retrieve_for_baseline(case, top_k, index=index, vector_store=vector_store, embedding_model=embedding_model)
+        retrieved = _retrieve_for_baseline(
+            case, top_k, index=index, vector_store=vector_store, embedding_model=embedding_model
+        )
         metrics = _compute_metrics_for_case(case, retrieved, top_k=top_k)
         retrieved_source_ids = [ctx.source_id for ctx in retrieved[:top_k]]
         results.append(
@@ -204,7 +207,9 @@ def grid_search_baseline(
     for k in sorted(candidates):
         all_results: list[RagBaselineResult] = []
         for case in cases:
-            retrieved = _retrieve_for_baseline(case, k, index=index, vector_store=vector_store, embedding_model=embedding_model)
+            retrieved = _retrieve_for_baseline(
+                case, k, index=index, vector_store=vector_store, embedding_model=embedding_model
+            )
             metrics = _compute_metrics_for_case(case, retrieved, top_k=k)
             retrieved_source_ids = [ctx.source_id for ctx in retrieved[:k]]
             all_results.append(
@@ -223,37 +228,15 @@ def grid_search_baseline(
         total = len(all_results)
         n_expected = len(cases_with_expected)
 
-        avg_recall = (
-            sum(r.metrics.recall_at_k for r in cases_with_expected) / n_expected
-            if n_expected > 0
-            else 0.0
-        )
+        avg_recall = sum(r.metrics.recall_at_k for r in cases_with_expected) / n_expected if n_expected > 0 else 0.0
         avg_precision = (
-            sum(r.metrics.precision_at_k for r in cases_with_expected) / n_expected
-            if n_expected > 0
-            else 0.0
+            sum(r.metrics.precision_at_k for r in cases_with_expected) / n_expected if n_expected > 0 else 0.0
         )
         mrr = sum(r.metrics.mrr for r in all_results) / total if total > 0 else 0.0
-        avg_citation = (
-            sum(r.metrics.citation_precision for r in all_results) / total
-            if total > 0
-            else 0.0
-        )
-        avg_unsupported = (
-            sum(r.metrics.unsupported_claim_rate for r in all_results) / total
-            if total > 0
-            else 0.0
-        )
-        avg_ret = (
-            sum(r.metrics.retrieved_context_count for r in all_results) / total
-            if total > 0
-            else 0.0
-        )
-        avg_rel = (
-            sum(r.metrics.relevant_context_count for r in all_results) / total
-            if total > 0
-            else 0.0
-        )
+        avg_citation = sum(r.metrics.citation_precision for r in all_results) / total if total > 0 else 0.0
+        avg_unsupported = sum(r.metrics.unsupported_claim_rate for r in all_results) / total if total > 0 else 0.0
+        avg_ret = sum(r.metrics.retrieved_context_count for r in all_results) / total if total > 0 else 0.0
+        avg_rel = sum(r.metrics.relevant_context_count for r in all_results) / total if total > 0 else 0.0
 
         grid_results.append(
             RagGridSearchResult(
@@ -308,9 +291,7 @@ def _format_report(grid_results: list[RagGridSearchResult]) -> str:
 
     lines.append("")
     lines.append(f"Total cases: {grid_results[0].total_cases if grid_results else 0}")
-    lines.append(
-        f"Cases with expected sources: {grid_results[0].cases_with_expected_sources if grid_results else 0}"
-    )
+    lines.append(f"Cases with expected sources: {grid_results[0].cases_with_expected_sources if grid_results else 0}")
     lines.append("")
 
     return "\n".join(lines)
@@ -437,16 +418,11 @@ def run_full_calibration(
         citation_target=citation_target,
     )
 
-    min_ctx_rec = _recommend_min_required_contexts(
-        grid_results, recommended_top_k=top_k_rec["recommended_top_k"]
-    )
+    min_ctx_rec = _recommend_min_required_contexts(grid_results, recommended_top_k=top_k_rec["recommended_top_k"])
 
-    dataset_meta = _load_baseline_golden(
-        golden_path or Path("data/eval/golden_baseline_rag.json")
-    )
+    dataset_meta = _load_baseline_golden(golden_path or Path("data/eval/golden_baseline_rag.json"))
     has_minimum_metadata = all(
-        c.minimum_relevant_contexts is not None and c.critical_claims_expected is not None
-        for c in dataset_meta
+        c.minimum_relevant_contexts is not None and c.critical_claims_expected is not None for c in dataset_meta
     )
 
     calibration_status = "baseline_measured" if top_k_rec["production_allowed"] else "baseline_dataset_insufficient"

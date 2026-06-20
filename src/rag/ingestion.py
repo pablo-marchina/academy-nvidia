@@ -31,9 +31,7 @@ def load_sources() -> dict[str, RagSource]:
             version=active_info.get("version", info.get("version", "1.0")),
             document_type=info.get("document_type", "nvidia_corpus"),
             content_hash=active_info.get("content_hash", info.get("content_hash")),
-            previous_content_hash=active_info.get(
-                "previous_content_hash", info.get("previous_content_hash")
-            ),
+            previous_content_hash=active_info.get("previous_content_hash", info.get("previous_content_hash")),
             collected_at=active_info.get("collected_at", info.get("collected_at")),
             last_checked_at=active_info.get("last_checked_at", info.get("last_checked_at")),
             valid_from=active_info.get("valid_from", info.get("valid_from")),
@@ -43,9 +41,7 @@ def load_sources() -> dict[str, RagSource]:
             is_active=active_info.get("is_active", info.get("is_active", True)),
             deprecated_at=active_info.get("deprecated_at", info.get("deprecated_at")),
             superseded_by=active_info.get("superseded_by", info.get("superseded_by")),
-            deprecation_reason=active_info.get(
-                "deprecation_reason", info.get("deprecation_reason")
-            ),
+            deprecation_reason=active_info.get("deprecation_reason", info.get("deprecation_reason")),
         )
     return sources
 

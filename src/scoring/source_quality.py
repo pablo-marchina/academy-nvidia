@@ -7,7 +7,7 @@ blocks with ``score_status="blocked_uncalibrated_weights"`` otherwise.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -104,9 +104,7 @@ def _lookup_source_quality_weights(
                 )
                 return None, rec.calibration_status.value, False, blockers
             return rec.current_value, rec.calibration_status.value, rec.production_allowed, blockers
-    blockers.append(
-        f"Decision '{SOURCE_QUALITY_WEIGHTS_DECISION_ID}' not found in registry"
-    )
+    blockers.append(f"Decision '{SOURCE_QUALITY_WEIGHTS_DECISION_ID}' not found in registry")
     return None, ScoreCalibrationStatus.UNCALIBRATED.value, False, blockers
 
 
@@ -128,7 +126,7 @@ def extract_source_quality_features(
     evidence_item: dict[str, Any],
     now: datetime | None = None,
 ) -> SourceQualityFeatures:
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     source_type_str = str(evidence_item.get("source_type", SourceType.DIRECTORY.value))
     if source_type_str not in SOURCE_AUTHORITY_PRIOR:
         source_type_str = SourceType.DIRECTORY.value
@@ -154,8 +152,7 @@ def extract_source_quality_features(
         source_authority_prior=authority_prior,
         robots_allowed=bool(evidence_item.get("robots_allowed", False)),
         compliance_status=str(evidence_item.get("compliance_status", "unknown")),
-        fetch_success=evidence_item.get("status") == "fetched"
-        or evidence_item.get("http_status_code", 500) < 400,
+        fetch_success=evidence_item.get("status") == "fetched" or evidence_item.get("http_status_code", 500) < 400,
         extraction_success=evidence_item.get("extraction_status") == "success",
         duplicate_status="duplicate" if evidence_item.get("duplicate") else "unique",
         content_bytes=int(evidence_item.get("content_bytes", 0)),
@@ -195,11 +192,7 @@ def _compute_weighted_score(
     if features.historical_evidence_yield is not None:
         feature_values["historical_evidence_yield"] = min(1.0, features.historical_evidence_yield / 10.0)
 
-    raw = sum(
-        weights.get(k, 0.0) * v
-        for k, v in feature_values.items()
-        if k in weights
-    )
+    raw = sum(weights.get(k, 0.0) * v for k, v in feature_values.items() if k in weights)
     raw /= weight_sum
     return max(0.0, min(1.0, raw))
 

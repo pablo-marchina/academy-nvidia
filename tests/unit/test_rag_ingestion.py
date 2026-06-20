@@ -37,10 +37,7 @@ class TestIngestion:
         doc = RagDocument(
             source_id="test_tech",
             title="Test Technology",
-            raw_text=(
-                "# Test\n\n## Description\n\nA description.\n\n## Use Cases\n\n"
-                "- Case 1\n- Case 2"
-            ),
+            raw_text=("# Test\n\n## Description\n\nA description.\n\n## Use Cases\n\n" "- Case 1\n- Case 2"),
         )
         sources = load_sources()
         chunks = chunk_document(doc, sources)

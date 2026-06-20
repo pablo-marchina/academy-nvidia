@@ -140,9 +140,7 @@ def _build_missing_evidence(classification: AINativeLevel) -> list[str]:
         AINativeLevel.AI_ENABLED,
         AINativeLevel.AI_NATIVE,
     ):
-        missing.append(
-            "Evidence of proprietary data or workflow integration (required for AI-native service)"
-        )
+        missing.append("Evidence of proprietary data or workflow integration (required for AI-native service)")
 
     return missing
 
@@ -246,10 +244,7 @@ def classify_ai_native(profile: StartupProfile) -> ClassificationResult:
     evidence_used: list[Evidence] = [
         s
         for s in profile.sources
-        if any(
-            kw in s.claim.lower()
-            for kw in ("ai signal", "tech stack", "company description", "funding")
-        )
+        if any(kw in s.claim.lower() for kw in ("ai signal", "tech stack", "company description", "funding"))
     ]
 
     return ClassificationResult(

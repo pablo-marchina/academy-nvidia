@@ -243,9 +243,7 @@ def test_unsupported_claims_appear_in_risks(repo_session) -> None:
         dossier["executive_verdict"]["unsupported_claim_count"] > 0
     ), f"Expected unsupported_claim_count > 0, got {dossier['executive_verdict']}"
     risks = dossier["risks"]
-    assert any(
-        "unsupported" in r.get("risk", "").lower() for r in risks
-    ), f"Expected unsupported in risks, got {risks}"
+    assert any("unsupported" in r.get("risk", "").lower() for r in risks), f"Expected unsupported in risks, got {risks}"
     uncertainties = dossier["uncertainties"]
     assert any(
         "lack evidence" in u.get("description", "").lower() for u in uncertainties
@@ -265,6 +263,7 @@ def test_review_appears_when_exists(repo_session) -> None:
     review_repo = ReviewDecisionRepository(repo_session)
     review_repo.create(
         analysis_run_id=run_id,
+        startup_id=_get_startup_id(repo_session, run_id),
         decision="approve",
         reviewer="test_user",
         notes="Looks good",

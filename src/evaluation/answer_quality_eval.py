@@ -195,17 +195,11 @@ def run_answer_quality_gates(
             gate_name="citation_coverage",
             status=AnswerQualityStatus.WARN if citation_warning else AnswerQualityStatus.PASS,
             passed=not citation_warning,
-            details=(
-                "citation coverage below threshold"
-                if citation_warning
-                else "citation coverage within threshold"
-            ),
+            details=("citation coverage below threshold" if citation_warning else "citation coverage within threshold"),
         )
     )
 
-    absolute_warning = (
-        metrics.forbidden_absolute_language_count > case.max_forbidden_absolute_language_count
-    )
+    absolute_warning = metrics.forbidden_absolute_language_count > case.max_forbidden_absolute_language_count
     gates.append(
         AnswerQualityGateResult(
             gate_name="forbidden_absolute_language",
@@ -257,8 +251,7 @@ def _check_required_sections(
 ) -> list[RequiredSectionCheck]:
     titles = {section.title for section in brief.sections}
     return [
-        RequiredSectionCheck(section_title=section, present=section in titles)
-        for section in case.required_sections
+        RequiredSectionCheck(section_title=section, present=section in titles) for section in case.required_sections
     ]
 
 
@@ -271,9 +264,7 @@ def _missing_evidence_preserved(
     if not brief.missing_evidence:
         return False
     combined = " ".join(brief.missing_evidence)
-    return all(
-        _identifier_present(term, [combined]) for term in case.required_missing_evidence_terms
-    )
+    return all(_identifier_present(term, [combined]) for term in case.required_missing_evidence_terms)
 
 
 def _uncertainty_preserved(
@@ -305,15 +296,11 @@ def _technology_gap_consistent(brief: StartupActionBrief) -> bool:
         gap = _normalize_identifier(
             candidate.get("addresses_gap") or candidate.get("gap") or candidate.get("diagnosed_gap")
         )
-        technology = _normalize_identifier(
-            candidate.get("technology_name") or candidate.get("technology")
-        )
+        technology = _normalize_identifier(candidate.get("technology_name") or candidate.get("technology"))
         if technology and gap and gap not in detected_gaps:
             return False
     for recommendation in brief.recommendations:
-        gap = _normalize_identifier(
-            recommendation.get("diagnosed_gap") or recommendation.get("gap")
-        )
+        gap = _normalize_identifier(recommendation.get("diagnosed_gap") or recommendation.get("gap"))
         technologies = recommendation.get("recommended_nvidia_technologies") or []
         detected = bool(recommendation.get("detected", True))
         if technologies and (not detected or (gap and gap not in detected_gaps)):
@@ -335,11 +322,7 @@ def _startup_evidence_citation_coverage(brief: StartupActionBrief) -> float:
 def _rag_context_citation_coverage(brief: StartupActionBrief) -> float:
     if not brief.packed_rag_contexts:
         return 1.0
-    cited = sum(
-        1
-        for context in brief.packed_rag_contexts
-        if context.source_id and str(context.url or "").strip()
-    )
+    cited = sum(1 for context in brief.packed_rag_contexts if context.source_id and str(context.url or "").strip())
     return round(cited / len(brief.packed_rag_contexts), 4)
 
 
@@ -348,9 +331,7 @@ def _coverage_check(
     required_ids: list[str],
     present_identifiers: list[str],
 ) -> EvidenceCoverageCheck:
-    present_required = [
-        required for required in required_ids if _identifier_present(required, present_identifiers)
-    ]
+    present_required = [required for required in required_ids if _identifier_present(required, present_identifiers)]
     missing = [required for required in required_ids if required not in present_required]
     coverage = 1.0 if not required_ids else len(present_required) / len(required_ids)
     return EvidenceCoverageCheck(
@@ -385,9 +366,7 @@ def _gap_identifiers(brief: StartupActionBrief) -> list[str]:
 def _technology_identifiers(brief: StartupActionBrief) -> list[str]:
     identifiers: list[str] = []
     for candidate in brief.nvidia_technology_candidates:
-        identifiers.append(
-            _normalize_identifier(candidate.get("technology_name") or candidate.get("technology"))
-        )
+        identifiers.append(_normalize_identifier(candidate.get("technology_name") or candidate.get("technology")))
     for recommendation in brief.recommendations:
         for technology in recommendation.get("recommended_nvidia_technologies") or []:
             identifiers.append(_normalize_identifier(technology))
@@ -536,11 +515,7 @@ def _mean_citation_coverage(results: Sequence[AnswerQualityEvalResult]) -> float
     if not results:
         return 0.0
     total = sum(
-        (
-            result.metrics.rag_context_citation_coverage
-            + result.metrics.startup_evidence_citation_coverage
-        )
-        / 2
+        (result.metrics.rag_context_citation_coverage + result.metrics.startup_evidence_citation_coverage) / 2
         for result in results
     )
     return total / len(results)

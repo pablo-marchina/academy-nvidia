@@ -8,7 +8,7 @@ NVIDIA Startup AI Radar transforma sinais públicos de startups brasileiras em u
 
 Build a reproducible, versioned, AI-oriented workspace that prioritizes traceability, evidence quality, structured outputs, and continuous evaluation. Productization is guided by the consolidated final backlog in [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md).
 
-Demo paths remain useful for validation, but the primary product flow now uses persisted entities (startups, analysis runs, Action Briefs, exports, reviews) via the product API. Legacy demo artifacts and historical docs are archived; see [docs/57_product_simplification_deletion_pass.md](docs/57_product_simplification_deletion_pass.md).
+The primary product flow uses persisted entities (startups, analysis runs, Action Briefs, exports, reviews) via the product API. Legacy demo routes, sample-first UI inputs, and demo CLI surfaces have been removed from the active product path.
 
 ## Problem
 
@@ -30,10 +30,10 @@ How can NVIDIA identify, attract, and nurture Brazilian AI-native startups in a 
 8. **NVIDIA Technology Mapping** maps each gap to relevant NVIDIA technologies.
 9. **Recommendation Engine** generates deterministic per-gap recommendations with action, priority, experiment, and next step.
 10. **Startup Action Brief** produces executive-ready outputs with traceability.
-11. **Product RAG** retrieves NVIDIA documentation snippets (lexical + semantic + hybrid) to enrich briefs with grounded, provenance-tracked context.
+11. **Product RAG** retrieves NVIDIA documentation snippets from Qdrant with real embeddings to enrich briefs with grounded, provenance-tracked context.
 12. **RAG Evaluation** offline evaluation layer with golden queries, 7 retrieval metrics, and 6 quality gates for the Product RAG module.
 13. **Reranking + Context Packing** deterministic reranking (composite score: gap/tech boost + provenance/duplicate/irrelevant penalties) and context packing (dedup, gap/tech limits, provenance filtering) for enriched, clean NVIDIA context in briefs.
-14. **Persistent Vector Store (Qdrant)** optional Qdrant-backed vector store with lazy connection, full payload provenance, and server-side filtering — falls back to in-memory.
+14. **Persistent Vector Store (Qdrant)** required Qdrant-backed vector store with full payload provenance and server-side filtering in `APP_MODE=product`.
 15. **CI/CD & Quality Gates** GitHub Actions CI (ruff, black, mypy, pytest), pre-commit hooks, Makefile targets, scope/documentation validation scripts.
 16. **Startup Discovery Engine** Multi-source discovery of AI-native Brazilian startups with manual seed and URL list importers, keyword-based AI-native signal detection, dedup (normalized_name + domain), DiscoveryRun lifecycle (queued/running/completed/degraded/failed), candidate management, and promotion to Startup records with evidence migration.
 17. **Source Sync** Allowlist-based download of NVIDIA documentation to staging with hash comparison, robots.txt verification, rate limiting, and optional promotion to the local corpus.
@@ -48,7 +48,7 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 
 ## Current Capabilities
 
-### Pipeline (12-step deterministic flow, RAG optional)
+### Pipeline (12-step deterministic flow)
 1. **Extraction** — structured startup profile from raw text (sector, signals, tech stack, customers, funding)
 2. **AI-native Classification** — 5-level heuristic classification (NON_AI → AI_NATIVE_SERVICE) with confidence
 3. **Evidence Validation** — FACT/INFERENCE/HYPOTHESIS tagging with confidence recalibration
@@ -60,7 +60,7 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 9. **NVIDIA Technology Mapping** — deterministic matrix mapping each gap to relevant technologies
 10. **Recommendation Engine** — per-gap recommendations with action, priority, and suggested experiment
 11. **Output Consolidation** — aggregated evidence_used, missing_evidence, reasoning
-12. **Product RAG (optional)** — hybrid retrieval (lexical/semantic), deterministic reranking, context packing, provenance tracking
+12. **Product RAG** — Qdrant semantic retrieval, deterministic reranking, context packing, provenance tracking
 
 13. **CI/CD & Quality Gates** — GitHub Actions (ruff, black, mypy, pytest), pre-commit hooks, Makefile targets, scope-check and docs-closure verification scripts.
 
@@ -78,7 +78,7 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 - **API** — 9 endpoints in `src/api/product_routes.py` (sources, manual-seed, url-list, runs, candidates, promote, dedup)
 
 ### Workflow Orchestration
-- **Workflow Runner** — deterministic sequential 11-node execution with per-node retry (max 1), degraded/failed status propagation, and state persistence. LangGraph optional extra (fallback works without it).
+- **Workflow Runner** — LangGraph-based 11-node execution in `APP_MODE=product`, with per-node retry, degraded/failed status propagation, state persistence, and explicit failure if orchestration is not configured. Sequential execution is reserved for test/development mode.
 - **Workflow Nodes** — 11 nodes wrapping existing services: load_startup_or_candidate (critical), collect_or_load_evidence, validate_evidence, diagnose_gaps, retrieve_nvidia_context, map_nvidia_technologies, generate_claims, match_activation_playbooks, generate_activation_dossier, run_product_quality, summarize_readiness.
 - **Workflow API** — 6 REST endpoints (POST/GET product-runs, GET nodes, GET analysis-run workflow, GET langgraph-status).
 - **Workflow Repository** — CRUD for workflow runs with full node-level tracing (input/output snapshots, retry count, error tracking).
@@ -184,12 +184,18 @@ See [docs/54_final_product_backlog.md](docs/54_final_product_backlog.md) for the
 
 ### Required Setup
 1. Copy `.env.example` to `.env` and set at minimum:
-   - `PRODUCT_DB_URL=sqlite:///data/product/product.db`
    - `APP_MODE=product`
+   - `PRODUCT_DB_URL=postgresql+psycopg://...`
+   - `QDRANT_URL=http://localhost:6333`
+   - `QDRANT_COLLECTION=nvidia_corpus`
+   - `RAG_VECTOR_BACKEND=qdrant`
+   - `RAG_REQUIRED_FOR_PRODUCT=true`
+   - `RAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2`
+   - `AGENT_ORCHESTRATION_ENABLED=true`
    - `ENABLE_PRODUCT_PERSISTENCE=true`
 2. Install backend:
    ```bash
-   pip install -e ".[dev]"
+   pip install -e ".[dev,rag,agent-orchestration]"
    ```
 3. Run migrations:
    ```bash
@@ -252,15 +258,17 @@ python scripts/product_acceptance_report.py  # Readiness report
 - UI blank: check `curl http://localhost:8000/health/product` → status
 - Missing features: check `curl /product/capabilities` for `not_configured` status
 
-## Demo Script
+## Product Walkthrough
 
 The following script walks through the complete product flow from environment setup to delivery. Estimated time: 15–20 minutes.
 
 ### 1. Prepare Environment
 ```bash
 cp .env.example .env
-# Edit .env: PRODUCT_DB_URL, APP_MODE=product, ENABLE_PRODUCT_PERSISTENCE=true
-pip install -e ".[dev]"
+# Edit .env: APP_MODE=product, PRODUCT_DB_URL=postgresql+psycopg://...,
+# QDRANT_URL, QDRANT_COLLECTION, RAG_VECTOR_BACKEND=qdrant,
+# RAG_REQUIRED_FOR_PRODUCT=true, RAG_EMBEDDING_MODEL, AGENT_ORCHESTRATION_ENABLED=true
+pip install -e ".[dev,rag,agent-orchestration]"
 alembic upgrade head
 ```
 
@@ -384,20 +392,10 @@ python scripts/check_no_demo_dependency.py  # No demo dependency
 
 ## Sample Input Policy
 
-1. **Sample inputs are controlled test/demo data only** — never used as automatic fallback.
-2. **Samples are NOT stored in `data/demo_runs/`** (directory removed in Epic 31).
-3. **Approved locations:**
-   - `sample_inputs/` — manual demo (load via explicit API call)
-   - `tests/fixtures/` — automated tests
-   - `docs/examples/` — documentation examples
-4. **The product flow uses DB/API real** — samples are never loaded automatically.
-5. To load a sample manually:
-   ```bash
-   curl -X POST http://localhost:8000/startups \
-     -H "Content-Type: application/json" \
-     -d @sample_inputs/<file.json>
-   ```
-6. See `sample_inputs/README.md` for full documentation.
+1. **Fixtures are test data only** — never loaded by product code or UI.
+2. **No product path reads `data/demo_runs/`, `examples/demo/`, or `sample_inputs/`.**
+3. **Approved test/documentation locations:** `tests/fixtures/` and `docs/examples/`.
+4. **The product flow uses persisted DB/API entities** created through `/startups` and `/analysis-runs`.
 
 ---
 
@@ -466,9 +464,9 @@ make db-downgrade
 make db-migrate msg="description"
 ```
 
-The migration reads `PRODUCT_DB_URL` from the environment. Default is
-`sqlite:///data/product/product.db`. PostgreSQL can be validated by setting
-`PRODUCT_DB_TEST_URL` and running `docker compose up postgres -d`.
+The migration reads `PRODUCT_DB_URL` from the environment. In `APP_MODE=product`,
+`PRODUCT_DB_URL` must point to PostgreSQL. SQLite is reserved for explicit test
+or development mode.
 
 See `docs/contracts/product_db_migrations.md` for full documentation.
 
@@ -482,7 +480,7 @@ Important variables:
 - `NVIDIA_API_KEY`
 - `COHERE_API_KEY`
 - `DATABASE_URL`
-- `PRODUCT_DB_URL` (default `sqlite:///data/product/product.db`)
+- `PRODUCT_DB_URL` (PostgreSQL required in `APP_MODE=product`)
 - `PRODUCT_DB_TEST_URL` (PostgreSQL test URL, optional)
 - `APP_MODE`
 - `ENABLE_PRODUCT_PERSISTENCE`
@@ -503,12 +501,10 @@ The primary flow uses persisted entities via the FastAPI product API. See
 [docs/contracts/product_api_contract.md](docs/contracts/product_api_contract.md)
 for endpoint documentation and usage.
 
-## Legacy Demo CLI
+## Product CLI/API
 
-A legacy CLI demo script (`scripts/run_startup_radar_demo.py`) is preserved for
-manual smoke testing. It runs the pipeline on a sample input
-(`examples/demo/sample_startup_input.json`). This is not the product flow; use
-the product API for persisted operations.
+The active product path is the persisted FastAPI product API. Legacy demo CLI,
+demo routes, and sample-first UI inputs have been removed from the active repo.
 
 ## Running Tests
 
@@ -543,8 +539,8 @@ make corpus-maintenance-evals    # safe maintenance + RAG/golden evals
 make corpus-maintenance-ingest   # explicit real Qdrant ingestion path
 make regression-dashboard  # build local Markdown/JSON regression dashboard
 make ui-install  # install frontend dependencies
-make ui-dev      # run the legacy demo UI
-make ui-build    # build the legacy demo UI
+make ui-dev      # run the Product UI
+make ui-build    # build the Product UI
 make acceptance  # run Product Golden Path acceptance tests (separate target)
 make acceptance-backend  # run acceptance tests excluding E2E
 make prepare-release  # validate + acceptance + ui-build (pre-release gate)
@@ -587,7 +583,7 @@ python scripts/check_docs_closure.py
 
 ## Running the API
 
-The FastAPI server exposes both product endpoints and legacy demo routes.
+The FastAPI server exposes product endpoints only; legacy demo routes are not included in the main app.
 
 ### Start the API
 
@@ -634,16 +630,11 @@ trigger brief generation, RAG retrieval, scoring, scraping, or recommendation
 ranking. Use `GET /analysis-runs/{id}` for run lifecycle/status and summary
 context, not as the primary Action Brief payload.
 
-### Legacy demo endpoints
+### Removed Demo Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/health` | Health check |
-| `GET` | `/version` | Project version info |
-| `GET` | `/rag/status` | RAG backend configuration and Qdrant availability |
-| `POST` | `/brief` | Generate a Startup Action Brief (deprecated) |
-| `POST` | `/brief/evaluate` | Evaluate brief answer quality (deprecated) |
-| `GET` | `/demo/artifacts` | List generated demo artifacts (deprecated) |
+The main FastAPI app no longer exposes `/brief`, `/brief/evaluate`, or
+`/demo/artifacts`. Use the persisted product resources under `/startups`,
+`/analysis-runs`, `/opportunities`, `/reviews`, `/dossier`, and `/exports`.
 
 ### Swagger UI
 
@@ -661,7 +652,7 @@ pytest tests/integration/test_product_patch_review_export.py -v
 ### Required Configuration
 
 1. Copy `.env.example` to `.env` and configure at minimum:
-   - `PRODUCT_DB_URL` — database URL (SQLite default works out of the box)
+   - `PRODUCT_DB_URL` — PostgreSQL URL required in `APP_MODE=product`
    - `APP_MODE` — set to `product`
    - `ENABLE_PRODUCT_PERSISTENCE` — set to `true`
 2. Install the base package:
@@ -727,8 +718,7 @@ consumes the Product API (`/product/readiness`, `/product/capabilities`,
 provides a workspace for setup, capabilities, startup management, analysis
 execution, opportunities, dossier/quality visualization, and review actions.
 
-The Product UI is the primary interface for the product flow. A legacy demo
-UI is preserved for backward-compatible smoke testing but is deprecated.
+The Product UI is the primary interface for the product flow.
 
 ### Prerequisites
 
@@ -870,7 +860,7 @@ Use this checklist to validate a release candidate before delivery.
 - [ ] No `data/demo_runs` dependency (`python scripts/check_no_demo_dependency.py`)
 - [ ] Limitations documented (see Known Limitations below)
 - [ ] Screenshots captured (see `docs/screenshots/INSTRUCTIONS.md`)
-- [ ] Demo script reviewed (see Demo Script section above)
+- [ ] Product walkthrough reviewed (see Product Walkthrough section above)
 - [ ] Final evaluation report updated (`docs/74_final_evaluation_report.md`)
 
 ### Optional (non-blocking)
@@ -886,7 +876,7 @@ Use this checklist to validate a release candidate before delivery.
 |---|---|---|---|---|
 | CI only tests on Ubuntu | Windows/macOS not tested | No | CI uses Ubuntu (GitHub hosted) | Add matrix build |
 | Pre-commit hooks not auto-installed | Hooks don't run automatically | No | Documented in README | Auto-install via setup.py |
-| Integration tests excluded from CI | Qdrant/PG tests manual only | No | Marked `@pytest.mark.integration` | Add service containers to CI |
+| Integration tests excluded from CI | Qdrant/PG tests manual only | Yes for release readiness | Run Docker Compose Postgres + Qdrant locally before release | Add service containers to CI |
 | Playwright requires manual browser install | E2E doesn't run without `npx playwright install` | No | Separate target, documented | Add CI E2E stage |
 
 ### Product Intelligence
@@ -907,7 +897,7 @@ Use this checklist to validate a release candidate before delivery.
 | No frontend unit tests | Only E2E covers UI | No (acceptable v1) | Backend tests cover API | Add Vitest |
 | No React Router | No deep-linking or browser navigation | No (acceptable v1) | State-based navigation | Add React Router |
 | Golden fixture is minimal | Edge cases in unit tests | No | Unit/integration tests cover edge cases | Enrich fixture |
-| Acceptance tests use SQLite by default | PostgreSQL not tested automatically | No | `integration` marker for PG | Add PG CI job |
+| Acceptance tests can use SQLite in `APP_MODE=test` | PostgreSQL is required for product mode | Yes for product release readiness | Run product acceptance with Docker Compose Postgres before release | Add PG CI job |
 
 ### User Interface (v1 limitations)
 
@@ -922,8 +912,8 @@ Use this checklist to validate a release candidate before delivery.
 
 | Limitation | Impact | Blocks delivery? | Mitigation | Future |
 |---|---|---|---|---|
-| RAG requires optional `[rag]` extra | No semantic retrieval without it | No | Falls back to lexical | Improve optional handling |
-| QdrantStore no auto-fallback to in-memory | Qdrant offline = RAG failure | No | Caller catches `QdrantConnectionError` | Add auto-fallback |
+| RAG requires `[rag]` extra in product mode | Product readiness blocks without real embeddings | Yes | Install `pip install -e ".[rag]"` and set `RAG_EMBEDDING_MODEL` | Keep model/version audit current |
+| QdrantStore no auto-fallback to in-memory | Qdrant offline = product readiness failure | Yes | Start Qdrant and ingest corpus | Add managed deployment recipe |
 | Context packing limits (2/3/5) | May drop relevant contexts in edge cases | No | Configurable via `PackingConfig` | Evaluate dynamic limits |
 | Reranking is deterministic, no cross-encoder | May miss semantic relevance | No | Transparent formula | Add optional cross-encoder |
 | No multi-turn RAG queries | Single-shot retrieval only | No | Adequate for briefs | Add interactive mode |

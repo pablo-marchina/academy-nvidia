@@ -66,9 +66,7 @@ class OpportunityService:
             scores = {s.score_type: s for s in run.scores}
             gaps = [g for g in run.gaps if g.detected]
             mappings = run.mappings
-            degraded_count = sum(
-                1 for rc in run.readiness_checks if rc.status in ("degraded", "error")
-            )
+            degraded_count = sum(1 for rc in run.readiness_checks if rc.status in ("degraded", "error"))
             last_review = self._latest_review(run.reviews)
 
             if has_degraded is not None:
@@ -84,12 +82,8 @@ class OpportunityService:
             confidence_value = None
             if run.output_snapshot_json:
                 recommended_motion_value = run.output_snapshot_json.get("recommended_motion")
-                composite_score_value = run.output_snapshot_json.get("composite_score", {}).get(
-                    "composite_score"
-                )
-                confidence_value = run.output_snapshot_json.get("composite_score", {}).get(
-                    "confidence"
-                )
+                composite_score_value = run.output_snapshot_json.get("composite_score", {}).get("composite_score")
+                confidence_value = run.output_snapshot_json.get("composite_score", {}).get("confidence")
 
             if recommended_motion and recommended_motion_value != recommended_motion:
                 continue
@@ -132,12 +126,8 @@ class OpportunityService:
             try:
                 quality_run = self._latest_quality_run(run.id)
                 if quality_run is not None and quality_run.summary_json:
-                    quality_export_readiness = quality_run.summary_json.get(
-                        METRIC_EXPORT_READINESS_SCORE
-                    )
-                    quality_review_readiness = quality_run.summary_json.get(
-                        METRIC_REVIEW_READINESS_SCORE
-                    )
+                    quality_export_readiness = quality_run.summary_json.get(METRIC_EXPORT_READINESS_SCORE)
+                    quality_review_readiness = quality_run.summary_json.get(METRIC_REVIEW_READINESS_SCORE)
             except Exception:
                 pass
 
@@ -209,8 +199,7 @@ class OpportunityService:
             select(AnalysisRun.id)
             .join(
                 subq,
-                (AnalysisRun.startup_id == subq.c.startup_id)
-                & (AnalysisRun.created_at == subq.c.max_created),
+                (AnalysisRun.startup_id == subq.c.startup_id) & (AnalysisRun.created_at == subq.c.max_created),
             )
             .where(AnalysisRun.status.in_(["completed", "degraded"]))
         )

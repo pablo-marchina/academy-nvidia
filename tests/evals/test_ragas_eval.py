@@ -52,9 +52,7 @@ class TestLoadGoldenSet:
     def test_loads_samples(self, loaded_dataset: RagasEvalDataset) -> None:
         assert len(loaded_dataset.samples) >= 1
 
-    def test_each_sample_has_required_fields(
-        self, loaded_dataset: RagasEvalDataset
-    ) -> None:
+    def test_each_sample_has_required_fields(self, loaded_dataset: RagasEvalDataset) -> None:
         for sample in loaded_dataset.samples:
             assert sample.question
             assert sample.gap_id
@@ -70,9 +68,7 @@ class TestLoadGoldenSet:
 
 
 class TestValidateSchema:
-    def test_valid_dataset_returns_no_errors(
-        self, harness: RagasEvalHarness, loaded_dataset: RagasEvalDataset
-    ) -> None:
+    def test_valid_dataset_returns_no_errors(self, harness: RagasEvalHarness, loaded_dataset: RagasEvalDataset) -> None:
         errors = harness.validate_schema(loaded_dataset)
         assert len(errors) == 0, f"schema errors: {errors}"
 
@@ -123,23 +119,17 @@ class TestComputeCustomMetrics:
         assert isinstance(metrics.retrieved_context_count, int)
         assert metrics.retrieved_context_count >= 0
 
-    def test_contexts_per_gap_is_populated(
-        self, harness: RagasEvalHarness, loaded_dataset: RagasEvalDataset
-    ) -> None:
+    def test_contexts_per_gap_is_populated(self, harness: RagasEvalHarness, loaded_dataset: RagasEvalDataset) -> None:
         metrics = harness.compute_custom_metrics(loaded_dataset)
         assert isinstance(metrics.contexts_per_gap, dict)
         assert len(metrics.contexts_per_gap) >= 1
 
-    def test_gaps_without_context_is_counted(
-        self, harness: RagasEvalHarness, loaded_dataset: RagasEvalDataset
-    ) -> None:
+    def test_gaps_without_context_is_counted(self, harness: RagasEvalHarness, loaded_dataset: RagasEvalDataset) -> None:
         metrics = harness.compute_custom_metrics(loaded_dataset)
         assert isinstance(metrics.gaps_without_context_count, int)
         assert metrics.gaps_without_context_count >= 0
 
-    def test_empty_dataset_returns_zero_metrics(
-        self, harness: RagasEvalHarness
-    ) -> None:
+    def test_empty_dataset_returns_zero_metrics(self, harness: RagasEvalHarness) -> None:
         empty = RagasEvalDataset(samples=[])
         metrics = harness.compute_custom_metrics(empty)
         assert metrics.citation_precision == 1.0
@@ -147,9 +137,7 @@ class TestComputeCustomMetrics:
         assert metrics.retrieved_context_count == 0
         assert metrics.gaps_without_context_count == 0
 
-    def test_citation_precision_drops_without_url(
-        self, harness: RagasEvalHarness
-    ) -> None:
+    def test_citation_precision_drops_without_url(self, harness: RagasEvalHarness) -> None:
         ds = RagasEvalDataset(
             samples=[
                 RagasEvalGoldenSample(
@@ -176,9 +164,7 @@ class TestComputeCustomMetrics:
         metrics = harness.compute_custom_metrics(ds)
         assert metrics.citation_precision == 0.0
 
-    def test_unsupported_claim_rate_handles_no_expected_ids(
-        self, harness: RagasEvalHarness
-    ) -> None:
+    def test_unsupported_claim_rate_handles_no_expected_ids(self, harness: RagasEvalHarness) -> None:
         ds = RagasEvalDataset(
             samples=[
                 RagasEvalGoldenSample(
@@ -221,9 +207,7 @@ class TestComputeRagasMetrics:
         assert metrics.answer_relevancy is None
         assert "unavailable" in metrics.metrics_source
 
-    def test_ragas_metrics_structure(
-        self, harness: RagasEvalHarness
-    ) -> None:
+    def test_ragas_metrics_structure(self, harness: RagasEvalHarness) -> None:
         empty = RagasEvalDataset(samples=[])
         metrics = harness.compute_ragas_metrics(empty)
         assert metrics.metrics_source is not None
@@ -245,9 +229,7 @@ class TestDatasetSufficiency:
         assert MINIMUM_GOLDEN_SAMPLES >= 5
         assert MINIMUM_GAP_TYPES_COVERED >= 2
 
-    def test_empty_dataset_is_insufficient(
-        self, harness: RagasEvalHarness
-    ) -> None:
+    def test_empty_dataset_is_insufficient(self, harness: RagasEvalHarness) -> None:
         empty = RagasEvalDataset(samples=[])
         sufficient, msg = harness.check_dataset_sufficiency(empty)
         assert sufficient is False
@@ -261,15 +243,11 @@ class TestFullRun:
     def test_run_returns_result(self, run_result: RagasEvalResult) -> None:
         assert isinstance(run_result, RagasEvalResult)
 
-    def test_run_reports_sufficient_dataset(
-        self, run_result: RagasEvalResult
-    ) -> None:
+    def test_run_reports_sufficient_dataset(self, run_result: RagasEvalResult) -> None:
         assert run_result.dataset_sufficient is True
         assert run_result.calibration_status == "baseline_measured"
 
-    def test_run_production_allowed(
-        self, run_result: RagasEvalResult
-    ) -> None:
+    def test_run_production_allowed(self, run_result: RagasEvalResult) -> None:
         assert run_result.production_allowed is True
 
     def test_run_has_custom_metrics(self, run_result: RagasEvalResult) -> None:
@@ -278,39 +256,29 @@ class TestFullRun:
     def test_run_has_reports(self, run_result: RagasEvalResult) -> None:
         assert len(run_result.reports) >= 4
 
-    def test_run_has_calibration_decisions(
-        self, run_result: RagasEvalResult
-    ) -> None:
+    def test_run_has_calibration_decisions(self, run_result: RagasEvalResult) -> None:
         assert len(run_result.calibration_decisions) >= 5
         assert "rag.semantic_top_k" in run_result.calibration_decisions
         assert "rag.min_contexts_per_gap" in run_result.calibration_decisions
         assert "rag.citation_precision_threshold" in run_result.calibration_decisions
 
-    def test_run_reports_have_required_fields(
-        self, run_result: RagasEvalResult
-    ) -> None:
+    def test_run_reports_have_required_fields(self, run_result: RagasEvalResult) -> None:
         for report in run_result.reports:
             assert isinstance(report, RagasEvalReport)
             assert report.metric_name
             assert isinstance(report.score, float)
             assert report.sample_count >= 1
 
-    def test_run_calibration_decisions_have_value_origin(
-        self, run_result: RagasEvalResult
-    ) -> None:
-        for decision_id, decision in run_result.calibration_decisions.items():
+    def test_run_calibration_decisions_have_value_origin(self, run_result: RagasEvalResult) -> None:
+        for _decision_id, decision in run_result.calibration_decisions.items():
             assert "value_origin" in decision
             assert "ragas_rag_eval" in decision["value_origin"]
             assert "calibration_status" in decision
             assert "production_allowed" in decision
 
-    def test_run_all_decisions_are_baseline_measured(
-        self, run_result: RagasEvalResult
-    ) -> None:
+    def test_run_all_decisions_are_baseline_measured(self, run_result: RagasEvalResult) -> None:
         for decision_id, decision in run_result.calibration_decisions.items():
-            assert decision["calibration_status"] == "baseline_measured", (
-                f"{decision_id} is not baseline_measured"
-            )
+            assert decision["calibration_status"] == "baseline_measured", f"{decision_id} is not baseline_measured"
             assert decision["production_allowed"] is True
 
 
@@ -318,9 +286,7 @@ class TestFullRun:
 
 
 class TestNoExternalCalls:
-    def test_compute_custom_metrics_is_deterministic(
-        self, harness: RagasEvalHarness
-    ) -> None:
+    def test_compute_custom_metrics_is_deterministic(self, harness: RagasEvalHarness) -> None:
         ds = RagasEvalDataset(
             samples=[
                 RagasEvalGoldenSample(
@@ -349,9 +315,7 @@ class TestNoExternalCalls:
         assert m1.citation_precision == m2.citation_precision
         assert m1.unsupported_claim_rate == m2.unsupported_claim_rate
 
-    def test_validate_schema_no_external_calls(
-        self, harness: RagasEvalHarness
-    ) -> None:
+    def test_validate_schema_no_external_calls(self, harness: RagasEvalHarness) -> None:
         ds = RagasEvalDataset(
             samples=[
                 RagasEvalGoldenSample(
@@ -365,15 +329,11 @@ class TestNoExternalCalls:
         errors = harness.validate_schema(ds)
         assert len(errors) == 0
 
-    def test_check_sufficiency_no_external_calls(
-        self, harness: RagasEvalHarness
-    ) -> None:
+    def test_check_sufficiency_no_external_calls(self, harness: RagasEvalHarness) -> None:
         ds = RagasEvalDataset(samples=[])
         harness.check_dataset_sufficiency(ds)
 
-    def test_generate_report_no_external_calls(
-        self, harness: RagasEvalHarness
-    ) -> None:
+    def test_generate_report_no_external_calls(self, harness: RagasEvalHarness) -> None:
         custom = CustomEvalMetrics()
         ragas = RagasComputedMetrics()
         ds = RagasEvalDataset(samples=[])
@@ -385,25 +345,19 @@ class TestNoExternalCalls:
 
 
 class TestReportStructure:
-    def test_each_report_has_calibration_recommendation(
-        self, run_result: RagasEvalResult
-    ) -> None:
+    def test_each_report_has_calibration_recommendation(self, run_result: RagasEvalResult) -> None:
         for report in run_result.reports:
             assert report.calibration_recommendation
 
-    def test_custom_metric_reports_production_allowed(
-        self, run_result: RagasEvalResult
-    ) -> None:
+    def test_custom_metric_reports_production_allowed(self, run_result: RagasEvalResult) -> None:
         for report in run_result.reports:
             if report.metric_name.startswith("custom."):
                 assert report.production_allowed_recommendation is True
 
-    def test_report_contains_both_metric_families(
-        self, run_result: RagasEvalResult
-    ) -> None:
+    def test_report_contains_both_metric_families(self, run_result: RagasEvalResult) -> None:
         names = {r.metric_name for r in run_result.reports}
         custom_metrics = {n for n in names if n.startswith("custom.")}
-        ragas_metrics = {n for n in names if n.startswith("ragas.")}
+        {n for n in names if n.startswith("ragas.")}
         assert len(custom_metrics) >= 3
         assert "custom.citation_precision" in custom_metrics
         assert "custom.unsupported_claim_rate" in custom_metrics

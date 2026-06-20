@@ -1,14 +1,21 @@
-import type { EvaluateResponse, JsonObject } from "../api/client";
+import type { JsonObject } from "../api/client";
+
+type EvaluationResponse = {
+  status?: string;
+  metrics?: JsonObject;
+  failure_reasons?: unknown[];
+  warnings?: unknown[];
+};
 
 type EvalStatusPanelProps = {
-  evalResult: EvaluateResponse | JsonObject | null;
+  evalResult: EvaluationResponse | JsonObject | null;
   isEvaluating: boolean;
   evalError: string | null;
   canEvaluate: boolean;
   onEvaluate: () => void;
 };
 
-function statusFromEval(evalResult: EvaluateResponse | JsonObject | null): string {
+function statusFromEval(evalResult: EvaluationResponse | JsonObject | null): string {
   if (!evalResult) {
     return "not run";
   }
@@ -23,7 +30,7 @@ function statusFromEval(evalResult: EvaluateResponse | JsonObject | null): strin
   return metrics?.answer_quality_status ? String(metrics.answer_quality_status) : "available";
 }
 
-function failureReasons(evalResult: EvaluateResponse | JsonObject | null): string[] {
+function failureReasons(evalResult: EvaluationResponse | JsonObject | null): string[] {
   if (!evalResult || !("failure_reasons" in evalResult)) {
     return [];
   }
@@ -32,7 +39,7 @@ function failureReasons(evalResult: EvaluateResponse | JsonObject | null): strin
     : [];
 }
 
-function warnings(evalResult: EvaluateResponse | JsonObject | null): string[] {
+function warnings(evalResult: EvaluationResponse | JsonObject | null): string[] {
   if (!evalResult || !("warnings" in evalResult)) {
     return [];
   }

@@ -3,21 +3,18 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import pytest
-
 from src.evaluation.startup_scoring_calibration import (
-    AI_NATIVE_MIN_LABELED,
     AI_NATIVE_MAE_MAX,
+    AI_NATIVE_MIN_LABELED,
     AI_NATIVE_SPEARMAN_MIN,
     CANDIDATE_AI_WEIGHTS,
     CANDIDATE_NVIDIA_WEIGHTS,
     NVIDIA_FIT_FP_RATE_MAX,
-    NVIDIA_FIT_MIN_LABELED,
     NVIDIA_FIT_MAE_MAX,
+    NVIDIA_FIT_MIN_LABELED,
     NVIDIA_FIT_SPEARMAN_MIN,
     StartupScoringGoldenEntry,
     StartupScoringMetrics,
-    WeightCandidateResult,
     _check_startup_scoring_production_ready,
     _compute_ai_native_metrics,
     _compute_nvidia_fit_metrics,
@@ -46,31 +43,43 @@ def _make_test_entry(
     evidence: list[dict[str, Any]] = []
 
     if ai_signals > 0:
-        claims.append({
-            "claim_text": "Startup usa inteligencia artificial para analise preditiva",
-            "criticality": "critical", "support_status": "supported", "confidence": "medium",
-        })
+        claims.append(
+            {
+                "claim_text": "Startup usa inteligencia artificial para analise preditiva",
+                "criticality": "critical",
+                "support_status": "supported",
+                "confidence": "medium",
+            }
+        )
     if nv_signals > 0:
-        claims.append({
-            "claim_text": "Plataforma usa GPU NVIDIA para treinamento de modelos",
-            "criticality": "normal", "support_status": "supported", "confidence": "medium",
-        })
+        claims.append(
+            {
+                "claim_text": "Plataforma usa GPU NVIDIA para treinamento de modelos",
+                "criticality": "normal",
+                "support_status": "supported",
+                "confidence": "medium",
+            }
+        )
     if ai_signals > 1:
-        evidence.append({
-            "text": "A startup utiliza machine learning e PyTorch para processamento de dados com GPU.",
-            "source_type": "official_website",
-            "source_quality_score": 0.85,
-            "evidence_confidence_score": 0.78,
-            "source_id": "src1",
-        })
+        evidence.append(
+            {
+                "text": "A startup utiliza machine learning e PyTorch para processamento de dados com GPU.",
+                "source_type": "official_website",
+                "source_quality_score": 0.85,
+                "evidence_confidence_score": 0.78,
+                "source_id": "src1",
+            }
+        )
     if nv_signals > 1:
-        evidence.append({
-            "text": "Treinamento distribuido com CUDA e TensorRT em cluster A100.",
-            "source_type": "technical_docs",
-            "source_quality_score": 0.90,
-            "evidence_confidence_score": 0.82,
-            "source_id": "src2",
-        })
+        evidence.append(
+            {
+                "text": "Treinamento distribuido com CUDA e TensorRT em cluster A100.",
+                "source_type": "technical_docs",
+                "source_quality_score": 0.90,
+                "evidence_confidence_score": 0.82,
+                "source_id": "src2",
+            }
+        )
 
     return StartupScoringGoldenEntry(
         startup_id="test-001",
@@ -126,15 +135,21 @@ class TestLoadGoldenSet:
 
     def test_no_llm_qdrant_internet_scraping(self) -> None:
         import sys
+
         before = set(sys.modules.keys())
-        entries = load_startup_scoring_golden_set(_GOLDEN_PATH)
-        _ = _compute_scores_for_entries(
-            [_make_test_entry()], CANDIDATE_AI_WEIGHTS[0], "ai_native"
-        )
+        load_startup_scoring_golden_set(_GOLDEN_PATH)
+        _ = _compute_scores_for_entries([_make_test_entry()], CANDIDATE_AI_WEIGHTS[0], "ai_native")
         after = set(sys.modules.keys())
         new_imports = after - before
-        banned = {"langchain", "qdrant_client", "httpx", "aiohttp",
-                   "requests", "openai", "anthropic"}
+        banned = {
+            "langchain",
+            "qdrant_client",
+            "httpx",
+            "aiohttp",
+            "requests",
+            "openai",
+            "anthropic",
+        }
         triggered = {m for m in new_imports if any(b in m for b in banned)}
         assert not triggered, f"Banned imports detected: {triggered}"
 
@@ -176,9 +191,7 @@ class TestComputeMetrics:
             _make_test_entry(ai_signals=1, ai_label="medium"),
             _make_test_entry(ai_signals=0, ai_label="low"),
         ]
-        predicted, human, feats = _compute_scores_for_entries(
-            entries, CANDIDATE_AI_WEIGHTS[0], "ai_native"
-        )
+        predicted, human, feats = _compute_scores_for_entries(entries, CANDIDATE_AI_WEIGHTS[0], "ai_native")
         for s in predicted:
             assert 0.0 <= s <= 1.0
 
@@ -188,9 +201,7 @@ class TestComputeMetrics:
             _make_test_entry(nv_signals=1, nv_label="medium"),
             _make_test_entry(nv_signals=0, nv_label="low"),
         ]
-        predicted, human, feats = _compute_scores_for_entries(
-            entries, CANDIDATE_NVIDIA_WEIGHTS[0], "nvidia_fit"
-        )
+        predicted, human, feats = _compute_scores_for_entries(entries, CANDIDATE_NVIDIA_WEIGHTS[0], "nvidia_fit")
         for s in predicted:
             assert 0.0 <= s <= 1.0
 
@@ -283,8 +294,10 @@ class TestSelectBestCandidate:
 class TestCheckProductionReady:
     def test_blocked_when_insufficient_labels(self) -> None:
         ready, blockers = _check_startup_scoring_production_ready(
-            ai_label_count=5, nv_label_count=5,
-            ai_metrics=None, nv_metrics=None,
+            ai_label_count=5,
+            nv_label_count=5,
+            ai_metrics=None,
+            nv_metrics=None,
         )
         assert ready is False
         assert any("labels" in b for b in blockers)
@@ -306,10 +319,12 @@ class TestCheckProductionReady:
             ai_label_count=AI_NATIVE_MIN_LABELED,
             nv_label_count=NVIDIA_FIT_MIN_LABELED,
             ai_metrics=StartupScoringMetrics(
-                spearman=AI_NATIVE_SPEARMAN_MIN, mae=AI_NATIVE_MAE_MAX,
+                spearman=AI_NATIVE_SPEARMAN_MIN,
+                mae=AI_NATIVE_MAE_MAX,
             ),
             nv_metrics=StartupScoringMetrics(
-                spearman=NVIDIA_FIT_SPEARMAN_MIN, mae=NVIDIA_FIT_MAE_MAX,
+                spearman=NVIDIA_FIT_SPEARMAN_MIN,
+                mae=NVIDIA_FIT_MAE_MAX,
                 false_positive_rate=NVIDIA_FIT_FP_RATE_MAX,
             ),
         )
@@ -406,6 +421,7 @@ class TestRegistryIntegration:
         from src.quality.decision_calibration_registry import (
             get_project_decision_inventory,
         )
+
         inventory = get_project_decision_inventory()
         scoring_ids = {
             "ai_native_score.weights",
@@ -424,6 +440,7 @@ class TestRegistryIntegration:
         from src.quality.decision_calibration_registry import (
             get_project_decision_inventory,
         )
+
         inventory = get_project_decision_inventory()
         scoring_ids = {
             "ai_native_score.weights",
@@ -441,6 +458,7 @@ class TestRegistryIntegration:
         from src.quality.decision_calibration_registry import (
             get_project_decision_inventory,
         )
+
         inventory = get_project_decision_inventory()
         scoring_ids = {
             "ai_native_score.weights",
@@ -460,6 +478,7 @@ class TestRegistryIntegration:
             CalibrationStatus,
             get_project_decision_inventory,
         )
+
         inventory = get_project_decision_inventory()
         for rec in inventory:
             if rec.decision_id in {
@@ -471,6 +490,7 @@ class TestRegistryIntegration:
 
     def test_no_values_liberated_without_registry(self) -> None:
         from src.scoring.startup_scoring import compute_startup_scoring
+
         result = compute_startup_scoring([], [], [], inventory=[])
         assert result.ai_native.production_allowed is False
         assert result.nvidia_fit.production_allowed is False
@@ -478,6 +498,7 @@ class TestRegistryIntegration:
 
     def test_threshold_from_measured_result(self) -> None:
         from src.evaluation.startup_scoring_calibration import _calibrate_threshold_from_errors
+
         pred = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05]
         human = [0.85, 0.78, 0.72, 0.58, 0.48, 0.42, 0.28, 0.18, 0.12, 0.08]
         result = _calibrate_threshold_from_errors(pred, human, percentile=5.0)
@@ -486,7 +507,10 @@ class TestRegistryIntegration:
         assert "distribution" in result
 
     def test_uncertainty_penalty_from_measured_result(self) -> None:
-        from src.evaluation.startup_scoring_calibration import _calibrate_uncertainty_penalty_from_data
+        from src.evaluation.startup_scoring_calibration import (
+            _calibrate_uncertainty_penalty_from_data,
+        )
+
         pred = [0.9, 0.5, 0.1]
         human = [0.85, 0.55, 0.15]
         uncertainties = [0.1, 0.2, 0.3]

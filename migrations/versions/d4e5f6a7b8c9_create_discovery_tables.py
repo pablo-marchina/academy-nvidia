@@ -37,9 +37,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("discovery_runs", schema=None) as batch_op:
-        batch_op.create_index(
-            batch_op.f("ix_discovery_runs_source_id"), ["source_id"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_discovery_runs_source_id"), ["source_id"], unique=False)
         batch_op.create_index(batch_op.f("ix_discovery_runs_status"), ["status"], unique=False)
 
     op.create_table(
@@ -69,23 +67,15 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("startup_discovery_candidates", schema=None) as batch_op:
-        batch_op.create_index(
-            batch_op.f("ix_startup_discovery_candidates_source_id"), ["source_id"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_startup_discovery_candidates_status"), ["status"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_startup_discovery_candidates_source_id"), ["source_id"], unique=False)
+        batch_op.create_index(batch_op.f("ix_startup_discovery_candidates_status"), ["status"], unique=False)
         batch_op.create_index(
             batch_op.f("ix_startup_discovery_candidates_normalized_name"),
             ["normalized_name"],
             unique=False,
         )
-        batch_op.create_index(
-            batch_op.f("ix_startup_discovery_candidates_website"), ["website"], unique=False
-        )
-        batch_op.create_index(
-            batch_op.f("ix_startup_discovery_candidates_confidence"), ["confidence"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_startup_discovery_candidates_website"), ["website"], unique=False)
+        batch_op.create_index(batch_op.f("ix_startup_discovery_candidates_confidence"), ["confidence"], unique=False)
         batch_op.create_index(
             batch_op.f("ix_startup_discovery_candidates_discovery_run_id"),
             ["discovery_run_id"],

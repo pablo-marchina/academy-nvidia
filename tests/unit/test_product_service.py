@@ -31,9 +31,7 @@ def _startup_payload() -> dict[str, Any]:
                 "claim": "Runs inference in production",
                 "source_url": "https://product.example.com/technology",
                 "source_type": "official_site",
-                "quote_or_evidence": (
-                    "Our platform runs GPU inference workloads in production environments."
-                ),
+                "quote_or_evidence": ("Our platform runs GPU inference workloads in production environments."),
                 "confidence": "high",
             }
         ],

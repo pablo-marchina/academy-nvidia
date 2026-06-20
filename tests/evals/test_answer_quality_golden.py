@@ -20,10 +20,7 @@ from tests.evals.helpers import load_golden_case, run_pipeline_on_case, run_pipe
 
 GOLDEN_DIR = Path(__file__).resolve().parent.parent.parent / "examples" / "golden"
 ANSWER_QUALITY_PATH = (
-    Path(__file__).resolve().parent.parent.parent
-    / "examples"
-    / "answer_quality"
-    / "golden_answer_quality_cases.json"
+    Path(__file__).resolve().parent.parent.parent / "examples" / "answer_quality" / "golden_answer_quality_cases.json"
 )
 
 
@@ -36,9 +33,7 @@ def test_answer_quality_golden_cases_run_offline() -> None:
 
     assert len(results) == len(cases)
     assert all(result.passed for result in results), summary
-    assert all(
-        result.metrics.answer_quality_status == AnswerQualityStatus.PASS for result in results
-    ), summary
+    assert all(result.metrics.answer_quality_status == AnswerQualityStatus.PASS for result in results), summary
 
 
 def test_fails_when_required_section_missing() -> None:
@@ -70,9 +65,7 @@ def test_fails_when_uncertainty_is_omitted_for_low_confidence() -> None:
     case = _case("low_confidence_validate_manually")
     brief = _build_brief(case).model_copy(deep=True)
     brief.uncertainties = []
-    brief.sections = [
-        section for section in brief.sections if section.title != "Uncertainties / Limitations"
-    ]
+    brief.sections = [section for section in brief.sections if section.title != "Uncertainties / Limitations"]
 
     result = evaluate_answer_quality(brief, case)
 
@@ -130,7 +123,7 @@ def test_detects_unsupported_claims() -> None:
 
 
 def test_warns_when_citation_coverage_is_low() -> None:
-    case = _case("rag_context_good_gap")
+    case = _case("high_fit_supported_answer")
     brief = _build_brief(case).model_copy(deep=True)
     for context in brief.packed_rag_contexts:
         context.url = None
@@ -174,14 +167,8 @@ def _build_brief(case: AnswerQualityEvalCase):
 
 
 def _gate_failed(result, gate_name: str) -> bool:
-    return any(
-        gate.gate_name == gate_name and gate.status == AnswerQualityStatus.FAIL
-        for gate in result.gates
-    )
+    return any(gate.gate_name == gate_name and gate.status == AnswerQualityStatus.FAIL for gate in result.gates)
 
 
 def _gate_warned(result, gate_name: str) -> bool:
-    return any(
-        gate.gate_name == gate_name and gate.status == AnswerQualityStatus.WARN
-        for gate in result.gates
-    )
+    return any(gate.gate_name == gate_name and gate.status == AnswerQualityStatus.WARN for gate in result.gates)

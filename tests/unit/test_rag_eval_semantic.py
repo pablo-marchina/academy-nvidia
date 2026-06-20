@@ -124,9 +124,7 @@ def test_mode_eval_hybrid_falls_back_to_lexical() -> None:
     store = InMemoryVectorStore()
     emb = MockEmbeddingProvider()
     idx = ChunkIndex([])
-    result = run_mode_eval(
-        RetrievalMode.HYBRID, chunk_index=idx, vector_store=store, embedding_model=emb
-    )
+    result = run_mode_eval(RetrievalMode.HYBRID, chunk_index=idx, vector_store=store, embedding_model=emb)
     assert result.total_cases > 0
     for r in result.results:
         if not r.expected_source_ids:
@@ -205,9 +203,16 @@ def test_format_comparison_summary_includes_modes(populated_store: InMemoryVecto
     assert "REGRESSION" in summary
 
 
-def test_format_comparison_summary_without_vector_store() -> None:
+def test_format_comparison_summary_with_explicit_vector_store(
+    populated_store: InMemoryVectorStore,
+) -> None:
+    emb = MockEmbeddingProvider()
     idx = build_default_index()
-    comparison = run_comparison_eval(chunk_index=idx)
+    comparison = run_comparison_eval(
+        chunk_index=idx,
+        vector_store=populated_store,
+        embedding_model=emb,
+    )
     summary = format_comparison_summary(comparison)
     assert "LEXICAL" in summary
     assert "SEMANTIC" in summary

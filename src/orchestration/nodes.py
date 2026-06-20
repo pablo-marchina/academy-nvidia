@@ -31,9 +31,7 @@ NODE_NAMES: list[str] = []
 
 def _register(name: str, description: str, critical: bool = False) -> Callable[[NodeFn], NodeFn]:
     def decorator(fn: NodeFn) -> NodeFn:
-        WORKFLOW_NODES.append(
-            NodeDefinition(name=name, description=description, fn=fn, critical=critical)
-        )
+        WORKFLOW_NODES.append(NodeDefinition(name=name, description=description, fn=fn, critical=critical))
         NODE_NAMES.append(name)
         return fn
 

@@ -83,9 +83,7 @@ def test_connection_error_raised() -> None:
 # ------------------------------------------------------------------
 
 
-def test_add_entry_upserts_point(
-    store: QdrantStore, mock_qdrant: MagicMock, sample_entry: VectorEntry
-) -> None:
+def test_add_entry_upserts_point(store: QdrantStore, mock_qdrant: MagicMock, sample_entry: VectorEntry) -> None:
     """add_entry calls upsert with a properly formatted PointStruct."""
     store.add_entry(sample_entry)
     mock_qdrant.upsert.assert_called_once()

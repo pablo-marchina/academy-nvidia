@@ -91,9 +91,7 @@ class WorkflowRepository:
         self.session.flush()
         return run
 
-    def complete_workflow(
-        self, workflow_id: str, *, state_json: dict[str, Any]
-    ) -> WorkflowRun | None:
+    def complete_workflow(self, workflow_id: str, *, state_json: dict[str, Any]) -> WorkflowRun | None:
         return self.update_workflow_status(
             workflow_id,
             status=WorkflowStatus.COMPLETED,

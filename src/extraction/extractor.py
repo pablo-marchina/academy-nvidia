@@ -137,18 +137,15 @@ _TECH_KEYWORDS: list[str] = [
 
 _FOUNDER_PATTERNS: list[re.Pattern[str]] = [
     re.compile(
-        r"(?:founded|co.?founded|created|started)\s+by\s+"
-        r"([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ]+\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ]+)",
+        r"(?:founded|co.?founded|created|started)\s+by\s+" r"([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ]+\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ]+)",
         re.IGNORECASE,
     ),
     re.compile(
-        r"(?:CEO|CTO|COO|Founder|Co.?founder)\s*:?\s*"
-        r"([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ]+\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ]+)",
+        r"(?:CEO|CTO|COO|Founder|Co.?founder)\s*:?\s*" r"([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ]+\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ]+)",
         re.IGNORECASE,
     ),
     re.compile(
-        r"([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ]+\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ]+)"
-        r"\s+is\s+(?:the\s+)?(?:CEO|CTO|Founder|Co.?founder)",
+        r"([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ]+\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ]+)" r"\s+is\s+(?:the\s+)?(?:CEO|CTO|Founder|Co.?founder)",
         re.IGNORECASE,
     ),
     re.compile(
@@ -159,8 +156,7 @@ _FOUNDER_PATTERNS: list[re.Pattern[str]] = [
 
 _CUSTOMER_PATTERNS: list[re.Pattern[str]] = [
     re.compile(
-        r"(?:clients?|customers?|parceiros?|clientes?)"
-        r"\s+(?:include|like|such as|são|sao|incluem?)\s+([^.]+)",
+        r"(?:clients?|customers?|parceiros?|clientes?)" r"\s+(?:include|like|such as|são|sao|incluem?)\s+([^.]+)",
         re.IGNORECASE,
     ),
     re.compile(r"(?:serving|atendendo|atendemos)\s+([^.]+)", re.IGNORECASE),
@@ -172,15 +168,11 @@ _CUSTOMER_PATTERNS: list[re.Pattern[str]] = [
 
 _FUNDING_PATTERNS: list[re.Pattern[str]] = [
     re.compile(
-        r"(?:raised|secured|obtained|levantou|recebeu|captou)"
-        r"\s+(?:[A-Z]{3}\s*)?"
-        r"\$?(\d[\d,.]*[MkKmMbB]?)",
+        r"(?:raised|secured|obtained|levantou|recebeu|captou)" r"\s+(?:[A-Z]{3}\s*)?" r"\$?(\d[\d,.]*[MkKmMbB]?)",
         re.IGNORECASE,
     ),
     re.compile(
-        r"(?:series|série|serie|round)"
-        r"\s+([A-Z])\s+"
-        r"(?:funding|investment|round|investimento|rodada)",
+        r"(?:series|série|serie|round)" r"\s+([A-Z])\s+" r"(?:funding|investment|round|investimento|rodada)",
         re.IGNORECASE,
     ),
     re.compile(

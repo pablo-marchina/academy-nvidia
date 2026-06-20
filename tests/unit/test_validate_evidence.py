@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import patch
-
-import pytest
 
 from src.agents.graph import _validate_evidence
 from src.quality.decision_calibration_registry import (
@@ -15,15 +13,21 @@ from src.quality.decision_calibration_registry import (
     DecisionType,
 )
 
-_NOW = datetime(2026, 6, 17, tzinfo=timezone.utc)
+_NOW = datetime(2026, 6, 17, tzinfo=UTC)
 
 REQUIRED_METRICS_KEYS: list[str] = [
-    "evidence_items_count", "scored_evidence_count",
-    "accepted_evidence_count", "rejected_evidence_count",
-    "low_source_quality_count", "low_evidence_confidence_count",
-    "claims_count", "supported_claims_count", "unsupported_claims_count",
+    "evidence_items_count",
+    "scored_evidence_count",
+    "accepted_evidence_count",
+    "rejected_evidence_count",
+    "low_source_quality_count",
+    "low_evidence_confidence_count",
+    "claims_count",
+    "supported_claims_count",
+    "unsupported_claims_count",
     "unsupported_critical_claims_count",
-    "average_source_quality_score", "average_evidence_confidence_score",
+    "average_source_quality_score",
+    "average_evidence_confidence_score",
     "production_ready_evidence_ratio",
 ]
 
@@ -146,8 +150,7 @@ def _good_evidence_item(url: str = "https://example.com") -> dict[str, Any]:
     return {
         "url": url,
         "text": (
-            "A sufficiently long explicit quote that provides "
-            "specific context and supports the claim with details"
+            "A sufficiently long explicit quote that provides " "specific context and supports the claim with details"
         ),
         "source_type": "news",
         "robots_allowed": True,
@@ -161,8 +164,7 @@ def _good_evidence_item(url: str = "https://example.com") -> dict[str, Any]:
         "collected_at": "2026-06-15T00:00:00+00:00",
         "confidence": "high",
         "snippet": (
-            "A sufficiently long explicit quote that provides "
-            "specific context and supports the claim with details"
+            "A sufficiently long explicit quote that provides " "specific context and supports the claim with details"
         ),
     }
 
@@ -214,12 +216,14 @@ def test_blocked_when_sq_weights_uncalibrated() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=inv,
     ):
-        result = _validate_evidence({
-            "raw_evidence": [],
-            "evidence_items": [_good_evidence_item()],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": [],
+                "evidence_items": [_good_evidence_item()],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
     assert result["status"] == "evidence_scoring_uncalibrated"
     assert result["evidence_validation"]["status"] == "blocked_uncalibrated_scoring"
     assert result["review_required"] is True
@@ -237,12 +241,14 @@ def test_blocked_when_ec_weights_uncalibrated() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=inv,
     ):
-        result = _validate_evidence({
-            "raw_evidence": [],
-            "evidence_items": [_good_evidence_item()],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": [],
+                "evidence_items": [_good_evidence_item()],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
     assert result["status"] == "evidence_scoring_uncalibrated"
     assert result["evidence_validation"]["status"] == "blocked_uncalibrated_scoring"
     assert any("weight.evidence_confidence_score.weights" in b for b in result.get("blockers", []))
@@ -259,12 +265,14 @@ def test_blocked_when_thresholds_absent() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=inv,
     ):
-        result = _validate_evidence({
-            "raw_evidence": [],
-            "evidence_items": [_good_evidence_item()],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": [],
+                "evidence_items": [_good_evidence_item()],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
     assert result["status"] == "evidence_scoring_uncalibrated"
     assert result["evidence_validation"]["status"] == "blocked_uncalibrated_scoring"
     all_blockers = " ".join(result.get("blockers", []))
@@ -280,27 +288,30 @@ def test_blocked_when_thresholds_absent() -> None:
 def test_item_below_sq_threshold_rejected() -> None:
     inv = _calibrated_inventory()
     # raw_evidence matches the url so the item gets evidence_kind
-    raw = [{
-        "claim": "Bad source claim",
-        "source_url": "https://bad-source.com",
-        "source_type": "directory",
-        "quote_or_evidence": (
-            "A sufficiently long explicit quote that provides "
-            "specific context and supports the claim"
-        ),
-        "confidence": "low",
-        "collected_at": "2026-06-01T00:00:00+00:00",
-    }]
+    raw = [
+        {
+            "claim": "Bad source claim",
+            "source_url": "https://bad-source.com",
+            "source_type": "directory",
+            "quote_or_evidence": (
+                "A sufficiently long explicit quote that provides " "specific context and supports the claim"
+            ),
+            "confidence": "low",
+            "collected_at": "2026-06-01T00:00:00+00:00",
+        }
+    ]
     with patch(
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=inv,
     ):
-        result = _validate_evidence({
-            "raw_evidence": raw,
-            "evidence_items": [_bad_source_item()],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": raw,
+                "evidence_items": [_bad_source_item()],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
     items = result.get("evidence_items", [])
     assert len(items) >= 1
     first = items[0]
@@ -320,27 +331,30 @@ def test_item_below_ec_threshold_rejected() -> None:
     item = _good_evidence_item(url="https://low-ec.com")
     item["snippet"] = "Short."
     item["confidence"] = "low"
-    raw = [{
-        "claim": "Low confidence claim",
-        "source_url": "https://low-ec.com",
-        "source_type": "news",
-        "quote_or_evidence": (
-            "A sufficiently long explicit quote that provides "
-            "specific context and supports the claim"
-        ),
-        "confidence": "low",
-        "collected_at": "2026-06-15T00:00:00+00:00",
-    }]
+    raw = [
+        {
+            "claim": "Low confidence claim",
+            "source_url": "https://low-ec.com",
+            "source_type": "news",
+            "quote_or_evidence": (
+                "A sufficiently long explicit quote that provides " "specific context and supports the claim"
+            ),
+            "confidence": "low",
+            "collected_at": "2026-06-15T00:00:00+00:00",
+        }
+    ]
     with patch(
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=inv,
     ):
-        result = _validate_evidence({
-            "raw_evidence": raw,
-            "evidence_items": [item],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": raw,
+                "evidence_items": [item],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
     items = result.get("evidence_items", [])
     assert len(items) >= 1
     first = items[0]
@@ -356,27 +370,31 @@ def test_item_below_ec_threshold_rejected() -> None:
 
 def test_item_above_thresholds_accepted() -> None:
     inv = _calibrated_inventory()
-    raw = [{
-        "claim": "Good evidence claim",
-        "source_url": "https://example.com",
-        "source_type": "news",
-        "quote_or_evidence": (
-            "A sufficiently long explicit quote that provides "
-            "specific context and supports the claim with details"
-        ),
-        "confidence": "high",
-        "collected_at": "2026-06-15T00:00:00+00:00",
-    }]
+    raw = [
+        {
+            "claim": "Good evidence claim",
+            "source_url": "https://example.com",
+            "source_type": "news",
+            "quote_or_evidence": (
+                "A sufficiently long explicit quote that provides "
+                "specific context and supports the claim with details"
+            ),
+            "confidence": "high",
+            "collected_at": "2026-06-15T00:00:00+00:00",
+        }
+    ]
     with patch(
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=inv,
     ):
-        result = _validate_evidence({
-            "raw_evidence": raw,
-            "evidence_items": [_good_evidence_item()],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": raw,
+                "evidence_items": [_good_evidence_item()],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
     items = result.get("evidence_items", [])
     assert len(items) >= 1
     first = items[0]
@@ -390,24 +408,28 @@ def test_item_above_thresholds_accepted() -> None:
 
 def test_unsupported_critical_claim_failed() -> None:
     inv = _calibrated_inventory()
-    raw = [{
-        "claim": "We are the undisputed market leader",
-        "source_url": "https://critical.ai",
-        "source_type": "official_site",
-        "quote_or_evidence": "",
-        "confidence": "medium",
-        "collected_at": "2026-06-15T00:00:00+00:00",
-    }]
+    raw = [
+        {
+            "claim": "We are the undisputed market leader",
+            "source_url": "https://critical.ai",
+            "source_type": "official_site",
+            "quote_or_evidence": "",
+            "confidence": "medium",
+            "collected_at": "2026-06-15T00:00:00+00:00",
+        }
+    ]
     with patch(
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=inv,
     ):
-        result = _validate_evidence({
-            "raw_evidence": raw,
-            "evidence_items": [_empty_claim_item()],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": raw,
+                "evidence_items": [_empty_claim_item()],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
     assert result["status"] == "evidence_validation_failed"
     assert result["evidence_validation"]["status"] == "failed"
     assert result["unsupported_critical_claims_count"] >= 1
@@ -438,8 +460,7 @@ def test_aggregate_metrics_calculated() -> None:
             "source_url": "https://bad-source.com",
             "source_type": "directory",
             "quote_or_evidence": (
-                "A sufficiently long explicit quote that provides "
-                "specific context and supports the claim"
+                "A sufficiently long explicit quote that provides " "specific context and supports the claim"
             ),
             "confidence": "low",
             "collected_at": "2026-06-01T00:00:00+00:00",
@@ -450,12 +471,14 @@ def test_aggregate_metrics_calculated() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=inv,
     ):
-        result = _validate_evidence({
-            "raw_evidence": raw,
-            "evidence_items": items,
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": raw,
+                "evidence_items": items,
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
     evm = result.get("evidence_validation_metrics", {})
     assert evm.get("evidence_items_count") == 2
     assert evm.get("scored_evidence_count") == 2
@@ -503,12 +526,14 @@ def test_production_ready_evidence_ratio() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=inv,
     ):
-        result = _validate_evidence({
-            "raw_evidence": raw,
-            "evidence_items": items,
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": raw,
+                "evidence_items": items,
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
     evm = result.get("evidence_validation_metrics", {})
     assert evm.get("accepted_evidence_count") == 2
     assert evm.get("scored_evidence_count") == 4
@@ -525,27 +550,31 @@ def test_passed_status_requires_calibration_and_accepted() -> None:
         production_ready_ratio_calibrated=True,
         min_supported_claims_calibrated=True,
     )
-    raw = [{
-        "claim": "Good claim",
-        "source_url": "https://example.com",
-        "source_type": "news",
-        "quote_or_evidence": (
-            "A sufficiently long explicit quote that provides "
-            "specific context and supports the claim with details"
-        ),
-        "confidence": "high",
-        "collected_at": "2026-06-15T00:00:00+00:00",
-    }]
+    raw = [
+        {
+            "claim": "Good claim",
+            "source_url": "https://example.com",
+            "source_type": "news",
+            "quote_or_evidence": (
+                "A sufficiently long explicit quote that provides "
+                "specific context and supports the claim with details"
+            ),
+            "confidence": "high",
+            "collected_at": "2026-06-15T00:00:00+00:00",
+        }
+    ]
     with patch(
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=inv,
     ):
-        result = _validate_evidence({
-            "raw_evidence": raw,
-            "evidence_items": [_good_evidence_item()],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": raw,
+                "evidence_items": [_good_evidence_item()],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
     assert result["status"] == "evidence_validation_passed"
     assert result["evidence_validation"]["status"] == "passed"
     assert result.get("review_required") is False
@@ -563,13 +592,15 @@ def test_run_id_preserved() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=inv,
     ):
-        result = _validate_evidence({
-            "run_id": "preserved-id-42",
-            "raw_evidence": [],
-            "evidence_items": [_good_evidence_item()],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "run_id": "preserved-id-42",
+                "raw_evidence": [],
+                "evidence_items": [_good_evidence_item()],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
     # run_id is not mutated — it stays in caller's state dict
     assert "validate_evidence" in result["executed_nodes"]
 
@@ -588,17 +619,24 @@ def test_no_llm_qdrant_internet_scraping() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=inv,
     ):
-        _validate_evidence({
-            "raw_evidence": [],
-            "evidence_items": [_good_evidence_item()],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        _validate_evidence(
+            {
+                "raw_evidence": [],
+                "evidence_items": [_good_evidence_item()],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
     after = set(sys.modules.keys())
     new_imports = after - before
     banned: set[str] = {
-        "langchain", "qdrant_client", "httpx", "aiohttp",
-        "requests", "openai", "anthropic",
+        "langchain",
+        "qdrant_client",
+        "httpx",
+        "aiohttp",
+        "requests",
+        "openai",
+        "anthropic",
     }
     triggered = {m for m in new_imports if any(b in m for b in banned)}
     assert not triggered, f"Banned imports detected: {triggered}"

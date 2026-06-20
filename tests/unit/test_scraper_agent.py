@@ -131,9 +131,7 @@ class TestCollectGovernedSources:
             "src.scraping.http_collector.list_governed_sources",
             lambda: [governed_source],
         )
-        items, errors = collect_governed_sources(
-            startup_name="TestStartup", website_url=http_server
-        )
+        items, errors = collect_governed_sources(startup_name="TestStartup", website_url=http_server)
         assert len(items) >= 1, f"errors={errors}"
         assert all(item["url"].startswith(http_server) for item in items)
         assert all(isinstance(item["url"], str) for item in items)
@@ -144,9 +142,7 @@ class TestCollectGovernedSources:
             "src.scraping.http_collector.list_governed_sources",
             lambda: [],
         )
-        items, errors = collect_governed_sources(
-            startup_name="Empty", website_url="http://example.com"
-        )
+        items, errors = collect_governed_sources(startup_name="Empty", website_url="http://example.com")
         assert items == []
         assert any("No production-enabled sources" in e for e in errors)
 
@@ -158,16 +154,12 @@ class TestCollectGovernedSources:
             "src.scraping.http_collector.list_governed_sources",
             lambda: [governed_source],
         )
-        items, errors = collect_governed_sources(
-            startup_name="DryRun", website_url=http_server, dry_run=True
-        )
+        items, errors = collect_governed_sources(startup_name="DryRun", website_url=http_server, dry_run=True)
         assert len(items) == 0
         # dry_run should not produce fetches — blocked or no content
         assert all(e for e in errors)  # errors might have dry-run messages
 
-    def test_dynamic_base_url_from_website_url(
-        self, http_server: str, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_dynamic_base_url_from_website_url(self, http_server: str, monkeypatch: pytest.MonkeyPatch) -> None:
         _Handler.routes = {
             "/": (200, "text/html", "<html><body>Home page</body></html>"),
             "/robots.txt": (200, "text/plain", "User-agent: *\nAllow: /\n"),

@@ -54,5 +54,9 @@ Each contains:
 - `missing_evidence` populated for inferred gaps
 - Top recommendation is the highest-priority `APPROACH_NOW`
 
+## Final Product Readiness Update - 2026-06-19
+
+In the product path, recommendations are blocked unless productive calibration and RAG support are available. Each NVIDIA recommendation must expose evidence, RAG provenance, confidence, business impact, implementation complexity, and next best action. Decisions based on `UNCALIBRATED`, placeholder, synthetic, or `production_allowed=false` calibration records are non-productive and must fail readiness or quality gates instead of silently emitting a recommendation.
+
 ## Contract Version
 1.0 — June 2026

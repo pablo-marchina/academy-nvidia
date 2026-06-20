@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -15,15 +15,13 @@ from src.quality.decision_calibration_registry import (
 )
 from src.scoring.source_quality import (
     SOURCE_QUALITY_WEIGHTS_DECISION_ID,
-    ScoreCalibrationStatus,
     ScoreStatus,
     SourceQualityFeatures,
-    SourceQualityScoreResult,
     compute_source_quality_score,
     extract_source_quality_features,
 )
 
-_NOW = datetime(2026, 6, 17, tzinfo=timezone.utc)
+_NOW = datetime(2026, 6, 17, tzinfo=UTC)
 
 
 def _make_evidence_item(
@@ -297,6 +295,14 @@ class TestRegistryIntegration:
         extract_source_quality_features(_make_evidence_item(), now=_NOW)
         after = set(sys.modules.keys())
         new_imports = after - before
-        banned = {"langchain", "qdrant_client", "httpx", "aiohttp", "requests", "openai", "anthropic"}
+        banned = {
+            "langchain",
+            "qdrant_client",
+            "httpx",
+            "aiohttp",
+            "requests",
+            "openai",
+            "anthropic",
+        }
         triggered = {m for m in new_imports if any(b in m for b in banned)}
         assert not triggered, f"Banned imports detected: {triggered}"

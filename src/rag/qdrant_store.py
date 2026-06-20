@@ -94,9 +94,7 @@ class QdrantStore(VectorStore):
                 "qdrant-client is not installed.  Install it with: pip install qdrant-client"
             ) from err
         except Exception as exc:
-            raise QdrantConnectionError(
-                f"Cannot connect to Qdrant at {self._config.url}: {exc}"
-            ) from exc
+            raise QdrantConnectionError(f"Cannot connect to Qdrant at {self._config.url}: {exc}") from exc
 
     def _ensure_collection(self) -> None:
         """Create the collection if it does not exist."""
@@ -319,11 +317,7 @@ class QdrantStore(VectorStore):
 
         entries = [_point_to_entry(p) for p in results.points]
         if not include_deprecated:
-            entries = [
-                e
-                for e in entries
-                if e.is_active is True and not e.deprecated_at and not e.superseded_by
-            ]
+            entries = [e for e in entries if e.is_active is True and not e.deprecated_at and not e.superseded_by]
         if not include_expired:
             entries = [e for e in entries if not _is_expired(e.valid_until)]
         return entries

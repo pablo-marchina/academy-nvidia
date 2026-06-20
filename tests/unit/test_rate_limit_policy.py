@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import inspect
 import os
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 
+import src.scraping.rate_limit_policy as rate_limit_policy_module
 from src.scraping.rate_limit_policy import (
     RateLimitPolicy,
     check_capability_ready,
@@ -15,7 +17,6 @@ from src.scraping.rate_limit_policy import (
     reset_policy_cache,
     summarize_rate_limit_policies,
 )
-
 
 # ── Model ──────────────────────────────────────────────────────────────────
 
@@ -57,7 +58,14 @@ class TestLoadRateLimitPolicies:
 
     def test_includes_all_expected_policies(self) -> None:
         policies = load_rate_limit_policies()
-        expected = {"default_polite", "github_api", "news_site", "directory_listing", "search_engine", "nvidia_eco"}
+        expected = {
+            "default_polite",
+            "github_api",
+            "news_site",
+            "directory_listing",
+            "search_engine",
+            "nvidia_eco",
+        }
         assert expected == set(policies.keys())
 
     def test_github_api_requires_key(self) -> None:
@@ -149,7 +157,12 @@ class TestCapabilityReadiness:
 class TestSummarize:
     def test_summarize_returns_all_keys(self) -> None:
         summary = summarize_rate_limit_policies()
-        expected = {"total_policies", "policy_ids", "policies_requiring_api_key", "available_capabilities"}
+        expected = {
+            "total_policies",
+            "policy_ids",
+            "policies_requiring_api_key",
+            "available_capabilities",
+        }
         assert expected.issubset(summary.keys())
 
     def test_summarize_count(self) -> None:
@@ -180,14 +193,12 @@ class TestSafety:
             socket.socket.connect = original  # type: ignore[assignment]
 
     def test_does_not_import_httpx(self) -> None:
-        with pytest.raises(ImportError):
-            from src.scraping.rate_limit_policy import httpx  # type: ignore[attr-defined]  # noqa: F811
-        assert True
+        source = inspect.getsource(rate_limit_policy_module).lower()
+        assert "httpx" not in source
 
     def test_does_not_import_qdrant(self) -> None:
-        with pytest.raises(ImportError):
-            from src.scraping.rate_limit_policy import qdrant_client  # type: ignore[attr-defined]  # noqa: F811
-        assert True
+        source = inspect.getsource(rate_limit_policy_module).lower()
+        assert "qdrant" not in source
 
 
 # ── Cleanup ────────────────────────────────────────────────────────────────

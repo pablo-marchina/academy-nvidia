@@ -1,22 +1,18 @@
-"""Guard: Production API code must not depend on MockEmbeddingProvider.
-
-This test verifies that the API service module does not import mock providers
-and only uses real implementations (SentenceTransformerProvider) for embeddings.
-"""
-
-from src.api.service import build_rag_dependencies
+"""Guard: production RAG must not use mock or in-memory providers."""
 
 
-def test_build_rag_dependencies_uses_real_provider() -> None:
-    """Verify production path uses SentenceTransformerProvider, not MockEmbeddingProvider."""
+def test_product_rag_factory_uses_real_provider() -> None:
+    """Verify production RAG factory references real embeddings only."""
     import inspect
 
-    source = inspect.getsource(build_rag_dependencies)
+    import src.rag.rag_service_factory as rag_factory
+
+    source = inspect.getsource(rag_factory)
     assert "SentenceTransformerProvider" in source
     assert "MockEmbeddingProvider" not in source
 
 
-def test_build_rag_dependencies_local_raises_without_sentence_transformers() -> None:
+def test_sentence_transformer_provider_raises_without_sentence_transformers() -> None:
     """When sentence-transformers is not installed, local backend raises ImportError."""
     import sys
 
@@ -37,10 +33,15 @@ def test_build_rag_dependencies_local_raises_without_sentence_transformers() -> 
             sys.modules.pop("sentence_transformers", None)
 
 
-def test_build_rag_dependencies_raises_on_unknown_backend() -> None:
-    """build_rag_dependencies raises ValueError for unknown backends."""
+def test_in_memory_vector_store_is_blocked_in_product(monkeypatch) -> None:
+    """In-memory vector store is allowed for unit tests only."""
+    monkeypatch.setenv("APP_MODE", "product")
+    monkeypatch.setenv("RAG_VECTOR_BACKEND", "in_memory")
+
+    from src.rag.vector_store import InMemoryVectorStore
+
     try:
-        build_rag_dependencies("nonexistent_backend")
-        raise AssertionError("Expected ValueError")
-    except ValueError:
-        pass
+        InMemoryVectorStore()
+        raise AssertionError("Expected RuntimeError")
+    except RuntimeError as exc:
+        assert "FORBIDDEN in production" in str(exc)

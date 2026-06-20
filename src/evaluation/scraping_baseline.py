@@ -12,8 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 SOURCE_CATEGORIES = [
-    "official_website", "technical_docs", "funding_news", "jobs",
-    "github_or_code", "ecosystem_directory", "media", "nvidia_or_partner_ecosystem",
+    "official_website",
+    "technical_docs",
+    "funding_news",
+    "jobs",
+    "github_or_code",
+    "ecosystem_directory",
+    "media",
+    "nvidia_or_partner_ecosystem",
 ]
 
 
@@ -209,9 +215,7 @@ def evaluate_case(
     failure_by_type: dict[str, list[bool]] = {}
     for s in selected:
         failure_by_type.setdefault(s.category, []).append(not (s.fetch_success and s.extraction_success))
-    failure_rate_by_type = {
-        cat: sum(fails) / len(fails) for cat, fails in failure_by_type.items()
-    }
+    failure_rate_by_type = {cat: sum(fails) / len(fails) for cat, fails in failure_by_type.items()}
 
     compliance_block = sum(1 for s in selected if s.compliance_blocked)
     compliance_rate = compliance_block / total_in if total_in > 0 else 0.0
@@ -277,10 +281,12 @@ def grid_search(
                 avg_duplicate_rate=round(sum(m.duplicate_rate for m in per_startup) / n, 4),
                 avg_latency_per_source=round(sum(m.latency_per_source for m in per_startup) / n, 2),
                 avg_compliance_block_rate=round(sum(m.compliance_block_rate for m in per_startup) / n, 4),
-                avg_cost_proxy_per_supported_claim=round(sum(m.cost_proxy_per_supported_claim for m in per_startup) / n, 4),
+                avg_cost_proxy_per_supported_claim=round(
+                    sum(m.cost_proxy_per_supported_claim for m in per_startup) / n, 4
+                ),
                 total_covered_claims=total_covered,
                 total_claims_available=total_claims_avail,
-                coverage_ratio=round(total_covered / total_claims_avail, 4) if total_claims_avail > 0 else 0.0,
+                coverage_ratio=(round(total_covered / total_claims_avail, 4) if total_claims_avail > 0 else 0.0),
                 per_startup_metrics=per_startup,
             )
         )
@@ -351,7 +357,7 @@ def compute_source_category_scores(
         rng = mx - mn if mx != mn else 1.0
         return {i: (v - mn) / rng for i, v in enumerate(values)}
 
-    n = len(raw_scores)
+    len(raw_scores)
     claim_yields = [float(s.total_supported_claims) for s in raw_scores]
     evidence_yields = [float(s.total_evidence_items) for s in raw_scores]
     failure_rates = [s.failure_rate for s in raw_scores]
@@ -418,7 +424,9 @@ def _format_report(
 
     lines.append("\nSource Category Scores:")
     lines.append("-" * 70)
-    cat_header = f"{'category':>30} | {'score':>8} | {'claims':>8} | {'evid':>8} | {'fail%':>8} | {'dup%':>8} | {'lat':>8}"
+    cat_header = (
+        f"{'category':>30} | {'score':>8} | {'claims':>8} | {'evid':>8} | {'fail%':>8} | {'dup%':>8} | {'lat':>8}"
+    )
     lines.append(cat_header)
     lines.append("-" * len(cat_header))
     for cat in sorted(category_scores, key=lambda c: category_scores[c].final_score, reverse=True):
@@ -478,11 +486,13 @@ def _recommend_max_sources(
     marginal_claim_target: float = 0.05,
 ) -> dict[str, Any]:
     if not grid_results:
-        return {"recommended_max_sources": None, "reason": "No grid results available", "production_allowed": False}
+        return {
+            "recommended_max_sources": None,
+            "reason": "No grid results available",
+            "production_allowed": False,
+        }
 
-    candidates_above_coverage = [
-        gr for gr in grid_results if gr.coverage_ratio >= coverage_target
-    ]
+    candidates_above_coverage = [gr for gr in grid_results if gr.coverage_ratio >= coverage_target]
     if not candidates_above_coverage:
         best = grid_results[-1]
         return {
@@ -557,10 +567,12 @@ def _recommend_stop_condition(
     results_by_gain: list[dict[str, Any]] = []
     for gr in grid_results:
         coverage = gr.coverage_ratio
-        results_by_gain.append({
-            "max_sources": gr.max_sources,
-            "coverage": coverage,
-        })
+        results_by_gain.append(
+            {
+                "max_sources": gr.max_sources,
+                "coverage": coverage,
+            }
+        )
 
     thresholds = {
         "coverage_min": 0.85,
@@ -608,11 +620,13 @@ def _recommend_max_depth(
             metrics = evaluate_case(case, max_sources=recommended_max_sources, max_depth=depth)
             total_evidence += metrics.unique_evidence_count
             total_sources += metrics.source_discovery_count
-        depth_results.append({
-            "depth": depth,
-            "total_evidence": total_evidence,
-            "total_sources": total_sources,
-        })
+        depth_results.append(
+            {
+                "depth": depth,
+                "total_evidence": total_evidence,
+                "total_sources": total_sources,
+            }
+        )
 
     best_depth = depth_results[0]["depth"]
     for i in range(1, len(depth_results)):
@@ -647,6 +661,7 @@ def validate_collector_coverage(
     if collector is None:
         try:
             from src.scraping.collector import build_collector
+
             collector = build_collector()
         except ImportError:
             return {
@@ -692,19 +707,21 @@ def validate_collector_coverage(
         total_fp += fp
         total_fn += fn
 
-        per_startup.append({
-            "startup_id": case.startup_id,
-            "startup_name": case.startup_name,
-            "found_sources": len(result.sources),
-            "expected_categories": sorted(expected_categories_set),
-            "found_expected_categories": sorted(found_expected),
-            "missing_categories": sorted(not_found),
-            "unexpected_categories": sorted(unexpected),
-            "collection_errors": result.errors,
-            "tp": tp,
-            "fp": fp,
-            "fn": fn,
-        })
+        per_startup.append(
+            {
+                "startup_id": case.startup_id,
+                "startup_name": case.startup_name,
+                "found_sources": len(result.sources),
+                "expected_categories": sorted(expected_categories_set),
+                "found_expected_categories": sorted(found_expected),
+                "missing_categories": sorted(not_found),
+                "unexpected_categories": sorted(unexpected),
+                "collection_errors": result.errors,
+                "tp": tp,
+                "fp": fp,
+                "fn": fn,
+            }
+        )
 
     precision = total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else 0.0
     recall = total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else 0.0
@@ -789,7 +806,9 @@ def run_full_calibration(
         and all(c.total_claims >= 2 for c in golden_set)
     )
 
-    dataset_insufficient = not has_minimum_data or not max_sources_rec["production_allowed"] or not real_collector_available
+    dataset_insufficient = (
+        not has_minimum_data or not max_sources_rec["production_allowed"] or not real_collector_available
+    )
 
     calibration_status = "baseline_dataset_insufficient" if dataset_insufficient else "baseline_measured"
     production_allowed = has_minimum_data and max_sources_rec["production_allowed"] and real_collector_available

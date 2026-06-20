@@ -94,11 +94,7 @@ def run_rag_pipeline(
         else:
             for tech in sorted(techs):
                 query = RetrievalQuery(gap_type=gap_val, technology=tech)
-                if (
-                    vector_store is not None
-                    and vector_store.size > 0
-                    and embedding_model is not None
-                ):  # noqa: E501
+                if vector_store is not None and vector_store.size > 0 and embedding_model is not None:  # noqa: E501
                     ctxs = hybrid_retrieve(query, idx, embedding_model, vector_store, top_k=3)
                     if retrieval_mode == "lexical":
                         retrieval_mode = "hybrid"

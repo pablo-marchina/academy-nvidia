@@ -73,10 +73,7 @@ class PlaybookRetriever:
                             contexts=contexts,
                             total_found=len(contexts),
                             missing_context=len(contexts) == 0,
-                            reasoning=(
-                                f"Retrieved context for gap '{gap_val}' "
-                                f"with technology '{tech}'"
-                            ),
+                            reasoning=(f"Retrieved context for gap '{gap_val}' " f"with technology '{tech}'"),
                         )
                     )
 
@@ -92,7 +89,5 @@ class PlaybookRetriever:
 
         The brief continues to function normally even if this returns empty.
         """
-        results = self.retrieve_for_gaps(
-            diagnosed_gaps, nvidia_technology_candidates, recommendations
-        )
+        results = self.retrieve_for_gaps(diagnosed_gaps, nvidia_technology_candidates, recommendations)
         return [r.model_dump() for r in results]

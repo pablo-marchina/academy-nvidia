@@ -60,22 +60,21 @@ class TestNumericRanges:
     def test_confidence_thresholds_consistent(self) -> None:
         high_min = CONFIDENCE_THRESHOLDS["high_min"]
         medium_min = CONFIDENCE_THRESHOLDS["medium_min"]
-        assert 0.0 < medium_min < high_min < 1.0, (
-            f"Threshold order violated: high_min={high_min}, medium_min={medium_min}"
-        )
+        assert (
+            0.0 < medium_min < high_min < 1.0
+        ), f"Threshold order violated: high_min={high_min}, medium_min={medium_min}"
 
     def test_source_quality_scores_descending(self) -> None:
         scores = list(SOURCE_QUALITY_SCORES.values())
         for i in range(len(scores) - 1):
-            assert scores[i] >= scores[i + 1], (
-                f"SOURCE_QUALITY_SCORES not descending at index {i}: {scores[i]} < {scores[i + 1]}"
-            )
+            assert (
+                scores[i] >= scores[i + 1]
+            ), f"SOURCE_QUALITY_SCORES not descending at index {i}: {scores[i]} < {scores[i + 1]}"
 
     def test_discovery_confidence_weights_reasonable(self) -> None:
         total = sum(DISCOVERY_CONFIDENCE_WEIGHTS.values())
         assert total < 1.0, (
-            f"DISCOVERY_CONFIDENCE_WEIGHTS sum = {total}, expected < 1.0 "
-            "(signal_contribution adds to total)"
+            f"DISCOVERY_CONFIDENCE_WEIGHTS sum = {total}, expected < 1.0 " "(signal_contribution adds to total)"
         )
 
 
@@ -83,9 +82,7 @@ class TestConsistency:
     def test_confidence_levels_match_between_maps(self) -> None:
         float_levels = set(CONFIDENCE_FLOAT_MAP.keys())
         factor_levels = set(CONFIDENCE_SCORE_FACTORS.keys())
-        assert float_levels == factor_levels, (
-            f"Mismatched levels: float_map={float_levels}, factors={factor_levels}"
-        )
+        assert float_levels == factor_levels, f"Mismatched levels: float_map={float_levels}, factors={factor_levels}"
         # NOTE: CONFIDENCE_FLOAT_MAP and CONFIDENCE_SCORE_FACTORS have documented
         # discrepancies (low=0.3 vs 0.4). TODO: unify per params.py docstring.
 
@@ -108,7 +105,5 @@ class TestDocumentation:
         source = inspect.getsource(mod)
         for name in _WEIGHT_SETS:
             pos = source.find(name)
-            before = source[max(0, pos - 400):pos]
-            assert "# rationale:" in before, (
-                f"{name} does not have a '# rationale:' comment within 400 chars before it"
-            )
+            before = source[max(0, pos - 400) : pos]
+            assert "# rationale:" in before, f"{name} does not have a '# rationale:' comment within 400 chars before it"

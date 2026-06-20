@@ -1,4 +1,5 @@
 """Populate startup scoring golden set with derived labels and run calibration."""
+
 from __future__ import annotations
 
 import json
@@ -10,8 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from src.evaluation.startup_scoring_calibration import (
     _score_to_class,
     generate_golden_dataset,
-    run_startup_scoring_baseline_calibration,
     make_startup_scoring_baseline_records,
+    run_startup_scoring_baseline_calibration,
 )
 
 _GOLDEN_PATH = Path("data/eval/golden_startup_scoring_baseline.json")
@@ -77,9 +78,7 @@ def populate(entry_count: int = 30) -> int:
         "startups": golden_entries,
     }
 
-    _GOLDEN_PATH.write_text(
-        json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    _GOLDEN_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
     return len(golden_entries)
 
 

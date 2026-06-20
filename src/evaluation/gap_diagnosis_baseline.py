@@ -339,11 +339,24 @@ def _spearman(xs: list[float], ys: list[float]) -> float:
 def _distribution(values: list[float]) -> dict[str, float]:
     n = len(values)
     if n == 0:
-        return {"count": 0, "mean": 0.0, "min": 0.0, "max": 0.0,
-                "p1": 0.0, "p5": 0.0, "p10": 0.0, "p25": 0.0,
-                "p50": 0.0, "p75": 0.0, "p95": 0.0}
+        return {
+            "count": 0,
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "p1": 0.0,
+            "p5": 0.0,
+            "p10": 0.0,
+            "p25": 0.0,
+            "p50": 0.0,
+            "p75": 0.0,
+            "p95": 0.0,
+        }
     sorted_v = sorted(values)
-    idx_fn = lambda p: max(0, min(n - 1, int(n * p / 100)))
+
+    def idx_fn(p: float) -> int:
+        return max(0, min(n - 1, int(n * p / 100)))
+
     return {
         "count": n,
         "mean": round(sum(values) / n, 4),
@@ -492,40 +505,52 @@ def _generate_claim_text(
 
     claims: dict[str, list[str]] = {
         "compute_acceleration_gap": [
-            "Precisa de aceleracao GPU para treinamento", "Treinamento de modelos e lento",
+            "Precisa de aceleracao GPU para treinamento",
+            "Treinamento de modelos e lento",
         ],
         "inference_performance_gap": [
-            "Inferencia em tempo real e necessaria", "Baixa latencia para deployed models",
+            "Inferencia em tempo real e necessaria",
+            "Baixa latencia para deployed models",
         ],
         "training_scalability_gap": [
-            "Treinamento distribuido essencial", "Modelos grandes exigem multi-GPU",
+            "Treinamento distribuido essencial",
+            "Modelos grandes exigem multi-GPU",
         ],
         "mlops_deployment_gap": [
-            "Governanca de modelos necessaria", "MLOps pipeline nao automatizado",
+            "Governanca de modelos necessaria",
+            "MLOps pipeline nao automatizado",
         ],
         "data_pipeline_gap": [
-            "Pipeline de dados lento", "ETL precisa de otimizacao",
+            "Pipeline de dados lento",
+            "ETL precisa de otimizacao",
         ],
         "model_optimization_gap": [
-            "Modelos precisam de otimizacao", "Quantizacao reduziria custos",
+            "Modelos precisam de otimizacao",
+            "Quantizacao reduziria custos",
         ],
         "computer_vision_gap": [
-            "Visao computacional para inspecao", "Detecao de objetos em video",
+            "Visao computacional para inspecao",
+            "Detecao de objetos em video",
         ],
         "genai_llm_gap": [
-            "Chatbot com LLM precisa de GPU", "Geracao de texto demanda GPU",
+            "Chatbot com LLM precisa de GPU",
+            "Geracao de texto demanda GPU",
         ],
         "cybersecurity_ai_gap": [
-            "Deteccao de ameacas com ML", "Seguranca baseada em IA",
+            "Deteccao de ameacas com ML",
+            "Seguranca baseada em IA",
         ],
         "nvidia_ecosystem_fit_gap": [
-            "Compatibilidade com NVIDIA necessaria", "GPU computing aceleraria",
+            "Compatibilidade com NVIDIA necessaria",
+            "GPU computing aceleraria",
         ],
         "evidence_coverage_gap": [
-            "Startup de tecnologia geral", "Plataforma de software empresarial",
+            "Startup de tecnologia geral",
+            "Plataforma de software empresarial",
         ],
         "technical_depth_gap": [
-            "Produto de baixa complexidade tecnica", "API wrapper sem inovacao",
+            "Produto de baixa complexidade tecnica",
+            "API wrapper sem inovacao",
         ],
     }
     options = claims.get(gap_type.value, ["Descricao generica da startup"])
@@ -604,9 +629,7 @@ def generate_synthetic_gap_diagnosis_golden_set(
 
         # Extract features using the COMPLETE evidence/claims (consistent with evaluator)
         human_labeled_gaps: list[HumanLabeledGap] = []
-        all_ev_ids = [
-            e.get("id") or e.get("evidence_id", "") for e in evidence_items
-        ]
+        all_ev_ids = [e.get("id") or e.get("evidence_id", "") for e in evidence_items]
         for gt in gap_types_sample:
             sev_features = extract_gap_severity_features(
                 gap_type=gt,
@@ -627,36 +650,42 @@ def generate_synthetic_gap_diagnosis_golden_set(
             )
 
             ref_sev = _compute_weighted_score(
-                sev_features.model_dump(mode="json"), _REFERENCE_SEVERITY_WEIGHTS,
+                sev_features.model_dump(mode="json"),
+                _REFERENCE_SEVERITY_WEIGHTS,
             )
             ref_conf = _compute_weighted_score(
-                conf_features.model_dump(mode="json"), _REFERENCE_CONFIDENCE_WEIGHTS,
+                conf_features.model_dump(mode="json"),
+                _REFERENCE_CONFIDENCE_WEIGHTS,
             )
 
             is_present = ref_sev > 0.3
 
-            human_labeled_gaps.append(HumanLabeledGap(
-                gap_type=gt.value,
-                human_label_gap_present=is_present,
-                human_label_severity=round(ref_sev, 4),
-                human_label_confidence=round(ref_conf, 4),
-                supporting_evidence_ids=all_ev_ids,
-                label_notes="Synthetic derived from reference weights",
-                label_source="derived_from_synthetic_reference",
-                reviewer_id="synthetic-generator",
-            ))
+            human_labeled_gaps.append(
+                HumanLabeledGap(
+                    gap_type=gt.value,
+                    human_label_gap_present=is_present,
+                    human_label_severity=round(ref_sev, 4),
+                    human_label_confidence=round(ref_conf, 4),
+                    supporting_evidence_ids=all_ev_ids,
+                    label_notes="Synthetic derived from reference weights",
+                    label_source="derived_from_synthetic_reference",
+                    reviewer_id="synthetic-generator",
+                )
+            )
 
-        entries.append(GapDiagnosisGoldenEntry(
-            startup_id=startup_id,
-            startup_name=f"SynthGap {i:04d}",
-            startup_profile_snapshot={"sector": "Technology", "funding_stage": "seed"},
-            accepted_evidence_items_snapshot=evidence_items,
-            accepted_claims_snapshot=claims,
-            ai_native_score_snapshot=round(rng.uniform(0.0, 1.0), 4),
-            nvidia_fit_score_snapshot=round(rng.uniform(0.0, 1.0), 4),
-            expected_gap_types=[gt.value for gt in gap_types_sample],
-            human_labeled_gaps=human_labeled_gaps,
-        ))
+        entries.append(
+            GapDiagnosisGoldenEntry(
+                startup_id=startup_id,
+                startup_name=f"SynthGap {i:04d}",
+                startup_profile_snapshot={"sector": "Technology", "funding_stage": "seed"},
+                accepted_evidence_items_snapshot=evidence_items,
+                accepted_claims_snapshot=claims,
+                ai_native_score_snapshot=round(rng.uniform(0.0, 1.0), 4),
+                nvidia_fit_score_snapshot=round(rng.uniform(0.0, 1.0), 4),
+                expected_gap_types=[gt.value for gt in gap_types_sample],
+                human_labeled_gaps=human_labeled_gaps,
+            )
+        )
 
     return entries
 
@@ -713,9 +742,7 @@ def _compute_gap_detection_metrics(
         precision[gt] = tp / (tp + fp) if (tp + fp) > 0 else (1.0 if tp > 0 else 0.0)
         recall[gt] = tp / (tp + fn) if (tp + fn) > 0 else (1.0 if tp > 0 else 0.0)
         f1[gt] = (
-            2 * precision[gt] * recall[gt] / (precision[gt] + recall[gt])
-            if (precision[gt] + recall[gt]) > 0
-            else 0.0
+            2 * precision[gt] * recall[gt] / (precision[gt] + recall[gt]) if (precision[gt] + recall[gt]) > 0 else 0.0
         )
 
     fp_rate = total_fp / total_predicted_positive if total_predicted_positive > 0 else 0.0
@@ -812,13 +839,13 @@ def _compute_evidence_metrics(
     gap_without_evidence_rate = gap_without_evidence_count / max(1, len(human_labeled_gaps))
 
     unsupported_count = sum(
-        1 for hg in human_labeled_gaps
-        if hg.human_label_gap_present and len(hg.supporting_evidence_ids) == 0
+        1 for hg in human_labeled_gaps if hg.human_label_gap_present and len(hg.supporting_evidence_ids) == 0
     )
     unsupported_gap_rate = unsupported_count / max(1, sum(1 for hg in human_labeled_gaps if hg.human_label_gap_present))
 
     alignment_count = sum(
-        1 for hg in human_labeled_gaps
+        1
+        for hg in human_labeled_gaps
         for pg in gaps
         if pg.get("gap_type") == hg.gap_type and pg.get("detected", False) and len(hg.supporting_evidence_ids) > 0
     )
@@ -908,10 +935,16 @@ def _evaluate_weight_candidates(
     for idx, weights in enumerate(candidate_weights):
         predicted, human_labels = _compute_scores_for_entries(entries, weights, weight_type)
         if len(predicted) < 3:
-            results.append(WeightCandidateResult(
-                candidate_index=idx, weights=dict(weights), weight_type=weight_type,
-                spearman=None, mae=None, rmse=None,
-            ))
+            results.append(
+                WeightCandidateResult(
+                    candidate_index=idx,
+                    weights=dict(weights),
+                    weight_type=weight_type,
+                    spearman=None,
+                    mae=None,
+                    rmse=None,
+                )
+            )
             continue
 
         correlation = _spearman(predicted, human_labels)
@@ -920,11 +953,18 @@ def _evaluate_weight_candidates(
         sq_errors = [(p - h) ** 2 for p, h in zip(predicted, human_labels, strict=True)]
         rmse = math.sqrt(sum(sq_errors) / len(sq_errors))
 
-        results.append(WeightCandidateResult(
-            candidate_index=idx, weights=dict(weights), weight_type=weight_type,
-            spearman=round(correlation, 4), mae=round(mae, 4), rmse=round(rmse, 4),
-            predicted_scores=predicted, human_labels=human_labels,
-        ))
+        results.append(
+            WeightCandidateResult(
+                candidate_index=idx,
+                weights=dict(weights),
+                weight_type=weight_type,
+                spearman=round(correlation, 4),
+                mae=round(mae, 4),
+                rmse=round(rmse, 4),
+                predicted_scores=predicted,
+                human_labels=human_labels,
+            )
+        )
     results.sort(key=lambda r: (-(r.spearman or 0.0), r.mae if r.mae is not None else 1.0))
     return results
 
@@ -952,7 +992,10 @@ def _calibrate_threshold_from_scores(
         return {"threshold": None, "method": "insufficient_data", "distribution": {}}
 
     sorted_scores = sorted(predicted_scores)
-    idx_fn = lambda p: max(0, min(n - 1, int(n * p / 100)))
+
+    def idx_fn(p: float) -> int:
+        return max(0, min(n - 1, int(n * p / 100)))
+
     distribution = {
         "count": n,
         "mean": round(sum(predicted_scores) / n, 4),
@@ -991,21 +1034,20 @@ def _calibrate_uncertainty_penalty_from_scores(
 
     results: list[dict[str, Any]] = []
     for penalty in penalty_candidates:
-        adjusted = [
-            max(0.0, min(1.0, p - u * penalty))
-            for p, u in zip(predicted_scores, uncertainties, strict=True)
-        ]
+        adjusted = [max(0.0, min(1.0, p - u * penalty)) for p, u in zip(predicted_scores, uncertainties, strict=True)]
         abs_errors = [abs(a - h) for a, h in zip(adjusted, human_labels, strict=True)]
         mae = sum(abs_errors) / n
         sq_errors = [(a - h) ** 2 for a, h in zip(adjusted, human_labels, strict=True)]
         rmse = math.sqrt(sum(sq_errors) / n)
         max_error = max(abs_errors)
-        results.append({
-            "penalty": penalty,
-            "mae": round(mae, 4),
-            "rmse": round(rmse, 4),
-            "max_error": round(max_error, 4),
-        })
+        results.append(
+            {
+                "penalty": penalty,
+                "mae": round(mae, 4),
+                "rmse": round(rmse, 4),
+                "max_error": round(max_error, 4),
+            }
+        )
 
     results.sort(key=lambda r: (r["mae"], r["max_error"]))
     best = results[0]
@@ -1077,42 +1119,28 @@ def _check_gap_diagnosis_production_ready(
     blockers: list[str] = []
 
     if labeled_entry_count < MIN_LABELED_ENTRIES:
-        blockers.append(
-            f"Labeled entries ({labeled_entry_count}) < minimum ({MIN_LABELED_ENTRIES})"
-        )
+        blockers.append(f"Labeled entries ({labeled_entry_count}) < minimum ({MIN_LABELED_ENTRIES})")
     if gap_label_count < MIN_LABELED_ENTRIES:
-        blockers.append(
-            f"Gap labels ({gap_label_count}) < minimum ({MIN_LABELED_ENTRIES})"
-        )
+        blockers.append(f"Gap labels ({gap_label_count}) < minimum ({MIN_LABELED_ENTRIES})")
 
     if sev_metrics is not None:
         if sev_metrics.correlation is not None and sev_metrics.correlation < MIN_SPEARMAN:
-            blockers.append(
-                f"Severity spearman ({sev_metrics.correlation:.4f}) < minimum ({MIN_SPEARMAN})"
-            )
+            blockers.append(f"Severity spearman ({sev_metrics.correlation:.4f}) < minimum ({MIN_SPEARMAN})")
         if sev_metrics.mae is not None and sev_metrics.mae > MAX_MAE:
-            blockers.append(
-                f"Severity MAE ({sev_metrics.mae:.4f}) > maximum ({MAX_MAE})"
-            )
+            blockers.append(f"Severity MAE ({sev_metrics.mae:.4f}) > maximum ({MAX_MAE})")
 
     if conf_metrics is not None:
         if conf_metrics.correlation is not None and conf_metrics.correlation < MIN_SPEARMAN:
-            blockers.append(
-                f"Confidence spearman ({conf_metrics.correlation:.4f}) < minimum ({MIN_SPEARMAN})"
-            )
+            blockers.append(f"Confidence spearman ({conf_metrics.correlation:.4f}) < minimum ({MIN_SPEARMAN})")
         if conf_metrics.mae is not None and conf_metrics.mae > MAX_MAE:
-            blockers.append(
-                f"Confidence MAE ({conf_metrics.mae:.4f}) > maximum ({MAX_MAE})"
-            )
+            blockers.append(f"Confidence MAE ({conf_metrics.mae:.4f}) > maximum ({MAX_MAE})")
 
     if coverage_by_type:
         gap_types_present = sum(1 for c in coverage_by_type.values() if c > 0)
         total_gap_types = max(1, len(coverage_by_type))
         coverage_ratio = gap_types_present / total_gap_types
         if coverage_ratio < MIN_CALIBRATION_COVERAGE:
-            blockers.append(
-                f"Gap type coverage ({coverage_ratio:.2f}) < minimum ({MIN_CALIBRATION_COVERAGE})"
-            )
+            blockers.append(f"Gap type coverage ({coverage_ratio:.2f}) < minimum ({MIN_CALIBRATION_COVERAGE})")
 
     return len(blockers) == 0, blockers
 
@@ -1168,10 +1196,7 @@ def _format_report(result: GapDiagnosisCalibrationResult) -> str:
     if result.severity_candidates:
         lines.append("--- Severity weight candidates ---")
         for c in result.severity_candidates:
-            lines.append(
-                f"  Candidate {c.candidate_index}: "
-                f"spearman={c.spearman}, mae={c.mae}, rmse={c.rmse}"
-            )
+            lines.append(f"  Candidate {c.candidate_index}: " f"spearman={c.spearman}, mae={c.mae}, rmse={c.rmse}")
         if result.best_severity_candidate_index is not None:
             bc = result.severity_candidates[result.best_severity_candidate_index]
             lines.append(f"  Best severity: candidate {result.best_severity_candidate_index} — weights={bc.weights}")
@@ -1186,13 +1211,12 @@ def _format_report(result: GapDiagnosisCalibrationResult) -> str:
     if result.confidence_candidates:
         lines.append("--- Confidence weight candidates ---")
         for c in result.confidence_candidates:
-            lines.append(
-                f"  Candidate {c.candidate_index}: "
-                f"spearman={c.spearman}, mae={c.mae}, rmse={c.rmse}"
-            )
+            lines.append(f"  Candidate {c.candidate_index}: " f"spearman={c.spearman}, mae={c.mae}, rmse={c.rmse}")
         if result.best_confidence_candidate_index is not None:
             bc = result.confidence_candidates[result.best_confidence_candidate_index]
-            lines.append(f"  Best confidence: candidate {result.best_confidence_candidate_index} — weights={bc.weights}")
+            lines.append(
+                f"  Best confidence: candidate {result.best_confidence_candidate_index} — weights={bc.weights}"
+            )
     if result.best_confidence_metrics:
         cm = result.best_confidence_metrics
         lines.append(
@@ -1241,7 +1265,12 @@ def run_gap_diagnosis_baseline_calibration(
         entries = generate_synthetic_gap_diagnosis_golden_set(count=60)
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
-            json.dump({"startups": [e.model_dump(mode="json") for e in entries]}, f, indent=2, ensure_ascii=False)
+            json.dump(
+                {"startups": [e.model_dump(mode="json") for e in entries]},
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
         logger.info(f"Saved {len(entries)} synthetic entries to {path}")
         # Reload to ensure round-trip consistency
         entries = load_gap_diagnosis_golden_set(path)
@@ -1252,7 +1281,11 @@ def run_gap_diagnosis_baseline_calibration(
             production_allowed=False,
             golden_set_size=0,
             has_human_labels=False,
-            label_coverage={"total_entries_with_labels": 0, "total_gap_labels": 0, "gap_type_coverage": {}},
+            label_coverage={
+                "total_entries_with_labels": 0,
+                "total_gap_labels": 0,
+                "gap_type_coverage": {},
+            },
             production_blockers=["Golden set is empty. Add human-labeled entries."],
         )
         result.report = _format_report(result)
@@ -1270,7 +1303,9 @@ def run_gap_diagnosis_baseline_calibration(
             golden_set_size=len(entries),
             has_human_labels=has_labels,
             label_coverage=label_coverage,
-            production_blockers=[f"Insufficient labeled entries ({labeled_entry_count}). Need at least {MIN_LABELED_ENTRIES}."],
+            production_blockers=[
+                f"Insufficient labeled entries ({labeled_entry_count}). Need at least {MIN_LABELED_ENTRIES}."
+            ],
         )
         result.report = _format_report(result)
         return result
@@ -1309,22 +1344,32 @@ def run_gap_diagnosis_baseline_calibration(
         best_conf_weights = bc.weights
         best_conf_predicted, best_conf_human = _compute_scores_for_entries(entries, best_conf_weights, "confidence")
         if len(best_conf_predicted) >= 3:
-            best_conf_metrics = _compute_confidence_metrics(best_conf_predicted, best_conf_human, conf_uncertainties or [0.0])
+            best_conf_metrics = _compute_confidence_metrics(
+                best_conf_predicted, best_conf_human, conf_uncertainties or [0.0]
+            )
     else:
         best_conf_predicted, best_conf_human = _compute_scores_for_entries(entries, best_conf_weights, "confidence")
         if len(best_conf_predicted) >= 3:
-            best_conf_metrics = _compute_confidence_metrics(best_conf_predicted, best_conf_human, conf_uncertainties or [0.0])
+            best_conf_metrics = _compute_confidence_metrics(
+                best_conf_predicted, best_conf_human, conf_uncertainties or [0.0]
+            )
 
     gap_detection_metrics = _compute_gap_detection_metrics(
-        predicted_gaps=[{"gap_type": hg.gap_type, "detected": hg.human_label_gap_present}
-                        for e in entries for hg in e.human_labeled_gaps],
+        predicted_gaps=[
+            {"gap_type": hg.gap_type, "detected": hg.human_label_gap_present}
+            for e in entries
+            for hg in e.human_labeled_gaps
+        ],
         human_labeled_gaps=[hg for e in entries for hg in e.human_labeled_gaps],
         all_gap_types=[g.value for g in GapType],
     )
 
     evidence_metrics = _compute_evidence_metrics(
-        gaps=[{"gap_type": hg.gap_type, "detected": hg.human_label_gap_present}
-              for e in entries for hg in e.human_labeled_gaps],
+        gaps=[
+            {"gap_type": hg.gap_type, "detected": hg.human_label_gap_present}
+            for e in entries
+            for hg in e.human_labeled_gaps
+        ],
         human_labeled_gaps=[hg for e in entries for hg in e.human_labeled_gaps],
     )
 
@@ -1335,14 +1380,14 @@ def run_gap_diagnosis_baseline_calibration(
     uncertainty_penalty = None
     if best_sev_metrics is not None and len(best_sev_predicted) >= 3:
         uncertainty_penalty = _calibrate_uncertainty_penalty_from_scores(
-            best_sev_predicted, best_sev_human, sev_uncertainties or [0.0],
+            best_sev_predicted,
+            best_sev_human,
+            sev_uncertainties or [0.0],
         )
 
     min_evidence_coverage = _calibrate_min_evidence_coverage(entries)
 
-    gap_type_coverage: dict[str, float] = {
-        k: float(v) for k, v in label_coverage.get("gap_type_coverage", {}).items()
-    }
+    gap_type_coverage: dict[str, float] = {k: float(v) for k, v in label_coverage.get("gap_type_coverage", {}).items()}
     prod_ready, blockers = _check_gap_diagnosis_production_ready(
         labeled_entry_count=labeled_entry_count,
         gap_label_count=total_gap_labels,
@@ -1352,12 +1397,18 @@ def run_gap_diagnosis_baseline_calibration(
     )
 
     # Block production if ALL labels are synthetic (not human-labeled)
-    all_synthetic = any(
-        lg.label_source and "synthetic" in lg.label_source.lower()
-        for e in entries for lg in e.human_labeled_gaps
-    ) if entries else False
+    all_synthetic = (
+        any(lg.label_source and "synthetic" in lg.label_source.lower() for e in entries for lg in e.human_labeled_gaps)
+        if entries
+        else False
+    )
 
-    if prod_ready and has_labels and labeled_entry_count >= MIN_LABELED_ENTRIES and total_gap_labels >= MIN_LABELED_ENTRIES:
+    if (
+        prod_ready
+        and has_labels
+        and labeled_entry_count >= MIN_LABELED_ENTRIES
+        and total_gap_labels >= MIN_LABELED_ENTRIES
+    ):
         if all_synthetic:
             calibration_status = "baseline_measured_blocked"
             production_allowed = False
@@ -1434,7 +1485,11 @@ def make_gap_diagnosis_baseline_records(
             conf_weights_value = cal_result.confidence_candidates[cal_result.best_confidence_candidate_index].weights
         threshold_value = cal_result.production_threshold.get("threshold") if cal_result.production_threshold else None
         penalty_value = cal_result.uncertainty_penalty.get("best_penalty") if cal_result.uncertainty_penalty else None
-        coverage_value = cal_result.min_evidence_coverage.get("recommended_min_coverage") if cal_result.min_evidence_coverage else None
+        coverage_value = (
+            cal_result.min_evidence_coverage.get("recommended_min_coverage")
+            if cal_result.min_evidence_coverage
+            else None
+        )
         status = CalibrationStatus.BASELINE_MEASURED
         prod = True
         notes = (

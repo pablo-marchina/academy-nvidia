@@ -74,5 +74,13 @@
 - `dropped_contexts_debug` exists in the schema but does NOT appear in executive sections
 - RAG does NOT alter `recommended_motion`, scores, or evidence_used
 
+## Final Product Readiness Update - 2026-06-19
+
+- Product briefs must be generated from persisted product runs, not demo artifacts.
+- Production brief generation must fail or require review when upstream scoring,
+  recommendation, evidence, or RAG calibration is blocked.
+- Test fixtures may use synthetic data only under tests; product output must not
+  depend on sample/demo input files.
+
 ## Contract Version
 2.0 — June 2026 (Epic 10 + 14.1 RAG integration)

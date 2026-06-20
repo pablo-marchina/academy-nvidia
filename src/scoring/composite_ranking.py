@@ -58,6 +58,7 @@ class RankedStartup(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _score_from_classification(result: ClassificationResult) -> float:
     return CLASSIFICATION_TO_BASE_SCORE.get(result.classification.value, 0)
 
@@ -201,9 +202,7 @@ def compute_composite_score(
     def_score = defensibility.total_score if defensibility else "N/A"
     inc_score = inception_fit.total_score if inception_fit else "N/A"
     pr_score = production_readiness.production_readiness_score if production_readiness else "N/A"
-    clf_score = (
-        _score_from_classification(classification_result) if classification_result else "N/A"
-    )
+    clf_score = _score_from_classification(classification_result) if classification_result else "N/A"
     lines: list[str] = [
         f"Composite score: {composite}/100 (confidence: {overall_conf.value})",
         f'  defensibility ({OPPORTUNITY_SCORE_WEIGHTS["defensibility"]}): {def_score}',
@@ -220,12 +219,8 @@ def compute_composite_score(
         composite_score=composite,
         defensibility_score=defensibility.total_score if defensibility else 0.0,
         inception_fit_score=inception_fit.total_score if inception_fit else 0.0,
-        production_readiness_score=(
-            production_readiness.production_readiness_score if production_readiness else 0.0
-        ),
-        classification_score=(
-            _score_from_classification(classification_result) if classification_result else 0.0
-        ),
+        production_readiness_score=(production_readiness.production_readiness_score if production_readiness else 0.0),
+        classification_score=(_score_from_classification(classification_result) if classification_result else 0.0),
         confidence=overall_conf,
         confidence_penalty_applied=confidence_penalty,
         missing_components=missing,

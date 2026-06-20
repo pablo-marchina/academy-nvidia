@@ -34,9 +34,7 @@ class Base(DeclarativeBase):
 
 
 class TimestampMixin:
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utc_now, nullable=False, index=True
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
     )
@@ -56,12 +54,8 @@ class Startup(TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="active", index=True)
     tags_json: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
 
-    evidence: Mapped[list[StartupEvidence]] = relationship(
-        back_populates="startup", cascade="all, delete-orphan"
-    )
-    analysis_runs: Mapped[list[AnalysisRun]] = relationship(
-        back_populates="startup", cascade="all, delete-orphan"
-    )
+    evidence: Mapped[list[StartupEvidence]] = relationship(back_populates="startup", cascade="all, delete-orphan")
+    analysis_runs: Mapped[list[AnalysisRun]] = relationship(back_populates="startup", cascade="all, delete-orphan")
 
 
 class StartupEvidence(TimestampMixin, Base):
@@ -69,17 +63,13 @@ class StartupEvidence(TimestampMixin, Base):
     __table_args__ = (Index("ix_startup_evidence_startup_collected", "startup_id", "collected_at"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    startup_id: Mapped[str] = mapped_column(
-        ForeignKey("startups.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    startup_id: Mapped[str] = mapped_column(ForeignKey("startups.id", ondelete="CASCADE"), nullable=False, index=True)
     claim: Mapped[str] = mapped_column(Text, nullable=False)
     source_url: Mapped[str] = mapped_column(String(2048), nullable=False, index=True)
     source_type: Mapped[str] = mapped_column(String(50), nullable=False)
     quote_or_evidence: Mapped[str] = mapped_column(Text, nullable=False)
     confidence: Mapped[str] = mapped_column(String(20), nullable=False)
-    evidence_kind: Mapped[str] = mapped_column(
-        String(50), nullable=False, default="unverified", index=True
-    )
+    evidence_kind: Mapped[str] = mapped_column(String(50), nullable=False, default="unverified", index=True)
     collected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
 
@@ -91,9 +81,7 @@ class AnalysisRun(TimestampMixin, Base):
     __table_args__ = (Index("ix_analysis_runs_startup_created", "startup_id", "created_at"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    startup_id: Mapped[str] = mapped_column(
-        ForeignKey("startups.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    startup_id: Mapped[str] = mapped_column(ForeignKey("startups.id", ondelete="CASCADE"), nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="queued", index=True)
     error_message: Mapped[str | None] = mapped_column(Text)
     degraded_reason: Mapped[str | None] = mapped_column(Text)
@@ -106,27 +94,17 @@ class AnalysisRun(TimestampMixin, Base):
     config_snapshot_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
 
     startup: Mapped[Startup] = relationship(back_populates="analysis_runs")
-    scores: Mapped[list[ScoreRecord]] = relationship(
-        back_populates="analysis_run", cascade="all, delete-orphan"
-    )
-    gaps: Mapped[list[GapDiagnosisRecord]] = relationship(
-        back_populates="analysis_run", cascade="all, delete-orphan"
-    )
+    scores: Mapped[list[ScoreRecord]] = relationship(back_populates="analysis_run", cascade="all, delete-orphan")
+    gaps: Mapped[list[GapDiagnosisRecord]] = relationship(back_populates="analysis_run", cascade="all, delete-orphan")
     mappings: Mapped[list[NvidiaMappingRecord]] = relationship(
         back_populates="analysis_run", cascade="all, delete-orphan"
     )
-    briefs: Mapped[list[ActionBriefRecord]] = relationship(
-        back_populates="analysis_run", cascade="all, delete-orphan"
-    )
+    briefs: Mapped[list[ActionBriefRecord]] = relationship(back_populates="analysis_run", cascade="all, delete-orphan")
     readiness_checks: Mapped[list[ProductReadinessCheck]] = relationship(
         back_populates="analysis_run", cascade="all, delete-orphan"
     )
-    reviews: Mapped[list[ReviewDecision]] = relationship(
-        back_populates="analysis_run", cascade="all, delete-orphan"
-    )
-    exports: Mapped[list[ExportRecord]] = relationship(
-        back_populates="analysis_run", cascade="all, delete-orphan"
-    )
+    reviews: Mapped[list[ReviewDecision]] = relationship(back_populates="analysis_run", cascade="all, delete-orphan")
+    exports: Mapped[list[ExportRecord]] = relationship(back_populates="analysis_run", cascade="all, delete-orphan")
     activation_recommendations: Mapped[list[ActivationRecommendationRecord]] = relationship(
         back_populates="analysis_run", cascade="all, delete-orphan"
     )
@@ -171,9 +149,7 @@ class GapDiagnosisRecord(TimestampMixin, Base):
     confidence: Mapped[str] = mapped_column(String(20), nullable=False)
     evidence_tag: Mapped[str] = mapped_column(String(50), nullable=False)
     reasoning: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, nullable=False, default=list
-    )
+    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
     missing_evidence_json: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
 
     analysis_run: Mapped[AnalysisRun] = relationship(back_populates="gaps")
@@ -237,9 +213,7 @@ class ProductReadinessCheck(TimestampMixin, Base):
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    analysis_run_id: Mapped[str | None] = mapped_column(
-        ForeignKey("analysis_runs.id", ondelete="CASCADE"), index=True
-    )
+    analysis_run_id: Mapped[str | None] = mapped_column(ForeignKey("analysis_runs.id", ondelete="CASCADE"), index=True)
     code: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     severity: Mapped[str] = mapped_column(String(20), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
@@ -247,9 +221,7 @@ class ProductReadinessCheck(TimestampMixin, Base):
     internal_detail: Mapped[str] = mapped_column(Text, nullable=False, default="")
     recommended_action: Mapped[str] = mapped_column(Text, nullable=False, default="")
     metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
-    observed_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utc_now
-    )
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
 
     analysis_run: Mapped[AnalysisRun | None] = relationship(back_populates="readiness_checks")
 
@@ -262,9 +234,7 @@ class ReviewDecision(TimestampMixin, Base):
     analysis_run_id: Mapped[str] = mapped_column(
         ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    startup_id: Mapped[str] = mapped_column(
-        ForeignKey("startups.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    startup_id: Mapped[str] = mapped_column(ForeignKey("startups.id", ondelete="CASCADE"), nullable=False, index=True)
     decision: Mapped[str] = mapped_column(String(50), nullable=False)
     reviewer: Mapped[str] = mapped_column(String(255), nullable=False)
     notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
@@ -286,9 +256,7 @@ class ExportRecord(TimestampMixin, Base):
     analysis_run_id: Mapped[str] = mapped_column(
         ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    action_brief_id: Mapped[str | None] = mapped_column(
-        ForeignKey("action_brief_records.id", ondelete="SET NULL")
-    )
+    action_brief_id: Mapped[str | None] = mapped_column(ForeignKey("action_brief_records.id", ondelete="SET NULL"))
     export_type: Mapped[str] = mapped_column(String(50), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     storage_path: Mapped[str] = mapped_column(String(2048), nullable=False, default="")
@@ -308,9 +276,7 @@ class ClaimRecord(TimestampMixin, Base):
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    startup_id: Mapped[str] = mapped_column(
-        ForeignKey("startups.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    startup_id: Mapped[str] = mapped_column(ForeignKey("startups.id", ondelete="CASCADE"), nullable=False, index=True)
     analysis_run_id: Mapped[str] = mapped_column(
         ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
     )
@@ -318,9 +284,7 @@ class ClaimRecord(TimestampMixin, Base):
     claim_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     support_level: Mapped[str] = mapped_column(String(20), nullable=False, default="unsupported")
     confidence: Mapped[str] = mapped_column(String(20), nullable=False, default="low")
-    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, nullable=False, default=list
-    )
+    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
     used_in_score: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     used_in_gap: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     used_in_mapping: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -357,9 +321,7 @@ class ActivationRecommendationRecord(TimestampMixin, Base):
     priority: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
     confidence: Mapped[str] = mapped_column(String(20), nullable=False, default="low")
     reasoning: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, nullable=False, default=list
-    )
+    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
     risks_json: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     next_step: Mapped[str] = mapped_column(Text, nullable=False, default="")
 
@@ -411,9 +373,7 @@ class ProductQualityRun(TimestampMixin, Base):
         ForeignKey("action_brief_records.id", ondelete="SET NULL"), nullable=True
     )
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="running")
-    started_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utc_now
-    )
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     evaluator_version: Mapped[str] = mapped_column(String(50), nullable=False, default="1.0")
     metrics_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
@@ -499,21 +459,15 @@ class StartupDiscoveryCandidate(TimestampMixin, Base):
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     source_url: Mapped[str] = mapped_column(String(2048), nullable=False, default="")
     raw_text_excerpt: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    ai_native_signals_json: Mapped[dict[str, Any]] = mapped_column(
-        JSON, nullable=False, default=dict
-    )
-    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, nullable=False, default=list
-    )
+    ai_native_signals_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
     confidence: Mapped[str] = mapped_column(String(20), nullable=False, default="low", index=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="new", index=True)
     promoted_startup_id: Mapped[str | None] = mapped_column(
         ForeignKey("startups.id", ondelete="SET NULL"), nullable=True, index=True
     )
     metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
-    discovered_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=utc_now
-    )
+    discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
 
     discovery_run: Mapped[DiscoveryRun | None] = relationship(back_populates="candidates")
 
@@ -549,9 +503,7 @@ class WorkflowRun(TimestampMixin, Base):
     error_message: Mapped[str | None] = mapped_column(Text)
     degraded_reason: Mapped[str | None] = mapped_column(Text)
 
-    node_runs: Mapped[list[WorkflowNodeRun]] = relationship(
-        back_populates="workflow_run", cascade="all, delete-orphan"
-    )
+    node_runs: Mapped[list[WorkflowNodeRun]] = relationship(back_populates="workflow_run", cascade="all, delete-orphan")
     startup: Mapped[Startup | None] = relationship()
     discovery_candidate: Mapped[StartupDiscoveryCandidate | None] = relationship()
     analysis_run: Mapped[AnalysisRun | None] = relationship()
@@ -575,9 +527,7 @@ class OpportunityScoreRecord(TimestampMixin, Base):
     components_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     penalties_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
     penalty_total: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
-    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, nullable=False, default=list
-    )
+    evidence_refs_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
     recommended_action: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     reasoning: Mapped[str] = mapped_column(Text, nullable=False, default="")
 

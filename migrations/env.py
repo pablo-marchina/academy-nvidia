@@ -22,9 +22,7 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 database_url = (
-    config.get_main_option("sqlalchemy.url")
-    or os.getenv("PRODUCT_DB_URL")
-    or "sqlite:///data/product/product.db"
+    os.getenv("PRODUCT_DB_URL") or config.get_main_option("sqlalchemy.url") or "sqlite:///data/product/product.db"
 )
 
 

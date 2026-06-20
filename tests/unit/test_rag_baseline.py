@@ -6,7 +6,6 @@ import pytest
 
 from src.evaluation.rag_baseline import (
     RagBaselineCase,
-    RagBaselineMetrics,
     _compute_metrics_for_case,
     _load_baseline_golden,
     _recommend_min_required_contexts,
@@ -51,21 +50,21 @@ class TestRagBaselineCase:
         cases = _load_baseline_golden(_GOLDEN)
         for c in cases:
             if c.expected_source_ids:
-                assert c.minimum_relevant_contexts >= 1, (
-                    f"{c.case_id}: minimum_relevant_contexts={c.minimum_relevant_contexts}"
-                )
+                assert (
+                    c.minimum_relevant_contexts >= 1
+                ), f"{c.case_id}: minimum_relevant_contexts={c.minimum_relevant_contexts}"
 
     def test_critical_claims_matches_is_critical(self) -> None:
         cases = _load_baseline_golden(_GOLDEN)
         for c in cases:
             if c.is_critical and c.expected_source_ids:
-                assert c.critical_claims_expected >= 1, (
-                    f"{c.case_id}: critical_claims_expected={c.critical_claims_expected}"
-                )
+                assert (
+                    c.critical_claims_expected >= 1
+                ), f"{c.case_id}: critical_claims_expected={c.critical_claims_expected}"
             if not c.is_critical:
-                assert c.critical_claims_expected == 0, (
-                    f"{c.case_id}: non-critical but critical_claims_expected={c.critical_claims_expected}"
-                )
+                assert (
+                    c.critical_claims_expected == 0
+                ), f"{c.case_id}: non-critical but critical_claims_expected={c.critical_claims_expected}"
 
 
 class TestComputeMetricsForCase:
@@ -324,17 +323,13 @@ class TestGridSearchBaseline:
         grid_results = grid_search_baseline(top_k_candidates=[3, 10, 15])
         rec3 = next(gr for gr in grid_results if gr.top_k == 3).avg_recall
         rec15 = next(gr for gr in grid_results if gr.top_k == 15).avg_recall
-        assert rec15 >= rec3, (
-            f"Expected recall@15 ({rec15}) >= recall@3 ({rec3})"
-        )
+        assert rec15 >= rec3, f"Expected recall@15 ({rec15}) >= recall@3 ({rec3})"
 
     def test_precision_decreases_with_top_k(self) -> None:
         grid_results = grid_search_baseline(top_k_candidates=[3, 10, 15])
         p3 = next(gr for gr in grid_results if gr.top_k == 3).avg_precision
         p15 = next(gr for gr in grid_results if gr.top_k == 15).avg_precision
-        assert p15 <= p3, (
-            f"Expected precision@15 ({p15}) <= precision@3 ({p3})"
-        )
+        assert p15 <= p3, f"Expected precision@15 ({p15}) <= precision@3 ({p3})"
 
     def test_per_case_results_are_present(self) -> None:
         grid_results = grid_search_baseline(top_k_candidates=[5])
@@ -354,17 +349,13 @@ class TestRecommendTopK:
 
     def test_strict_targets_may_not_meet(self) -> None:
         grid_results = grid_search_baseline(top_k_candidates=[3, 5])
-        rec = _recommend_top_k(
-            grid_results, recall_target=0.99, precision_target=0.99, citation_target=1.0
-        )
+        rec = _recommend_top_k(grid_results, recall_target=0.99, precision_target=0.99, citation_target=1.0)
         if not rec["production_allowed"]:
             assert rec["recommended_top_k"] is None
 
     def test_low_targets_always_meet(self) -> None:
         grid_results = grid_search_baseline(top_k_candidates=[3])
-        rec = _recommend_top_k(
-            grid_results, recall_target=0.0, precision_target=0.0, citation_target=0.0
-        )
+        rec = _recommend_top_k(grid_results, recall_target=0.0, precision_target=0.0, citation_target=0.0)
         assert rec["production_allowed"] is True
         assert rec["recommended_top_k"] == 3
 
@@ -418,7 +409,8 @@ class TestRunFullCalibration:
     def test_calibration_status_is_measured_or_insufficient(self) -> None:
         result = run_full_calibration(top_k_candidates=[3, 5, 8, 10, 15])
         assert result["calibration_status"] in (
-            "baseline_measured", "baseline_dataset_insufficient"
+            "baseline_measured",
+            "baseline_dataset_insufficient",
         )
 
     def test_empty_index_produces_insufficient(self) -> None:

@@ -396,10 +396,7 @@ def quality_metrics_from_results(
     invalid_count = sum(1 for r in results if r.status == "invalid")
     total_errors = sum(len(r.validation_errors) for r in results)
     missing_fields = sum(
-        1
-        for r in results
-        for e in r.validation_errors
-        if e.error_type in ("missing", "value_error.missing")
+        1 for r in results for e in r.validation_errors if e.error_type in ("missing", "value_error.missing")
     )
     avg_retry = sum(r.retry_count for r in results) / total
 

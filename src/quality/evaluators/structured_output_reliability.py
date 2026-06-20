@@ -20,9 +20,7 @@ class StructuredOutputReliabilityEvaluator(BaseQualityEvaluator):
             for rc in readiness_checks_list
             if rc.code in ("STRUCTURED_OUTPUT_INVALID", "STRUCTURED_OUTPUT_RETRY_EXHAUSTED")
         )
-        repaired_count = sum(
-            1 for rc in readiness_checks_list if rc.code == "STRUCTURED_OUTPUT_REPAIRED"
-        )
+        repaired_count = sum(1 for rc in readiness_checks_list if rc.code == "STRUCTURED_OUTPUT_REPAIRED")
         total = len(readiness_checks_list) if readiness_checks_list else 1
 
         return {

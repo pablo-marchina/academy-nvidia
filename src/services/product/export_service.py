@@ -85,9 +85,7 @@ class ExportService:
     ) -> None:
         self.repository = repository
         self.product_repo = product_repo
-        self.product_data_dir = cast(
-            str, product_data_dir or os.getenv("PRODUCT_DATA_DIR", "data/product")
-        )
+        self.product_data_dir = cast(str, product_data_dir or os.getenv("PRODUCT_DATA_DIR", "data/product"))
 
     def create_export(
         self,

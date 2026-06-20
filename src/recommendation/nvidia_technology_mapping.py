@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from src.diagnosis.schemas import GapType, GapDiagnosisResultItem, GapDiagnosisMetrics
+from src.diagnosis.schemas import GapDiagnosisMetrics, GapDiagnosisResultItem
 from src.quality.decision_calibration_registry import (
     DecisionCalibrationRecord,
     get_project_decision_inventory,
@@ -168,13 +168,10 @@ def _lookup_calibration_group(
                 validation = validate_decision_for_production(rec)
                 if not validation.passed:
                     blockers.append(
-                        f"Decision '{decision_id}' blocked for production: "
-                        f"{'; '.join(validation.reasons)}"
+                        f"Decision '{decision_id}' blocked for production: " f"{'; '.join(validation.reasons)}"
                     )
                 elif rec.calibration_status.value in ("uncalibrated", "blocked"):
-                    blockers.append(
-                        f"Decision '{decision_id}' is {rec.calibration_status.value}"
-                    )
+                    blockers.append(f"Decision '{decision_id}' is {rec.calibration_status.value}")
                 else:
                     values[decision_id] = rec.current_value
                 break
@@ -290,20 +287,12 @@ def extract_mapping_features(
     source_quality_mean = _mean(ev_qualities)
 
     topic_keywords = [technology.lower()] + _TECHNOLOGY_TOPIC_KEYWORDS.get(technology, [])
-    all_text = " ".join(
-        str(ctx.get("content", "") or ctx.get("title", ""))
-        for ctx in rag_contexts
-    )
+    all_text = " ".join(str(ctx.get("content", "") or ctx.get("title", "")) for ctx in rag_contexts)
     tech_topic_match = 1.0 if _text_contains_any(all_text, topic_keywords) else 0.0
 
     startup_keywords = ["gpu", "cuda", "deep learning", "machine learning", "ai"]
-    startup_text = " ".join(
-        str(item.get("text", "") or item.get("snippet", "") or "")
-        for item in evidence_items
-    )
-    signal_match_count = sum(
-        1 for kw in startup_keywords if kw in startup_text.lower()
-    )
+    startup_text = " ".join(str(item.get("text", "") or item.get("snippet", "") or "") for item in evidence_items)
+    signal_match_count = sum(1 for kw in startup_keywords if kw in startup_text.lower())
     _MAX_SIGNALS = 6.0
     startup_signal_norm = min(1.0, signal_match_count / _MAX_SIGNALS)
 
@@ -345,21 +334,12 @@ def extract_mapping_features(
 
     contradiction_count = min(
         1.0,
-        sum(
-            1
-            for c in rag_for_tech
-            if isinstance(c.get("gap_types"), list) and len(c["gap_types"]) == 0
-        )
-        / 3.0,
+        sum(1 for c in rag_for_tech if isinstance(c.get("gap_types"), list) and len(c["gap_types"]) == 0) / 3.0,
     )
 
     completeness_rate = 1.0
     if rag_for_tech:
-        has_content = sum(
-            1
-            for ctx in rag_for_tech
-            if ctx.get("content") and ctx.get("source_id")
-        )
+        has_content = sum(1 for ctx in rag_for_tech if ctx.get("content") and ctx.get("source_id"))
         completeness_rate = has_content / len(rag_for_tech)
 
     _MAX_RAG_CONF = 10.0
@@ -441,9 +421,7 @@ def build_nvidia_technology_mappings(
         inventory = get_project_decision_inventory()
 
     # ── Calibration gate ────────────────────────────────────────────────
-    cal_values, cal_ok, blockers = _lookup_calibration_group(
-        REQUIRED_MAPPING_DECISIONS, inventory=inventory
-    )
+    cal_values, cal_ok, blockers = _lookup_calibration_group(REQUIRED_MAPPING_DECISIONS, inventory=inventory)
     is_blocked = not cal_ok
 
     # ── Golden set gate ─────────────────────────────────────────────────
@@ -505,26 +483,28 @@ def build_nvidia_technology_mappings(
 
             assert cal_values is not None
 
-            score_weights = _lookup_weight_dict(
-                "nvidia_mapping.mapping_score_weights", cal_values
-            )
-            conf_weights = _lookup_weight_dict(
-                "nvidia_mapping.mapping_confidence_weights", cal_values
-            )
-            production_threshold = _lookup_float(
-                "nvidia_mapping.production_threshold", cal_values
-            )
-            min_rag = _lookup_int(
-                "nvidia_mapping.minimum_rag_contexts", cal_values
-            )
-            min_evidence = _lookup_int(
-                "nvidia_mapping.minimum_evidence_support", cal_values
-            )
-            uncertainty_penalty_mult = _lookup_float(
-                "nvidia_mapping.uncertainty_penalty", cal_values
-            )
+            score_weights = _lookup_weight_dict("nvidia_mapping.mapping_score_weights", cal_values)
+            conf_weights = _lookup_weight_dict("nvidia_mapping.mapping_confidence_weights", cal_values)
+            production_threshold = _lookup_float("nvidia_mapping.production_threshold", cal_values)
+            min_rag = _lookup_int("nvidia_mapping.minimum_rag_contexts", cal_values)
+            min_evidence = _lookup_int("nvidia_mapping.minimum_evidence_support", cal_values)
+            uncertainty_penalty_mult = _lookup_float("nvidia_mapping.uncertainty_penalty", cal_values)
 
-            if score_weights is None or conf_weights is None:
+            invalid_calibration_blockers = []
+            if score_weights is None:
+                invalid_calibration_blockers.append("Mapping score weights calibration record has invalid type")
+            if conf_weights is None:
+                invalid_calibration_blockers.append("Mapping confidence weights calibration record has invalid type")
+            if production_threshold is None:
+                invalid_calibration_blockers.append("Mapping production threshold calibration record is not numeric")
+            if min_rag is None:
+                invalid_calibration_blockers.append("Minimum RAG contexts calibration record is not numeric")
+            if min_evidence is None:
+                invalid_calibration_blockers.append("Minimum evidence support calibration record is not numeric")
+            if uncertainty_penalty_mult is None:
+                invalid_calibration_blockers.append("Uncertainty penalty calibration record is not numeric")
+
+            if invalid_calibration_blockers:
                 mappings.append(
                     NvidiaTechnologyMappingRecord(
                         mapping_id=mapping_id,
@@ -541,19 +521,24 @@ def build_nvidia_technology_mappings(
                         supporting_evidence_ids=[],
                         calibration_decision_ids=REQUIRED_MAPPING_DECISIONS,
                         production_allowed=False,
-                        blockers=["Score or confidence weights calibration record has invalid type"],
+                        blockers=invalid_calibration_blockers,
                         explanation=f"Mapping '{gap_type_str} → {tech}' blocked: weight dicts invalid.",
                     )
                 )
                 continue
 
             # ── Compute mapping_score ───────────────────────────────────
+            assert score_weights is not None
+            assert conf_weights is not None
+            assert production_threshold is not None
+            assert min_rag is not None
+            assert min_evidence is not None
+            assert uncertainty_penalty_mult is not None
+
             feat_dict = score_feat.model_dump(mode="json")
             raw_score = _compute_weighted_score(feat_dict, score_weights)
 
-            unc_penalty = score_feat.uncertainty_penalty * (
-                uncertainty_penalty_mult or 0.1
-            )
+            unc_penalty = score_feat.uncertainty_penalty * uncertainty_penalty_mult
             final_score = max(0.0, min(1.0, raw_score - unc_penalty))
 
             # ── Compute mapping_confidence ──────────────────────────────
@@ -573,11 +558,7 @@ def build_nvidia_technology_mappings(
             for item in evidence_items:
                 eid = item.get("id") or item.get("evidence_id") or ""
                 if eid and _text_contains_any(
-                    str(
-                        item.get("text", "")
-                        or item.get("snippet", "")
-                        or item.get("claim", "")
-                    ),
+                    str(item.get("text", "") or item.get("snippet", "") or item.get("claim", "")),
                     tech_keywords_search,
                 ):
                     ev_ids.append(str(eid))
@@ -593,27 +574,20 @@ def build_nvidia_technology_mappings(
             if rag_count == 0 and ev_count == 0:
                 status = NvidiaMappingStatus.NEEDS_MORE_EVIDENCE
                 prod_allowed = False
-                mapping_blockers.append(
-                    "No RAG contexts and no evidence items supporting this mapping."
-                )
+                mapping_blockers.append("No RAG contexts and no evidence items supporting this mapping.")
             elif min_rag is not None and rag_count < min_rag:
                 status = NvidiaMappingStatus.NEEDS_MORE_EVIDENCE
                 prod_allowed = False
-                mapping_blockers.append(
-                    f"RAG contexts ({rag_count}) below minimum ({min_rag})."
-                )
+                mapping_blockers.append(f"RAG contexts ({rag_count}) below minimum ({min_rag}).")
             elif min_evidence is not None and ev_count < min_evidence:
                 status = NvidiaMappingStatus.NEEDS_MORE_EVIDENCE
                 prod_allowed = False
-                mapping_blockers.append(
-                    f"Evidence items ({ev_count}) below minimum ({min_evidence})."
-                )
+                mapping_blockers.append(f"Evidence items ({ev_count}) below minimum ({min_evidence}).")
             elif production_threshold is not None and final_score < production_threshold:
                 status = NvidiaMappingStatus.NEEDS_REVIEW
                 prod_allowed = False
                 mapping_blockers.append(
-                    f"Mapping score ({round(final_score, 4)}) "
-                    f"below production threshold ({production_threshold})."
+                    f"Mapping score ({round(final_score, 4)}) " f"below production threshold ({production_threshold})."
                 )
             else:
                 status = NvidiaMappingStatus.PASSED
@@ -629,9 +603,7 @@ def build_nvidia_technology_mappings(
             elif status == NvidiaMappingStatus.NEEDS_MORE_EVIDENCE:
                 explanation_parts.append("Insufficient evidence for reliable mapping.")
             elif status == NvidiaMappingStatus.NEEDS_REVIEW:
-                explanation_parts.append(
-                    f"Score below production threshold ({production_threshold})."
-                )
+                explanation_parts.append(f"Score below production threshold ({production_threshold}).")
 
             mappings.append(
                 NvidiaTechnologyMappingRecord(
@@ -660,10 +632,9 @@ def build_nvidia_technology_mappings(
     overall_status: str
     if is_blocked:
         overall_status = NvidiaMappingStatus.BLOCKED_UNCALIBRATED_MAPPING.value
-    elif any(
-        m.blockers and "No RAG contexts" in " ".join(m.blockers)
-        for m in mappings
-    ) and not any(m.production_allowed for m in mappings):
+    elif any(m.blockers and "No RAG contexts" in " ".join(m.blockers) for m in mappings) and not any(
+        m.production_allowed for m in mappings
+    ):
         overall_status = NvidiaMappingStatus.NEEDS_MORE_EVIDENCE.value
     elif any(m.production_allowed for m in mappings):
         overall_status = NvidiaMappingStatus.PASSED.value
@@ -674,12 +645,8 @@ def build_nvidia_technology_mappings(
     cal_metrics = NvidiaMappingCalibrationMetrics(
         evidence_supported_mapping_rate=metrics.evidence_supported_mapping_rate,
         rag_supported_mapping_rate=metrics.rag_supported_mapping_rate,
-        unsupported_mapping_rate=(
-            metrics.unsupported_mapping_count / max(1, metrics.total_mapping_count)
-        ),
-        technology_coverage=(
-            len(metrics.mappings_by_technology) / max(1, len(NVIDIA_TECHNOLOGIES))
-        ),
+        unsupported_mapping_rate=(metrics.unsupported_mapping_count / max(1, metrics.total_mapping_count)),
+        technology_coverage=(len(metrics.mappings_by_technology) / max(1, len(NVIDIA_TECHNOLOGIES))),
     )
 
     return {
@@ -699,11 +666,7 @@ def compute_mapping_metrics(
     total = len(mappings)
     prod_allowed = sum(1 for m in mappings if m.production_allowed)
     blocked = sum(1 for m in mappings if not m.production_allowed)
-    unsupported = sum(
-        1
-        for m in mappings
-        if not m.supporting_rag_context_ids and not m.supporting_evidence_ids
-    )
+    unsupported = sum(1 for m in mappings if not m.supporting_rag_context_ids and not m.supporting_evidence_ids)
 
     by_gap_type: dict[str, int] = {}
     by_tech: dict[str, int] = {}

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from src.extraction.schemas import Evidence, SourceType, StartupProfile
@@ -60,7 +60,7 @@ def _build_evidence_item(
     source_id: str = source_candidate.get("source_id", "")
     collected_at_raw: str = source_candidate.get("collected_at", "")
 
-    now_ts: str = datetime.now(timezone.utc).isoformat()
+    now_ts: str = datetime.now(UTC).isoformat()
     extracted_at: str = collected_at_raw if collected_at_raw else now_ts
 
     snippet = text[:300] if text else ""
@@ -123,7 +123,12 @@ def _build_claim(
     conf_value: float = 0.5
     if evidence_source.confidence:
         from src.extraction.schemas import ConfidenceLevel
-        conf_map = {ConfidenceLevel.HIGH: 0.9, ConfidenceLevel.MEDIUM: 0.6, ConfidenceLevel.LOW: 0.3}
+
+        conf_map = {
+            ConfidenceLevel.HIGH: 0.9,
+            ConfidenceLevel.MEDIUM: 0.6,
+            ConfidenceLevel.LOW: 0.3,
+        }
         conf_value = conf_map.get(evidence_source.confidence, 0.5)
 
     factuality: str = "inferred"
@@ -190,7 +195,9 @@ def _merge_profiles(profiles: list[StartupProfile]) -> dict[str, Any]:
     merged["founders"] = list(set(all_founders))
 
     merged["detected_domains"] = list(set(all_tech_terms))
-    merged["detected_products"] = [p for p in [profiles[0].product_summary] if p and p != "Not verified"] if profiles else []
+    merged["detected_products"] = (
+        [p for p in [profiles[0].product_summary] if p and p != "Not verified"] if profiles else []
+    )
     merged["detected_ai_signals"] = list(set(all_ai_signals))
     merged["detected_technical_terms"] = list(set(all_tech_terms))
 
@@ -311,16 +318,20 @@ def extract_profiles_from_candidates(
         source_type_coverage[st] = source_type_coverage.get(st, 0) + 1
 
     total_fields = 8
-    filled = sum(1 for f in [
-        startup_profile.get("detected_ai_signals"),
-        startup_profile.get("detected_technical_terms"),
-        startup_profile.get("detected_funding_or_traction_signals"),
-        startup_profile.get("detected_nvidia_relevance_terms"),
-        startup_profile.get("detected_products"),
-        startup_profile.get("detected_domains"),
-        startup_profile.get("source_coverage_by_type"),
-        startup_profile.get("profile_confidence", 0) > 0,
-    ] if f)
+    filled = sum(
+        1
+        for f in [
+            startup_profile.get("detected_ai_signals"),
+            startup_profile.get("detected_technical_terms"),
+            startup_profile.get("detected_funding_or_traction_signals"),
+            startup_profile.get("detected_nvidia_relevance_terms"),
+            startup_profile.get("detected_products"),
+            startup_profile.get("detected_domains"),
+            startup_profile.get("source_coverage_by_type"),
+            startup_profile.get("profile_confidence", 0) > 0,
+        ]
+        if f
+    )
 
     average_extraction_confidence = (
         sum(ev.get("extraction_confidence", 0) for ev in evidence_items) / len(evidence_items)
@@ -338,9 +349,9 @@ def extract_profiles_from_candidates(
         "empty_content_count": empty_count,
         "duplicate_content_count": duplicate_count,
         "source_type_coverage": source_type_coverage,
-        "extraction_success_rate": round(
-            extraction_success_count / extraction_attempt_count, 4
-        ) if extraction_attempt_count > 0 else 0.0,
+        "extraction_success_rate": (
+            round(extraction_success_count / extraction_attempt_count, 4) if extraction_attempt_count > 0 else 0.0
+        ),
         "profile_field_coverage": round(filled / total_fields, 4),
         "average_extraction_confidence": round(average_extraction_confidence, 4),
     }

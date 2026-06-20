@@ -28,6 +28,7 @@ def main() -> None:
     collector = None
     if real_collector:
         from src.scraping.collector import build_collector
+
         collector = build_collector()
 
     result = run_full_calibration(
@@ -42,9 +43,7 @@ def main() -> None:
             "production_allowed": result["production_allowed"],
             "golden_set_size": result["golden_set_size"],
             "collector_validation": result.get("collector_validation", {}),
-            "recommendations": {
-                k: v for k, v in result["recommendations"].items()
-            },
+            "recommendations": {k: v for k, v in result["recommendations"].items()},
             "marginal_gains": result["marginal_gains"],
         }
         print(json.dumps(clean, indent=2, default=str))
@@ -62,8 +61,10 @@ def main() -> None:
     if "--check" in flags:
         if result["production_allowed"] and result["calibration_status"] == "baseline_measured":
             sys.exit(0)
-        print(f"\nBLOCKED: calibration_status={result['calibration_status']}, "
-              f"production_allowed={result['production_allowed']}")
+        print(
+            f"\nBLOCKED: calibration_status={result['calibration_status']}, "
+            f"production_allowed={result['production_allowed']}"
+        )
         sys.exit(1)
 
 

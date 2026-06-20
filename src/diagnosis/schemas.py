@@ -44,6 +44,7 @@ class GapDiagnosisResult(BaseModel):
 
 # ── Quantitative Gap Diagnosis Models ──────────────────────────────────────
 
+
 class GapType(str, Enum):
     COMPUTE_ACCELERATION_GAP = "compute_acceleration_gap"
     INFERENCE_PERFORMANCE_GAP = "inference_performance_gap"

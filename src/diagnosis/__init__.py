@@ -5,8 +5,8 @@ Deterministic detection of production AI gaps and mapping to NVIDIA technologies
 
 from src.diagnosis.gap_diagnosis import diagnose_gaps
 from src.diagnosis.gap_diagnosis_scoring import (
-    GapDiagnosisStatus,
     REQUIRED_CALIBRATION_DECISIONS,
+    GapDiagnosisStatus,
     diagnose_gaps_quantitative,
     extract_gap_confidence_features,
     extract_gap_severity_features,

@@ -21,7 +21,7 @@ from src.pipeline.run_pipeline import PipelineResult, run_full_pipeline
 from src.rag.embeddings import MockEmbeddingProvider
 from src.rag.retrieval import ChunkIndex, build_default_index
 from src.rag.schemas import PackingConfig, RerankingConfig
-from src.rag.vector_store import InMemoryVectorStore
+from src.rag.vector_store import InMemoryVectorStore, VectorEntry
 
 
 @dataclass
@@ -96,6 +96,39 @@ def run_pipeline_with_rag(case: GoldenCase) -> tuple[PipelineResult, PipelineRes
     chunk_index = build_default_index()
     embedding = MockEmbeddingProvider()
     vector_store = InMemoryVectorStore()
+    vector_store.add_entries(
+        [
+            VectorEntry(
+                chunk_id=chunk.chunk_id,
+                source_id=chunk.source_id,
+                title=chunk.title,
+                content=chunk.content,
+                product=chunk.product,
+                gap_types=list(chunk.gap_types),
+                url=chunk.url,
+                embedding=embedding.embed(chunk.content),
+                version=chunk.version,
+                document_type=chunk.document_type,
+                content_hash=chunk.content_hash,
+                previous_content_hash=chunk.previous_content_hash,
+                collected_at=chunk.collected_at,
+                last_checked_at=chunk.last_checked_at,
+                valid_from=chunk.valid_from,
+                valid_until=chunk.valid_until,
+                freshness_policy=chunk.freshness_policy,
+                stale_after_days=chunk.stale_after_days,
+                is_active=chunk.is_active,
+                deprecated_at=chunk.deprecated_at,
+                superseded_by=chunk.superseded_by,
+                deprecation_reason=chunk.deprecation_reason,
+                nvidia_technology=chunk.nvidia_technology,
+                corpus_version=chunk.corpus_version,
+                chunk_index=chunk.chunk_index,
+                char_count=chunk.char_count,
+            )
+            for chunk in chunk_index.chunks
+        ]
+    )
     rerank_config = RerankingConfig()
     pack_config = PackingConfig()
 
@@ -164,8 +197,7 @@ def assert_no_tech_without_gap(result: PipelineResult) -> None:
     for pg in rec.recommendations:
         if not pg.detected:
             assert len(pg.recommended_nvidia_technologies) == 0, (
-                f"Undetected gap {pg.diagnosed_gap} has technologies: "
-                f"{pg.recommended_nvidia_technologies}"
+                f"Undetected gap {pg.diagnosed_gap} has technologies: " f"{pg.recommended_nvidia_technologies}"
             )
 
 
@@ -182,8 +214,7 @@ def assert_missing_evidence_propagates(result: PipelineResult) -> None:
     if rec.missing_evidence:
         for item in rec.missing_evidence:
             assert item in result.missing_evidence, (
-                f"missing_evidence '{item}' from recommendation "
-                f"not propagated to PipelineResult"
+                f"missing_evidence '{item}' from recommendation " f"not propagated to PipelineResult"
             )
 
 
@@ -213,15 +244,10 @@ def assert_no_strong_rec_without_evidence(result: PipelineResult) -> None:
     for pg in rec.recommendations:
         if pg.action == "approach_now":
             has_high = any(e.confidence == ConfidenceLevel.HIGH for e in result.validated_evidence)
-            assert has_high, (
-                f"approach_now recommendation for {pg.diagnosed_gap} "
-                f"but no HIGH confidence evidence"
-            )
+            assert has_high, f"approach_now recommendation for {pg.diagnosed_gap} " f"but no HIGH confidence evidence"
 
 
-def assert_rag_does_not_alter_motion(
-    result_no_rag: PipelineResult, result_with_rag: PipelineResult
-) -> None:
+def assert_rag_does_not_alter_motion(result_no_rag: PipelineResult, result_with_rag: PipelineResult) -> None:
     assert result_no_rag.recommended_motion == result_with_rag.recommended_motion, (
         f"RAG altered recommended_motion: "
         f"{result_no_rag.recommended_motion} -> {result_with_rag.recommended_motion}"
@@ -236,6 +262,4 @@ def assert_rag_context_not_in_evidence_used(
         context_content.add(ctx.gap_type)
         context_content.add(ctx.technology)
     for ev in brief.evidence_used:
-        assert (
-            ev.claim not in context_content
-        ), f"RAG context claim appears in evidence_used: {ev.claim}"
+        assert ev.claim not in context_content, f"RAG context claim appears in evidence_used: {ev.claim}"

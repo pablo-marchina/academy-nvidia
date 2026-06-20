@@ -23,7 +23,12 @@ not raised. Unit tests never call LLM or internet.
 from __future__ import annotations
 
 import json
-import math
+
+# ── Lazy RAGAS import — never fails, never called in unit tests ────────────
+# Uses subprocess-based check to avoid hanging on C extension build issues
+# (e.g. scikit-network on Python 3.14/Windows without VS Build Tools).
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -32,20 +37,12 @@ from src.evaluation.ragas_eval_schemas import (
     MINIMUM_GOLDEN_SAMPLES,
     REQUIRED_SAMPLE_FIELDS,
     CustomEvalMetrics,
-    GoldenContext,
     RagasComputedMetrics,
     RagasEvalDataset,
     RagasEvalGoldenSample,
     RagasEvalReport,
     RagasEvalResult,
 )
-
-# ── Lazy RAGAS import — never fails, never called in unit tests ────────────
-# Uses subprocess-based check to avoid hanging on C extension build issues
-# (e.g. scikit-network on Python 3.14/Windows without VS Build Tools).
-
-import subprocess
-import sys
 
 _HAS_RAGAS = False
 _RAGAS_IMPORT_ERROR: str | None = None
@@ -54,15 +51,16 @@ try:
     # Quick check via subprocess to avoid hanging on C extension compilation
     _result = subprocess.run(
         [sys.executable, "-c", "import ragas; print('ok')"],
-        capture_output=True, text=True, timeout=15,
+        capture_output=True,
+        text=True,
+        timeout=15,
     )
     if _result.returncode == 0 and _result.stdout.strip() == "ok":
         import ragas  # noqa: F401
+
         _HAS_RAGAS = True
     else:
-        _RAGAS_IMPORT_ERROR = (
-            _result.stderr.strip() or "ragas import failed (unknown error)"
-        )
+        _RAGAS_IMPORT_ERROR = _result.stderr.strip() or "ragas import failed (unknown error)"
 except FileNotFoundError:
     _RAGAS_IMPORT_ERROR = "ragas package not installed"
 except subprocess.TimeoutExpired:
@@ -136,16 +134,14 @@ class RagasEvalHarness:
     # Custom metric computation (deterministic, no external deps)
     # ------------------------------------------------------------------
 
-    def compute_custom_metrics(
-        self, dataset: RagasEvalDataset
-    ) -> CustomEvalMetrics:
+    def compute_custom_metrics(self, dataset: RagasEvalDataset) -> CustomEvalMetrics:
         total_retrieved = 0
         total_with_citation = 0
         total_expected = 0
         total_unsupported = 0
         contexts_per_gap: dict[str, int] = {}
         gaps_without = 0
-        gap_count = len(dataset.samples)
+        len(dataset.samples)
 
         for sample in dataset.samples:
             ctxs = sample.retrieved_contexts
@@ -170,12 +166,8 @@ class RagasEvalHarness:
                 if ctx.source_id and ctx.url:
                     total_with_citation += 1
 
-        citation_precision = (
-            total_with_citation / total_retrieved if total_retrieved > 0 else 1.0
-        )
-        unsupported_claim_rate = (
-            total_unsupported / total_expected if total_expected > 0 else 0.0
-        )
+        citation_precision = total_with_citation / total_retrieved if total_retrieved > 0 else 1.0
+        unsupported_claim_rate = total_unsupported / total_expected if total_expected > 0 else 0.0
 
         return CustomEvalMetrics(
             citation_precision=round(citation_precision, 4),
@@ -190,23 +182,17 @@ class RagasEvalHarness:
     # RAGAS metric computation (requires ragas + optional LLM judge)
     # ------------------------------------------------------------------
 
-    def compute_ragas_metrics(
-        self, dataset: RagasEvalDataset
-    ) -> RagasComputedMetrics:
+    def compute_ragas_metrics(self, dataset: RagasEvalDataset) -> RagasComputedMetrics:
         if not _HAS_RAGAS:
             return RagasComputedMetrics(metrics_source=f"unavailable: {_RAGAS_IMPORT_ERROR}")
 
-        samples_with_answers = [
-            s for s in dataset.samples if s.ground_truth_answer
-        ]
+        samples_with_answers = [s for s in dataset.samples if s.ground_truth_answer]
         if not samples_with_answers:
             return RagasComputedMetrics(metrics_source="unavailable: no ground_truth_answer")
 
         return self._compute_ragas_via_library(dataset)
 
-    def _compute_ragas_via_library(
-        self, dataset: RagasEvalDataset
-    ) -> RagasComputedMetrics:
+    def _compute_ragas_via_library(self, dataset: RagasEvalDataset) -> RagasComputedMetrics:
         try:
             from datasets import Dataset as HFDataset
             from ragas import evaluate
@@ -217,9 +203,7 @@ class RagasEvalHarness:
                 faithfulness,
             )
         except ImportError as exc:
-            return RagasComputedMetrics(
-                metrics_source=f"unavailable: ragas import error: {exc}"
-            )
+            return RagasComputedMetrics(metrics_source=f"unavailable: ragas import error: {exc}")
 
         rows: list[dict[str, Any]] = []
         for s in dataset.samples:
@@ -239,9 +223,7 @@ class RagasEvalHarness:
         try:
             hf_dataset = HFDataset.from_list(rows)
         except Exception as exc:
-            return RagasComputedMetrics(
-                metrics_source=f"unavailable: dataset conversion error: {exc}"
-            )
+            return RagasComputedMetrics(metrics_source=f"unavailable: dataset conversion error: {exc}")
 
         has_answer = "answer" in hf_dataset.column_names
         has_ground_truth = "ground_truth" in hf_dataset.column_names
@@ -253,16 +235,12 @@ class RagasEvalHarness:
             metrics_to_use.extend([faithfulness, answer_relevancy])
 
         if not metrics_to_use:
-            return RagasComputedMetrics(
-                metrics_source="unavailable: insufficient columns for ragas metrics"
-            )
+            return RagasComputedMetrics(metrics_source="unavailable: insufficient columns for ragas metrics")
 
         try:
             result = evaluate(hf_dataset, metrics=metrics_to_use)
         except Exception as exc:
-            return RagasComputedMetrics(
-                metrics_source=f"unavailable: ragas evaluation error: {exc}"
-            )
+            return RagasComputedMetrics(metrics_source=f"unavailable: ragas evaluation error: {exc}")
 
         scores: dict[str, Any] = {}
         for key, val in result.items():
@@ -299,9 +277,7 @@ class RagasEvalHarness:
                 score=custom.citation_precision,
                 sample_count=n,
                 calibration_recommendation=(
-                    "calibrate_threshold_via_ragas_eval"
-                    if sufficient
-                    else "baseline_dataset_insufficient"
+                    "calibrate_threshold_via_ragas_eval" if sufficient else "baseline_dataset_insufficient"
                 ),
                 production_allowed_recommendation=sufficient,
             )
@@ -312,9 +288,7 @@ class RagasEvalHarness:
                 score=custom.unsupported_claim_rate,
                 sample_count=n,
                 calibration_recommendation=(
-                    "calibrate_threshold_via_ragas_eval"
-                    if sufficient
-                    else "baseline_dataset_insufficient"
+                    "calibrate_threshold_via_ragas_eval" if sufficient else "baseline_dataset_insufficient"
                 ),
                 production_allowed_recommendation=sufficient,
             )
@@ -325,9 +299,7 @@ class RagasEvalHarness:
                 score=float(custom.retrieved_context_count) / max(n, 1),
                 sample_count=n,
                 calibration_recommendation=(
-                    "calibrate_min_contexts_per_gap_via_ragas_eval"
-                    if sufficient
-                    else "baseline_dataset_insufficient"
+                    "calibrate_min_contexts_per_gap_via_ragas_eval" if sufficient else "baseline_dataset_insufficient"
                 ),
                 production_allowed_recommendation=sufficient,
             )
@@ -338,9 +310,7 @@ class RagasEvalHarness:
                 score=float(custom.gaps_without_context_count),
                 sample_count=n,
                 calibration_recommendation=(
-                    "investigate_zero_context_gaps"
-                    if sufficient
-                    else "baseline_dataset_insufficient"
+                    "investigate_zero_context_gaps" if sufficient else "baseline_dataset_insufficient"
                 ),
                 production_allowed_recommendation=sufficient,
             )
@@ -358,12 +328,8 @@ class RagasEvalHarness:
                         metric_name=metric_name,
                         score=score if score is not None else 0.0,
                         sample_count=n,
-                        calibration_recommendation=(
-                            f"metrics_source={ragas.metrics_source}"
-                        ),
-                        production_allowed_recommendation=(
-                            score is not None and sufficient
-                        ),
+                        calibration_recommendation=(f"metrics_source={ragas.metrics_source}"),
+                        production_allowed_recommendation=(score is not None and sufficient),
                     )
                 )
 
@@ -389,13 +355,9 @@ class RagasEvalHarness:
                 "metric_name": metric_name,
                 "value_origin": f"{prefix} :: {self._golden_path.name}",
                 "calibration_method": "baseline_measurement",
-                "calibration_status": (
-                    "baseline_measured" if sufficient else "baseline_dataset_insufficient"
-                ),
+                "calibration_status": ("baseline_measured" if sufficient else "baseline_dataset_insufficient"),
                 "production_allowed": sufficient,
-                "evidence_source": (
-                    f"RAGAS eval on {self._golden_path} ({len(reports)} samples)"
-                ),
+                "evidence_source": (f"RAGAS eval on {self._golden_path} ({len(reports)} samples)"),
             }
 
         dec["rag.semantic_top_k"] = {
@@ -407,9 +369,7 @@ class RagasEvalHarness:
             "notes": "Recommendation from RAGAS eval — pending sufficient dataset",
         }
         dec["rag.context_relevance_threshold"] = {
-            **_decision(
-                "rag.context_relevance_threshold", 0.3, "rag_context_relevance_threshold"
-            ),
+            **_decision("rag.context_relevance_threshold", 0.3, "rag_context_relevance_threshold"),
             "notes": "Recommendation from RAGAS eval — pending sufficient dataset",
         }
         dec["rag.citation_precision_threshold"] = {
@@ -470,19 +430,13 @@ class RagasEvalHarness:
         if sufficient and not schema_errors:
             ragas_metrics = self.compute_ragas_metrics(dataset)
         else:
-            ragas_metrics = RagasComputedMetrics(
-                metrics_source="skipped: insufficient dataset or schema errors"
-            )
+            ragas_metrics = RagasComputedMetrics(metrics_source="skipped: insufficient dataset or schema errors")
 
         reports = self.generate_report(custom, ragas_metrics, dataset)
-        decisions = self._produce_calibration_decisions(
-            reports, custom, sufficient
-        )
+        decisions = self._produce_calibration_decisions(reports, custom, sufficient)
 
         calibration_status = (
-            "baseline_measured"
-            if sufficient and not schema_errors
-            else "baseline_dataset_insufficient"
+            "baseline_measured" if sufficient and not schema_errors else "baseline_dataset_insufficient"
         )
 
         return RagasEvalResult(

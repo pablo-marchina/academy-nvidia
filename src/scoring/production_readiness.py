@@ -98,8 +98,6 @@ _SCALE_TECH_KEYWORDS: list[str] = [
 ]
 
 
-
-
 # ---------------------------------------------------------------------------
 # Models
 # ---------------------------------------------------------------------------
@@ -321,9 +319,7 @@ def _score_privacy_and_governance(
         reasons.append(f"compliance signal ({comp_count}, +20)")
 
     has_gap = (
-        "privacy" in combined.lower()
-        or "controlled deployment" in combined.lower()
-        or "on-prem" in combined.lower()
+        "privacy" in combined.lower() or "controlled deployment" in combined.lower() or "on-prem" in combined.lower()
     )
     if has_gap:
         base += 20
@@ -436,18 +432,10 @@ def compute_production_readiness(
     """
     scores: dict[str, ReadinessDimension] = {}
 
-    scores["real_users_and_deployment"] = _score_real_users_and_deployment(
-        profile, classification, validated_evidence
-    )
-    scores["scale_and_inference"] = _score_scale_and_inference(
-        profile, classification, validated_evidence
-    )
-    scores["privacy_and_governance"] = _score_privacy_and_governance(
-        profile, classification, validated_evidence
-    )
-    scores["data_infrastructure"] = _score_data_infrastructure(
-        profile, classification, validated_evidence
-    )
+    scores["real_users_and_deployment"] = _score_real_users_and_deployment(profile, classification, validated_evidence)
+    scores["scale_and_inference"] = _score_scale_and_inference(profile, classification, validated_evidence)
+    scores["privacy_and_governance"] = _score_privacy_and_governance(profile, classification, validated_evidence)
+    scores["data_infrastructure"] = _score_data_infrastructure(profile, classification, validated_evidence)
 
     total = sum(s.adjusted_score * s.weight for s in scores.values())
     total = round(total, 1)
@@ -459,9 +447,7 @@ def compute_production_readiness(
         if not ds.evidence_used:
             missing.append(f"No evidence for dimension: {name}")
         elif ds.confidence == ConfidenceLevel.LOW:
-            missing.append(
-                f"Weak evidence for dimension: {name} (confidence: {ds.confidence.value})"
-            )
+            missing.append(f"Weak evidence for dimension: {name} (confidence: {ds.confidence.value})")
 
     conf_factors = [CONFIDENCE_SCORE_FACTORS.get(s.confidence.value, 0.4) for s in scores.values()]
     avg_conf = sum(conf_factors) / len(conf_factors)

@@ -7,6 +7,7 @@ blocking output with no LLM, Qdrant, scraping, or invented text.
 from __future__ import annotations
 
 from typing import Any
+
 from src.agents.graph import _generate_brief
 
 
@@ -56,8 +57,16 @@ def _state_with_recs(
         evidence_items = list(accepted_evidence_items)
     if claims is None:
         claims = [
-            {"claim_text": "Uses external API for inference", "criticality": "normal", "support_status": "supported"},
-            {"claim_text": "High inference cost on current cloud", "criticality": "critical", "support_status": "supported"},
+            {
+                "claim_text": "Uses external API for inference",
+                "criticality": "normal",
+                "support_status": "supported",
+            },
+            {
+                "claim_text": "High inference cost on current cloud",
+                "criticality": "critical",
+                "support_status": "supported",
+            },
         ]
     if rag_contexts is None:
         rag_contexts = ["NVIDIA NIM reduces cost", "TensorRT-LLM optimizes LLM"]
@@ -103,9 +112,15 @@ def _state_with_recs(
         }
     if executed_nodes is None:
         executed_nodes = [
-            "preflight_configuration_check", "plan_search", "collect_sources",
-            "extract_profile", "validate_evidence", "score_startup",
-            "diagnose_gaps", "retrieve_nvidia_context", "build_technology_mappings",
+            "preflight_configuration_check",
+            "plan_search",
+            "collect_sources",
+            "extract_profile",
+            "validate_evidence",
+            "score_startup",
+            "diagnose_gaps",
+            "retrieve_nvidia_context",
+            "build_technology_mappings",
             "rank_recommendations",
         ]
     if quality is None:
@@ -258,8 +273,13 @@ class TestGenerateBriefNoProduction:
 
 class TestGenerateBriefRankingBlocked:
     def test_ranking_not_passed_blocks(self) -> None:
-        for bad_status in ("blocked_no_nvidia_mappings", "blocked_uncalibrated_mapping",
-                           "blocked_uncalibrated_recommendation", "failed", "needs_review"):
+        for bad_status in (
+            "blocked_no_nvidia_mappings",
+            "blocked_uncalibrated_mapping",
+            "blocked_uncalibrated_recommendation",
+            "failed",
+            "needs_review",
+        ):
             state = _state_with_recs(ranking_status=bad_status)
             result = _generate_brief(state)
             assert result.get("brief_status") == "blocked_ranking_not_passed", f"Ranking {bad_status} should block"
@@ -422,6 +442,7 @@ class TestGenerateBriefExecutiveSummary:
 class TestGenerateBriefNoExternal:
     def test_no_llm_qdrant_scraping_imported(self) -> None:
         import sys as _sys
+
         before = set(_sys.modules.keys())
         state = _state_with_recs()
         _generate_brief(state)
@@ -459,12 +480,24 @@ class TestGenerateBriefExecutedNodes:
 
 class TestGenerateBriefQualityGate:
     def test_quality_failed_blocks(self) -> None:
-        state = _state_with_recs(quality={"status": "failed", "failed_checks": ["blockers_count > 0"], "warning_checks": []})
+        state = _state_with_recs(
+            quality={
+                "status": "failed",
+                "failed_checks": ["blockers_count > 0"],
+                "warning_checks": [],
+            }
+        )
         result = _generate_brief(state)
         assert result.get("brief_status") == "blocked_quality_gate"
 
     def test_quality_blocked_uncalibrated_blocks(self) -> None:
-        state = _state_with_recs(quality={"status": "blocked_uncalibrated_gap_diagnosis", "failed_checks": ["missing_calibration"], "warning_checks": []})
+        state = _state_with_recs(
+            quality={
+                "status": "blocked_uncalibrated_gap_diagnosis",
+                "failed_checks": ["missing_calibration"],
+                "warning_checks": [],
+            }
+        )
         result = _generate_brief(state)
         assert result.get("brief_status") == "blocked_quality_gate"
 
@@ -555,15 +588,27 @@ class TestGenerateBriefRequiredFields:
         assert len(recs) >= 1
         rec = recs[0]
         required_fields = [
-            "recommendation_id", "nvidia_technology", "gap_id", "gap_type",
-            "recommendation_priority_score", "recommendation_confidence",
-            "uncertainty", "mapping_score", "mapping_confidence",
-            "business_impact", "implementation_complexity",
-            "ai_native_score_value", "nvidia_fit_score_value",
-            "gap_severity_score", "gap_confidence_score",
-            "supporting_evidence_ids", "supporting_rag_context_ids",
-            "supporting_claim_ids", "calibration_decision_ids",
-            "next_best_action", "reason_grounded_in_scores",
+            "recommendation_id",
+            "nvidia_technology",
+            "gap_id",
+            "gap_type",
+            "recommendation_priority_score",
+            "recommendation_confidence",
+            "uncertainty",
+            "mapping_score",
+            "mapping_confidence",
+            "business_impact",
+            "implementation_complexity",
+            "ai_native_score_value",
+            "nvidia_fit_score_value",
+            "gap_severity_score",
+            "gap_confidence_score",
+            "supporting_evidence_ids",
+            "supporting_rag_context_ids",
+            "supporting_claim_ids",
+            "calibration_decision_ids",
+            "next_best_action",
+            "reason_grounded_in_scores",
             "production_allowed",
         ]
         for field in required_fields:
@@ -633,9 +678,9 @@ class TestGenerateBriefBlockingRules:
         assert "rec-prod" in top_ids
         assert "rec-blocked-2" not in top_ids
         blocker_descriptions = [b["description"] for b in ab["blockers"]]
-        assert any("rec-blocked-2" in d for d in blocker_descriptions), (
-            "Blocked recommendation should appear in blockers section"
-        )
+        assert any(
+            "rec-blocked-2" in d for d in blocker_descriptions
+        ), "Blocked recommendation should appear in blockers section"
 
 
 # ── Test 17: passed status when all conditions met ──

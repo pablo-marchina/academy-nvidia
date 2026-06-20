@@ -99,8 +99,7 @@ class HybridRagRetriever:
 
         has_sparse = sparse_retriever is not None and sparse_retriever.is_ready
         has_ce = self._reranker.__class__.__name__ == "OptionalCrossEncoderReranker" and (
-            getattr(self._reranker, "is_available", False)
-            or getattr(self._reranker, "_load_error", "") == ""
+            getattr(self._reranker, "is_available", False) or getattr(self._reranker, "_load_error", "") == ""
         )
 
         self._resolved_mode = _default_retrieval_mode(has_sparse, has_ce, retrieval_mode)
@@ -145,9 +144,7 @@ class HybridRagRetriever:
 
         retrieval_query = RetrievalQuery(
             gap_type=query_plan.metadata_filters.get("gap_type"),
-            technology=(
-                " ".join(query_plan.technology_filters) if query_plan.technology_filters else None
-            ),
+            technology=(" ".join(query_plan.technology_filters) if query_plan.technology_filters else None),
             keywords=query_plan.keyword_query.split() if query_plan.keyword_query else [],
         )
 

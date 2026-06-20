@@ -1,5 +1,25 @@
 # EVALS — Baseline de Testes e Cobertura
 
+## Final Product Readiness Validation - 2026-06-19
+
+| Check | Result | Notes |
+|---|---:|---|
+| `ruff check .` | PASS | Lint clean after scoped fixes. |
+| `black --check .` | PASS | Formatting clean before documentation-only edits. |
+| `mypy src` | PASS | Source typecheck clean. |
+| Full `pytest -q --basetemp .pytest_tmp_full` | PASS | `2085 passed`, `27 skipped`, `166 warnings`. |
+| Targeted product pytest battery | PASS | `1585 passed, 124 warnings` for unit, selected integration, and acceptance suites. |
+| Focused post-fix pytest runs | PASS | Acceptance (`33 passed`), workflow API (`26 passed`), product workflow API (`23 passed`), workflow runner (`16 passed`), pipeline golden (`38 passed`), answer quality golden (`9 passed`), NVIDIA corpus ingestion (`17 passed`). |
+| `python scripts/check_no_demo_dependency.py` | PASS | Demo dependency guard clean after route/script/sample removals. |
+| `python scripts/check_docs_closure.py` | PASS | Closure docs guard clean. |
+| `python scripts/check_scope.py` | PASS | Scope/docs contract guard clean. |
+| `python scripts/scan_magic_values.py --check` | PASS | `60 hits`, `44 registered`, `16 classified non-product`, `0 unregistered`. |
+| `npm ci` in `frontend` | PASS | Lockfile generated and install reproducible. |
+| `npm run build` in `frontend` | PASS | Product UI build succeeded. |
+| Docker Compose PostgreSQL + Qdrant acceptance | PASS | Migrations applied to PostgreSQL; Qdrant collection `nvidia_corpus` populated with 53 real-embedding points; readiness/health endpoints product-ready. |
+| Playwright product E2E against live backend | PASS | `6 passed`; screenshots stored under `docs/screenshots/`. |
+| `make validate-full` | ENV_BLOCKED | GNU Make is unavailable in this Windows environment; equivalent commands were run directly. |
+
 ## Testes Unitários
 
 | Módulo | Arquivo | Testes | Status |

@@ -14,12 +14,13 @@ import argparse
 import json
 import logging
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from datetime import UTC
 from math import sqrt
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from src.quality.decision_calibration_registry import (
     CalibrationMethod,
@@ -32,7 +33,6 @@ from src.scoring.startup_scoring import (
     _MODEL_ML_INFRA_KEYWORDS,
     _NVIDIA_CUDA_KEYWORDS,
     _NVIDIA_DATA_KEYWORDS,
-    _NVIDIA_GENAI_LLM_KEYWORDS,
     _NVIDIA_GPU_KEYWORDS,
     _NVIDIA_INDUSTRY_KEYWORDS,
     _NVIDIA_INFERENCE_KEYWORDS,
@@ -49,47 +49,65 @@ random.seed(42)
 # ── Ground-truth reference weights (hidden from grid search) ─────────────
 
 _REFERENCE_AI_WEIGHTS: dict[str, float] = {
-    "ai_signal_count": 0.18, "ai_signal_source_coverage": 0.12,
-    "technical_ai_term_count": 0.10, "product_ai_claim_count": 0.08,
-    "accepted_ai_evidence_count": 0.08, "ai_claim_support_ratio": 0.12,
+    "ai_signal_count": 0.18,
+    "ai_signal_source_coverage": 0.12,
+    "technical_ai_term_count": 0.10,
+    "product_ai_claim_count": 0.08,
+    "accepted_ai_evidence_count": 0.08,
+    "ai_claim_support_ratio": 0.12,
     "evidence_confidence_mean_for_ai_claims": 0.10,
     "source_quality_mean_for_ai_sources": 0.08,
     "technical_depth_signal_count": 0.06,
-    "model_or_ml_infrastructure_signal_count": 0.05, "uncertainty_penalty": 0.03,
+    "model_or_ml_infrastructure_signal_count": 0.05,
+    "uncertainty_penalty": 0.03,
 }
 
 _REFERENCE_NVIDIA_WEIGHTS: dict[str, float] = {
-    "gpu_compute_signal_count": 0.10, "cuda_or_acceleration_signal_count": 0.15,
-    "inference_or_training_signal_count": 0.12, "computer_vision_signal_count": 0.08,
-    "genai_llm_signal_count": 0.10, "data_pipeline_signal_count": 0.08,
+    "gpu_compute_signal_count": 0.10,
+    "cuda_or_acceleration_signal_count": 0.15,
+    "inference_or_training_signal_count": 0.12,
+    "computer_vision_signal_count": 0.08,
+    "genai_llm_signal_count": 0.10,
+    "data_pipeline_signal_count": 0.08,
     "nvidia_keyword_signal_count": 0.12,
     "nvidia_relevant_industry_signal_count": 0.07,
-    "accepted_nvidia_fit_evidence_count": 0.06, "rag_context_alignment_count": 0.03,
+    "accepted_nvidia_fit_evidence_count": 0.06,
+    "rag_context_alignment_count": 0.03,
     "evidence_confidence_mean_for_nvidia_claims": 0.04,
-    "implementation_complexity_proxy": 0.03, "uncertainty_penalty": 0.02,
+    "implementation_complexity_proxy": 0.03,
+    "uncertainty_penalty": 0.02,
 }
 
 # ── Best calibrated weights (from previous grid search run) ──────────────
 
 BEST_AI_WEIGHTS: dict[str, float] = {
-    "ai_signal_count": 0.15, "ai_signal_source_coverage": 0.10,
-    "technical_ai_term_count": 0.12, "product_ai_claim_count": 0.10,
-    "accepted_ai_evidence_count": 0.10, "ai_claim_support_ratio": 0.12,
+    "ai_signal_count": 0.15,
+    "ai_signal_source_coverage": 0.10,
+    "technical_ai_term_count": 0.12,
+    "product_ai_claim_count": 0.10,
+    "accepted_ai_evidence_count": 0.10,
+    "ai_claim_support_ratio": 0.12,
     "evidence_confidence_mean_for_ai_claims": 0.10,
     "source_quality_mean_for_ai_sources": 0.08,
     "technical_depth_signal_count": 0.05,
-    "model_or_ml_infrastructure_signal_count": 0.05, "uncertainty_penalty": 0.03,
+    "model_or_ml_infrastructure_signal_count": 0.05,
+    "uncertainty_penalty": 0.03,
 }
 
 BEST_NVIDIA_WEIGHTS: dict[str, float] = {
-    "gpu_compute_signal_count": 0.10, "cuda_or_acceleration_signal_count": 0.12,
-    "inference_or_training_signal_count": 0.12, "computer_vision_signal_count": 0.08,
-    "genai_llm_signal_count": 0.10, "data_pipeline_signal_count": 0.08,
+    "gpu_compute_signal_count": 0.10,
+    "cuda_or_acceleration_signal_count": 0.12,
+    "inference_or_training_signal_count": 0.12,
+    "computer_vision_signal_count": 0.08,
+    "genai_llm_signal_count": 0.10,
+    "data_pipeline_signal_count": 0.08,
     "nvidia_keyword_signal_count": 0.12,
     "nvidia_relevant_industry_signal_count": 0.07,
-    "accepted_nvidia_fit_evidence_count": 0.06, "rag_context_alignment_count": 0.03,
+    "accepted_nvidia_fit_evidence_count": 0.06,
+    "rag_context_alignment_count": 0.03,
     "evidence_confidence_mean_for_nvidia_claims": 0.04,
-    "implementation_complexity_proxy": 0.03, "uncertainty_penalty": 0.02,
+    "implementation_complexity_proxy": 0.03,
+    "uncertainty_penalty": 0.02,
 }
 
 _AI_FEATURE_NAMES: list[str] = list(BEST_AI_WEIGHTS.keys())
@@ -100,93 +118,127 @@ _NVIDIA_FEATURE_NAMES: list[str] = list(BEST_NVIDIA_WEIGHTS.keys())
 CANDIDATE_AI_WEIGHTS: list[dict[str, float]] = [
     {**BEST_AI_WEIGHTS},
     {
-        "ai_signal_count": 0.15, "ai_signal_source_coverage": 0.10,
-        "technical_ai_term_count": 0.12, "product_ai_claim_count": 0.10,
-        "accepted_ai_evidence_count": 0.10, "ai_claim_support_ratio": 0.12,
+        "ai_signal_count": 0.15,
+        "ai_signal_source_coverage": 0.10,
+        "technical_ai_term_count": 0.12,
+        "product_ai_claim_count": 0.10,
+        "accepted_ai_evidence_count": 0.10,
+        "ai_claim_support_ratio": 0.12,
         "evidence_confidence_mean_for_ai_claims": 0.10,
         "source_quality_mean_for_ai_sources": 0.08,
         "technical_depth_signal_count": 0.05,
-        "model_or_ml_infrastructure_signal_count": 0.05, "uncertainty_penalty": 0.03,
+        "model_or_ml_infrastructure_signal_count": 0.05,
+        "uncertainty_penalty": 0.03,
     },
     {
-        "ai_signal_count": 0.25, "ai_signal_source_coverage": 0.10,
-        "technical_ai_term_count": 0.08, "product_ai_claim_count": 0.06,
-        "accepted_ai_evidence_count": 0.06, "ai_claim_support_ratio": 0.08,
+        "ai_signal_count": 0.25,
+        "ai_signal_source_coverage": 0.10,
+        "technical_ai_term_count": 0.08,
+        "product_ai_claim_count": 0.06,
+        "accepted_ai_evidence_count": 0.06,
+        "ai_claim_support_ratio": 0.08,
         "evidence_confidence_mean_for_ai_claims": 0.08,
         "source_quality_mean_for_ai_sources": 0.06,
         "technical_depth_signal_count": 0.10,
-        "model_or_ml_infrastructure_signal_count": 0.08, "uncertainty_penalty": 0.05,
+        "model_or_ml_infrastructure_signal_count": 0.08,
+        "uncertainty_penalty": 0.05,
     },
     {
-        "ai_signal_count": 0.12, "ai_signal_source_coverage": 0.15,
-        "technical_ai_term_count": 0.12, "product_ai_claim_count": 0.10,
-        "accepted_ai_evidence_count": 0.10, "ai_claim_support_ratio": 0.15,
+        "ai_signal_count": 0.12,
+        "ai_signal_source_coverage": 0.15,
+        "technical_ai_term_count": 0.12,
+        "product_ai_claim_count": 0.10,
+        "accepted_ai_evidence_count": 0.10,
+        "ai_claim_support_ratio": 0.15,
         "evidence_confidence_mean_for_ai_claims": 0.10,
         "source_quality_mean_for_ai_sources": 0.08,
         "technical_depth_signal_count": 0.03,
-        "model_or_ml_infrastructure_signal_count": 0.03, "uncertainty_penalty": 0.02,
+        "model_or_ml_infrastructure_signal_count": 0.03,
+        "uncertainty_penalty": 0.02,
     },
     {
-        "ai_signal_count": 0.18, "ai_signal_source_coverage": 0.12,
-        "technical_ai_term_count": 0.10, "product_ai_claim_count": 0.08,
-        "accepted_ai_evidence_count": 0.08, "ai_claim_support_ratio": 0.12,
+        "ai_signal_count": 0.18,
+        "ai_signal_source_coverage": 0.12,
+        "technical_ai_term_count": 0.10,
+        "product_ai_claim_count": 0.08,
+        "accepted_ai_evidence_count": 0.08,
+        "ai_claim_support_ratio": 0.12,
         "evidence_confidence_mean_for_ai_claims": 0.10,
         "source_quality_mean_for_ai_sources": 0.08,
         "technical_depth_signal_count": 0.06,
-        "model_or_ml_infrastructure_signal_count": 0.05, "uncertainty_penalty": 0.03,
+        "model_or_ml_infrastructure_signal_count": 0.05,
+        "uncertainty_penalty": 0.03,
     },
 ]
 
 CANDIDATE_NVIDIA_WEIGHTS: list[dict[str, float]] = [
     {**BEST_NVIDIA_WEIGHTS},
     {
-        "gpu_compute_signal_count": 0.15, "cuda_or_acceleration_signal_count": 0.12,
-        "inference_or_training_signal_count": 0.10, "computer_vision_signal_count": 0.10,
-        "genai_llm_signal_count": 0.08, "data_pipeline_signal_count": 0.08,
+        "gpu_compute_signal_count": 0.15,
+        "cuda_or_acceleration_signal_count": 0.12,
+        "inference_or_training_signal_count": 0.10,
+        "computer_vision_signal_count": 0.10,
+        "genai_llm_signal_count": 0.08,
+        "data_pipeline_signal_count": 0.08,
         "nvidia_keyword_signal_count": 0.10,
         "nvidia_relevant_industry_signal_count": 0.08,
-        "accepted_nvidia_fit_evidence_count": 0.06, "rag_context_alignment_count": 0.03,
+        "accepted_nvidia_fit_evidence_count": 0.06,
+        "rag_context_alignment_count": 0.03,
         "evidence_confidence_mean_for_nvidia_claims": 0.05,
-        "implementation_complexity_proxy": 0.03, "uncertainty_penalty": 0.02,
+        "implementation_complexity_proxy": 0.03,
+        "uncertainty_penalty": 0.02,
     },
     {
-        "gpu_compute_signal_count": 0.08, "cuda_or_acceleration_signal_count": 0.18,
-        "inference_or_training_signal_count": 0.15, "computer_vision_signal_count": 0.06,
-        "genai_llm_signal_count": 0.12, "data_pipeline_signal_count": 0.06,
+        "gpu_compute_signal_count": 0.08,
+        "cuda_or_acceleration_signal_count": 0.18,
+        "inference_or_training_signal_count": 0.15,
+        "computer_vision_signal_count": 0.06,
+        "genai_llm_signal_count": 0.12,
+        "data_pipeline_signal_count": 0.06,
         "nvidia_keyword_signal_count": 0.10,
         "nvidia_relevant_industry_signal_count": 0.06,
-        "accepted_nvidia_fit_evidence_count": 0.05, "rag_context_alignment_count": 0.03,
+        "accepted_nvidia_fit_evidence_count": 0.05,
+        "rag_context_alignment_count": 0.03,
         "evidence_confidence_mean_for_nvidia_claims": 0.05,
-        "implementation_complexity_proxy": 0.03, "uncertainty_penalty": 0.03,
+        "implementation_complexity_proxy": 0.03,
+        "uncertainty_penalty": 0.03,
     },
     {
-        "gpu_compute_signal_count": 0.12, "cuda_or_acceleration_signal_count": 0.10,
-        "inference_or_training_signal_count": 0.10, "computer_vision_signal_count": 0.08,
-        "genai_llm_signal_count": 0.10, "data_pipeline_signal_count": 0.10,
+        "gpu_compute_signal_count": 0.12,
+        "cuda_or_acceleration_signal_count": 0.10,
+        "inference_or_training_signal_count": 0.10,
+        "computer_vision_signal_count": 0.08,
+        "genai_llm_signal_count": 0.10,
+        "data_pipeline_signal_count": 0.10,
         "nvidia_keyword_signal_count": 0.08,
         "nvidia_relevant_industry_signal_count": 0.10,
-        "accepted_nvidia_fit_evidence_count": 0.08, "rag_context_alignment_count": 0.04,
+        "accepted_nvidia_fit_evidence_count": 0.08,
+        "rag_context_alignment_count": 0.04,
         "evidence_confidence_mean_for_nvidia_claims": 0.05,
-        "implementation_complexity_proxy": 0.03, "uncertainty_penalty": 0.02,
+        "implementation_complexity_proxy": 0.03,
+        "uncertainty_penalty": 0.02,
     },
     {
-        "gpu_compute_signal_count": 0.10, "cuda_or_acceleration_signal_count": 0.12,
-        "inference_or_training_signal_count": 0.12, "computer_vision_signal_count": 0.08,
-        "genai_llm_signal_count": 0.10, "data_pipeline_signal_count": 0.08,
+        "gpu_compute_signal_count": 0.10,
+        "cuda_or_acceleration_signal_count": 0.12,
+        "inference_or_training_signal_count": 0.12,
+        "computer_vision_signal_count": 0.08,
+        "genai_llm_signal_count": 0.10,
+        "data_pipeline_signal_count": 0.08,
         "nvidia_keyword_signal_count": 0.12,
         "nvidia_relevant_industry_signal_count": 0.07,
-        "accepted_nvidia_fit_evidence_count": 0.06, "rag_context_alignment_count": 0.03,
+        "accepted_nvidia_fit_evidence_count": 0.06,
+        "rag_context_alignment_count": 0.03,
         "evidence_confidence_mean_for_nvidia_claims": 0.04,
-        "implementation_complexity_proxy": 0.03, "uncertainty_penalty": 0.02,
+        "implementation_complexity_proxy": 0.03,
+        "uncertainty_penalty": 0.02,
     },
 ]
 
 # ── Scoring helpers ──────────────────────────────────────────────────────
 
 
-def _compute_weighted_score(
-    features: dict[str, float], weights: dict[str, float]
-) -> float:
+def _compute_weighted_score(features: dict[str, float], weights: dict[str, float]) -> float:
     weight_sum = sum(weights.values())
     if weight_sum == 0.0:
         return 0.0
@@ -198,11 +250,24 @@ def _compute_weighted_score(
 def _distribution(values: list[float]) -> dict[str, float]:
     n = len(values)
     if n == 0:
-        return {"count": 0, "mean": 0.0, "min": 0.0, "max": 0.0,
-                "p1": 0.0, "p5": 0.0, "p10": 0.0, "p25": 0.0,
-                "p50": 0.0, "p75": 0.0, "p95": 0.0}
+        return {
+            "count": 0,
+            "mean": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "p1": 0.0,
+            "p5": 0.0,
+            "p10": 0.0,
+            "p25": 0.0,
+            "p50": 0.0,
+            "p75": 0.0,
+            "p95": 0.0,
+        }
     sorted_v = sorted(values)
-    idx = lambda p: max(0, min(n - 1, int(n * p / 100)))
+
+    def idx(p: float) -> int:
+        return max(0, min(n - 1, int(n * p / 100)))
+
     return {
         "count": n,
         "mean": round(sum(values) / n, 4),
@@ -250,13 +315,8 @@ class FeatureGoldenEntry:
     ground_truth: float
 
 
-def generate_feature_golden_dataset(
-    count: int = 1000, score_type: str = "ai_native"
-) -> list[FeatureGoldenEntry]:
-    ref_weights = (
-        _REFERENCE_AI_WEIGHTS if score_type == "ai_native"
-        else _REFERENCE_NVIDIA_WEIGHTS
-    )
+def generate_feature_golden_dataset(count: int = 1000, score_type: str = "ai_native") -> list[FeatureGoldenEntry]:
+    ref_weights = _REFERENCE_AI_WEIGHTS if score_type == "ai_native" else _REFERENCE_NVIDIA_WEIGHTS
     feature_names = list(ref_weights.keys())
 
     entries: list[FeatureGoldenEntry] = []
@@ -277,22 +337,16 @@ def calibrate_threshold(
     dataset_size: int = 1000,
 ) -> dict[str, Any]:
     best_weights = BEST_AI_WEIGHTS if score_type == "ai_native" else BEST_NVIDIA_WEIGHTS
-    entries = generate_feature_golden_dataset(
-        count=dataset_size, score_type=score_type
-    )
+    entries = generate_feature_golden_dataset(count=dataset_size, score_type=score_type)
 
-    predicted = [
-        _compute_weighted_score(e.features, best_weights) for e in entries
-    ]
+    predicted = [_compute_weighted_score(e.features, best_weights) for e in entries]
 
     dist = _distribution(predicted)
     threshold = dist[f"p{int(percentile)}"]
     mean_score = dist["mean"]
 
     spearman = _spearman(predicted, [e.ground_truth for e in entries])
-    abs_errors = [
-        abs(p - e.ground_truth) for p, e in zip(predicted, entries, strict=True)
-    ]
+    abs_errors = [abs(p - e.ground_truth) for p, e in zip(predicted, entries, strict=True)]
     mae = sum(abs_errors) / len(abs_errors)
 
     return {
@@ -328,9 +382,7 @@ def calibrate_uncertainty_penalty(
     best_weights = BEST_AI_WEIGHTS if score_type == "ai_native" else BEST_NVIDIA_WEIGHTS
     feature_names = list(best_weights.keys())
 
-    entries = generate_feature_golden_dataset(
-        count=dataset_size, score_type=score_type
-    )
+    entries = generate_feature_golden_dataset(count=dataset_size, score_type=score_type)
 
     results: list[dict[str, Any]] = []
     for penalty in penalty_candidates:
@@ -352,19 +404,19 @@ def calibrate_uncertainty_penalty(
             noisy = _compute_weighted_score(noisy_features, best_weights)
             noisy_predicted.append(noisy)
 
-        abs_errors = [
-            abs(c - n) for c, n in zip(clean_predicted, noisy_predicted, strict=True)
-        ]
+        abs_errors = [abs(c - n) for c, n in zip(clean_predicted, noisy_predicted, strict=True)]
         mae = sum(abs_errors) / len(abs_errors)
-        rmse_val = sqrt(sum(e ** 2 for e in abs_errors) / len(abs_errors))
+        rmse_val = sqrt(sum(e**2 for e in abs_errors) / len(abs_errors))
         max_error = max(abs_errors)
 
-        results.append({
-            "penalty": penalty,
-            "mae": round(mae, 4),
-            "rmse": round(rmse_val, 4),
-            "max_error": round(max_error, 4),
-        })
+        results.append(
+            {
+                "penalty": penalty,
+                "mae": round(mae, 4),
+                "rmse": round(rmse_val, 4),
+                "max_error": round(max_error, 4),
+            }
+        )
 
     results.sort(key=lambda r: (r["mae"], r["max_error"]))
 
@@ -493,15 +545,17 @@ def generate_golden_dataset(count: int = 60) -> list[SyntheticStartup]:
         claims: list[dict[str, Any]] = []
         for _j in range(claim_count):
             claim_text = _make_claim_text(ai_level, nvidia_level)
-            support_status = (
-                "supported" if random.random() < 0.7 + ai_level * 0.2 else "unsupported"
-            )
+            support_status = "supported" if random.random() < 0.7 + ai_level * 0.2 else "unsupported"
             criticality = "critical" if random.random() < 0.2 else "normal"
-            claims.append({
-                "claim_text": claim_text, "criticality": criticality,
-                "support_status": support_status, "supporting_evidence_refs": [],
-                "confidence": "high" if source_quality > 0.7 else "medium",
-            })
+            claims.append(
+                {
+                    "claim_text": claim_text,
+                    "criticality": criticality,
+                    "support_status": support_status,
+                    "supporting_evidence_refs": [],
+                    "confidence": "high" if source_quality > 0.7 else "medium",
+                }
+            )
 
         evidence_count = random.randint(3, 8)
         evidence_items: list[dict[str, Any]] = []
@@ -512,7 +566,8 @@ def generate_golden_dataset(count: int = 60) -> list[SyntheticStartup]:
             item_ec = max(0.3, min(1.0, source_quality * 0.8 + random.gauss(0, 0.06)))
             is_accepted = item_sq >= 0.5 and item_ec >= 0.4
             item: dict[str, Any] = {
-                "text": ev_text, "snippet": ev_text[:200],
+                "text": ev_text,
+                "snippet": ev_text[:200],
                 "source_type": random.choice(["official_website", "news", "blog", "technical_docs"]),
                 "source_quality_score": round(item_sq, 4),
                 "evidence_confidence_score": round(item_ec, 4),
@@ -528,13 +583,19 @@ def generate_golden_dataset(count: int = 60) -> list[SyntheticStartup]:
         gt_ai = _compute_ground_truth(ai_features.model_dump(mode="json"), _REFERENCE_AI_WEIGHTS)
         gt_nv = _compute_ground_truth(nv_features.model_dump(mode="json"), _REFERENCE_NVIDIA_WEIGHTS)
 
-        startups.append(SyntheticStartup(
-            startup_id=startup_id, ai_level=ai_level, nvidia_level=nvidia_level,
-            source_quality=source_quality, claims=claims, evidence_items=evidence_items,
-            accepted_evidence_items=accepted,
-            ground_truth_ai_score=round(gt_ai, 4),
-            ground_truth_nvidia_score=round(gt_nv, 4),
-        ))
+        startups.append(
+            SyntheticStartup(
+                startup_id=startup_id,
+                ai_level=ai_level,
+                nvidia_level=nvidia_level,
+                source_quality=source_quality,
+                claims=claims,
+                evidence_items=evidence_items,
+                accepted_evidence_items=accepted,
+                ground_truth_ai_score=round(gt_ai, 4),
+                ground_truth_nvidia_score=round(gt_nv, 4),
+            )
+        )
     return startups
 
 
@@ -577,12 +638,17 @@ def run_grid_search(
         mae = sum(abs_errors) / len(abs_errors)
         sq_errors = [(p - g) ** 2 for p, g in zip(predicted, ground_truth, strict=True)]
         rmse = sqrt(sum(sq_errors) / len(sq_errors))
-        results.append(GridSearchResult(
-            candidate_index=idx, weights=dict(weights),
-            spearman=round(spearman, 4), mae=round(mae, 4), rmse=round(rmse, 4),
-            predicted_scores=[round(s, 4) for s in predicted],
-            ground_truth_scores=ground_truth,
-        ))
+        results.append(
+            GridSearchResult(
+                candidate_index=idx,
+                weights=dict(weights),
+                spearman=round(spearman, 4),
+                mae=round(mae, 4),
+                rmse=round(rmse, 4),
+                predicted_scores=[round(s, 4) for s in predicted],
+                ground_truth_scores=ground_truth,
+            )
+        )
     results.sort(key=lambda r: (r.spearman, -r.mae), reverse=True)
     return results
 
@@ -614,7 +680,7 @@ def run_full_calibration(golden_count: int = 60) -> dict[str, Any]:
         "=" * 72,
         "",
         f"Golden dataset size: {len(startups)} synthetic",
-        f"Feature dataset size: 1000 (threshold) + 500 (uncertainty)",
+        "Feature dataset size: 1000 (threshold) + 500 (uncertainty)",
         "",
         "--- ai_native_score.weights ---",
         f"  Best candidate: {best_ai.candidate_index}",
@@ -629,22 +695,22 @@ def run_full_calibration(golden_count: int = 60) -> dict[str, Any]:
         f"  Weights: {best_nv.weights}",
         "",
         "--- ai_native_score.production_threshold ---",
-        f"  Method: P5 percentile of predicted distribution",
+        "  Method: P5 percentile of predicted distribution",
         f"  Threshold: {ai_threshold['recommended_threshold']}",
         f"  Distribution: {ai_threshold['distribution']}",
         "",
         "--- nvidia_fit_score.production_threshold ---",
-        f"  Method: P5 percentile of predicted distribution",
+        "  Method: P5 percentile of predicted distribution",
         f"  Threshold: {nv_threshold['recommended_threshold']}",
         f"  Distribution: {nv_threshold['distribution']}",
         "",
         "--- ai_native_score.uncertainty_penalty ---",
-        f"  Method: sensitivity analysis (noise injection)",
+        "  Method: sensitivity analysis (noise injection)",
         f"  Recommended: {ai_uncertainty['recommended_penalty']}",
         f"  Best MAE: {ai_uncertainty['best_mae']}",
         "",
         "--- nvidia_fit_score.uncertainty_penalty ---",
-        f"  Method: sensitivity analysis (noise injection)",
+        "  Method: sensitivity analysis (noise injection)",
         f"  Recommended: {nv_uncertainty['recommended_penalty']}",
         f"  Best MAE: {nv_uncertainty['best_mae']}",
         "",
@@ -704,9 +770,9 @@ def run_full_calibration(golden_count: int = 60) -> dict[str, Any]:
 
 
 def make_calibration_records(cal_result: dict[str, Any]) -> list[DecisionCalibrationRecord]:
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    _now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+    _now = datetime(2026, 6, 18, tzinfo=UTC)
     ai = cal_result["ai_native"]
     nv = cal_result["nvidia_fit"]
 
@@ -759,9 +825,10 @@ def make_calibration_records(cal_result: dict[str, Any]) -> list[DecisionCalibra
             metric_name="ai_native_score_weights",
             value_origin=f"src/evaluation/startup_scoring_calibration.py :: run_full_calibration -- grid search over {len(CANDIDATE_AI_WEIGHTS)} candidates on {cal_result['golden_set_size']} synthetic golden entries.",
             calibration_method=CalibrationMethod.GRID_SEARCH,
-            calibration_status=CalibrationStatus.CALIBRATED if ai_meets else CalibrationStatus.BASELINE_MEASURED,
+            calibration_status=(CalibrationStatus.CALIBRATED if ai_meets else CalibrationStatus.BASELINE_MEASURED),
             production_allowed=ai_meets,
-            owner="team-scoring", last_calibrated_at=_now,
+            owner="team-scoring",
+            last_calibrated_at=_now,
             evidence_source=ai_weights_evidence,
             notes=f"Per-feature weights for ai_native_score. Calibrated via grid_search on {cal_result['golden_set_size']} synthetic entries. Best candidate (idx {ai['best_candidate_index']}): spearman={ai['spearman']}, mae={ai['mae']}, rmse={ai['rmse']}. Weights sum to ~1.0. ai_signal_count (0.20) and ai_claim_support_ratio (0.10) are the dominant features.",
         ),
@@ -775,7 +842,8 @@ def make_calibration_records(cal_result: dict[str, Any]) -> list[DecisionCalibra
             calibration_method=CalibrationMethod.PERCENTILE_RULE,
             calibration_status=CalibrationStatus.CALIBRATED,
             production_allowed=True,
-            owner="team-scoring", last_calibrated_at=_now,
+            owner="team-scoring",
+            last_calibrated_at=_now,
             evidence_source=ai_threshold_evidence,
             notes=f"Minimum ai_native_score for production. Threshold at P5 of predicted score distribution ({ai_th['dataset_size']} entries). Distribution: mean={ai_th['mean_score']}, p5={ai_th['distribution']['p5']}, p50={ai_th['distribution']['p50']}. Excludes bottom 5%.",
         ),
@@ -789,7 +857,8 @@ def make_calibration_records(cal_result: dict[str, Any]) -> list[DecisionCalibra
             calibration_method=CalibrationMethod.SENSITIVITY_ANALYSIS,
             calibration_status=CalibrationStatus.CALIBRATED,
             production_allowed=True,
-            owner="team-scoring", last_calibrated_at=_now,
+            owner="team-scoring",
+            last_calibrated_at=_now,
             evidence_source=ai_uncertainty_evidence,
             notes=f"Multiplier applied to computed uncertainty before subtracting from raw ai_native_score. Selected penalty={ai_up['recommended_penalty']} as smallest that keeps max_error<0.10. MAE={ai_up['best_mae']}.",
         ),
@@ -801,9 +870,12 @@ def make_calibration_records(cal_result: dict[str, Any]) -> list[DecisionCalibra
             metric_name="nvidia_fit_score_weights",
             value_origin=f"src/evaluation/startup_scoring_calibration.py :: run_full_calibration -- grid search over {len(CANDIDATE_NVIDIA_WEIGHTS)} candidates on {cal_result['golden_set_size']} synthetic golden entries.",
             calibration_method=CalibrationMethod.GRID_SEARCH,
-            calibration_status=CalibrationStatus.CALIBRATED if nv["meets_criteria"] else CalibrationStatus.BASELINE_MEASURED,
+            calibration_status=(
+                CalibrationStatus.CALIBRATED if nv["meets_criteria"] else CalibrationStatus.BASELINE_MEASURED
+            ),
             production_allowed=nv["meets_criteria"],
-            owner="team-scoring", last_calibrated_at=_now,
+            owner="team-scoring",
+            last_calibrated_at=_now,
             evidence_source=nv_weights_evidence,
             notes=f"Per-feature weights for nvidia_fit_score. Calibrated via grid_search on {cal_result['golden_set_size']} synthetic entries. Best candidate (idx {nv['best_candidate_index']}): spearman={nv['spearman']}, mae={nv['mae']}, rmse={nv['rmse']}. Weights sum to ~1.0. gpu_compute_signal_count (0.15) and cuda_or_acceleration_signal_count (0.12) are the dominant features.",
         ),
@@ -817,7 +889,8 @@ def make_calibration_records(cal_result: dict[str, Any]) -> list[DecisionCalibra
             calibration_method=CalibrationMethod.PERCENTILE_RULE,
             calibration_status=CalibrationStatus.CALIBRATED,
             production_allowed=True,
-            owner="team-scoring", last_calibrated_at=_now,
+            owner="team-scoring",
+            last_calibrated_at=_now,
             evidence_source=nv_threshold_evidence,
             notes=f"Minimum nvidia_fit_score for production. Threshold at P5 of predicted score distribution ({nv_th['dataset_size']} entries). Distribution: mean={nv_th['mean_score']}, p5={nv_th['distribution']['p5']}, p50={nv_th['distribution']['p50']}. Excludes bottom 5%.",
         ),
@@ -831,7 +904,8 @@ def make_calibration_records(cal_result: dict[str, Any]) -> list[DecisionCalibra
             calibration_method=CalibrationMethod.SENSITIVITY_ANALYSIS,
             calibration_status=CalibrationStatus.CALIBRATED,
             production_allowed=True,
-            owner="team-scoring", last_calibrated_at=_now,
+            owner="team-scoring",
+            last_calibrated_at=_now,
             evidence_source=nv_uncertainty_evidence,
             notes=f"Multiplier applied to computed uncertainty before subtracting from raw nvidia_fit_score. Selected penalty={nv_up['recommended_penalty']} as smallest that keeps max_error<0.10. MAE={nv_up['best_mae']}.",
         ),
@@ -959,9 +1033,7 @@ def _compute_ai_native_metrics(
         fn = sum(1 for p, t in zip(predicted_classes, true_classes, strict=True) if p != cls and t == cls)
         precision[cls] = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall[cls] = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    total_tp = sum(
-        1 for p, t in zip(predicted_classes, true_classes, strict=True) if p == t
-    )
+    total_tp = sum(1 for p, t in zip(predicted_classes, true_classes, strict=True) if p == t)
     f1_val = total_tp / n if n > 0 else 0.0
 
     # calibration_error = mean absolute difference between predicted score and human label
@@ -1021,9 +1093,7 @@ def _compute_nvidia_fit_metrics(
     indexed = list(enumerate(predicted_scores))
     indexed.sort(key=lambda x: x[1], reverse=True)
     top_k_indices = {idx for idx, _ in indexed[:k]}
-    top_k_relevant = sum(
-        1 for idx in top_k_indices if human_labels_numeric[idx] >= 0.7
-    )
+    top_k_relevant = sum(1 for idx in top_k_indices if human_labels_numeric[idx] >= 0.7)
     total_relevant = sum(1 for h in human_labels_numeric if h >= 0.7)
     precision_at_k_val = top_k_relevant / k if k > 0 else 0.0
     recall_at_k_val = top_k_relevant / total_relevant if total_relevant > 0 else 0.0
@@ -1039,16 +1109,11 @@ def _compute_nvidia_fit_metrics(
         fn = sum(1 for p, t in zip(predicted_classes, true_classes, strict=True) if p != cls and t == cls)
         precision[cls] = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall[cls] = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    total_tp = sum(
-        1 for p, t in zip(predicted_classes, true_classes, strict=True) if p == t
-    )
+    total_tp = sum(1 for p, t in zip(predicted_classes, true_classes, strict=True) if p == t)
     f1_val = total_tp / n if n > 0 else 0.0
 
     # false_positive_rate: predicted high but label < 0.5
-    fp_count = sum(
-        1 for p, h in zip(predicted_scores, human_labels_numeric, strict=True)
-        if p >= 0.7 and h < 0.5
-    )
+    fp_count = sum(1 for p, h in zip(predicted_scores, human_labels_numeric, strict=True) if p >= 0.7 and h < 0.5)
     total_predicted_high = sum(1 for p in predicted_scores if p >= 0.7)
     fp_rate = fp_count / total_predicted_high if total_predicted_high > 0 else 0.0
 
@@ -1150,16 +1215,22 @@ def _evaluate_weight_candidates(
 ) -> list[WeightCandidateResult]:
     results: list[WeightCandidateResult] = []
     for idx, weights in enumerate(candidate_weights):
-        predicted, human_labels, feature_dicts = _compute_scores_for_entries(
-            entries, weights, score_type
-        )
+        predicted, human_labels, feature_dicts = _compute_scores_for_entries(entries, weights, score_type)
         if len(predicted) < 3:
-            results.append(WeightCandidateResult(
-                candidate_index=idx, weights=dict(weights),
-                spearman=None, mae=None, rmse=None, f1=None,
-                feature_coverage=None, fp_rate=None,
-                predicted_scores=predicted, human_labels=human_labels,
-            ))
+            results.append(
+                WeightCandidateResult(
+                    candidate_index=idx,
+                    weights=dict(weights),
+                    spearman=None,
+                    mae=None,
+                    rmse=None,
+                    f1=None,
+                    feature_coverage=None,
+                    fp_rate=None,
+                    predicted_scores=predicted,
+                    human_labels=human_labels,
+                )
+            )
             continue
 
         if score_type == "ai_native":
@@ -1169,13 +1240,20 @@ def _evaluate_weight_candidates(
             metrics = _compute_nvidia_fit_metrics(predicted, human_labels, feature_dicts)
             fp_rate = metrics.false_positive_rate
 
-        results.append(WeightCandidateResult(
-            candidate_index=idx, weights=dict(weights),
-            spearman=metrics.spearman, mae=metrics.mae, rmse=metrics.rmse,
-            f1=metrics.f1, feature_coverage=metrics.feature_coverage,
-            fp_rate=fp_rate,
-            predicted_scores=predicted, human_labels=human_labels,
-        ))
+        results.append(
+            WeightCandidateResult(
+                candidate_index=idx,
+                weights=dict(weights),
+                spearman=metrics.spearman,
+                mae=metrics.mae,
+                rmse=metrics.rmse,
+                f1=metrics.f1,
+                feature_coverage=metrics.feature_coverage,
+                fp_rate=fp_rate,
+                predicted_scores=predicted,
+                human_labels=human_labels,
+            )
+        )
     return results
 
 
@@ -1207,7 +1285,10 @@ def _calibrate_threshold_from_errors(
 
     errors = [abs(p - h) for p, h in zip(predicted_scores, human_labels, strict=True)]
     sorted_scores = sorted(predicted_scores)
-    idx = lambda p: max(0, min(n - 1, int(n * p / 100)))
+
+    def idx(p: float) -> int:
+        return max(0, min(n - 1, int(n * p / 100)))
+
     distribution = {
         "count": n,
         "mean": round(sum(predicted_scores) / len(predicted_scores), 4),
@@ -1249,20 +1330,21 @@ def _calibrate_uncertainty_penalty_from_data(
     results: list[dict[str, Any]] = []
     for penalty in penalty_candidates:
         adjusted = [
-            max(0.0, min(1.0, p - u * penalty))
-            for p, u in zip(predicted_scores, feature_uncertainties, strict=True)
+            max(0.0, min(1.0, p - u * penalty)) for p, u in zip(predicted_scores, feature_uncertainties, strict=True)
         ]
         abs_errors = [abs(a - h) for a, h in zip(adjusted, human_labels, strict=True)]
         mae = sum(abs_errors) / n
         sq_errors = [(a - h) ** 2 for a, h in zip(adjusted, human_labels, strict=True)]
         rmse = sqrt(sum(sq_errors) / n)
         max_error = max(abs_errors)
-        results.append({
-            "penalty": penalty,
-            "mae": round(mae, 4),
-            "rmse": round(rmse, 4),
-            "max_error": round(max_error, 4),
-        })
+        results.append(
+            {
+                "penalty": penalty,
+                "mae": round(mae, 4),
+                "rmse": round(rmse, 4),
+                "max_error": round(max_error, 4),
+            }
+        )
 
     results.sort(key=lambda r: (r["mae"], r["max_error"]))
     best = results[0]
@@ -1301,31 +1383,19 @@ def _check_startup_scoring_production_ready(
 ) -> tuple[bool, list[str]]:
     blockers: list[str] = []
     if ai_label_count < AI_NATIVE_MIN_LABELED:
-        blockers.append(
-            f"AI Native labels ({ai_label_count}) < minimum ({AI_NATIVE_MIN_LABELED})"
-        )
+        blockers.append(f"AI Native labels ({ai_label_count}) < minimum ({AI_NATIVE_MIN_LABELED})")
     if nv_label_count < NVIDIA_FIT_MIN_LABELED:
-        blockers.append(
-            f"NVIDIA Fit labels ({nv_label_count}) < minimum ({NVIDIA_FIT_MIN_LABELED})"
-        )
+        blockers.append(f"NVIDIA Fit labels ({nv_label_count}) < minimum ({NVIDIA_FIT_MIN_LABELED})")
     if ai_metrics is not None:
         if ai_metrics.spearman is not None and ai_metrics.spearman < AI_NATIVE_SPEARMAN_MIN:
-            blockers.append(
-                f"AI Native spearman ({ai_metrics.spearman:.4f}) < minimum ({AI_NATIVE_SPEARMAN_MIN})"
-            )
+            blockers.append(f"AI Native spearman ({ai_metrics.spearman:.4f}) < minimum ({AI_NATIVE_SPEARMAN_MIN})")
         if ai_metrics.mae is not None and ai_metrics.mae > AI_NATIVE_MAE_MAX:
-            blockers.append(
-                f"AI Native mae ({ai_metrics.mae:.4f}) > maximum ({AI_NATIVE_MAE_MAX})"
-            )
+            blockers.append(f"AI Native mae ({ai_metrics.mae:.4f}) > maximum ({AI_NATIVE_MAE_MAX})")
     if nv_metrics is not None:
         if nv_metrics.spearman is not None and nv_metrics.spearman < NVIDIA_FIT_SPEARMAN_MIN:
-            blockers.append(
-                f"NVIDIA Fit spearman ({nv_metrics.spearman:.4f}) < minimum ({NVIDIA_FIT_SPEARMAN_MIN})"
-            )
+            blockers.append(f"NVIDIA Fit spearman ({nv_metrics.spearman:.4f}) < minimum ({NVIDIA_FIT_SPEARMAN_MIN})")
         if nv_metrics.mae is not None and nv_metrics.mae > NVIDIA_FIT_MAE_MAX:
-            blockers.append(
-                f"NVIDIA Fit mae ({nv_metrics.mae:.4f}) > maximum ({NVIDIA_FIT_MAE_MAX})"
-            )
+            blockers.append(f"NVIDIA Fit mae ({nv_metrics.mae:.4f}) > maximum ({NVIDIA_FIT_MAE_MAX})")
         if nv_metrics.false_positive_rate is not None and nv_metrics.false_positive_rate > NVIDIA_FIT_FP_RATE_MAX:
             blockers.append(
                 f"NVIDIA Fit fp_rate ({nv_metrics.false_positive_rate:.4f}) > maximum ({NVIDIA_FIT_FP_RATE_MAX})"
@@ -1410,9 +1480,11 @@ def _format_startup_scoring_report(
             bc = ai_candidates[best_ai_idx]
             lines.append(f"  Best: candidate {best_ai_idx} — weights={bc.weights}")
     if best_ai_metrics:
-        lines.append(f"  Metrics: spearman={best_ai_metrics.spearman}, mae={best_ai_metrics.mae}, "
-                      f"rmse={best_ai_metrics.rmse}, f1={best_ai_metrics.f1}, "
-                      f"feature_coverage={best_ai_metrics.feature_coverage}")
+        lines.append(
+            f"  Metrics: spearman={best_ai_metrics.spearman}, mae={best_ai_metrics.mae}, "
+            f"rmse={best_ai_metrics.rmse}, f1={best_ai_metrics.f1}, "
+            f"feature_coverage={best_ai_metrics.feature_coverage}"
+        )
     lines.append("")
 
     if nv_candidates:
@@ -1427,10 +1499,12 @@ def _format_startup_scoring_report(
             bc = nv_candidates[best_nv_idx]
             lines.append(f"  Best: candidate {best_nv_idx} — weights={bc.weights}")
     if best_nv_metrics:
-        lines.append(f"  Metrics: spearman={best_nv_metrics.spearman}, mae={best_nv_metrics.mae}, "
-                      f"rmse={best_nv_metrics.rmse}, f1={best_nv_metrics.f1}, "
-                      f"precision@k={best_nv_metrics.precision_at_k}, recall@k={best_nv_metrics.recall_at_k}, "
-                      f"fp_rate={best_nv_metrics.false_positive_rate}")
+        lines.append(
+            f"  Metrics: spearman={best_nv_metrics.spearman}, mae={best_nv_metrics.mae}, "
+            f"rmse={best_nv_metrics.rmse}, f1={best_nv_metrics.f1}, "
+            f"precision@k={best_nv_metrics.precision_at_k}, recall@k={best_nv_metrics.recall_at_k}, "
+            f"fp_rate={best_nv_metrics.false_positive_rate}"
+        )
     lines.append("")
 
     if ai_threshold:
@@ -1469,7 +1543,11 @@ def run_startup_scoring_baseline_calibration(
             production_allowed=False,
             golden_set_size=0,
             has_human_labels=False,
-            human_label_coverage={"ai_native_labels": 0, "nvidia_fit_labels": 0, "total_entries": 0},
+            human_label_coverage={
+                "ai_native_labels": 0,
+                "nvidia_fit_labels": 0,
+                "total_entries": 0,
+            },
             ai_candidates=[],
             nv_candidates=[],
             ai_threshold=None,
@@ -1505,8 +1583,7 @@ def run_startup_scoring_baseline_calibration(
             nv_uncertainty=None,
             production_blockers=["Insufficient human labels for calibration."],
             labels_missing_notes=(
-                f"Found {ai_labels} AI labels and {nv_labels} NVIDIA labels. "
-                f"Need at least 3 of each for metrics."
+                f"Found {ai_labels} AI labels and {nv_labels} NVIDIA labels. " f"Need at least 3 of each for metrics."
             ),
             report="Insufficient labels — cannot compute calibration metrics.",
         )
@@ -1526,15 +1603,11 @@ def run_startup_scoring_baseline_calibration(
     if best_ai_idx is not None:
         bc = ai_candidates[best_ai_idx]
         best_ai_weights = bc.weights
-        predicted, human_labels, feature_dicts = _compute_scores_for_entries(
-            entries, best_ai_weights, "ai_native"
-        )
+        predicted, human_labels, feature_dicts = _compute_scores_for_entries(entries, best_ai_weights, "ai_native")
         if len(predicted) >= 3:
             best_ai_metrics = _compute_ai_native_metrics(predicted, human_labels, feature_dicts)
     else:
-        predicted, human_labels, feature_dicts = _compute_scores_for_entries(
-            entries, best_ai_weights, "ai_native"
-        )
+        predicted, human_labels, feature_dicts = _compute_scores_for_entries(entries, best_ai_weights, "ai_native")
         if len(predicted) >= 3:
             best_ai_metrics = _compute_ai_native_metrics(predicted, human_labels, feature_dicts)
 
@@ -1573,7 +1646,10 @@ def run_startup_scoring_baseline_calibration(
 
     # Production readiness
     prod_ready, blockers = _check_startup_scoring_production_ready(
-        ai_labels, nv_labels, best_ai_metrics, best_nv_metrics,
+        ai_labels,
+        nv_labels,
+        best_ai_metrics,
+        best_nv_metrics,
     )
 
     if prod_ready and has_labels and ai_labels >= AI_NATIVE_MIN_LABELED and nv_labels >= NVIDIA_FIT_MIN_LABELED:
@@ -1636,12 +1712,11 @@ def run_startup_scoring_baseline_calibration(
 def make_startup_scoring_baseline_records(
     cal_result: StartupScoringCalibrationResult,
 ) -> list[DecisionCalibrationRecord]:
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    _now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+    _now = datetime(2026, 6, 18, tzinfo=UTC)
 
     if cal_result.calibration_status == "baseline_dataset_insufficient" or not cal_result.production_allowed:
-        no_value = None
         status = CalibrationStatus.UNCALIBRATED
         prod = False
         notes_template = (
@@ -1651,7 +1726,6 @@ def make_startup_scoring_baseline_records(
             "Current: {ai_labels} AI labels, {nv_labels} NVIDIA labels."
         )
     else:
-        no_value = None
         status = CalibrationStatus.BASELINE_MEASURED
         prod = True
         notes_template = "Baseline calibration measured with {size} entries."
@@ -1706,9 +1780,7 @@ def make_startup_scoring_baseline_records(
             decision_type=DecisionType.WEIGHT,
             current_value=ai_weights,
             metric_name="ai_native_score_weights",
-            value_origin="src/evaluation/startup_scoring_calibration.py :: run_startup_scoring_baseline_calibration -- grid search over {} candidates on {} human-labeled entries.".format(
-                len(CANDIDATE_AI_WEIGHTS), cal_result.golden_set_size
-            ),
+            value_origin=f"src/evaluation/startup_scoring_calibration.py :: run_startup_scoring_baseline_calibration -- grid search over {len(CANDIDATE_AI_WEIGHTS)} candidates on {cal_result.golden_set_size} human-labeled entries.",
             calibration_method=CalibrationMethod.GRID_SEARCH,
             calibration_status=status,
             production_allowed=prod,
@@ -1753,9 +1825,7 @@ def make_startup_scoring_baseline_records(
             decision_type=DecisionType.WEIGHT,
             current_value=nv_weights,
             metric_name="nvidia_fit_score_weights",
-            value_origin="src/evaluation/startup_scoring_calibration.py :: run_startup_scoring_baseline_calibration -- grid search over {} candidates on {} human-labeled entries.".format(
-                len(CANDIDATE_NVIDIA_WEIGHTS), cal_result.golden_set_size
-            ),
+            value_origin=f"src/evaluation/startup_scoring_calibration.py :: run_startup_scoring_baseline_calibration -- grid search over {len(CANDIDATE_NVIDIA_WEIGHTS)} candidates on {cal_result.golden_set_size} human-labeled entries.",
             calibration_method=CalibrationMethod.GRID_SEARCH,
             calibration_status=status,
             production_allowed=prod,
@@ -1801,12 +1871,14 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     parser = argparse.ArgumentParser(description="Startup scoring calibration")
     parser.add_argument(
-        "--mode", choices=["synthetic", "baseline", "both"],
+        "--mode",
+        choices=["synthetic", "baseline", "both"],
         default="baseline",
         help="Calibration mode: synthetic (old), baseline (human labels), or both",
     )
     parser.add_argument(
-        "--check", action="store_true",
+        "--check",
+        action="store_true",
         help="Run baseline check only — no calibration",
     )
     args = parser.parse_args()
@@ -1814,9 +1886,11 @@ def main() -> None:
     if args.check:
         result = run_startup_scoring_baseline_calibration()
         print(f"\nBaseline check: {result.calibration_status}")
-        print(f"Golden set: {result.golden_set_size} entries, "
-              f"AI labels: {result.human_label_coverage.get('ai_native_labels', 0)}, "
-              f"NVIDIA labels: {result.human_label_coverage.get('nvidia_fit_labels', 0)}")
+        print(
+            f"Golden set: {result.golden_set_size} entries, "
+            f"AI labels: {result.human_label_coverage.get('ai_native_labels', 0)}, "
+            f"NVIDIA labels: {result.human_label_coverage.get('nvidia_fit_labels', 0)}"
+        )
         print(f"Production allowed: {result.production_allowed}")
         if result.production_blockers:
             print("Blockers:")
@@ -1832,23 +1906,27 @@ def main() -> None:
         print("\n" + "=" * 60)
         print("SYNTHETIC CALIBRATION SUMMARY")
         print("=" * 60)
-        print("ai_native_score.weights: spearman={} -> {}".format(
-            ai["spearman"], "PASS" if ai["meets_criteria"] else "FAIL"))
-        print("nvidia_fit_score.weights: spearman={} -> {}".format(
-            nv["spearman"], "PASS" if nv["meets_criteria"] else "FAIL"))
-        print("ai_native_score.production_threshold: p5={}".format(
-            ai["threshold"]["recommended_threshold"]))
-        print("nvidia_fit_score.production_threshold: p5={}".format(
-            nv["threshold"]["recommended_threshold"]))
+        print(
+            "ai_native_score.weights: spearman={} -> {}".format(
+                ai["spearman"], "PASS" if ai["meets_criteria"] else "FAIL"
+            )
+        )
+        print(
+            "nvidia_fit_score.weights: spearman={} -> {}".format(
+                nv["spearman"], "PASS" if nv["meets_criteria"] else "FAIL"
+            )
+        )
+        print("ai_native_score.production_threshold: p5={}".format(ai["threshold"]["recommended_threshold"]))
+        print("nvidia_fit_score.production_threshold: p5={}".format(nv["threshold"]["recommended_threshold"]))
 
     if args.mode in ("baseline", "both"):
         base_result = run_startup_scoring_baseline_calibration()
         print("\n" + "=" * 60)
         print("BASELINE CALIBRATION SUMMARY")
         print("=" * 60)
-        print("Status: {}".format(base_result.calibration_status))
-        print("Production allowed: {}".format(base_result.production_allowed))
-        print("Golden set size: {}".format(base_result.golden_set_size))
+        print(f"Status: {base_result.calibration_status}")
+        print(f"Production allowed: {base_result.production_allowed}")
+        print(f"Golden set size: {base_result.golden_set_size}")
         print("AI labels: {}".format(base_result.human_label_coverage.get("ai_native_labels", 0)))
         print("NVIDIA labels: {}".format(base_result.human_label_coverage.get("nvidia_fit_labels", 0)))
         print("\nAll 6 baseline calibration records generated.")

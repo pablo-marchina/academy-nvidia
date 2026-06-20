@@ -10,19 +10,14 @@ from src.evaluation.source_evidence_baseline import (
     EC_F1_MIN,
     EC_FP_RATE_MAX,
     EC_MIN_LABELED,
-    SQ_LABEL_TO_SCORE,
     SQ_MAE_MAX,
     SQ_MIN_LABELED,
     SQ_SPEARMAN_MIN,
     SourceEvidenceGoldenEntry,
-    SourceQualityCandidateResult,
-    EvidenceConfidenceCandidateResult,
     _check_production_ready,
     _compute_binary_metrics,
-    _compute_ec_metrics,
     _compute_mae,
     _compute_rmse,
-    _compute_sq_metrics,
     _derive_evidence_support_label,
     _derive_source_quality_label,
     _find_best_threshold_for_ec,
@@ -54,9 +49,7 @@ class TestLoadGoldenSet:
         assert len(golden_entries) > 0
         assert all(isinstance(e, SourceEvidenceGoldenEntry) for e in golden_entries)
 
-    def test_all_entries_have_required_fields(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_all_entries_have_required_fields(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         for entry in golden_entries:
             assert entry.source_id
             assert entry.source_url
@@ -67,31 +60,30 @@ class TestLoadGoldenSet:
             assert entry.claim_id
             assert entry.claim_text
 
-    def test_all_entries_have_labels(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_all_entries_have_labels(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         for entry in golden_entries:
             assert entry.human_label_source_quality is not None, f"Missing SQ label in {entry.evidence_id}"
             assert entry.human_label_evidence_support is not None, f"Missing EC label in {entry.evidence_id}"
 
     def test_labels_are_valid(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         for entry in golden_entries:
-            assert entry.human_label_source_quality in ("high", "medium", "low"), (
-                f"Invalid SQ label: {entry.human_label_source_quality}"
-            )
+            assert entry.human_label_source_quality in (
+                "high",
+                "medium",
+                "low",
+            ), f"Invalid SQ label: {entry.human_label_source_quality}"
             assert entry.human_label_evidence_support in (
-                "supported", "insufficient", "unsupported", "conflicting"
+                "supported",
+                "insufficient",
+                "unsupported",
+                "conflicting",
             ), f"Invalid EC label: {entry.human_label_evidence_support}"
 
-    def test_all_entries_have_label_source(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_all_entries_have_label_source(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         for entry in golden_entries:
             assert entry.label_source == "derived_from_scraping_baseline"
 
-    def test_entries_have_source_features_observable(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_entries_have_source_features_observable(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         for entry in golden_entries:
             feats = entry.source_features_observable
             assert "source_type" in feats
@@ -104,25 +96,24 @@ class TestLoadGoldenSet:
             assert "latency_ms" in feats
             assert "evidence_kind" in feats
 
-    def test_entry_count_is_reasonable(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_entry_count_is_reasonable(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         assert 80 <= len(golden_entries) <= 120
 
-    def test_source_categories_are_valid(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_source_categories_are_valid(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         valid_categories = {
-            "official_website", "technical_docs", "funding_news", "jobs",
-            "github_or_code", "ecosystem_directory", "media",
+            "official_website",
+            "technical_docs",
+            "funding_news",
+            "jobs",
+            "github_or_code",
+            "ecosystem_directory",
+            "media",
             "nvidia_or_partner_ecosystem",
         }
         for entry in golden_entries:
             assert entry.source_category in valid_categories
 
-    def test_label_distribution_reasonable(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_label_distribution_reasonable(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         sq_counts: dict[str, int] = {}
         ec_counts: dict[str, int] = {}
         for e in golden_entries:
@@ -137,14 +128,22 @@ class TestLoadGoldenSet:
 
     def test_no_llm_qdrant_internet_scraping(self) -> None:
         import sys
+
         before = set(sys.modules.keys())
         entries = load_golden_set(_GOLDEN_PATH)
         _ = grid_search_source_quality(entries)
         _ = grid_search_evidence_confidence(entries)
         after = set(sys.modules.keys())
         new_imports = after - before
-        banned = {"langchain", "qdrant_client", "httpx", "aiohttp",
-                   "requests", "openai", "anthropic"}
+        banned = {
+            "langchain",
+            "qdrant_client",
+            "httpx",
+            "aiohttp",
+            "requests",
+            "openai",
+            "anthropic",
+        }
         triggered = {m for m in new_imports if any(b in m for b in banned)}
         assert not triggered, f"Banned imports detected: {triggered}"
 
@@ -161,83 +160,103 @@ class TestCheckHumanLabels:
 
 class TestLabelDerivation:
     def test_derive_source_quality_high(self) -> None:
-        label = _derive_source_quality_label({
-            "source_type": "official_site",
-            "compliance_status": "compliant",
-            "status": "fetched",
-            "extraction_status": "success",
-            "duplicate": False,
-            "latency_ms": 200,
-        })
+        label = _derive_source_quality_label(
+            {
+                "source_type": "official_site",
+                "compliance_status": "compliant",
+                "status": "fetched",
+                "extraction_status": "success",
+                "duplicate": False,
+                "latency_ms": 200,
+            }
+        )
         assert label == "high"
 
     def test_derive_source_quality_medium_blog(self) -> None:
-        label = _derive_source_quality_label({
-            "source_type": "blog",
-            "compliance_status": "compliant",
-            "status": "fetched",
-            "extraction_status": "success",
-            "duplicate": False,
-            "latency_ms": 600,
-        })
+        label = _derive_source_quality_label(
+            {
+                "source_type": "blog",
+                "compliance_status": "compliant",
+                "status": "fetched",
+                "extraction_status": "success",
+                "duplicate": False,
+                "latency_ms": 600,
+            }
+        )
         assert label == "medium"
 
     def test_derive_source_quality_low_fetch_failed(self) -> None:
-        label = _derive_source_quality_label({
-            "source_type": "news",
-            "compliance_status": "compliant",
-            "status": "failed",
-            "extraction_status": "failed",
-            "duplicate": False,
-            "latency_ms": 5000,
-        })
+        label = _derive_source_quality_label(
+            {
+                "source_type": "news",
+                "compliance_status": "compliant",
+                "status": "failed",
+                "extraction_status": "failed",
+                "duplicate": False,
+                "latency_ms": 5000,
+            }
+        )
         assert label == "low"
 
     def test_derive_source_quality_low_blocked(self) -> None:
-        label = _derive_source_quality_label({
-            "source_type": "news",
-            "compliance_status": "non_compliant",
-            "status": "fetched",
-            "extraction_status": "success",
-            "duplicate": False,
-            "latency_ms": 200,
-        })
+        label = _derive_source_quality_label(
+            {
+                "source_type": "news",
+                "compliance_status": "non_compliant",
+                "status": "fetched",
+                "extraction_status": "success",
+                "duplicate": False,
+                "latency_ms": 200,
+            }
+        )
         assert label == "low"
 
     def test_derive_evidence_support_supported(self) -> None:
-        label = _derive_evidence_support_label({
-            "compliance_status": "compliant",
-            "status": "fetched",
-            "extraction_status": "success",
-            "duplicate": False,
-        }, claim_support_count=3)
+        label = _derive_evidence_support_label(
+            {
+                "compliance_status": "compliant",
+                "status": "fetched",
+                "extraction_status": "success",
+                "duplicate": False,
+            },
+            claim_support_count=3,
+        )
         assert label == "supported"
 
     def test_derive_evidence_support_insufficient(self) -> None:
-        label = _derive_evidence_support_label({
-            "compliance_status": "compliant",
-            "status": "fetched",
-            "extraction_status": "success",
-            "duplicate": False,
-        }, claim_support_count=1)
+        label = _derive_evidence_support_label(
+            {
+                "compliance_status": "compliant",
+                "status": "fetched",
+                "extraction_status": "success",
+                "duplicate": False,
+            },
+            claim_support_count=1,
+        )
         assert label == "insufficient"
 
     def test_derive_evidence_support_unsupported(self) -> None:
-        label = _derive_evidence_support_label({
-            "compliance_status": "compliant",
-            "status": "failed",
-            "extraction_status": "failed",
-            "duplicate": False,
-        }, claim_support_count=0)
+        label = _derive_evidence_support_label(
+            {
+                "compliance_status": "compliant",
+                "status": "failed",
+                "extraction_status": "failed",
+                "duplicate": False,
+            },
+            claim_support_count=0,
+        )
         assert label == "unsupported"
 
     def test_derive_evidence_support_duplicate(self) -> None:
-        label = _derive_evidence_support_label({
-            "compliance_status": "compliant",
-            "status": "fetched",
-            "extraction_status": "success",
-            "duplicate": True,
-        }, claim_support_count=3)
+        label = _derive_evidence_support_label(
+            {
+                "compliance_status": "compliant",
+                "status": "fetched",
+                "extraction_status": "success",
+                "duplicate": True,
+            },
+            claim_support_count=3,
+        )
         assert label == "insufficient"
 
 
@@ -296,15 +315,11 @@ class TestStatisticalMetrics:
 
 
 class TestGridSearchSourceQuality:
-    def test_returns_all_candidates(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_returns_all_candidates(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         results = grid_search_source_quality(golden_entries)
         assert len(results) == len(CANDIDATE_WEIGHTS_SOURCE_QUALITY)
 
-    def test_scores_are_between_0_and_1(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_scores_are_between_0_and_1(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         results = grid_search_source_quality(golden_entries)
         for r in results:
             d = r.distribution
@@ -312,9 +327,7 @@ class TestGridSearchSourceQuality:
             assert 0.0 <= d.max <= 1.0
             assert 0.0 <= d.mean <= 1.0
 
-    def test_has_metrics(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_has_metrics(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         results = grid_search_source_quality(golden_entries)
         for r in results:
             assert r.sq_metrics is not None
@@ -323,9 +336,7 @@ class TestGridSearchSourceQuality:
             assert r.sq_metrics.coverage_by_category
             assert r.sq_metrics.confusion_matrix
 
-    def test_candidates_have_different_metrics(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_candidates_have_different_metrics(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         results = grid_search_source_quality(golden_entries)
         spearmans = {r.sq_metrics.spearman for r in results if r.sq_metrics and r.sq_metrics.spearman is not None}
         assert len(spearmans) >= 2
@@ -337,15 +348,11 @@ class TestGridSearchSourceQuality:
 
 
 class TestGridSearchEvidenceConfidence:
-    def test_returns_all_candidates(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_returns_all_candidates(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         results = grid_search_evidence_confidence(golden_entries)
         assert len(results) == len(CANDIDATE_WEIGHTS_EVIDENCE_CONFIDENCE)
 
-    def test_scores_are_between_0_and_1(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_scores_are_between_0_and_1(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         results = grid_search_evidence_confidence(golden_entries)
         for r in results:
             d = r.distribution
@@ -353,9 +360,7 @@ class TestGridSearchEvidenceConfidence:
             assert 0.0 <= d.max <= 1.0
             assert 0.0 <= d.mean <= 1.0
 
-    def test_has_metrics(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_has_metrics(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         results = grid_search_evidence_confidence(golden_entries)
         for r in results:
             assert r.ec_metrics is not None
@@ -370,9 +375,7 @@ class TestGridSearchEvidenceConfidence:
 
 
 class TestSelectBestCandidate:
-    def test_selects_highest_spearman(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_selects_highest_spearman(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         candidates = grid_search_source_quality(golden_entries)
         best_idx = _select_best_sq_candidate(candidates)
         assert best_idx is not None
@@ -381,9 +384,7 @@ class TestSelectBestCandidate:
             if i != best_idx and c.sq_metrics and c.sq_metrics.spearman is not None:
                 assert c.sq_metrics.spearman <= best_spearman
 
-    def test_selects_highest_f1(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_selects_highest_f1(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         candidates = grid_search_evidence_confidence(golden_entries)
         best_idx = _select_best_ec_candidate(candidates)
         assert best_idx is not None
@@ -399,9 +400,7 @@ class TestSelectBestCandidate:
 
 
 class TestThresholdOptimization:
-    def test_find_best_threshold_for_ec(
-        self, golden_entries: list[SourceEvidenceGoldenEntry]
-    ) -> None:
+    def test_find_best_threshold_for_ec(self, golden_entries: list[SourceEvidenceGoldenEntry]) -> None:
         from src.evaluation.source_evidence_baseline import _make_calibrated_inventory
         from src.scoring.evidence_confidence import compute_evidence_confidence_score
 
@@ -410,8 +409,7 @@ class TestThresholdOptimization:
             CANDIDATE_WEIGHTS_EVIDENCE_CONFIDENCE[0],
         )
         scores = [
-            compute_evidence_confidence_score(e.source_features_observable, inventory=inv).score
-            for e in golden_entries
+            compute_evidence_confidence_score(e.source_features_observable, inventory=inv).score for e in golden_entries
         ]
         best_threshold, metrics = _find_best_threshold_for_ec(golden_entries, scores)
         assert 0.1 <= best_threshold <= 0.9
@@ -426,7 +424,11 @@ class TestThresholdOptimization:
 
 class TestCheckProductionReady:
     def test_blocked_when_insufficient_labels(self) -> None:
-        from src.evaluation.source_evidence_baseline import SourceQualityMetrics, EvidenceConfidenceMetrics
+        from src.evaluation.source_evidence_baseline import (
+            EvidenceConfidenceMetrics,
+            SourceQualityMetrics,
+        )
+
         ready, blockers = _check_production_ready(
             sq_label_count=10,
             ec_label_count=10,
@@ -438,7 +440,11 @@ class TestCheckProductionReady:
         assert any("EC labels" in b for b in blockers)
 
     def test_blocked_when_poor_metrics(self) -> None:
-        from src.evaluation.source_evidence_baseline import SourceQualityMetrics, EvidenceConfidenceMetrics
+        from src.evaluation.source_evidence_baseline import (
+            EvidenceConfidenceMetrics,
+            SourceQualityMetrics,
+        )
+
         ready, blockers = _check_production_ready(
             sq_label_count=SQ_MIN_LABELED,
             ec_label_count=EC_MIN_LABELED,
@@ -452,7 +458,11 @@ class TestCheckProductionReady:
         assert any("fp_rate" in b for b in blockers)
 
     def test_allowed_when_all_criteria_met(self) -> None:
-        from src.evaluation.source_evidence_baseline import SourceQualityMetrics, EvidenceConfidenceMetrics
+        from src.evaluation.source_evidence_baseline import (
+            EvidenceConfidenceMetrics,
+            SourceQualityMetrics,
+        )
+
         ready, blockers = _check_production_ready(
             sq_label_count=SQ_MIN_LABELED,
             ec_label_count=EC_MIN_LABELED,
@@ -535,7 +545,6 @@ class TestFullCalibration:
     def test_label_distribution_reported(self) -> None:
         result = run_full_calibration(golden_path=_GOLDEN_PATH)
         sq_counts: dict[str, int] = {}
-        ec_counts: dict[str, int] = {}
         for c in result.source_quality_candidates:
             if c.sq_metrics and c.sq_metrics.confusion_matrix:
                 for true_label in c.sq_metrics.confusion_matrix:
@@ -575,6 +584,7 @@ class TestRegistryIntegration:
         from src.quality.decision_calibration_registry import (
             get_project_decision_inventory,
         )
+
         inventory = get_project_decision_inventory()
         scoring_ids = {
             "weight.source_quality_score.weights",
@@ -591,6 +601,7 @@ class TestRegistryIntegration:
         from src.quality.decision_calibration_registry import (
             get_project_decision_inventory,
         )
+
         inventory = get_project_decision_inventory()
         scoring_ids = {
             "weight.source_quality_score.weights",
@@ -606,6 +617,7 @@ class TestRegistryIntegration:
         from src.quality.decision_calibration_registry import (
             get_project_decision_inventory,
         )
+
         inventory = get_project_decision_inventory()
         scoring_ids = {
             "weight.source_quality_score.weights",
@@ -620,6 +632,7 @@ class TestRegistryIntegration:
 
     def test_no_values_liberated_without_registry(self) -> None:
         from src.scoring.source_quality import compute_source_quality_score
+
         result = compute_source_quality_score(
             {"source_type": "news"},
             inventory=[],
@@ -632,6 +645,7 @@ class TestRegistryIntegration:
             CalibrationStatus,
             get_project_decision_inventory,
         )
+
         inventory = get_project_decision_inventory()
         for rec in inventory:
             if rec.decision_id == "weight.source_quality_score.weights":

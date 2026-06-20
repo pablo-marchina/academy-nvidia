@@ -7,7 +7,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.product_routes import router as product_router
-from src.api.routes import router
 from src.api.workflow_routes import router as workflow_router
 from src.database.session import initialize_product_database
 
@@ -20,9 +19,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(
     title="NVIDIA Startup AI Radar API",
-    description="Minimal API for the NVIDIA Startup AI Radar project. "
-    "Generates Startup Action Briefs, evaluates answer quality, "
-    "checks RAG status, and lists demo artifacts.",
+    description="Product API for persisted startup analysis, recommendations, dossiers, and exports.",
     version="0.1.0",
     lifespan=lifespan,
 )
@@ -35,6 +32,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router)
 app.include_router(product_router)
 app.include_router(workflow_router)

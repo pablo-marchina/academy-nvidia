@@ -59,9 +59,7 @@ class DossierMetadataSchema(BaseModel):
 class DossierJsonSchema(BaseModel):
     metadata: DossierMetadataSchema = Field(default_factory=DossierMetadataSchema)
     startup: DossierStartupSchema = Field(default_factory=DossierStartupSchema)
-    executive_verdict: DossierExecutiveVerdictSchema = Field(
-        default_factory=DossierExecutiveVerdictSchema
-    )
+    executive_verdict: DossierExecutiveVerdictSchema = Field(default_factory=DossierExecutiveVerdictSchema)
     scores: dict[str, Any] = Field(default_factory=dict)
     gaps: dict[str, Any] = Field(default_factory=dict)
     risks: list[dict[str, Any]] = Field(default_factory=list)
@@ -351,9 +349,7 @@ class ActivationDossierService:
         result: dict[str, Any] = {}
         for score_type in ("defensibility", "inception_fit", "production_readiness"):
             s = scores.get(score_type)
-            result[f"{score_type}_score"] = (
-                {"value": s.value, "confidence": s.confidence} if s else None
-            )
+            result[f"{score_type}_score"] = {"value": s.value, "confidence": s.confidence} if s else None
         composite = scores.get("composite")
         if composite:
             result["composite_score"] = composite.value
@@ -380,9 +376,7 @@ class ActivationDossierService:
     def _collect_mappings(self, run: AnalysisRun) -> dict[str, Any]:
         technologies = sorted({m.technology_name for m in run.mappings})
         summary = (
-            f"{len(technologies)} NVIDIA technology(ies) mapped"
-            if technologies
-            else "No NVIDIA technologies mapped"
+            f"{len(technologies)} NVIDIA technology(ies) mapped" if technologies else "No NVIDIA technologies mapped"
         )
         return {"technologies": technologies, "summary": summary}
 

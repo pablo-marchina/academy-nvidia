@@ -18,9 +18,7 @@ def service(tmp_path: Path) -> OpportunityService:
     reset_product_database_runtime()
 
 
-def _setup_startup_with_run(
-    repo: ProductRepository, name: str, sector: str, score_value: float
-) -> str:
+def _setup_startup_with_run(repo: ProductRepository, name: str, sector: str, score_value: float) -> str:
     startup = repo.create_startup(
         name=name,
         website=f"https://{name.lower().replace(' ', '')}.example.com",
@@ -88,9 +86,7 @@ def test_opportunity_ranking_returns_sorted_results(
     items, total = service.list_opportunities(limit=10)
     assert total == 3
     scores = [i["inception_fit_score"] for i in items if i["inception_fit_score"] is not None]
-    assert scores == sorted(
-        scores, reverse=True
-    ), "Should be sorted descending by inception_fit_score"
+    assert scores == sorted(scores, reverse=True), "Should be sorted descending by inception_fit_score"
 
 
 def test_opportunity_filters_by_sector(service: OpportunityService) -> None:
@@ -138,6 +134,7 @@ def test_opportunity_review_status_present(service: OpportunityService) -> None:
     review_repo = ReviewDecisionRepository(service.session)
     review_repo.create(
         analysis_run_id=run.id,
+        startup_id=sid,
         decision="approve",
         reviewer="test",
         notes="Approved",

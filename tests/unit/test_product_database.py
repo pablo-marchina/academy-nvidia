@@ -12,8 +12,12 @@ from src.database.session import (
 
 
 def test_product_database_creates_sqlite_directory_and_schema(tmp_path: Path) -> None:
+    import os
+    from unittest.mock import patch
+
     database_path = tmp_path / "nested" / "product.db"
-    runtime = configure_product_database(f"sqlite:///{database_path.as_posix()}")
+    with patch.dict(os.environ, {"APP_MODE": "test"}):
+        runtime = configure_product_database(f"sqlite:///{database_path.as_posix()}")
 
     assert database_path.exists()
     assert {

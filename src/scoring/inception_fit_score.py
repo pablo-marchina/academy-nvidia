@@ -52,8 +52,6 @@ _PRIORITY_SECTORS: list[str] = [
 ]
 
 
-
-
 # ---------------------------------------------------------------------------
 # Models
 # ---------------------------------------------------------------------------
@@ -386,18 +384,12 @@ def compute_inception_fit_score(
 
     scores: dict[str, InceptionFitDimension] = {}
 
-    scores["explicit_gap_taxonomy"] = _score_gap_taxonomy(
-        profile, classification, validated_evidence
-    )
-    scores["vertical_alignment"] = _score_vertical_alignment(
-        profile, classification, validated_evidence
-    )
+    scores["explicit_gap_taxonomy"] = _score_gap_taxonomy(profile, classification, validated_evidence)
+    scores["vertical_alignment"] = _score_vertical_alignment(profile, classification, validated_evidence)
     scores["technical_maturity"] = _score_technical_maturity(
         profile, classification, defensibility_total_score, validated_evidence
     )
-    scores["revenue_potential"] = _score_revenue_potential(
-        profile, classification, validated_evidence
-    )
+    scores["revenue_potential"] = _score_revenue_potential(profile, classification, validated_evidence)
 
     total = sum(s.adjusted_score * s.weight for s in scores.values())
     total = round(total, 1)
@@ -409,9 +401,7 @@ def compute_inception_fit_score(
         if not ds.evidence_used:
             missing.append(f"No evidence for dimension: {name}")
         elif ds.confidence == ConfidenceLevel.LOW:
-            missing.append(
-                f"Weak evidence for dimension: {name} (confidence: {ds.confidence.value})"
-            )
+            missing.append(f"Weak evidence for dimension: {name} (confidence: {ds.confidence.value})")
 
     conf_factors = [CONFIDENCE_SCORE_FACTORS.get(s.confidence.value, 0.4) for s in scores.values()]
     avg_conf = sum(conf_factors) / len(conf_factors)

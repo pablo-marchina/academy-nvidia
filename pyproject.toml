@@ -65,7 +65,7 @@ markers = [
 ]
 
 [tool.black]
-line-length = 100
+line-length = 120
 target-version = ["py311"]
 extend-exclude = '''
 ^/notebooks/
@@ -75,13 +75,25 @@ extend-exclude = '''
 '''
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py311"
 extend-exclude = ["notebooks/*.ipynb", "migrations/*.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 ignore = ["UP042"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/calibrate_recommendation_parameters.py" = ["E501"]
+"scripts/calibrate_scoring_ablation.py" = ["E501"]
+"src/evaluation/gap_diagnosis_baseline.py" = ["E501"]
+"src/evaluation/qdrant_retrieval_eval.py" = ["E501"]
+"src/evaluation/rag_baseline.py" = ["E501"]
+"src/evaluation/recommendation_baseline.py" = ["E501"]
+"src/evaluation/scraping_baseline.py" = ["E501"]
+"src/evaluation/source_evidence_baseline.py" = ["E501"]
+"src/evaluation/startup_scoring_calibration.py" = ["E501"]
+"src/quality/decision_calibration_registry.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"

@@ -10,8 +10,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.api.main import app
-from src.database.models import ActionBriefRecord, AnalysisRun, ReviewDecision, WorkflowRun
-from src.database.session import configure_product_database, get_db_session, reset_product_database_runtime
+from src.database.models import ActionBriefRecord, AnalysisRun, WorkflowRun
+from src.database.session import (
+    configure_product_database,
+    get_db_session,
+    reset_product_database_runtime,
+)
 from src.orchestration.state import ProductWorkflowState
 from src.services.product.readiness_service import ProductReadinessReport
 
@@ -29,10 +33,12 @@ def _mock_readiness() -> Iterator[None]:
 
 @pytest.fixture
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
-    monkeypatch.setenv("APP_MODE", "product")
+    monkeypatch.setenv("APP_MODE", "test")
     monkeypatch.setenv("ENABLE_PRODUCT_PERSISTENCE", "true")
     monkeypatch.setenv("QDRANT_URL", "")
-    configure_product_database(f"sqlite:///{(tmp_path / 'test_product_workflow_api.db').as_posix()}")
+    db_url = f"sqlite:///{(tmp_path / 'test_product_workflow_api.db').as_posix()}"
+    monkeypatch.setenv("PRODUCT_DB_URL", db_url)
+    configure_product_database(db_url)
     with TestClient(app) as test_client:
         yield test_client
     reset_product_database_runtime()
@@ -65,16 +71,36 @@ def startup_id(client: TestClient) -> str:
 
 
 POST_RESPONSE_FIELDS = {
-    "run_id", "startup_id", "status", "review_required",
-    "executed_nodes", "blockers", "quality", "action_brief",
-    "evidence_validation", "rag_metrics", "recommendation_metrics",
-    "brief_metrics", "review_decision", "review_notes",
+    "run_id",
+    "startup_id",
+    "status",
+    "review_required",
+    "executed_nodes",
+    "blockers",
+    "quality",
+    "action_brief",
+    "evidence_validation",
+    "rag_metrics",
+    "recommendation_metrics",
+    "brief_metrics",
+    "review_decision",
+    "review_notes",
 }
 GET_RESPONSE_FIELDS = {
-    "run_id", "startup_id", "status", "executed_nodes", "blockers",
-    "quality", "evidence_validation", "rag_metrics",
-    "recommendation_metrics", "brief_metrics", "action_brief",
-    "review_required", "review_payload",
+    "run_id",
+    "startup_id",
+    "status",
+    "executed_nodes",
+    "blockers",
+    "quality",
+    "evidence_validation",
+    "rag_metrics",
+    "recommendation_metrics",
+    "brief_metrics",
+    "action_brief",
+    "dossier_summary",
+    "review_required",
+    "review_payload",
 }
 
 
@@ -220,7 +246,12 @@ def _create_workflow_run_record(session, analysis_run_id: str, startup_id: str) 
         current_node="finish",
         graph_version="1.0",
         state_json={
-            "completed_nodes": ["preflight", "load_startup", "collect_evidence", "validate_evidence"],
+            "completed_nodes": [
+                "preflight",
+                "load_startup",
+                "collect_evidence",
+                "validate_evidence",
+            ],
             "failed_nodes": [],
             "degraded_nodes": [],
             "blockers": [],
@@ -405,7 +436,13 @@ class TestGetAnalysisRun:
         resp = client.get(f"/analysis-runs/{ar_id}")
         assert resp.status_code == 200
         data = resp.json()
-        internal_keys = {"output_snapshot", "input_snapshot", "config_snapshot", "error_message", "_session"}
+        internal_keys = {
+            "output_snapshot",
+            "input_snapshot",
+            "config_snapshot",
+            "error_message",
+            "_session",
+        }
         exposed = set(data.keys()) & internal_keys
         assert not exposed, f"Internal fields exposed: {exposed}"
 
@@ -606,10 +643,17 @@ def _create_awaiting_review_workflow(session, ar_id: str, startup_id: str) -> st
         graph_version="1.0",
         state_json={
             "completed_nodes": [
-                "preflight_configuration_check", "plan_search", "collect_sources",
-                "extract_profile", "validate_evidence", "score_startup",
-                "diagnose_gaps", "retrieve_nvidia_context", "rank_recommendations",
-                "generate_brief", "run_quality_gates",
+                "preflight_configuration_check",
+                "plan_search",
+                "collect_sources",
+                "extract_profile",
+                "validate_evidence",
+                "score_startup",
+                "diagnose_gaps",
+                "retrieve_nvidia_context",
+                "rank_recommendations",
+                "generate_brief",
+                "run_quality_gates",
             ],
             "failed_nodes": [],
             "degraded_nodes": [],
@@ -636,7 +680,6 @@ class TestResumeAnalysisRun:
     """Integration tests for POST /analysis-runs/{analysis_run_id}/resume."""
 
     def _patch_submit_review(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        import uuid
         from datetime import UTC, datetime
 
         from src.orchestration.service import WorkflowOrchestrationService
@@ -648,6 +691,7 @@ class TestResumeAnalysisRun:
             decision: str,
             reviewer: str,
             notes: str,
+            resume: bool = False,
         ) -> dict:
             return {
                 "workflow_id": workflow_id,
@@ -662,9 +706,7 @@ class TestResumeAnalysisRun:
             mock_submit_review,
         )
 
-    def _assert_review_decision_persisted(
-        self, analysis_run_id: str, startup_id: str, expected_decision: str
-    ) -> None:
+    def _assert_review_decision_persisted(self, analysis_run_id: str, startup_id: str, expected_decision: str) -> None:
         """Verify a ReviewDecision was persisted with the expected fields."""
         session = next(get_db_session())
         try:

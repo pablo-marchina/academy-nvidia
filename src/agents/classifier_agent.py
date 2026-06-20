@@ -10,8 +10,12 @@ def score_startup(
     validated_evidence_dicts: list[dict[str, Any]],
     run_id: str,
 ) -> tuple[
-    dict[str, Any], dict[str, Any], dict[str, Any],
-    dict[str, Any], dict[str, Any], list[str],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    dict[str, Any],
+    list[str],
 ]:
     from src.classification.ai_native_classifier import classify_ai_native
     from src.extraction.schemas import StartupProfile
@@ -30,17 +34,22 @@ def score_startup(
 
     if not profile_dict:
         return (
-            scores, classification_result,
-            defensibility_result, inception_fit_result,
-            production_readiness_result, errors,
+            scores,
+            classification_result,
+            defensibility_result,
+            inception_fit_result,
+            production_readiness_result,
+            errors,
         )
 
     try:
         profile = StartupProfile.model_validate(profile_dict)
     except Exception as exc:
         return (
-            scores, classification_result,
-            defensibility_result, inception_fit_result,
+            scores,
+            classification_result,
+            defensibility_result,
+            inception_fit_result,
             production_readiness_result,
             [f"Failed to deserialize startup_profile: {exc}"],
         )
@@ -58,9 +67,7 @@ def score_startup(
     inception_fit = compute_inception_fit_score(
         profile, classification, defensibility.total_score, validated_evidence_objs
     )
-    production_readiness = compute_production_readiness(
-        profile, classification, validated_evidence_objs
-    )
+    production_readiness = compute_production_readiness(profile, classification, validated_evidence_objs)
     composite = compute_composite_score(
         startup_id=run_id,
         defensibility=defensibility,
@@ -89,7 +96,10 @@ def score_startup(
     production_readiness_result = production_readiness.model_dump(mode="json")
 
     return (
-        scores, classification_result,
-        defensibility_result, inception_fit_result,
-        production_readiness_result, errors,
+        scores,
+        classification_result,
+        defensibility_result,
+        inception_fit_result,
+        production_readiness_result,
+        errors,
     )

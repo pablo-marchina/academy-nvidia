@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any, cast
 
 from sqlalchemy.orm import Session
@@ -22,6 +23,10 @@ except ImportError:
 _POSTGRES_CHECKPOINTER: Any | None = None
 
 
+def _is_product_mode() -> bool:
+    return os.environ.get("APP_MODE", "").lower() == "product"
+
+
 def _build_postgres_checkpointer() -> Any | None:
     """Build a PostgresSaver if the database is PostgreSQL, else None."""
     global _POSTGRES_CHECKPOINTER
@@ -41,8 +46,9 @@ def _build_postgres_checkpointer() -> Any | None:
             saver.setup()
             _POSTGRES_CHECKPOINTER = saver
             return saver
-    except Exception:
-        pass
+    except Exception as exc:
+        if _is_product_mode():
+            raise RuntimeError("APP_MODE=product requires a PostgreSQL LangGraph checkpointer.") from exc
     return None
 
 
@@ -50,6 +56,11 @@ def _build_checkpointer() -> Any | None:
     pg = _build_postgres_checkpointer()
     if pg is not None:
         return pg
+    if _is_product_mode():
+        raise RuntimeError(
+            "APP_MODE=product requires a PostgreSQL LangGraph checkpointer; "
+            "MemorySaver is allowed only for tests/development."
+        )
     try:
         from langgraph.checkpoint.memory import MemorySaver  # noqa: I001
 
@@ -58,9 +69,7 @@ def _build_checkpointer() -> Any | None:
         return None
 
 
-def _try_build_agent_graph(
-    *, checkpointer: Any = None, analysis_repository: Any = None
-) -> Any | None:
+def _try_build_agent_graph(*, checkpointer: Any = None, analysis_repository: Any = None) -> Any | None:
     try:
         from src.agents.graph import build_startup_radar_graph  # noqa: I001
 
@@ -70,21 +79,29 @@ def _try_build_agent_graph(
             analysis_repository=analysis_repository,
             rag_service=rag_service,
         )
-    except ImportError:
+    except ImportError as exc:
+        if _is_product_mode():
+            raise RuntimeError("APP_MODE=product requires LangGraph agent orchestration to be installed.") from exc
+        return None
+    except Exception as exc:
+        if _is_product_mode():
+            raise RuntimeError("APP_MODE=product failed to build the LangGraph agent graph.") from exc
         return None
 
 
 def _try_build_rag_service() -> Any | None:
     """Build a Qdrant-backed RagService if RAG_VECTOR_BACKEND=qdrant."""
-    import os
-
     if os.environ.get("RAG_VECTOR_BACKEND", "").lower() != "qdrant":
+        if _is_product_mode():
+            raise RuntimeError("APP_MODE=product requires RAG_VECTOR_BACKEND=qdrant.")
         return None
     try:
         from src.rag.rag_service_factory import build_rag_service  # noqa: I001
 
         return build_rag_service()
-    except Exception:
+    except Exception as exc:
+        if _is_product_mode():
+            raise RuntimeError("APP_MODE=product failed to build Qdrant RAG service.") from exc
         return None
 
 
@@ -161,22 +178,48 @@ class WorkflowRunner:
             persister = None
 
         thread_id: str = state.analysis_run_id or state.workflow_id
-        checkpointer = _get_cached_checkpointer(thread_id)
-        if checkpointer is None:
-            checkpointer = _build_checkpointer()
-            if checkpointer is not None:
-                _cache_checkpointer(thread_id, checkpointer)
+        try:
+            checkpointer = _get_cached_checkpointer(thread_id)
+            if checkpointer is None:
+                checkpointer = _build_checkpointer()
+                if checkpointer is not None:
+                    _cache_checkpointer(thread_id, checkpointer)
 
-        agent_graph = _try_build_agent_graph(
-            checkpointer=checkpointer,
-            analysis_repository=persister,
-        )
+            agent_graph = _try_build_agent_graph(
+                checkpointer=checkpointer,
+                analysis_repository=persister,
+            )
+        except RuntimeError as exc:
+            if _is_product_mode():
+                state.error_message = str(exc)
+                self.repo.fail_workflow(
+                    state.workflow_id,
+                    error_message=str(exc),
+                    state_json=self._dump_state(state),
+                )
+                state.metadata_json.pop("_session", None)
+                return state
+            raise
         if agent_graph is not None:
             return self._run_with_langgraph(state, agent_graph, use_agent_graph=True)
 
         graph = build_workflow_graph()
         if graph is not None:
             return self._run_with_langgraph(state, graph, use_agent_graph=False)
+
+        if _is_product_mode():
+            msg = (
+                "APP_MODE=product requires LangGraph orchestration; "
+                "sequential runner is allowed only for tests/development."
+            )
+            state.error_message = msg
+            self.repo.fail_workflow(
+                state.workflow_id,
+                error_message=msg,
+                state_json=self._dump_state(state),
+            )
+            state.metadata_json.pop("_session", None)
+            return state
 
         return self._run_sequential(state, max_retry=max_retry)
 
@@ -413,8 +456,7 @@ class WorkflowRunner:
                 if node_def.critical:
                     self.repo.fail_workflow(
                         state.workflow_id,
-                        error_message=result.error_message
-                        or f"Critical node failed: {node_def.name}",
+                        error_message=result.error_message or f"Critical node failed: {node_def.name}",
                         state_json=self._dump_state(state),
                     )
                     return state
@@ -458,9 +500,7 @@ class WorkflowRunner:
             failed_list = ", ".join(state.failed_nodes)
             degraded_list = ", ".join(state.degraded_nodes)
             reason = f"Nodes failed: {failed_list}; degraded: {degraded_list}"
-            self.repo.degrade_workflow(
-                state.workflow_id, degraded_reason=reason, state_json=self._dump_state(state)
-            )
+            self.repo.degrade_workflow(state.workflow_id, degraded_reason=reason, state_json=self._dump_state(state))
         elif state.failed_nodes:
             self.repo.fail_workflow(
                 state.workflow_id,
@@ -469,9 +509,7 @@ class WorkflowRunner:
             )
         elif state.degraded_nodes:
             reason = f"Degraded nodes: {', '.join(state.degraded_nodes)}"
-            self.repo.degrade_workflow(
-                state.workflow_id, degraded_reason=reason, state_json=self._dump_state(state)
-            )
+            self.repo.degrade_workflow(state.workflow_id, degraded_reason=reason, state_json=self._dump_state(state))
         else:
             self.repo.complete_workflow(state.workflow_id, state_json=self._dump_state(state))
 
@@ -495,14 +533,10 @@ class WorkflowRunner:
                     NodeStatus.DEGRADED,
                 ):
                     return last_result
-                if last_result.status == NodeStatus.FAILED and not _is_retryable(
-                    last_result.error_message or ""
-                ):
+                if last_result.status == NodeStatus.FAILED and not _is_retryable(last_result.error_message or ""):
                     return last_result
             except Exception as exc:
-                last_result = NodeResult(
-                    status=NodeStatus.FAILED, error_message=f"{type(exc).__name__}: {exc}"
-                )
+                last_result = NodeResult(status=NodeStatus.FAILED, error_message=f"{type(exc).__name__}: {exc}")
 
             if attempt < max_retry and _is_retryable(last_result.error_message or ""):
                 self.repo.increment_node_retry(node_run_id)

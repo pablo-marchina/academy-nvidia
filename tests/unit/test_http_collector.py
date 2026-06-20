@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-import json
-import os
+import inspect
 import socket
 import threading
 import time
-from http import HTTPStatus
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from typing import Any, Iterator
+from collections.abc import Iterator
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any
 from urllib.parse import urlparse
 
 import pytest
 
+import src.scraping.http_collector as http_collector_module
 from src.scraping.http_collector import (
     CollectionMetrics,
     CollectionRequest,
@@ -28,7 +28,6 @@ from src.scraping.http_collector import (
     list_governed_sources,
 )
 from src.scraping.source_registry import SourceRecord
-
 
 # ── Test helpers ─────────────────────────────────────────────────────────
 
@@ -142,10 +141,7 @@ class TestRobotsChecker:
         assert checker.is_allowed("https://example.com/api/private") is False
 
     def test_respects_user_agent(self) -> None:
-        robots = (
-            "User-agent: BadBot\nDisallow: /\n\n"
-            "User-agent: *\nAllow: /\n"
-        )
+        robots = "User-agent: BadBot\nDisallow: /\n\n" "User-agent: *\nAllow: /\n"
         checker = RobotsChecker(robots, user_agent="GoodBot")
         assert checker.is_allowed("https://example.com/") is True
 
@@ -231,9 +227,7 @@ class TestHttpSourceCollector:
         host, port = local_server
         url = f"http://{host}:{port}/test"
         _TestHandler.responses["/test"] = (200, "text/html", "<html><body>OK</body></html>")
-        _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nAllow: /\n"
-        )
+        _TestHandler.responses["/robots.txt"] = (200, "text/plain", "User-agent: *\nAllow: /\n")
 
         enabled = _source(base_url=url, production_enabled=True)
         disabled = _source(source_id="blocked", base_url=url, production_enabled=False)
@@ -252,9 +246,7 @@ class TestHttpSourceCollector:
         url = f"http://{host}:{port}/page"
         html = "<html><body><h1>Hello World</h1></body></html>"
         _TestHandler.responses["/page"] = (200, "text/html", html)
-        _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nAllow: /\n"
-        )
+        _TestHandler.responses["/robots.txt"] = (200, "text/plain", "User-agent: *\nAllow: /\n")
 
         collector = HttpSourceCollector()
         req = _make_request([_source(base_url=url)])
@@ -277,7 +269,9 @@ class TestHttpSourceCollector:
         url = f"http://{host}:{port}/admin"
         _TestHandler.responses["/admin"] = (200, "text/html", "<html>Secret</html>")
         _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nDisallow: /admin\n"
+            200,
+            "text/plain",
+            "User-agent: *\nDisallow: /admin\n",
         )
 
         collector = HttpSourceCollector()
@@ -296,9 +290,7 @@ class TestHttpSourceCollector:
         url2 = f"http://{host}:{port}/b"
         _TestHandler.responses["/a"] = (200, "text/html", "<html>A</html>")
         _TestHandler.responses["/b"] = (200, "text/html", "<html>B</html>")
-        _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nAllow: /\n"
-        )
+        _TestHandler.responses["/robots.txt"] = (200, "text/plain", "User-agent: *\nAllow: /\n")
 
         collector = HttpSourceCollector()
         src_a = _source(source_id="src-a", base_url=url1, rate_limit_policy_id="default_polite")
@@ -318,14 +310,16 @@ class TestHttpSourceCollector:
         url = f"http://{host}:{port}/retry-test"
         # Simulate 500 errors
         _TestHandler.responses["/retry-test"] = (500, "text/plain", "Server Error")
-        _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nAllow: /\n"
-        )
+        _TestHandler.responses["/robots.txt"] = (200, "text/plain", "User-agent: *\nAllow: /\n")
 
         collector = HttpSourceCollector()
         req = _make_request(
             [_source(base_url=url)],
-            calibrated_limits={"timeout_seconds": 5, "max_retries": 2, "backoff_base_seconds": 0.05},
+            calibrated_limits={
+                "timeout_seconds": 5,
+                "max_retries": 2,
+                "backoff_base_seconds": 0.05,
+            },
         )
         result = collector.collect(req)
 
@@ -339,9 +333,7 @@ class TestHttpSourceCollector:
         host, port = local_server
         url = f"http://{host}:{port}/not-found"
         _TestHandler.responses["/not-found"] = (404, "text/plain", "Not Found")
-        _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nAllow: /\n"
-        )
+        _TestHandler.responses["/robots.txt"] = (200, "text/plain", "User-agent: *\nAllow: /\n")
 
         collector = HttpSourceCollector()
         req = _make_request([_source(base_url=url)])
@@ -359,9 +351,7 @@ class TestHttpSourceCollector:
         url = f"http://{host}:{port}/hash-test"
         html = "<html><body>Hash me</body></html>"
         _TestHandler.responses["/hash-test"] = (200, "text/html", html)
-        _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nAllow: /\n"
-        )
+        _TestHandler.responses["/robots.txt"] = (200, "text/plain", "User-agent: *\nAllow: /\n")
 
         expected_hash = _compute_content_hash(html)
         collector = HttpSourceCollector()
@@ -375,9 +365,7 @@ class TestHttpSourceCollector:
         url = f"http://{host}:{port}/dup"
         html = "<html><body>Duplicate</body></html>"
         _TestHandler.responses["/dup"] = (200, "text/html", html)
-        _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nAllow: /\n"
-        )
+        _TestHandler.responses["/robots.txt"] = (200, "text/plain", "User-agent: *\nAllow: /\n")
 
         collector = HttpSourceCollector()
         src = _source(base_url=url)
@@ -404,9 +392,7 @@ class TestHttpSourceCollector:
         host, port = local_server
         url = f"http://{host}:{port}/dry"
         _TestHandler.responses["/dry"] = (200, "text/html", "<html>Dry</html>")
-        _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nAllow: /\n"
-        )
+        _TestHandler.responses["/robots.txt"] = (200, "text/plain", "User-agent: *\nAllow: /\n")
 
         collector = HttpSourceCollector()
         req = _make_request([_source(base_url=url)], dry_run=True)
@@ -415,15 +401,11 @@ class TestHttpSourceCollector:
         assert len(result.sources) == 1
         assert result.sources[0].status == "dry_run"
 
-    def test_calibrated_values_do_not_block_for_local_server(
-        self, local_server: tuple[str, int]
-    ) -> None:
+    def test_calibrated_values_do_not_block_for_local_server(self, local_server: tuple[str, int]) -> None:
         host, port = local_server
         url = f"http://{host}:{port}/cal-pass"
         _TestHandler.responses["/cal-pass"] = (200, "text/html", "<html>Calibrated OK</html>")
-        _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nAllow: /\n"
-        )
+        _TestHandler.responses["/robots.txt"] = (200, "text/plain", "User-agent: *\nAllow: /\n")
 
         collector = HttpSourceCollector()
         req = _make_request(
@@ -455,9 +437,7 @@ class TestCollectionMetrics:
         host, port = local_server
         url = f"http://{host}:{port}/metrics"
         _TestHandler.responses["/metrics"] = (200, "text/html", "<html>Metrics</html>")
-        _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nAllow: /\n"
-        )
+        _TestHandler.responses["/robots.txt"] = (200, "text/plain", "User-agent: *\nAllow: /\n")
 
         collector = HttpSourceCollector()
         req = _make_request([_source(base_url=url)])
@@ -482,7 +462,9 @@ class TestCollectionMetrics:
         url = f"http://{host}:{port}/metrics-blocked"
         _TestHandler.responses["/metrics-blocked"] = (200, "text/html", "<html>OK</html>")
         _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nDisallow: /metrics-blocked\n"
+            200,
+            "text/plain",
+            "User-agent: *\nDisallow: /metrics-blocked\n",
         )
 
         collector = HttpSourceCollector()
@@ -501,9 +483,7 @@ class TestCollectionMetrics:
         host, port = local_server
         url = f"http://{host}:{port}/metrics-dup"
         _TestHandler.responses["/metrics-dup"] = (200, "text/html", "<html>Dup</html>")
-        _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nAllow: /\n"
-        )
+        _TestHandler.responses["/robots.txt"] = (200, "text/plain", "User-agent: *\nAllow: /\n")
 
         collector = HttpSourceCollector()
         src = _source(base_url=url)
@@ -529,9 +509,7 @@ class TestNoExternalInternet:
         host, port = local_server
         url = f"http://{host}:{port}/safe"
         _TestHandler.responses["/safe"] = (200, "text/html", "<html>Safe</html>")
-        _TestHandler.responses["/robots.txt"] = (
-            200, "text/plain", "User-agent: *\nAllow: /\n"
-        )
+        _TestHandler.responses["/robots.txt"] = (200, "text/plain", "User-agent: *\nAllow: /\n")
 
         original_connect = socket.socket.connect
         connections: list[str] = []
@@ -553,19 +531,18 @@ class TestNoExternalInternet:
             socket.socket.connect = original_connect  # type: ignore[assignment]
 
     def test_no_llm_import(self) -> None:
-        with pytest.raises(ImportError):
-            from src.scraping.http_collector import openai  # type: ignore[attr-defined]  # noqa: F811
-        assert True
+        source = inspect.getsource(http_collector_module).lower()
+        assert "openai" not in source
+        assert "anthropic" not in source
+        assert "instructor" not in source
 
     def test_no_qdrant_import(self) -> None:
-        with pytest.raises(ImportError):
-            from src.scraping.http_collector import qdrant_client  # type: ignore[attr-defined]  # noqa: F811
-        assert True
+        source = inspect.getsource(http_collector_module).lower()
+        assert "qdrant" not in source
 
     def test_no_playwright_import(self) -> None:
-        with pytest.raises(ImportError):
-            from src.scraping.http_collector import playwright  # type: ignore[attr-defined]  # noqa: F811
-        assert True
+        source = inspect.getsource(http_collector_module).lower()
+        assert "playwright" not in source
 
 
 # ── Pydantic Model Tests ──────────────────────────────────────────────────

@@ -66,9 +66,7 @@ class ProductRepository:
         return list(self.session.scalars(statement))
 
     def get_startup(self, startup_id: str) -> Startup | None:
-        statement = (
-            select(Startup).where(Startup.id == startup_id).options(selectinload(Startup.evidence))
-        )
+        statement = select(Startup).where(Startup.id == startup_id).options(selectinload(Startup.evidence))
         return self.session.scalar(statement)
 
     def update_startup(self, startup_id: str, **changes: Any) -> Startup | None:

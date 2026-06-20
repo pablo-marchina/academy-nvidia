@@ -1,4 +1,5 @@
 """Show calibrated values from baseline evaluation."""
+
 from __future__ import annotations
 
 import sys
@@ -13,18 +14,18 @@ result = run_startup_scoring_baseline_calibration()
 best_ai_idx = result.best_ai_candidate_index
 if best_ai_idx is not None:
     bc = result.ai_candidates[best_ai_idx]
-    print("AI Native best weights (candidate {}):".format(best_ai_idx))
+    print(f"AI Native best weights (candidate {best_ai_idx}):")
     for k, v in bc.weights.items():
-        print("  {}: {}".format(k, v))
-    print("  (sum: {:.4f})".format(sum(bc.weights.values())))
+        print(f"  {k}: {v}")
+    print(f"  (sum: {sum(bc.weights.values()):.4f})")
 
 best_nv_idx = result.best_nv_candidate_index
 if best_nv_idx is not None:
     bc = result.nv_candidates[best_nv_idx]
-    print("\nNVIDIA Fit best weights (candidate {}):".format(best_nv_idx))
+    print(f"\nNVIDIA Fit best weights (candidate {best_nv_idx}):")
     for k, v in bc.weights.items():
-        print("  {}: {}".format(k, v))
-    print("  (sum: {:.4f})".format(sum(bc.weights.values())))
+        print(f"  {k}: {v}")
+    print(f"  (sum: {sum(bc.weights.values()):.4f})")
 
 if result.ai_threshold:
     print("\nAI threshold: {}".format(result.ai_threshold.get("threshold")))

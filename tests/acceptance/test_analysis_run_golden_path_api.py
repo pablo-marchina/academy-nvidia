@@ -17,32 +17,40 @@ from fastapi.testclient import TestClient
 
 from src.api.main import app
 from src.database.models import ActionBriefRecord, AnalysisRun, WorkflowRun
-from src.database.session import configure_product_database, get_db_session, reset_product_database_runtime
+from src.database.session import (
+    configure_product_database,
+    get_db_session,
+    reset_product_database_runtime,
+)
 from src.orchestration.state import ProductWorkflowState
 from src.services.product.readiness_service import ProductReadinessReport
 
 _READY_REPORT = ProductReadinessReport(ready=True)
 
-REQUIRED_EXECUTED_NODES = frozenset({
-    "preflight_configuration_check",
-    "validate_evidence",
-    "retrieve_nvidia_context",
-    "rank_recommendations",
-    "generate_brief",
-    "run_quality_gates",
-})
+REQUIRED_EXECUTED_NODES = frozenset(
+    {
+        "preflight_configuration_check",
+        "validate_evidence",
+        "retrieve_nvidia_context",
+        "rank_recommendations",
+        "generate_brief",
+        "run_quality_gates",
+    }
+)
 
-ACTION_BRIEF_REQUIRED_KEYS = frozenset({
-    "summary",
-    "top_recommendations",
-    "evidence_summary",
-    "rag_summary",
-    "risks",
-    "next_best_actions",
-    "confidence",
-    "generated_from",
-    "audit_flags",
-})
+ACTION_BRIEF_REQUIRED_KEYS = frozenset(
+    {
+        "summary",
+        "top_recommendations",
+        "evidence_summary",
+        "rag_summary",
+        "risks",
+        "next_best_actions",
+        "confidence",
+        "generated_from",
+        "audit_flags",
+    }
+)
 
 
 @pytest.fixture(autouse=True)
@@ -56,12 +64,14 @@ def _mock_readiness() -> Iterator[None]:
 
 @pytest.fixture
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
-    monkeypatch.setenv("APP_MODE", "product")
+    monkeypatch.setenv("APP_MODE", "test")
     monkeypatch.setenv("ENABLE_PRODUCT_PERSISTENCE", "true")
     monkeypatch.setenv("QDRANT_URL", "")
     monkeypatch.setenv("RAG_REQUIRED_FOR_PRODUCT", "false")
     monkeypatch.setenv("PRODUCT_DATA_DIR", str(tmp_path / "product_data"))
-    configure_product_database(f"sqlite:///{(tmp_path / 'analysis_run_golden.db').as_posix()}")
+    db_url = f"sqlite:///{(tmp_path / 'analysis_run_golden.db').as_posix()}"
+    monkeypatch.setenv("PRODUCT_DB_URL", db_url)
+    configure_product_database(db_url)
     with TestClient(app) as test_client:
         yield test_client
     reset_product_database_runtime()
@@ -254,7 +264,11 @@ def _create_action_brief_record(session, analysis_run_id: str) -> str:
                 "blockers": [],
                 "quality_gate_status": "passed",
             },
-            "quality_gate_snapshot": {"status": "passed", "failed_checks": [], "warning_checks": []},
+            "quality_gate_snapshot": {
+                "status": "passed",
+                "failed_checks": [],
+                "warning_checks": [],
+            },
             "calibration_snapshot": {
                 "calibration_decision_count": 1,
                 "missing_calibration_count": 0,
@@ -397,7 +411,7 @@ class TestAnalysisRunGoldenPath:
             resp = client.post("/analysis-runs", json={"startup_id": startup_id})
 
         assert "Traceback" not in resp.text
-        assert "File \"" not in resp.text
+        assert 'File "' not in resp.text
 
     # --- GET /analysis-runs/{run_id} ---
 

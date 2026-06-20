@@ -46,7 +46,7 @@ def spearman(x: list[float], y: list[float]) -> float:
 
 
 def reclassify_rate(before: list[str], after: list[str]) -> float:
-    return sum(1 for b, a in zip(before, after) if b != a) / len(before)
+    return sum(1 for b, a in zip(before, after, strict=False) if b != a) / len(before)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -59,13 +59,15 @@ def _synthetic_retrieval() -> list[dict[str, float]]:
     n = random.randint(10, 30)
     chunks: list[dict[str, float]] = []
     for i in range(n):
-        chunks.append({
-            "chunk_id": float(i),
-            "score_dense": random.random(),
-            "score_sparse": random.random(),
-            "in_dense": random.random() < 0.8,
-            "in_sparse": random.random() < 0.8,
-        })
+        chunks.append(
+            {
+                "chunk_id": float(i),
+                "score_dense": random.random(),
+                "score_sparse": random.random(),
+                "in_dense": random.random() < 0.8,
+                "in_sparse": random.random() < 0.8,
+            }
+        )
     return chunks
 
 
@@ -99,16 +101,16 @@ def study_fusion_weight() -> dict[str, Any]:
             pert_scores = rrf(retrieval, dw, sw, 60)
             if len(retrieval) >= 3:
                 rhos.append(spearman(base_scores, pert_scores))
-        results["perturbations"].append({
-            "dense_weight": dw,
-            "sparse_weight": sw,
-            "spearman_r_mean": round(sum(rhos) / len(rhos), 6) if rhos else 0.0,
-            "spearman_r_min": round(min(rhos), 6) if rhos else 0.0,
-        })
+        results["perturbations"].append(
+            {
+                "dense_weight": dw,
+                "sparse_weight": sw,
+                "spearman_r_mean": round(sum(rhos) / len(rhos), 6) if rhos else 0.0,
+                "spearman_r_min": round(min(rhos), 6) if rhos else 0.0,
+            }
+        )
 
-    results["min_spearman_rho"] = round(min(
-        p["spearman_r_mean"] for p in results["perturbations"]
-    ), 6)
+    results["min_spearman_rho"] = round(min(p["spearman_r_mean"] for p in results["perturbations"]), 6)
     return results
 
 
@@ -134,11 +136,13 @@ def study_rrf_k() -> dict[str, Any]:
             pert_scores = rrf(retrieval, 0.5, 0.5, k)
             if len(retrieval) >= 3:
                 rhos.append(spearman(base_scores, pert_scores))
-        results["sweep"].append({
-            "k": k,
-            "spearman_r_mean": round(sum(rhos) / len(rhos), 6) if rhos else 0.0,
-            "spearman_r_min": round(min(rhos), 6) if rhos else 0.0,
-        })
+        results["sweep"].append(
+            {
+                "k": k,
+                "spearman_r_mean": round(sum(rhos) / len(rhos), 6) if rhos else 0.0,
+                "spearman_r_min": round(min(rhos), 6) if rhos else 0.0,
+            }
+        )
 
     min_rho = min(p["spearman_r_mean"] for p in results["sweep"])
     results["min_spearman_rho"] = round(min_rho, 6)
@@ -243,16 +247,18 @@ def study_rerank_params() -> dict[str, Any]:
             pert_scores = rerank(chunks, cfg)
             pert_rank = _rank(pert_scores)
             pert_labels = [_rerank_label(s) for s in pert_scores]
-            results["perturbations"].append({
-                "parameter": pname,
-                "original": BASELINE[pname],
-                "multiplier": multiplier,
-                "shift": label,
-                "shifted_to": cfg[pname],
-                "spearman_rho": round(spearman(base_rank, pert_rank), 6),
-                "reclassification_rate": round(reclassify_rate(base_labels, pert_labels), 6),
-                "new_distribution": dict(Counter(pert_labels)),
-            })
+            results["perturbations"].append(
+                {
+                    "parameter": pname,
+                    "original": BASELINE[pname],
+                    "multiplier": multiplier,
+                    "shift": label,
+                    "shifted_to": cfg[pname],
+                    "spearman_rho": round(spearman(base_rank, pert_rank), 6),
+                    "reclassification_rate": round(reclassify_rate(base_labels, pert_labels), 6),
+                    "new_distribution": dict(Counter(pert_labels)),
+                }
+            )
 
     # Ablation: set each parameter to 0
     for pname in params:
@@ -261,14 +267,16 @@ def study_rerank_params() -> dict[str, Any]:
         pert_scores = rerank(chunks, cfg)
         pert_rank = _rank(pert_scores)
         pert_labels = [_rerank_label(s) for s in pert_scores]
-        results["ablations"].append({
-            "parameter": pname,
-            "original": BASELINE[pname],
-            "ablated_to": 0.0,
-            "spearman_rho": round(spearman(base_rank, pert_rank), 6),
-            "reclassification_rate": round(reclassify_rate(base_labels, pert_labels), 6),
-            "new_distribution": dict(Counter(pert_labels)),
-        })
+        results["ablations"].append(
+            {
+                "parameter": pname,
+                "original": BASELINE[pname],
+                "ablated_to": 0.0,
+                "spearman_rho": round(spearman(base_rank, pert_rank), 6),
+                "reclassification_rate": round(reclassify_rate(base_labels, pert_labels), 6),
+                "new_distribution": dict(Counter(pert_labels)),
+            }
+        )
 
     # Full ablation: all parameters set to 0
     cfg = dict(BASELINE)
@@ -285,9 +293,7 @@ def study_rerank_params() -> dict[str, Any]:
         "new_distribution": dict(Counter(all_labels)),
     }
 
-    results["min_spearman_rho"] = round(min(
-        p["spearman_rho"] for p in results["perturbations"]
-    ), 6)
+    results["min_spearman_rho"] = round(min(p["spearman_rho"] for p in results["perturbations"]), 6)
 
     return results
 
@@ -307,8 +313,10 @@ def main() -> None:
     r1 = study_fusion_weight()
     all_results["fusion_weight"] = r1
     for p in r1["perturbations"]:
-        print(f"  dense={p['dense_weight']:g} sparse={p['sparse_weight']:g}:  "
-              f"rho_mean={p['spearman_r_mean']:.6f}  rho_min={p['spearman_r_min']:.6f}")
+        print(
+            f"  dense={p['dense_weight']:g} sparse={p['sparse_weight']:g}:  "
+            f"rho_mean={p['spearman_r_mean']:.6f}  rho_min={p['spearman_r_min']:.6f}"
+        )
     print()
 
     print("=" * 60)
@@ -327,18 +335,21 @@ def main() -> None:
     r3 = study_rerank_params()
     all_results["rerank_parameters"] = r3
     print(f"  Baseline distribution: {r3['baseline_distribution']}")
-    print(f"  Perturbations:")
+    print("  Perturbations:")
     for p in r3["perturbations"]:
-        print(f"    {p['parameter']:.<35s} {p['original']:g} -> {p['shifted_to']:g}  "
-              f"({p['shift']}): rho={p['spearman_rho']:.6f}  reclass={p['reclassification_rate']:.2%}")
-    print(f"  Ablations (set to 0):")
+        print(
+            f"    {p['parameter']:.<35s} {p['original']:g} -> {p['shifted_to']:g}  "
+            f"({p['shift']}): rho={p['spearman_rho']:.6f}  reclass={p['reclassification_rate']:.2%}"
+        )
+    print("  Ablations (set to 0):")
     for a in r3["ablations"]:
-        print(f"    {a['parameter']:.<35s} {a['original']:g} -> 0:  "
-              f"rho={a['spearman_rho']:.6f}  reclass={a['reclassification_rate']:.2%}")
-    print(f"  Full ablation (all -> 0):")
+        print(
+            f"    {a['parameter']:.<35s} {a['original']:g} -> 0:  "
+            f"rho={a['spearman_rho']:.6f}  reclass={a['reclassification_rate']:.2%}"
+        )
+    print("  Full ablation (all -> 0):")
     f = r3["full_ablation"]
-    print(f"    {'all parameters':.<35s} rho={f['spearman_rho']:.6f}  "
-          f"reclass={f['reclassification_rate']:.2%}")
+    print(f"    {'all parameters':.<35s} rho={f['spearman_rho']:.6f}  " f"reclass={f['reclassification_rate']:.2%}")
     print(f"    distribution: {f['baseline_distribution']} -> {f['new_distribution']}")
     print()
 

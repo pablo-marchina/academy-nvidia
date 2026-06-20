@@ -59,9 +59,7 @@ class StartupDiscoveryService:
             source_id=source_id,
             query_json={"type": "manual_seed", "entry_count": len(seed_entries)},
         )
-        self.repo.update_discovery_run_status(
-            run.id, status="running", started_at=datetime.now(UTC)
-        )
+        self.repo.update_discovery_run_status(run.id, status="running", started_at=datetime.now(UTC))
         self.session.commit()
 
         try:
@@ -163,9 +161,7 @@ class StartupDiscoveryService:
             source_id=source_id,
             query_json={"type": "url_list", "url_count": len(urls)},
         )
-        self.repo.update_discovery_run_status(
-            run.id, status="running", started_at=datetime.now(UTC)
-        )
+        self.repo.update_discovery_run_status(run.id, status="running", started_at=datetime.now(UTC))
         self.session.commit()
 
         try:
@@ -338,9 +334,7 @@ class StartupDiscoveryService:
             }
 
         if candidate.status == "duplicate":
-            raise ValueError(
-                f"Candidate {candidate_id} is marked as duplicate and cannot be promoted."
-            )
+            raise ValueError(f"Candidate {candidate_id} is marked as duplicate and cannot be promoted.")
 
         existing = self.repo.find_existing_startup_match(
             normalized_name=candidate.normalized_name,
@@ -408,9 +402,7 @@ class StartupDiscoveryService:
 
         return {"duplicate_of_candidate_id": None, "duplicate_of_startup_id": None}
 
-    def persist_candidates(
-        self, candidates: list[dict[str, Any]]
-    ) -> list[StartupDiscoveryCandidate]:
+    def persist_candidates(self, candidates: list[dict[str, Any]]) -> list[StartupDiscoveryCandidate]:
         return self.repo.create_candidates_bulk(candidates)
 
     def _entry_to_candidate(
@@ -476,7 +468,9 @@ class StartupDiscoveryService:
             query_json={"type": "source_scraper", "source_id": source_id},
         )
         self.repo.update_discovery_run_status(
-            run.id, status="running", started_at=datetime.now(UTC),
+            run.id,
+            status="running",
+            started_at=datetime.now(UTC),
         )
         self.session.commit()
 

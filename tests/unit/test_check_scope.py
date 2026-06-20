@@ -7,9 +7,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parent.parent.parent / "scripts"
 CHECK_SCOPE = SCRIPTS_DIR / "check_scope.py"
 
 
-def run_check_scope(
-    args: list[str] | None = None, cwd: Path | None = None
-) -> subprocess.CompletedProcess:
+def run_check_scope(args: list[str] | None = None, cwd: Path | None = None) -> subprocess.CompletedProcess:
     cmd = ["python", str(CHECK_SCOPE)]
     if cwd:
         cmd.extend(["--repo-path", str(cwd)])
@@ -83,14 +81,10 @@ def test_check_scope_requires_evals_when_src_changes(tmp_path: Path):
         cwd=repo,
         check=True,
     )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"], capture_output=True, text=True, cwd=repo, check=True
-    )
+    subprocess.run(["git", "config", "user.name", "Test"], capture_output=True, text=True, cwd=repo, check=True)
     (repo / "README.md").write_text("# Test")
     subprocess.run(["git", "add", "."], capture_output=True, text=True, cwd=repo, check=True)
-    subprocess.run(
-        ["git", "commit", "-m", "init"], capture_output=True, text=True, cwd=repo, check=True
-    )
+    subprocess.run(["git", "commit", "-m", "init"], capture_output=True, text=True, cwd=repo, check=True)
     (repo / "src" / "pipeline" / "test.txt").parent.mkdir(parents=True, exist_ok=True)
     (repo / "src" / "pipeline" / "test.txt").write_text("change")
     result = run_check_scope(cwd=repo)
@@ -110,14 +104,10 @@ def test_check_scope_override_flag(tmp_path: Path):
         cwd=repo,
         check=True,
     )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"], capture_output=True, text=True, cwd=repo, check=True
-    )
+    subprocess.run(["git", "config", "user.name", "Test"], capture_output=True, text=True, cwd=repo, check=True)
     (repo / "README.md").write_text("# Test")
     subprocess.run(["git", "add", "."], capture_output=True, text=True, cwd=repo, check=True)
-    subprocess.run(
-        ["git", "commit", "-m", "init"], capture_output=True, text=True, cwd=repo, check=True
-    )
+    subprocess.run(["git", "commit", "-m", "init"], capture_output=True, text=True, cwd=repo, check=True)
     (repo / "src" / "rag" / "test.txt").parent.mkdir(parents=True, exist_ok=True)
     (repo / "src" / "rag" / "test.txt").write_text("rag change")
     result = run_check_scope(cwd=repo)
@@ -147,14 +137,10 @@ def test_check_scope_contract_required_for_src_rag(tmp_path: Path):
         cwd=repo,
         check=True,
     )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"], capture_output=True, text=True, cwd=repo, check=True
-    )
+    subprocess.run(["git", "config", "user.name", "Test"], capture_output=True, text=True, cwd=repo, check=True)
     (repo / "README.md").write_text("# Test")
     subprocess.run(["git", "add", "."], capture_output=True, text=True, cwd=repo, check=True)
-    subprocess.run(
-        ["git", "commit", "-m", "init"], capture_output=True, text=True, cwd=repo, check=True
-    )
+    subprocess.run(["git", "commit", "-m", "init"], capture_output=True, text=True, cwd=repo, check=True)
     (repo / "src" / "rag" / "test.txt").parent.mkdir(parents=True, exist_ok=True)
     (repo / "src" / "rag" / "test.txt").write_text("rag change")
     (repo / "ROADMAP.md").write_text("# ROADMAP")
@@ -175,14 +161,10 @@ def test_check_scope_contract_override(tmp_path: Path):
         cwd=repo,
         check=True,
     )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"], capture_output=True, text=True, cwd=repo, check=True
-    )
+    subprocess.run(["git", "config", "user.name", "Test"], capture_output=True, text=True, cwd=repo, check=True)
     (repo / "README.md").write_text("# Test")
     subprocess.run(["git", "add", "."], capture_output=True, text=True, cwd=repo, check=True)
-    subprocess.run(
-        ["git", "commit", "-m", "init"], capture_output=True, text=True, cwd=repo, check=True
-    )
+    subprocess.run(["git", "commit", "-m", "init"], capture_output=True, text=True, cwd=repo, check=True)
     (repo / "src" / "rag" / "test.txt").parent.mkdir(parents=True, exist_ok=True)
     (repo / "src" / "rag" / "test.txt").write_text("rag change")
     (repo / "ROADMAP.md").write_text("# ROADMAP")

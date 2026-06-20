@@ -7,7 +7,7 @@ blocks with ``score_status="blocked_uncalibrated_weights"`` otherwise.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -19,7 +19,7 @@ from src.quality.decision_calibration_registry import (
     get_project_decision_inventory,
     validate_decision_for_production,
 )
-from src.quantitative.params import CONFIDENCE_FLOAT_MAP, CONFIDENCE_SCORE_FACTORS
+from src.quantitative.params import CONFIDENCE_FLOAT_MAP
 
 EVIDENCE_CONFIDENCE_WEIGHTS_DECISION_ID = "weight.evidence_confidence_score.weights"
 EVIDENCE_CONFIDENCE_THRESHOLD_DECISION_ID = "threshold.evidence_confidence_score.production_min"
@@ -92,9 +92,7 @@ def _lookup_evidence_confidence_weights(
                 )
                 return None, rec.calibration_status.value, False, blockers
             return rec.current_value, rec.calibration_status.value, rec.production_allowed, blockers
-    blockers.append(
-        f"Decision '{EVIDENCE_CONFIDENCE_WEIGHTS_DECISION_ID}' not found in registry"
-    )
+    blockers.append(f"Decision '{EVIDENCE_CONFIDENCE_WEIGHTS_DECISION_ID}' not found in registry")
     return None, ScoreCalibrationStatus.UNCALIBRATED.value, False, blockers
 
 
@@ -127,7 +125,7 @@ def extract_evidence_confidence_features(
     validated_evidence: dict[str, Any] | None = None,
     now: datetime | None = None,
 ) -> EvidenceConfidenceFeatures:
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
 
     source_qs = float(evidence_item.get("source_quality_score", 0.5))
 
@@ -205,11 +203,7 @@ def _compute_weighted_score(
     if features.evidence_recency_days is not None:
         feature_values["evidence_recency_days"] = max(0.0, 1.0 - features.evidence_recency_days / 365.0)
 
-    raw = sum(
-        weights.get(k, 0.0) * v
-        for k, v in feature_values.items()
-        if k in weights
-    )
+    raw = sum(weights.get(k, 0.0) * v for k, v in feature_values.items() if k in weights)
     raw /= weight_sum
     return max(0.0, min(1.0, raw))
 
@@ -220,9 +214,7 @@ def compute_evidence_confidence_score(
     inventory: list[DecisionCalibrationRecord] | None = None,
     now: datetime | None = None,
 ) -> EvidenceConfidenceScoreResult:
-    features = extract_evidence_confidence_features(
-        evidence_item, validated_evidence=validated_evidence, now=now
-    )
+    features = extract_evidence_confidence_features(evidence_item, validated_evidence=validated_evidence, now=now)
     weights, cal_status, prod_allowed, blockers = _lookup_evidence_confidence_weights(inventory=inventory)
 
     if weights is None:

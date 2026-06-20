@@ -14,7 +14,8 @@ class AceScraper(SourceScraper):
         entries: list[dict[str, Any]] = []
         for match in re.finditer(
             r"(?:startup|portfolio|empresa)\s*[:\-]\s*([A-Z][A-Za-z0-9\s\.]+)",
-            html, re.IGNORECASE,
+            html,
+            re.IGNORECASE,
         ):
             name = match.group(1).strip()
             entries.append({"name": name, "source_id": self.source_id})

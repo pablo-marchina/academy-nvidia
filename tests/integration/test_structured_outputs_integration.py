@@ -92,9 +92,7 @@ class TestDossierSchemaValidation:
         )
         assert result.status == "invalid"
 
-    def test_readiness_check_created_for_invalid(
-        self, session: Session, analysis_run: AnalysisRun
-    ) -> None:
+    def test_readiness_check_created_for_invalid(self, session: Session, analysis_run: AnalysisRun) -> None:
         result = run_validation_with_repair(
             SampleDossierSchema,
             {"startup_name": "x", "recommended_motion": ""},
@@ -107,9 +105,7 @@ class TestDossierSchemaValidation:
     def test_quality_metrics_from_dossier_validation(self) -> None:
         from src.evaluation.structured_outputs import quality_metrics_from_results
 
-        r1 = run_validation_with_repair(
-            SampleDossierSchema, {"startup_name": "a", "recommended_motion": "poc"}
-        )
+        r1 = run_validation_with_repair(SampleDossierSchema, {"startup_name": "a", "recommended_motion": "poc"})
         r2 = run_validation_with_repair(SampleDossierSchema, {"startup_name": "b"})
         metrics = quality_metrics_from_results([r1, r2])
         assert metrics["structured_output_valid_rate"] >= 0.5

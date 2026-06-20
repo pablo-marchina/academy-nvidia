@@ -7,15 +7,16 @@ order, that run_id is preserved, and that the final status is explicit.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Generator
-from unittest.mock import ANY, MagicMock, patch
-
-import src.agents.graph as agent_graph
-from langgraph.types import Command
+from datetime import UTC, datetime
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
+from langgraph.types import Command
 
+import src.agents.graph as agent_graph
 from src.agents.graph import NODE_NAMES, build_startup_radar_graph
 from src.scraping.fetcher import FetchResult
 from src.services.product.readiness_service import ProductReadinessReport
@@ -142,9 +143,11 @@ def test_graph_compiles() -> None:
 
 
 def test_happy_path_executes_all_nodes_in_order() -> None:
-    mock_rag = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=["ctx"],
-    ))
+    mock_rag = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=["ctx"],
+        )
+    )
     mock_brief = MagicMock(return_value=("# Brief\n\ncontent", []))
     graph = build_startup_radar_graph(
         rag_service=mock_rag,
@@ -159,19 +162,21 @@ def test_happy_path_executes_all_nodes_in_order() -> None:
     assert len(executed) >= len(NODE_NAMES)
     expected = [n for n in executed if n != "needs_review"]
     assert expected == NODE_NAMES
-    
-    
+
+
 def test_run_id_preserved() -> None:
     graph = build_startup_radar_graph()
     result = graph.invoke({"run_id": "preserve-me-42"})
     state = _state_of(result)
     assert state["run_id"] == "preserve-me-42"
-    
-    
+
+
 def test_graph_skeleton_completes_with_all_nodes() -> None:
-    mock_rag = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=["ctx"],
-    ))
+    mock_rag = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=["ctx"],
+        )
+    )
     mock_brief = MagicMock(return_value=("# Brief\n\ncontent", []))
     graph = build_startup_radar_graph(
         rag_service=mock_rag,
@@ -186,17 +191,20 @@ def test_graph_skeleton_completes_with_all_nodes() -> None:
     assert "run_id" in state
 
 
-@pytest.mark.parametrize("field", [
-    "evidence_items",
-    "claims",
-    "scores",
-    "gaps",
-    "rag_contexts",
-    "rag_metrics",
-    "recommendations",
-    "search_plan_metrics",
-    "search_plan",
-])
+@pytest.mark.parametrize(
+    "field",
+    [
+        "evidence_items",
+        "claims",
+        "scores",
+        "gaps",
+        "rag_contexts",
+        "rag_metrics",
+        "recommendations",
+        "search_plan_metrics",
+        "search_plan",
+    ],
+)
 def test_accumulated_fields_are_present(field: str) -> None:
     mock_rag = MagicMock(return_value=(["ctx"], []))
     mock_brief = MagicMock(return_value=("# Brief\n\ncontent", []))
@@ -264,12 +272,14 @@ def test_plan_search_includes_configured_sources() -> None:
 def test_plan_search_with_website_url() -> None:
     from src.agents.graph import _plan_search
 
-    result = _plan_search({
-        "run_id": "ps-url-001",
-        "startup_name": None,
-        "website_url": "https://minha-startup.ai",
-        "executed_nodes": ["preflight_configuration_check"],
-    })
+    result = _plan_search(
+        {
+            "run_id": "ps-url-001",
+            "startup_name": None,
+            "website_url": "https://minha-startup.ai",
+            "executed_nodes": ["preflight_configuration_check"],
+        }
+    )
     sp = result.get("search_plan", {})
     assert isinstance(sp, dict)
     assert sp.get("run_id") == "ps-url-001"
@@ -283,10 +293,12 @@ def test_plan_search_with_website_url() -> None:
 def test_plan_search_needs_review_without_name_and_url() -> None:
     from src.agents.graph import _plan_search
 
-    result = _plan_search({
-        "run_id": "ps-nodata-001",
-        "executed_nodes": [],
-    })
+    result = _plan_search(
+        {
+            "run_id": "ps-nodata-001",
+            "executed_nodes": [],
+        }
+    )
     assert result.get("status") == "search_plan_needs_review"
     assert result.get("review_required") is True
     metrics = result.get("search_plan_metrics", {})
@@ -297,13 +309,15 @@ def test_plan_search_needs_review_without_name_and_url() -> None:
 def test_plan_search_includes_retry_context() -> None:
     from src.agents.graph import _plan_search
 
-    result = _plan_search({
-        "run_id": "ps-retry-001",
-        "startup_name": "RetryAI",
-        "evidence_request_reason": "Need more funding sources",
-        "evidence_retry_count": 1,
-        "executed_nodes": [],
-    })
+    result = _plan_search(
+        {
+            "run_id": "ps-retry-001",
+            "startup_name": "RetryAI",
+            "evidence_request_reason": "Need more funding sources",
+            "evidence_retry_count": 1,
+            "executed_nodes": [],
+        }
+    )
     sp = result.get("search_plan", {})
     rc = sp.get("retry_context")
     assert rc is not None
@@ -317,13 +331,15 @@ def test_plan_search_includes_retry_context() -> None:
 def test_plan_search_blocks_on_max_retries_exceeded() -> None:
     from src.agents.graph import _plan_search
 
-    result = _plan_search({
-        "run_id": "ps-blocked-001",
-        "startup_name": "BlockedAI",
-        "evidence_retry_count": 3,
-        "max_evidence_retries": 2,
-        "executed_nodes": [],
-    })
+    result = _plan_search(
+        {
+            "run_id": "ps-blocked-001",
+            "startup_name": "BlockedAI",
+            "evidence_retry_count": 3,
+            "max_evidence_retries": 2,
+            "executed_nodes": [],
+        }
+    )
     assert result.get("status") == "max_evidence_retries_reached"
     blockers = result.get("blockers", [])
     assert "max_evidence_retries_reached" in blockers
@@ -335,26 +351,37 @@ def test_plan_search_blocks_on_max_retries_exceeded() -> None:
 def test_search_plan_metrics_exist() -> None:
     from src.agents.graph import _plan_search
 
-    result = _plan_search({
-        "run_id": "ps-metrics-001",
-        "startup_name": "MetricAI",
-        "executed_nodes": [],
-    })
+    result = _plan_search(
+        {
+            "run_id": "ps-metrics-001",
+            "startup_name": "MetricAI",
+            "executed_nodes": [],
+        }
+    )
     metrics = result.get("search_plan_metrics", {})
     assert isinstance(metrics, dict)
-    for key in ("query_count", "target_source_type_count", "required_evidence_type_count",
-                "max_sources", "max_depth", "evidence_retry_count", "planning_status"):
+    for key in (
+        "query_count",
+        "target_source_type_count",
+        "required_evidence_type_count",
+        "max_sources",
+        "max_depth",
+        "evidence_retry_count",
+        "planning_status",
+    ):
         assert key in metrics, f"Missing metric key: {key}"
 
 
 def test_plan_search_query_count_correct() -> None:
     from src.agents.graph import _plan_search
 
-    result = _plan_search({
-        "run_id": "ps-qcount-001",
-        "startup_name": "QueryCountAI",
-        "executed_nodes": [],
-    })
+    result = _plan_search(
+        {
+            "run_id": "ps-qcount-001",
+            "startup_name": "QueryCountAI",
+            "executed_nodes": [],
+        }
+    )
     sp = result.get("search_plan", {})
     queries = sp.get("search_queries", [])
     metrics = result.get("search_plan_metrics", {})
@@ -365,11 +392,13 @@ def test_plan_search_query_count_correct() -> None:
 def test_plan_search_run_id_preserved_in_plan() -> None:
     from src.agents.graph import _plan_search
 
-    result = _plan_search({
-        "run_id": "preserve-ps-001",
-        "startup_name": "PreserveAI",
-        "executed_nodes": [],
-    })
+    result = _plan_search(
+        {
+            "run_id": "preserve-ps-001",
+            "startup_name": "PreserveAI",
+            "executed_nodes": [],
+        }
+    )
     sp = result.get("search_plan", {})
     assert sp.get("run_id") == "preserve-ps-001"
 
@@ -378,11 +407,13 @@ def test_plan_search_no_real_llm_qdrant_scraping() -> None:
     """Unit test validates the node does not trigger external services."""
     from src.agents.graph import _plan_search
 
-    result = _plan_search({
-        "run_id": "ps-noext-001",
-        "startup_name": "NoExtAI",
-        "executed_nodes": [],
-    })
+    result = _plan_search(
+        {
+            "run_id": "ps-noext-001",
+            "startup_name": "NoExtAI",
+            "executed_nodes": [],
+        }
+    )
     assert result.get("status") == "search_plan_ready"
     assert "plan_search" in result.get("executed_nodes", [])
     sp = result.get("search_plan", {})
@@ -406,7 +437,6 @@ _SOURCE_RECORD_KWARGS: dict[str, Any] = {
     "production_enabled": True,
 }
 
-from datetime import UTC, datetime
 _TEST_NOW = datetime.now(UTC)
 _TEST_HTML = "<html><body><p>Acme AI is a Brazilian startup building ML solutions.</p></body></html>"
 
@@ -447,16 +477,18 @@ def test_collect_sources_fetches_and_parses(
     mock_fetch.return_value = FetchResult(
         url="https://example.com",
         status=200,
-            raw_html="<html><body><p>Hello from example</p></body></html>",
+        raw_html="<html><body><p>Hello from example</p></body></html>",
         fetched_at=_TEST_NOW,
         error=None,
     )
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "c-001",
-        "startup_name": "ExampleAI",
-        "website_url": "https://example.com",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "c-001",
+            "startup_name": "ExampleAI",
+            "website_url": "https://example.com",
+        }
+    )
     state = _state_of(result)
     assert len(state.get("evidence_items", [])) >= 1
     item = state["evidence_items"][0]
@@ -488,11 +520,13 @@ def test_collect_sources_handles_fetch_errors(
         error="Connection refused",
     )
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "c-002",
-        "startup_name": "FailAI",
-        "website_url": "https://example.com",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "c-002",
+            "startup_name": "FailAI",
+            "website_url": "https://example.com",
+        }
+    )
     state = _state_of(result)
     assert state.get("evidence_items") == []
     errors = state.get("blockers", [])
@@ -505,11 +539,13 @@ def test_collect_sources_blocked_when_no_enabled_sources(
 ) -> None:
     mock_list_sources.return_value = []
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "c-003",
-        "startup_name": "NoSourcesAI",
-        "website_url": "https://example.com",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "c-003",
+            "startup_name": "NoSourcesAI",
+            "website_url": "https://example.com",
+        }
+    )
     state = _state_of(result)
     assert state.get("evidence_items") == []
     assert state.get("collection_status") == "collection_blocked"
@@ -534,11 +570,13 @@ def test_collect_sources_fills_collection_metrics(
         error=None,
     )
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "c-004",
-        "startup_name": "MetricAI",
-        "website_url": "https://example.com",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "c-004",
+            "startup_name": "MetricAI",
+            "website_url": "https://example.com",
+        }
+    )
     state = _state_of(result)
     metrics = state.get("collection_metrics", {})
     assert metrics.get("fetched_sources_count", 0) >= 1
@@ -565,11 +603,13 @@ def test_collect_sources_fills_raw_evidence_candidates(
         error=None,
     )
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "c-005",
-        "startup_name": "EvidenceAI",
-        "website_url": "https://example.com",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "c-005",
+            "startup_name": "EvidenceAI",
+            "website_url": "https://example.com",
+        }
+    )
     state = _state_of(result)
     candidates = state.get("raw_evidence_candidates", [])
     assert len(candidates) >= 1
@@ -598,15 +638,23 @@ def test_collect_sources_partial_failure_partial_status(
     def _side_effect(url: str, **kw: Any) -> FetchResult:
         if "fail" in url:
             return FetchResult(url=url, status=None, raw_html="", fetched_at=_TEST_NOW, error="Connection refused")
-        return FetchResult(url=url, status=200, raw_html="<html><body><p>OK</p></body></html>", fetched_at=_TEST_NOW, error=None)
+        return FetchResult(
+            url=url,
+            status=200,
+            raw_html="<html><body><p>OK</p></body></html>",
+            fetched_at=_TEST_NOW,
+            error=None,
+        )
 
     mock_fetch.side_effect = _side_effect
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "c-006",
-        "startup_name": "PartialAI",
-        "website_url": "https://ok.example.com",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "c-006",
+            "startup_name": "PartialAI",
+            "website_url": "https://ok.example.com",
+        }
+    )
     state = _state_of(result)
     assert state.get("evidence_items") is not None
     assert state.get("collection_status") in ("partial", "sources_collected_partial")
@@ -632,11 +680,13 @@ def test_collect_sources_total_failure_creates_blocker(
         error="Connection refused",
     )
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "c-007",
-        "startup_name": "FailAI",
-        "website_url": "https://example.com",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "c-007",
+            "startup_name": "FailAI",
+            "website_url": "https://example.com",
+        }
+    )
     state = _state_of(result)
     assert state.get("collection_status") == "collection_failed"
     blockers = state.get("blockers", [])
@@ -649,10 +699,12 @@ def test_collect_sources_run_id_preserved(
 ) -> None:
     mock_list_sources.return_value = []
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "preserve-collect-001",
-        "startup_name": "PreserveAI",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "preserve-collect-001",
+            "startup_name": "PreserveAI",
+        }
+    )
     state = _state_of(result)
     assert state["run_id"] == "preserve-collect-001"
     assert "collect_sources" in state.get("executed_nodes", [])
@@ -689,11 +741,13 @@ def test_collect_sources_production_enabled_only(
         error=None,
     )
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "c-008",
-        "startup_name": "FilterAI",
-        "website_url": "https://enabled.example.com",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "c-008",
+            "startup_name": "FilterAI",
+            "website_url": "https://enabled.example.com",
+        }
+    )
     state = _state_of(result)
     # Only enabled source should produce evidence
     items = state.get("evidence_items", [])
@@ -704,17 +758,20 @@ def test_collect_sources_production_enabled_only(
 
 def test_collect_sources_no_llm_qdrant_playwright() -> None:
     """Unit test validates _collect_sources does not import external services."""
-    from src.agents.graph import _collect_sources
     import sys
 
+    from src.agents.graph import _collect_sources
+
     before = set(sys.modules.keys())
-    _collect_sources({
-        "run_id": "safety-001",
-        "search_plan": {},
-        "evidence_retry_count": 0,
-        "max_evidence_retries": 3,
-        "executed_nodes": [],
-    })
+    _collect_sources(
+        {
+            "run_id": "safety-001",
+            "search_plan": {},
+            "evidence_retry_count": 0,
+            "max_evidence_retries": 3,
+            "executed_nodes": [],
+        }
+    )
     after = set(sys.modules.keys())
     new_imports = after - before
     banned = {"langchain", "qdrant_client", "playwright", "openai", "anthropic"}
@@ -743,11 +800,13 @@ def test_extract_profile_creates_claims_from_evidence(
     )
     _patch_enabled_source(mock_list_sources, mock_fetch, html=html)
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "ext-001",
-        "startup_name": "Acme AI",
-        "website_url": "https://acme-ai.com.br",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "ext-001",
+            "startup_name": "Acme AI",
+            "website_url": "https://acme-ai.com.br",
+        }
+    )
     state = _state_of(result)
     executed = state.get("executed_nodes", [])
     assert "extract_profile" in executed
@@ -771,10 +830,12 @@ def test_extract_profile_creates_claims_from_evidence(
 
 def test_extract_profile_handles_empty_evidence() -> None:
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "ext-002",
-        "startup_name": "EmptyAI",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "ext-002",
+            "startup_name": "EmptyAI",
+        }
+    )
     state = _state_of(result)
     assert state.get("claims") == []
     assert state.get("raw_evidence") == []
@@ -864,11 +925,13 @@ def test_validate_evidence_classifies_claims(
     )
     _patch_enabled_source(mock_list_sources, mock_fetch, html=html)
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "val-001",
-        "startup_name": "Acme AI",
-        "website_url": "https://acme-ai.com.br",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "val-001",
+            "startup_name": "Acme AI",
+            "website_url": "https://acme-ai.com.br",
+        }
+    )
     state = _state_of(result)
     executed = state.get("executed_nodes", [])
     assert "validate_evidence" in executed
@@ -878,7 +941,12 @@ def test_validate_evidence_classifies_claims(
     first = claims[0]
     assert "claim_text" in first
     assert "support_status" in first
-    assert first["support_status"] in ("supported", "unsupported", "insufficient_evidence", "conflicting")
+    assert first["support_status"] in (
+        "supported",
+        "unsupported",
+        "insufficient_evidence",
+        "conflicting",
+    )
 
 
 @patch("src.extraction.extractor.extract_profile")
@@ -922,7 +990,9 @@ def test_validate_evidence_enriches_evidence_items(
                 claim="NLP APIs for healthcare",
                 source_url=HttpUrl("https://startupx.ai"),
                 source_type=SourceType.OFFICIAL_SITE,
-                quote_or_evidence="StartupX offers NLP APIs for healthcare. Founded by John Doe. Raised $2M seed round.",
+                quote_or_evidence=(
+                    "StartupX offers NLP APIs for healthcare. " "Founded by John Doe. Raised $2M seed round."
+                ),
                 confidence=ConfidenceLevel.MEDIUM,
                 collected_at=datetime.now(UTC),
             ),
@@ -930,27 +1000,29 @@ def test_validate_evidence_enriches_evidence_items(
     )
     mock_extract.return_value = fake_profile
     graph = build_startup_radar_graph()
-    result = graph.invoke({
-        "run_id": "val-002",
-        "startup_name": "StartupX",
-        "website_url": "https://startupx.ai",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "val-002",
+            "startup_name": "StartupX",
+            "website_url": "https://startupx.ai",
+        }
+    )
     state = _state_of(result)
     items = state.get("evidence_items", [])
     assert len(items) >= 1
     first = items[0]
-    assert "evidence_kind" in first, (
-        f"Expected evidence_kind in evidence_item, got keys: {list(first.keys())}"
-    )
+    assert "evidence_kind" in first, f"Expected evidence_kind in evidence_item, got keys: {list(first.keys())}"
     assert "validated_confidence" in first
 
 
 def test_validate_evidence_handles_empty_raw_evidence() -> None:
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "val-003",
-        "startup_name": "EmptyCo",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "val-003",
+            "startup_name": "EmptyCo",
+        }
+    )
     state = _state_of(result)
     assert state.get("claims") == []
     assert "validate_evidence" in state.get("executed_nodes", [])
@@ -975,11 +1047,13 @@ def test_validate_evidence_sets_unsupported_critical_claims_count(
     )
     _patch_enabled_source(mock_list_sources, mock_fetch, html=html)
     graph = build_startup_radar_graph()
-    result = graph.invoke({
-        "run_id": "val-004",
-        "startup_name": "Acme AI",
-        "website_url": "https://acme-ai.com.br",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "val-004",
+            "startup_name": "Acme AI",
+            "website_url": "https://acme-ai.com.br",
+        }
+    )
     state = _state_of(result)
     assert "unsupported_critical_claims_count" in state
     assert isinstance(state["unsupported_critical_claims_count"], int)
@@ -1005,17 +1079,21 @@ def test_validate_evidence_passes_when_claims_supported() -> None:
             "collected_at": "2024-01-01T00:00:00",
         }
     ]
-    evidence_items = [{
-        "url": "https://acme.ai",
-        "text": "Acme AI is a Brazilian startup building machine learning solutions for hospitals",
-    }]
+    evidence_items = [
+        {
+            "url": "https://acme.ai",
+            "text": "Acme AI is a Brazilian startup building machine learning solutions for hospitals",
+        }
+    ]
 
-    result = _validate_evidence({
-        "raw_evidence": raw_evidence,
-        "evidence_items": evidence_items,
-        "claims": [],
-        "executed_nodes": [],
-    })
+    result = _validate_evidence(
+        {
+            "raw_evidence": raw_evidence,
+            "evidence_items": evidence_items,
+            "claims": [],
+            "executed_nodes": [],
+        }
+    )
 
     # EC weights are uncalibrated by default -> blocked
     assert result["status"] == "evidence_scoring_uncalibrated"
@@ -1042,17 +1120,21 @@ def test_validate_evidence_blocks_production_ready_with_uncalibrated_scoring() -
             "collected_at": "2024-01-01T00:00:00",
         }
     ]
-    evidence_items = [{
-        "url": "https://acme.ai",
-        "text": "Acme AI is a Brazilian startup building machine learning solutions for hospitals",
-    }]
+    evidence_items = [
+        {
+            "url": "https://acme.ai",
+            "text": "Acme AI is a Brazilian startup building machine learning solutions for hospitals",
+        }
+    ]
 
-    result = _validate_evidence({
-        "raw_evidence": raw_evidence,
-        "evidence_items": evidence_items,
-        "claims": [],
-        "executed_nodes": [],
-    })
+    result = _validate_evidence(
+        {
+            "raw_evidence": raw_evidence,
+            "evidence_items": evidence_items,
+            "claims": [],
+            "executed_nodes": [],
+        }
+    )
 
     # EC weights are uncalibrated by default -> blocked
     assert result["status"] == "evidence_scoring_uncalibrated"
@@ -1072,44 +1154,66 @@ def test_validate_evidence_fails_when_critical_unsupported() -> None:
     )
 
     SQ_WEIGHTS: dict[str, float] = {
-        "source_authority_prior": 0.30, "robots_allowed": 0.10,
-        "compliance_status": 0.10, "fetch_success": 0.15,
-        "extraction_success": 0.10, "duplicate_status": 0.05,
-        "content_bytes": 0.05, "latency_ms": 0.05,
-        "source_freshness_days": 0.05, "source_independence_type": 0.05,
+        "source_authority_prior": 0.30,
+        "robots_allowed": 0.10,
+        "compliance_status": 0.10,
+        "fetch_success": 0.15,
+        "extraction_success": 0.10,
+        "duplicate_status": 0.05,
+        "content_bytes": 0.05,
+        "latency_ms": 0.05,
+        "source_freshness_days": 0.05,
+        "source_independence_type": 0.05,
     }
     EC_WEIGHTS: dict[str, float] = {
-        "source_quality_score": 0.15, "extraction_confidence": 0.15,
-        "snippet_length": 0.05, "text_specificity_score": 0.10,
-        "claim_support_count": 0.10, "supporting_source_count": 0.10,
-        "cross_source_agreement_count": 0.10, "contradiction_count": 0.05,
-        "factuality_status": 0.10, "duplicate_penalty": 0.05,
+        "source_quality_score": 0.15,
+        "extraction_confidence": 0.15,
+        "snippet_length": 0.05,
+        "text_specificity_score": 0.10,
+        "claim_support_count": 0.10,
+        "supporting_source_count": 0.10,
+        "cross_source_agreement_count": 0.10,
+        "contradiction_count": 0.05,
+        "factuality_status": 0.10,
+        "duplicate_penalty": 0.05,
         "unsupported_critical_claim_flag": 0.05,
     }
     _CALIBRATED_INVENTORY = [
         DecisionCalibrationRecord(
             decision_id="weight.source_quality_score.weights",
-            decision_name="SQ Weights", decision_type=DecisionType.WEIGHT,
-            current_value=SQ_WEIGHTS, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="SQ Weights",
+            decision_type=DecisionType.WEIGHT,
+            current_value=SQ_WEIGHTS,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.source_quality_score.production_min",
-            decision_name="SQ Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.65, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="SQ Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.65,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.evidence_confidence_score.weights",
-            decision_name="EC Weights", decision_type=DecisionType.WEIGHT,
-            current_value=EC_WEIGHTS, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="EC Weights",
+            decision_type=DecisionType.WEIGHT,
+            current_value=EC_WEIGHTS,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.evidence_confidence_score.production_min",
-            decision_name="EC Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.55, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="EC Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.55,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
     ]
 
@@ -1129,12 +1233,14 @@ def test_validate_evidence_fails_when_critical_unsupported() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=_CALIBRATED_INVENTORY,
     ):
-        result = _validate_evidence({
-            "raw_evidence": raw_evidence,
-            "evidence_items": evidence_items,
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": raw_evidence,
+                "evidence_items": evidence_items,
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
 
     assert result["status"] == "evidence_validation_failed"
     ev = result["evidence_validation"]
@@ -1158,29 +1264,39 @@ def test_validate_evidence_needs_review_empty_evidence_items() -> None:
     _CALIBRATED_FOR_REVIEW = [
         DecisionCalibrationRecord(
             decision_id="weight.source_quality_score.weights",
-            decision_name="SQ Weights", decision_type=DecisionType.WEIGHT,
+            decision_name="SQ Weights",
+            decision_type=DecisionType.WEIGHT,
             current_value={"source_authority_prior": 1.0},
             calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.source_quality_score.production_min",
-            decision_name="SQ Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.5, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="SQ Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.5,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.evidence_confidence_score.weights",
-            decision_name="EC Weights", decision_type=DecisionType.WEIGHT,
+            decision_name="EC Weights",
+            decision_type=DecisionType.WEIGHT,
             current_value={"source_quality_score": 1.0},
             calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.evidence_confidence_score.production_min",
-            decision_name="EC Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.5, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="EC Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.5,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
     ]
 
@@ -1188,12 +1304,14 @@ def test_validate_evidence_needs_review_empty_evidence_items() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=_CALIBRATED_FOR_REVIEW,
     ):
-        result = _validate_evidence({
-            "raw_evidence": [],
-            "evidence_items": [],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": [],
+                "evidence_items": [],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
 
     assert result["status"] == "evidence_needs_review"
     assert result["review_required"] is True
@@ -1215,29 +1333,39 @@ def test_validate_evidence_needs_review_empty_claims() -> None:
     _CALIBRATED_FOR_REVIEW = [
         DecisionCalibrationRecord(
             decision_id="weight.source_quality_score.weights",
-            decision_name="SQ Weights", decision_type=DecisionType.WEIGHT,
+            decision_name="SQ Weights",
+            decision_type=DecisionType.WEIGHT,
             current_value={"source_authority_prior": 1.0},
             calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.source_quality_score.production_min",
-            decision_name="SQ Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.5, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="SQ Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.5,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.evidence_confidence_score.weights",
-            decision_name="EC Weights", decision_type=DecisionType.WEIGHT,
+            decision_name="EC Weights",
+            decision_type=DecisionType.WEIGHT,
             current_value={"source_quality_score": 1.0},
             calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.evidence_confidence_score.production_min",
-            decision_name="EC Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.5, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="EC Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.5,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
     ]
 
@@ -1245,12 +1373,14 @@ def test_validate_evidence_needs_review_empty_claims() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=_CALIBRATED_FOR_REVIEW,
     ):
-        result = _validate_evidence({
-            "raw_evidence": [],
-            "evidence_items": [{"url": "https://a.com", "text": "text"}],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": [],
+                "evidence_items": [{"url": "https://a.com", "text": "text"}],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
 
     assert result["status"] == "evidence_needs_review"
     assert result["review_required"] is True
@@ -1270,44 +1400,66 @@ def test_validate_evidence_unsupported_critical_count_correct() -> None:
     )
 
     SQ_WEIGHTS: dict[str, float] = {
-        "source_authority_prior": 0.30, "robots_allowed": 0.10,
-        "compliance_status": 0.10, "fetch_success": 0.15,
-        "extraction_success": 0.10, "duplicate_status": 0.05,
-        "content_bytes": 0.05, "latency_ms": 0.05,
-        "source_freshness_days": 0.05, "source_independence_type": 0.05,
+        "source_authority_prior": 0.30,
+        "robots_allowed": 0.10,
+        "compliance_status": 0.10,
+        "fetch_success": 0.15,
+        "extraction_success": 0.10,
+        "duplicate_status": 0.05,
+        "content_bytes": 0.05,
+        "latency_ms": 0.05,
+        "source_freshness_days": 0.05,
+        "source_independence_type": 0.05,
     }
     EC_WEIGHTS: dict[str, float] = {
-        "source_quality_score": 0.15, "extraction_confidence": 0.15,
-        "snippet_length": 0.05, "text_specificity_score": 0.10,
-        "claim_support_count": 0.10, "supporting_source_count": 0.10,
-        "cross_source_agreement_count": 0.10, "contradiction_count": 0.05,
-        "factuality_status": 0.10, "duplicate_penalty": 0.05,
+        "source_quality_score": 0.15,
+        "extraction_confidence": 0.15,
+        "snippet_length": 0.05,
+        "text_specificity_score": 0.10,
+        "claim_support_count": 0.10,
+        "supporting_source_count": 0.10,
+        "cross_source_agreement_count": 0.10,
+        "contradiction_count": 0.05,
+        "factuality_status": 0.10,
+        "duplicate_penalty": 0.05,
         "unsupported_critical_claim_flag": 0.05,
     }
     _CALIBRATED_INVENTORY = [
         DecisionCalibrationRecord(
             decision_id="weight.source_quality_score.weights",
-            decision_name="SQ Weights", decision_type=DecisionType.WEIGHT,
-            current_value=SQ_WEIGHTS, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="SQ Weights",
+            decision_type=DecisionType.WEIGHT,
+            current_value=SQ_WEIGHTS,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.source_quality_score.production_min",
-            decision_name="SQ Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.65, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="SQ Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.65,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.evidence_confidence_score.weights",
-            decision_name="EC Weights", decision_type=DecisionType.WEIGHT,
-            current_value=EC_WEIGHTS, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="EC Weights",
+            decision_type=DecisionType.WEIGHT,
+            current_value=EC_WEIGHTS,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.evidence_confidence_score.production_min",
-            decision_name="EC Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.55, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="EC Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.55,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
     ]
 
@@ -1317,8 +1469,7 @@ def test_validate_evidence_unsupported_critical_count_correct() -> None:
             "source_url": "https://example.com",
             "source_type": "news",
             "quote_or_evidence": (
-                "This is a long explicit quote that supports the claim"
-                " and provides enough context for validation"
+                "This is a long explicit quote that supports the claim" " and provides enough context for validation"
             ),
             "confidence": "high",
             "collected_at": "2024-01-01T00:00:00",
@@ -1350,23 +1501,31 @@ def test_validate_evidence_unsupported_critical_count_correct() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=_CALIBRATED_INVENTORY,
     ):
-        result = _validate_evidence({
-            "raw_evidence": raw_evidence,
-            "evidence_items": evidence_items,
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": raw_evidence,
+                "evidence_items": evidence_items,
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
 
     assert result["unsupported_critical_claims_count"] == 1
 
 
 REQUIRED_METRICS_KEYS: list[str] = [
-    "evidence_items_count", "scored_evidence_count",
-    "accepted_evidence_count", "rejected_evidence_count",
-    "low_source_quality_count", "low_evidence_confidence_count",
-    "claims_count", "supported_claims_count", "unsupported_claims_count",
+    "evidence_items_count",
+    "scored_evidence_count",
+    "accepted_evidence_count",
+    "rejected_evidence_count",
+    "low_source_quality_count",
+    "low_evidence_confidence_count",
+    "claims_count",
+    "supported_claims_count",
+    "unsupported_claims_count",
     "unsupported_critical_claims_count",
-    "average_source_quality_score", "average_evidence_confidence_score",
+    "average_source_quality_score",
+    "average_evidence_confidence_score",
     "production_ready_evidence_ratio",
 ]
 
@@ -1374,12 +1533,14 @@ REQUIRED_METRICS_KEYS: list[str] = [
 def test_validate_evidence_metrics_exist() -> None:
     from src.agents.graph import _validate_evidence
 
-    result = _validate_evidence({
-        "raw_evidence": [],
-        "evidence_items": [],
-        "claims": [],
-        "executed_nodes": [],
-    })
+    result = _validate_evidence(
+        {
+            "raw_evidence": [],
+            "evidence_items": [],
+            "claims": [],
+            "executed_nodes": [],
+        }
+    )
 
     metrics = result["evidence_validation"]["metrics"]
     assert isinstance(metrics, dict)
@@ -1400,29 +1561,39 @@ def test_validate_evidence_thresholds_exist() -> None:
     _CALIBRATED_FOR_THRESHOLDS = [
         DecisionCalibrationRecord(
             decision_id="weight.source_quality_score.weights",
-            decision_name="SQ Weights", decision_type=DecisionType.WEIGHT,
+            decision_name="SQ Weights",
+            decision_type=DecisionType.WEIGHT,
             current_value={"source_authority_prior": 1.0},
             calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.source_quality_score.production_min",
-            decision_name="SQ Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.65, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="SQ Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.65,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.evidence_confidence_score.weights",
-            decision_name="EC Weights", decision_type=DecisionType.WEIGHT,
+            decision_name="EC Weights",
+            decision_type=DecisionType.WEIGHT,
             current_value={"source_quality_score": 1.0},
             calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.evidence_confidence_score.production_min",
-            decision_name="EC Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.55, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="EC Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.55,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
     ]
 
@@ -1430,12 +1601,14 @@ def test_validate_evidence_thresholds_exist() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=_CALIBRATED_FOR_THRESHOLDS,
     ):
-        result = _validate_evidence({
-            "raw_evidence": [],
-            "evidence_items": [],
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": [],
+                "evidence_items": [],
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
 
     thresholds = result["evidence_validation"]["thresholds"]
     assert isinstance(thresholds, dict)
@@ -1446,17 +1619,19 @@ def test_validate_evidence_thresholds_exist() -> None:
 def test_validate_evidence_executed_nodes_updated() -> None:
     from src.agents.graph import _validate_evidence
 
-    result = _validate_evidence({
-        "raw_evidence": [],
-        "evidence_items": [],
-        "claims": [],
-        "executed_nodes": [
-            "preflight_configuration_check",
-            "plan_search",
-            "collect_sources",
-            "extract_profile",
-        ],
-    })
+    result = _validate_evidence(
+        {
+            "raw_evidence": [],
+            "evidence_items": [],
+            "claims": [],
+            "executed_nodes": [
+                "preflight_configuration_check",
+                "plan_search",
+                "collect_sources",
+                "extract_profile",
+            ],
+        }
+    )
 
     assert "validate_evidence" in result["executed_nodes"]
     idx = result["executed_nodes"].index("validate_evidence")
@@ -1466,13 +1641,15 @@ def test_validate_evidence_executed_nodes_updated() -> None:
 def test_validate_evidence_preserves_run_id() -> None:
     from src.agents.graph import _validate_evidence
 
-    result = _validate_evidence({
-        "run_id": "preserve-val-001",
-        "raw_evidence": [],
-        "evidence_items": [],
-        "claims": [],
-        "executed_nodes": [],
-    })
+    result = _validate_evidence(
+        {
+            "run_id": "preserve-val-001",
+            "raw_evidence": [],
+            "evidence_items": [],
+            "claims": [],
+            "executed_nodes": [],
+        }
+    )
     # run_id is not returned (stays in state), but executed_nodes is correct
     assert result["executed_nodes"] == ["validate_evidence"]
 
@@ -1488,44 +1665,66 @@ def test_validate_evidence_blocker_added_on_failure() -> None:
     )
 
     SQ_WEIGHTS: dict[str, float] = {
-        "source_authority_prior": 0.30, "robots_allowed": 0.10,
-        "compliance_status": 0.10, "fetch_success": 0.15,
-        "extraction_success": 0.10, "duplicate_status": 0.05,
-        "content_bytes": 0.05, "latency_ms": 0.05,
-        "source_freshness_days": 0.05, "source_independence_type": 0.05,
+        "source_authority_prior": 0.30,
+        "robots_allowed": 0.10,
+        "compliance_status": 0.10,
+        "fetch_success": 0.15,
+        "extraction_success": 0.10,
+        "duplicate_status": 0.05,
+        "content_bytes": 0.05,
+        "latency_ms": 0.05,
+        "source_freshness_days": 0.05,
+        "source_independence_type": 0.05,
     }
     EC_WEIGHTS: dict[str, float] = {
-        "source_quality_score": 0.15, "extraction_confidence": 0.15,
-        "snippet_length": 0.05, "text_specificity_score": 0.10,
-        "claim_support_count": 0.10, "supporting_source_count": 0.10,
-        "cross_source_agreement_count": 0.10, "contradiction_count": 0.05,
-        "factuality_status": 0.10, "duplicate_penalty": 0.05,
+        "source_quality_score": 0.15,
+        "extraction_confidence": 0.15,
+        "snippet_length": 0.05,
+        "text_specificity_score": 0.10,
+        "claim_support_count": 0.10,
+        "supporting_source_count": 0.10,
+        "cross_source_agreement_count": 0.10,
+        "contradiction_count": 0.05,
+        "factuality_status": 0.10,
+        "duplicate_penalty": 0.05,
         "unsupported_critical_claim_flag": 0.05,
     }
     _CALIBRATED_INVENTORY = [
         DecisionCalibrationRecord(
             decision_id="weight.source_quality_score.weights",
-            decision_name="SQ Weights", decision_type=DecisionType.WEIGHT,
-            current_value=SQ_WEIGHTS, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="SQ Weights",
+            decision_type=DecisionType.WEIGHT,
+            current_value=SQ_WEIGHTS,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.source_quality_score.production_min",
-            decision_name="SQ Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.65, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="SQ Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.65,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.evidence_confidence_score.weights",
-            decision_name="EC Weights", decision_type=DecisionType.WEIGHT,
-            current_value=EC_WEIGHTS, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="EC Weights",
+            decision_type=DecisionType.WEIGHT,
+            current_value=EC_WEIGHTS,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.evidence_confidence_score.production_min",
-            decision_name="EC Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.55, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="EC Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.55,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
     ]
 
@@ -1545,12 +1744,14 @@ def test_validate_evidence_blocker_added_on_failure() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=_CALIBRATED_INVENTORY,
     ):
-        result = _validate_evidence({
-            "raw_evidence": raw_evidence,
-            "evidence_items": evidence_items,
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": raw_evidence,
+                "evidence_items": evidence_items,
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
 
     blockers = result.get("blockers", [])
     assert len(blockers) >= 1
@@ -1568,44 +1769,66 @@ def test_validate_evidence_evidence_items_normalized() -> None:
     )
 
     SQ_WEIGHTS: dict[str, float] = {
-        "source_authority_prior": 0.30, "robots_allowed": 0.10,
-        "compliance_status": 0.10, "fetch_success": 0.15,
-        "extraction_success": 0.10, "duplicate_status": 0.05,
-        "content_bytes": 0.05, "latency_ms": 0.05,
-        "source_freshness_days": 0.05, "source_independence_type": 0.05,
+        "source_authority_prior": 0.30,
+        "robots_allowed": 0.10,
+        "compliance_status": 0.10,
+        "fetch_success": 0.15,
+        "extraction_success": 0.10,
+        "duplicate_status": 0.05,
+        "content_bytes": 0.05,
+        "latency_ms": 0.05,
+        "source_freshness_days": 0.05,
+        "source_independence_type": 0.05,
     }
     EC_WEIGHTS: dict[str, float] = {
-        "source_quality_score": 0.15, "extraction_confidence": 0.15,
-        "snippet_length": 0.05, "text_specificity_score": 0.10,
-        "claim_support_count": 0.10, "supporting_source_count": 0.10,
-        "cross_source_agreement_count": 0.10, "contradiction_count": 0.05,
-        "factuality_status": 0.10, "duplicate_penalty": 0.05,
+        "source_quality_score": 0.15,
+        "extraction_confidence": 0.15,
+        "snippet_length": 0.05,
+        "text_specificity_score": 0.10,
+        "claim_support_count": 0.10,
+        "supporting_source_count": 0.10,
+        "cross_source_agreement_count": 0.10,
+        "contradiction_count": 0.05,
+        "factuality_status": 0.10,
+        "duplicate_penalty": 0.05,
         "unsupported_critical_claim_flag": 0.05,
     }
     _CALIBRATED_INVENTORY = [
         DecisionCalibrationRecord(
             decision_id="weight.source_quality_score.weights",
-            decision_name="SQ Weights", decision_type=DecisionType.WEIGHT,
-            current_value=SQ_WEIGHTS, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="SQ Weights",
+            decision_type=DecisionType.WEIGHT,
+            current_value=SQ_WEIGHTS,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.source_quality_score.production_min",
-            decision_name="SQ Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.65, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="SQ Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.65,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.evidence_confidence_score.weights",
-            decision_name="EC Weights", decision_type=DecisionType.WEIGHT,
-            current_value=EC_WEIGHTS, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="EC Weights",
+            decision_type=DecisionType.WEIGHT,
+            current_value=EC_WEIGHTS,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.evidence_confidence_score.production_min",
-            decision_name="EC Threshold", decision_type=DecisionType.THRESHOLD,
-            current_value=0.55, calibration_status=CalibrationStatus.CALIBRATED,
-            production_allowed=True, owner="test",
+            decision_name="EC Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.55,
+            calibration_status=CalibrationStatus.CALIBRATED,
+            production_allowed=True,
+            owner="test",
         ),
     ]
 
@@ -1615,8 +1838,7 @@ def test_validate_evidence_evidence_items_normalized() -> None:
             "source_url": "https://example.com",
             "source_type": "news",
             "quote_or_evidence": (
-                "A sufficiently long explicit quote to be considered"
-                " valid evidence for testing purposes"
+                "A sufficiently long explicit quote to be considered" " valid evidence for testing purposes"
             ),
             "confidence": "high",
             "collected_at": "2024-01-01T00:00:00",
@@ -1628,12 +1850,14 @@ def test_validate_evidence_evidence_items_normalized() -> None:
         "src.quality.decision_calibration_registry.get_project_decision_inventory",
         return_value=_CALIBRATED_INVENTORY,
     ):
-        result = _validate_evidence({
-            "raw_evidence": raw_evidence,
-            "evidence_items": evidence_items,
-            "claims": [],
-            "executed_nodes": [],
-        })
+        result = _validate_evidence(
+            {
+                "raw_evidence": raw_evidence,
+                "evidence_items": evidence_items,
+                "claims": [],
+                "executed_nodes": [],
+            }
+        )
 
     items = result.get("evidence_items", [])
     assert len(items) >= 1
@@ -1654,16 +1878,18 @@ def test_run_quality_gates_consumes_unsupported_critical_claims() -> None:
     """run_quality_gates sees unsupported_critical_claims_count from validate_evidence."""
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-consume-001",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 2,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": ["rec1"],
-        "nvidia_recommendation_metrics": {"ranking_status": "passed"},
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-consume-001",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 2,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": ["rec1"],
+            "nvidia_recommendation_metrics": {"ranking_status": "passed"},
+        }
+    )
     assert result["status"] == "quality_failed"
     assert "unsupported_critical_claims_count > 0" in result["quality"]["failed_checks"]
 
@@ -1688,11 +1914,13 @@ def test_score_startup_populates_scores(
     )
     _patch_enabled_source(mock_list_sources, mock_fetch, html=html, base_url="https://dataai.com.br")
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "score-001",
-        "startup_name": "DataAI",
-        "website_url": "https://dataai.com.br",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "score-001",
+            "startup_name": "DataAI",
+            "website_url": "https://dataai.com.br",
+        }
+    )
     state = _state_of(result)
     executed = state.get("executed_nodes", [])
     assert "score_startup" in executed
@@ -1712,10 +1940,12 @@ def test_score_startup_populates_scores(
 
 def test_score_startup_handles_empty_profile() -> None:
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "score-002",
-        "startup_name": "EmptyCo",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "score-002",
+            "startup_name": "EmptyCo",
+        }
+    )
     state = _state_of(result)
     scores = state.get("scores", {})
     assert "ai_native_score" in scores
@@ -1737,21 +1967,30 @@ def test_score_startup_works_without_startup_profile() -> None:
 
 
 def test_injected_score_service_is_used() -> None:
-    mock_svc = MagicMock(return_value=(
-        {"defensibility": 80, "inception_fit": 70, "production_readiness": 90,
-         "composite": 80, "classification": "AI_NATIVE"},
-        {"classification": "AI_NATIVE"},
-        {"score": 80, "signals": []},
-        {"score": 70, "signals": []},
-        {"score": 90, "signals": []},
-        [],
-    ))
+    mock_svc = MagicMock(
+        return_value=(
+            {
+                "defensibility": 80,
+                "inception_fit": 70,
+                "production_readiness": 90,
+                "composite": 80,
+                "classification": "AI_NATIVE",
+            },
+            {"classification": "AI_NATIVE"},
+            {"score": 80, "signals": []},
+            {"score": 70, "signals": []},
+            {"score": 90, "signals": []},
+            [],
+        )
+    )
     graph = build_startup_radar_graph(score_service=mock_svc)
-    result = graph.invoke({
-        "run_id": "inj-scr-001",
-        "startup_profile": {"test": True},
-        "validated_evidence": [],
-    })
+    result = graph.invoke(
+        {
+            "run_id": "inj-scr-001",
+            "startup_profile": {"test": True},
+            "validated_evidence": [],
+        }
+    )
     state = _state_of(result)
     assert "score_startup" in state.get("executed_nodes", [])
     assert state.get("scores", {}).get("defensibility") == 80
@@ -1759,9 +1998,11 @@ def test_injected_score_service_is_used() -> None:
 
 
 def test_injected_rag_service_is_used() -> None:
-    mock_svc = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=["nvidia_ctx_1", "nvidia_ctx_2"],
-    ))
+    mock_svc = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=["nvidia_ctx_1", "nvidia_ctx_2"],
+        )
+    )
     graph = build_startup_radar_graph(rag_service=mock_svc)
     result = graph.invoke({"run_id": "inj-rag-001"})
     state = _state_of(result)
@@ -1792,11 +2033,13 @@ def test_injected_qdrant_rag_service_protocol() -> None:
 
 
 def test_injected_diagnose_gaps_service_is_used() -> None:
-    mock_svc = MagicMock(return_value=(
-        ["external_api_dependency"],
-        {"diagnosed_gaps": [{"gap": "external_api_dependency", "detected": True}]},
-        [],
-    ))
+    mock_svc = MagicMock(
+        return_value=(
+            ["external_api_dependency"],
+            {"diagnosed_gaps": [{"gap": "external_api_dependency", "detected": True}]},
+            [],
+        )
+    )
     graph = build_startup_radar_graph(diagnose_gaps_service=mock_svc)
     result = graph.invoke({"run_id": "inj-gap-001"})
     state = _state_of(result)
@@ -1806,13 +2049,10 @@ def test_injected_diagnose_gaps_service_is_used() -> None:
 
 
 def test_injected_rank_recommendations_service_is_used() -> None:
-    from src.recommendation.recommendation_engine import rank_recommendations_from_mappings
 
     mock_rag = MagicMock(return_value=(["nvidia_ctx_1", "nvidia_ctx_2"], []))
     mock_brief = MagicMock(return_value=("# Startup Action Brief: Test\n\ncontent", []))
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [
                 {
@@ -1860,9 +2100,15 @@ def _brief_state(**overrides: Any) -> dict[str, Any]:
         "startup_id": "startup-42",
         "startup_name": "TestAI",
         "executed_nodes": [
-            "preflight_configuration_check", "plan_search", "collect_sources",
-            "extract_profile", "validate_evidence", "score_startup",
-            "diagnose_gaps", "retrieve_nvidia_context", "build_technology_mappings",
+            "preflight_configuration_check",
+            "plan_search",
+            "collect_sources",
+            "extract_profile",
+            "validate_evidence",
+            "score_startup",
+            "diagnose_gaps",
+            "retrieve_nvidia_context",
+            "build_technology_mappings",
             "rank_recommendations",
         ],
         "scores": {"ai_native_score": 0.75, "nvidia_fit_score": 0.65},
@@ -1955,8 +2201,16 @@ def _brief_state(**overrides: Any) -> dict[str, Any]:
         },
         "unsupported_critical_claims_count": 0,
         "claims": [
-            {"claim_text": "Uses external API for inference", "criticality": "normal", "support_status": "supported"},
-            {"claim_text": "High inference cost on current cloud", "criticality": "critical", "support_status": "supported"},
+            {
+                "claim_text": "Uses external API for inference",
+                "criticality": "normal",
+                "support_status": "supported",
+            },
+            {
+                "claim_text": "High inference cost on current cloud",
+                "criticality": "critical",
+                "support_status": "supported",
+            },
         ],
         "blockers": [],
         "quality": {"status": "passed", "failed_checks": [], "warning_checks": []},
@@ -2045,11 +2299,13 @@ def test_generate_brief_unsupported_critical_claim_marks_failed() -> None:
     from src.agents.graph import _generate_brief
 
     result = _generate_brief(
-        _brief_state(unsupported_critical_claims_count=2,
-                     evidence_validation={
-                         "status": "failed",
-                         "metrics": {"unsupported_critical_claims_count": 2},
-                     }),
+        _brief_state(
+            unsupported_critical_claims_count=2,
+            evidence_validation={
+                "status": "failed",
+                "metrics": {"unsupported_critical_claims_count": 2},
+            },
+        ),
     )
     assert result["status"] == "brief_failed"
     assert result["brief_status"] == "failed_unsupported_critical_claim"
@@ -2207,24 +2463,26 @@ def test_quality_gates_blocked_when_gap_diagnosis_blocked_uncalibrated() -> None
     """Quality gate blocks when gap_diagnosis_status is blocked_uncalibrated_gap_diagnosis."""
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-gap-001",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 0,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": [{"technology_name": "NIM", "priority_score": 0.8, "reason": "test"}],
-        "gap_diagnosis_status": "blocked_uncalibrated_gap_diagnosis",
-        "gap_diagnosis_metrics": {
-            "total_gap_count": 12,
-            "production_allowed_gap_count": 0,
-            "blocked_gap_count": 12,
-            "missing_calibration_count": 5,
-            "calibrated_decision_count": 0,
-            "gap_uncertainty_mean": 1.0,
-        },
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-gap-001",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 0,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": [{"technology_name": "NIM", "priority_score": 0.8, "reason": "test"}],
+            "gap_diagnosis_status": "blocked_uncalibrated_gap_diagnosis",
+            "gap_diagnosis_metrics": {
+                "total_gap_count": 12,
+                "production_allowed_gap_count": 0,
+                "blocked_gap_count": 12,
+                "missing_calibration_count": 5,
+                "calibrated_decision_count": 0,
+                "gap_uncertainty_mean": 1.0,
+            },
+        }
+    )
     assert result["status"] == "quality_blocked_uncalibrated"
     q = result["quality"]
     assert q["status"] == "blocked_uncalibrated_gap_diagnosis"
@@ -2236,24 +2494,26 @@ def test_quality_gates_blocks_when_gap_production_not_allowed() -> None:
     """Quality gate fails when some gaps have production_allowed=false."""
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-gap-002",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 0,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": [{"technology_name": "NIM", "priority_score": 0.8, "reason": "test"}],
-        "gap_diagnosis_status": "needs_review",
-        "gap_diagnosis_metrics": {
-            "total_gap_count": 12,
-            "production_allowed_gap_count": 10,
-            "blocked_gap_count": 2,
-            "missing_calibration_count": 0,
-            "calibrated_decision_count": 5,
-            "gap_uncertainty_mean": 0.3,
-        },
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-gap-002",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 0,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": [{"technology_name": "NIM", "priority_score": 0.8, "reason": "test"}],
+            "gap_diagnosis_status": "needs_review",
+            "gap_diagnosis_metrics": {
+                "total_gap_count": 12,
+                "production_allowed_gap_count": 10,
+                "blocked_gap_count": 2,
+                "missing_calibration_count": 0,
+                "calibrated_decision_count": 5,
+                "gap_uncertainty_mean": 0.3,
+            },
+        }
+    )
     assert result["status"] == "quality_failed"
     q = result["quality"]
     assert any("not all gaps allow production" in c for c in q["failed_checks"])
@@ -2264,28 +2524,30 @@ def test_quality_gates_passes_when_gap_diagnosis_passed() -> None:
     """Quality gate passes only when gap_diagnosis_status is 'passed' and all other checks pass."""
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-gap-003",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 0,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": [{"technology_name": "NIM", "priority_score": 0.8, "reason": "test"}],
-        "gap_diagnosis_status": "passed",
-        "gap_diagnosis_metrics": {
-            "total_gap_count": 12,
-            "production_allowed_gap_count": 12,
-            "blocked_gap_count": 0,
-            "needs_more_evidence_gap_count": 0,
-            "average_gap_severity": 0.25,
-            "average_gap_confidence": 0.75,
-            "average_gap_evidence_coverage": 0.0,
-            "missing_calibration_count": 0,
-            "calibrated_decision_count": 5,
-            "gap_uncertainty_mean": 0.15,
-        },
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-gap-003",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 0,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": [{"technology_name": "NIM", "priority_score": 0.8, "reason": "test"}],
+            "gap_diagnosis_status": "passed",
+            "gap_diagnosis_metrics": {
+                "total_gap_count": 12,
+                "production_allowed_gap_count": 12,
+                "blocked_gap_count": 0,
+                "needs_more_evidence_gap_count": 0,
+                "average_gap_severity": 0.25,
+                "average_gap_confidence": 0.75,
+                "average_gap_evidence_coverage": 0.0,
+                "missing_calibration_count": 0,
+                "calibrated_decision_count": 5,
+                "gap_uncertainty_mean": 0.15,
+            },
+        }
+    )
     assert result["status"] == "quality_passed"
     q = result["quality"]
     assert q["status"] == "passed"
@@ -2295,24 +2557,26 @@ def test_quality_gates_blocks_on_unsupported_critical_with_gap() -> None:
     """Unsupported critical claim blocks quality even when gap diagnosis passes."""
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-gap-004",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 1,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": [{"technology_name": "NIM", "priority_score": 0.8, "reason": "test"}],
-        "gap_diagnosis_status": "passed",
-        "gap_diagnosis_metrics": {
-            "total_gap_count": 12,
-            "production_allowed_gap_count": 12,
-            "blocked_gap_count": 0,
-            "missing_calibration_count": 0,
-            "calibrated_decision_count": 5,
-            "gap_uncertainty_mean": 0.15,
-        },
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-gap-004",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 1,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": [{"technology_name": "NIM", "priority_score": 0.8, "reason": "test"}],
+            "gap_diagnosis_status": "passed",
+            "gap_diagnosis_metrics": {
+                "total_gap_count": 12,
+                "production_allowed_gap_count": 12,
+                "blocked_gap_count": 0,
+                "missing_calibration_count": 0,
+                "calibrated_decision_count": 5,
+                "gap_uncertainty_mean": 0.15,
+            },
+        }
+    )
     assert result["status"] == "quality_failed"
     q = result["quality"]
     assert "unsupported_critical_claims_count > 0" in q["failed_checks"]
@@ -2323,28 +2587,30 @@ def test_quality_gates_contains_gap_metrics() -> None:
     """Quality metrics include gap_diagnosis_metrics fields."""
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-gap-005",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 0,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": [{"technology_name": "NIM", "priority_score": 0.8, "reason": "test"}],
-        "gap_diagnosis_status": "passed",
-        "gap_diagnosis_metrics": {
-            "total_gap_count": 12,
-            "production_allowed_gap_count": 12,
-            "blocked_gap_count": 0,
-            "needs_more_evidence_gap_count": 0,
-            "average_gap_severity": 0.35,
-            "average_gap_confidence": 0.65,
-            "average_gap_evidence_coverage": 0.0,
-            "missing_calibration_count": 0,
-            "calibrated_decision_count": 5,
-            "gap_uncertainty_mean": 0.20,
-        },
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-gap-005",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 0,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": [{"technology_name": "NIM", "priority_score": 0.8, "reason": "test"}],
+            "gap_diagnosis_status": "passed",
+            "gap_diagnosis_metrics": {
+                "total_gap_count": 12,
+                "production_allowed_gap_count": 12,
+                "blocked_gap_count": 0,
+                "needs_more_evidence_gap_count": 0,
+                "average_gap_severity": 0.35,
+                "average_gap_confidence": 0.65,
+                "average_gap_evidence_coverage": 0.0,
+                "missing_calibration_count": 0,
+                "calibrated_decision_count": 5,
+                "gap_uncertainty_mean": 0.20,
+            },
+        }
+    )
     m = result["quality"]["metrics"]
     assert m["total_gap_count"] == 12
     assert m["production_allowed_gap_count"] == 12
@@ -2361,24 +2627,26 @@ def test_quality_gates_blocked_when_missing_gap_calibration() -> None:
     """Missing gap calibration count > 0 causes calibration block."""
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-gap-006",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 0,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": [{"technology_name": "NIM", "priority_score": 0.8, "reason": "test"}],
-        "gap_diagnosis_status": "blocked_uncalibrated_gap_diagnosis",
-        "gap_diagnosis_metrics": {
-            "total_gap_count": 12,
-            "production_allowed_gap_count": 0,
-            "blocked_gap_count": 12,
-            "missing_calibration_count": 5,
-            "calibrated_decision_count": 0,
-            "gap_uncertainty_mean": 1.0,
-        },
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-gap-006",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 0,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": [{"technology_name": "NIM", "priority_score": 0.8, "reason": "test"}],
+            "gap_diagnosis_status": "blocked_uncalibrated_gap_diagnosis",
+            "gap_diagnosis_metrics": {
+                "total_gap_count": 12,
+                "production_allowed_gap_count": 0,
+                "blocked_gap_count": 12,
+                "missing_calibration_count": 5,
+                "calibrated_decision_count": 0,
+                "gap_uncertainty_mean": 1.0,
+            },
+        }
+    )
     assert result["status"] == "quality_blocked_uncalibrated"
     q = result["quality"]
     assert any("missing_gap_calibration" in c for c in q["failed_checks"])
@@ -2386,9 +2654,10 @@ def test_quality_gates_blocked_when_missing_gap_calibration() -> None:
 
 def test_quality_gates_no_llm_qdrant_internet_scraping() -> None:
     """_run_quality_gates does not call LLM, Qdrant, internet, or scraping."""
+    import inspect
+
     from src.agents.graph import _run_quality_gates
 
-    import inspect
     source = inspect.getsource(_run_quality_gates)
     for forbidden in ("openai", "qdrant", "trafilatura", "playwright", "httpx"):
         assert forbidden not in source
@@ -2440,9 +2709,11 @@ def _make_rag_mock_result(
 def test_retrieve_nvidia_context_passes_when_rag_returns_context() -> None:
     from src.agents.graph import _retrieve_nvidia_context
 
-    mock_svc = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=["nvidia_ctx_1", "nvidia_ctx_2"],
-    ))
+    mock_svc = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=["nvidia_ctx_1", "nvidia_ctx_2"],
+        )
+    )
     result = _retrieve_nvidia_context(
         {"run_id": "test-001", "executed_nodes": ["diagnose_gaps"]},
         _rag_service=mock_svc,
@@ -2456,9 +2727,11 @@ def test_retrieve_nvidia_context_passes_when_rag_returns_context() -> None:
 def test_retrieve_nvidia_context_populates_rag_metrics() -> None:
     from src.agents.graph import _retrieve_nvidia_context
 
-    mock_svc = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=["ctx_a"],
-    ))
+    mock_svc = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=["ctx_a"],
+        )
+    )
     result = _retrieve_nvidia_context(
         {"run_id": "test-002", "executed_nodes": []},
         _rag_service=mock_svc,
@@ -2475,9 +2748,11 @@ def test_retrieve_nvidia_context_populates_rag_metrics() -> None:
 def test_retrieve_nvidia_context_retrieved_context_count_correct() -> None:
     from src.agents.graph import _retrieve_nvidia_context
 
-    mock_svc = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=["a", "b", "c"],
-    ))
+    mock_svc = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=["a", "b", "c"],
+        )
+    )
     result = _retrieve_nvidia_context(
         {"run_id": "test-003", "executed_nodes": []},
         _rag_service=mock_svc,
@@ -2488,12 +2763,14 @@ def test_retrieve_nvidia_context_retrieved_context_count_correct() -> None:
 def test_retrieve_nvidia_context_empty_context_sets_needs_review() -> None:
     from src.agents.graph import _retrieve_nvidia_context
 
-    mock_svc = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=[],
-        retrieval_status="needs_review",
-        top_status="rag_needs_review",
-        review_required=True,
-    ))
+    mock_svc = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=[],
+            retrieval_status="needs_review",
+            top_status="rag_needs_review",
+            review_required=True,
+        )
+    )
     result = _retrieve_nvidia_context(
         {"run_id": "test-004", "executed_nodes": []},
         _rag_service=mock_svc,
@@ -2508,13 +2785,15 @@ def test_retrieve_nvidia_context_empty_context_sets_needs_review() -> None:
 def test_retrieve_nvidia_context_error_creates_blocker() -> None:
     from src.agents.graph import _retrieve_nvidia_context
 
-    mock_svc = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=[],
-        retrieval_status="failed",
-        top_status="rag_failed",
-        review_required=False,
-        blockers=["Qdrant connection refused"],
-    ))
+    mock_svc = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=[],
+            retrieval_status="failed",
+            top_status="rag_failed",
+            review_required=False,
+            blockers=["Qdrant connection refused"],
+        )
+    )
     result = _retrieve_nvidia_context(
         {"run_id": "test-005", "executed_nodes": []},
         _rag_service=mock_svc,
@@ -2543,24 +2822,30 @@ def test_retrieve_nvidia_context_exception_becomes_blocker() -> None:
 def test_retrieve_nvidia_context_executed_nodes_appended() -> None:
     from src.agents.graph import _retrieve_nvidia_context
 
-    mock_svc = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=["ctx"],
-    ))
+    mock_svc = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=["ctx"],
+        )
+    )
     result = _retrieve_nvidia_context(
         {"run_id": "test-007", "executed_nodes": ["preflight", "plan_search"]},
         _rag_service=mock_svc,
     )
     assert result["executed_nodes"] == [
-        "preflight", "plan_search", "retrieve_nvidia_context",
+        "preflight",
+        "plan_search",
+        "retrieve_nvidia_context",
     ]
 
 
 def test_retrieve_nvidia_context_run_id_preserved() -> None:
     from src.agents.graph import _retrieve_nvidia_context
 
-    mock_svc = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=["ctx"],
-    ))
+    mock_svc = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=["ctx"],
+        )
+    )
     result = _retrieve_nvidia_context(
         {"run_id": "preserve-rag-run-001", "executed_nodes": []},
         _rag_service=mock_svc,
@@ -2602,20 +2887,38 @@ def test_route_after_rag_missing_metrics_returns_needs_review() -> None:
 def _rank_rec_state(**overrides: Any) -> dict[str, Any]:
     defaults: dict[str, Any] = {
         "run_id": "rank-rec-001",
-        "executed_nodes": ["preflight", "plan_search", "collect_sources",
-                           "extract_profile", "validate_evidence", "score_startup",
-                           "diagnose_gaps", "retrieve_nvidia_context",
-                           "build_technology_mappings"],
+        "executed_nodes": [
+            "preflight",
+            "plan_search",
+            "collect_sources",
+            "extract_profile",
+            "validate_evidence",
+            "score_startup",
+            "diagnose_gaps",
+            "retrieve_nvidia_context",
+            "build_technology_mappings",
+        ],
         "gaps": ["external_api_dependency", "high_inference_cost"],
         "claims": [
-            {"claim_text": "Uses external API for inference", "criticality": "normal", "support_status": "supported"},
-            {"claim_text": "High inference cost on current cloud", "criticality": "critical", "support_status": "supported"},
+            {
+                "claim_text": "Uses external API for inference",
+                "criticality": "normal",
+                "support_status": "supported",
+            },
+            {
+                "claim_text": "High inference cost on current cloud",
+                "criticality": "critical",
+                "support_status": "supported",
+            },
         ],
         "evidence_items": [
             {"id": "ev_0", "url": "https://startup.ai", "text": "Uses OpenAI API"},
             {"id": "ev_1", "url": "https://startup.ai/pricing", "text": "High inference cost"},
         ],
-        "rag_contexts": ["NVIDIA NIM self-hosted reduces inference cost by 60%", "TensorRT-LLM optimizes LLM inference"],
+        "rag_contexts": [
+            "NVIDIA NIM self-hosted reduces inference cost by 60%",
+            "TensorRT-LLM optimizes LLM inference",
+        ],
         "rag_metrics": {"retrieval_status": "passed"},
         "unsupported_critical_claims_count": 0,
         "evidence_validation": {"status": "passed"},
@@ -2644,7 +2947,11 @@ def _rank_rec_state(**overrides: Any) -> dict[str, Any]:
                 "production_allowed": True,
             },
         ],
-        "nvidia_mapping_summary": {"mapping_status": "passed", "production_allowed": True, "blockers": []},
+        "nvidia_mapping_summary": {
+            "mapping_status": "passed",
+            "production_allowed": True,
+            "blockers": [],
+        },
     }
     result = dict(defaults)
     result.update(overrides)
@@ -2653,11 +2960,8 @@ def _rank_rec_state(**overrides: Any) -> dict[str, Any]:
 
 def test_rank_recommendations_fills_recommendations() -> None:
     from src.agents.graph import _rank_recommendations
-    from src.recommendation.recommendation_engine import rank_recommendations_from_mappings
 
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [
                 {
@@ -2695,11 +2999,8 @@ def test_rank_recommendations_fills_recommendations() -> None:
 
 def test_rank_recommendations_metrics_exist() -> None:
     from src.agents.graph import _rank_recommendations
-    from src.recommendation.recommendation_engine import rank_recommendations_from_mappings
 
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [],
             "nvidia_recommendation_metrics": {
@@ -2714,13 +3015,17 @@ def test_rank_recommendations_metrics_exist() -> None:
         result = _rank_recommendations(_rank_rec_state())
     metrics = result.get("recommendation_metrics", {})
     assert isinstance(metrics, dict)
-    for key in ("recommendation_count", "rag_contexts_count",
-                "ranking_status", "production_allowed"):
+    for key in (
+        "recommendation_count",
+        "rag_contexts_count",
+        "ranking_status",
+        "production_allowed",
+    ):
         assert key in metrics, f"Missing metric key: {key}"
 
 
 def test_rank_recommendations_priority_score_between_0_and_1() -> None:
-    from src.agents.graph import _rank_recommendations, _compute_priority_score
+    from src.agents.graph import _compute_priority_score, _rank_recommendations
 
     # Direct formula test
     score = _compute_priority_score(1.0, 1.0, 0.0, 1.0, 1.0)
@@ -2734,9 +3039,7 @@ def test_rank_recommendations_priority_score_between_0_and_1() -> None:
     assert 0.0 <= score <= 1.0
 
     # Verify through the node
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [
                 {
@@ -2762,11 +3065,8 @@ def test_rank_recommendations_priority_score_between_0_and_1() -> None:
 
 def test_rank_recommendations_sorted_by_priority_desc() -> None:
     from src.agents.graph import _rank_recommendations
-    from src.recommendation.recommendation_engine import rank_recommendations_from_mappings
 
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [
                 {
@@ -2816,11 +3116,8 @@ def test_rank_recommendations_failed_on_unsupported_critical_claim() -> None:
 
 def test_rank_recommendations_no_rag_contexts_sets_needs_review() -> None:
     from src.agents.graph import _rank_recommendations
-    from src.recommendation.recommendation_engine import rank_recommendations_from_mappings
 
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [],
             "nvidia_recommendation_metrics": {"mapping_count": 0, "recommendation_count": 0},
@@ -2837,11 +3134,8 @@ def test_rank_recommendations_no_rag_contexts_sets_needs_review() -> None:
 
 def test_rank_recommendations_no_mappings_sets_needs_review() -> None:
     from src.agents.graph import _rank_recommendations
-    from src.recommendation.recommendation_engine import rank_recommendations_from_mappings
 
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [],
             "nvidia_recommendation_metrics": {"mapping_count": 0, "recommendation_count": 0},
@@ -2858,11 +3152,8 @@ def test_rank_recommendations_no_mappings_sets_needs_review() -> None:
 
 def test_rank_recommendations_preserves_run_id() -> None:
     from src.agents.graph import _rank_recommendations
-    from src.recommendation.recommendation_engine import rank_recommendations_from_mappings
 
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [],
             "nvidia_recommendation_metrics": {},
@@ -2878,11 +3169,8 @@ def test_rank_recommendations_preserves_run_id() -> None:
 
 def test_rank_recommendations_executed_nodes_contains_rank() -> None:
     from src.agents.graph import _rank_recommendations
-    from src.recommendation.recommendation_engine import rank_recommendations_from_mappings
 
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [],
             "nvidia_recommendation_metrics": {},
@@ -2901,17 +3189,19 @@ def test_quality_gates_consumes_recommendation_count() -> None:
     """run_quality_gates reads recommendation_count from recommendations list."""
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-consumes-rec-001",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 0,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": [
-            {"technology_name": "NIM", "priority_score": 0.8, "reason": "test"},
-        ],
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-consumes-rec-001",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 0,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": [
+                {"technology_name": "NIM", "priority_score": 0.8, "reason": "test"},
+            ],
+        }
+    )
     metrics = result["quality"]["metrics"]
     assert metrics["recommendation_count"] == 1
     assert result["status"] == "quality_passed"
@@ -2920,11 +3210,8 @@ def test_quality_gates_consumes_recommendation_count() -> None:
 def test_rank_recommendations_no_real_llm_qdrant_scraping() -> None:
     """Unit test does not trigger real LLM, Qdrant, or scraping."""
     from src.agents.graph import _rank_recommendations
-    from src.recommendation.recommendation_engine import rank_recommendations_from_mappings
 
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [
                 {
@@ -2950,16 +3237,19 @@ def test_rank_recommendations_no_real_llm_qdrant_scraping() -> None:
 
 def test_rank_recommendations_status_passed_with_enough_recs() -> None:
     from src.agents.graph import _rank_recommendations
-    from src.recommendation.recommendation_engine import rank_recommendations_from_mappings
 
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [
-                {"nvidia_technology": "NVIDIA NIM", "reason": "ext_api",
-                 "recommendation_priority_score": 0.85, "confidence": 0.75,
-                 "next_best_action": "Rec", "supporting_rag_context_ids": [], "supporting_evidence_ids": []},
+                {
+                    "nvidia_technology": "NVIDIA NIM",
+                    "reason": "ext_api",
+                    "recommendation_priority_score": 0.85,
+                    "confidence": 0.75,
+                    "next_best_action": "Rec",
+                    "supporting_rag_context_ids": [],
+                    "supporting_evidence_ids": [],
+                },
             ],
             "nvidia_recommendation_metrics": {"mapping_count": 2, "recommendation_count": 1},
             "ranking_status": "passed",
@@ -2975,16 +3265,19 @@ def test_rank_recommendations_status_passed_with_enough_recs() -> None:
 
 def test_rank_recommendations_metrics_has_expected_values() -> None:
     from src.agents.graph import _rank_recommendations
-    from src.recommendation.recommendation_engine import rank_recommendations_from_mappings
 
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [
-                {"nvidia_technology": "NVIDIA NIM", "reason": "ext_api",
-                 "recommendation_priority_score": 0.85, "confidence": 0.75,
-                 "next_best_action": "Rec", "supporting_rag_context_ids": [], "supporting_evidence_ids": []},
+                {
+                    "nvidia_technology": "NVIDIA NIM",
+                    "reason": "ext_api",
+                    "recommendation_priority_score": 0.85,
+                    "confidence": 0.75,
+                    "next_best_action": "Rec",
+                    "supporting_rag_context_ids": [],
+                    "supporting_evidence_ids": [],
+                },
             ],
             "nvidia_recommendation_metrics": {"mapping_count": 2, "recommendation_count": 1},
             "ranking_status": "passed",
@@ -2999,11 +3292,8 @@ def test_rank_recommendations_metrics_has_expected_values() -> None:
 
 def test_rank_recommendations_empty_recs_with_no_mappings_produces_empty() -> None:
     from src.agents.graph import _rank_recommendations
-    from src.recommendation.recommendation_engine import rank_recommendations_from_mappings
 
-    with patch(
-        "src.recommendation.recommendation_engine.rank_recommendations_from_mappings"
-    ) as mock_rrfm:
+    with patch("src.recommendation.recommendation_engine.rank_recommendations_from_mappings") as mock_rrfm:
         mock_rrfm.return_value = {
             "nvidia_recommendations": [],
             "nvidia_recommendation_metrics": {"mapping_count": 0, "recommendation_count": 0},
@@ -3019,9 +3309,14 @@ def test_rank_recommendations_empty_recs_with_no_mappings_produces_empty() -> No
 
 
 def test_rag_needs_review_in_graph_routes_to_needs_review() -> None:
-    mock_rag = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=[], retrieval_status="needs_review", top_status="rag_needs_review", review_required=True,
-    ))
+    mock_rag = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=[],
+            retrieval_status="needs_review",
+            top_status="rag_needs_review",
+            review_required=True,
+        )
+    )
     mock_rec = MagicMock(return_value=([], []))
     mock_brief = MagicMock(return_value=("", []))
     graph = build_startup_radar_graph(
@@ -3038,10 +3333,15 @@ def test_rag_needs_review_in_graph_routes_to_needs_review() -> None:
 
 
 def test_rag_failed_in_graph_routes_to_needs_review() -> None:
-    mock_rag = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=[], retrieval_status="failed", top_status="rag_failed",
-        review_required=False, blockers=["RAG unavailable"],
-    ))
+    mock_rag = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=[],
+            retrieval_status="failed",
+            top_status="rag_failed",
+            review_required=False,
+            blockers=["RAG unavailable"],
+        )
+    )
     mock_rec = MagicMock(return_value=([], []))
     mock_brief = MagicMock(return_value=("", []))
     graph = build_startup_radar_graph(
@@ -3060,9 +3360,11 @@ def test_rag_failed_in_graph_routes_to_needs_review() -> None:
 
 
 def test_rag_passed_in_graph_routes_to_rank_recommendations() -> None:
-    mock_rag = MagicMock(return_value=_make_rag_mock_result(
-        rag_contexts=["ctx1", "ctx2"],
-    ))
+    mock_rag = MagicMock(
+        return_value=_make_rag_mock_result(
+            rag_contexts=["ctx1", "ctx2"],
+        )
+    )
     mock_brief = MagicMock(return_value=("# Brief\n\ncontent", []))
     graph = build_startup_radar_graph(
         rag_service=mock_rag,
@@ -3102,6 +3404,7 @@ def test_diagnose_gaps_detects_external_api_dependency(
         base_url="https://wrapperai.com.br",
     )
     from src.scraping.source_registry import SourceRecord
+
     mock_list.return_value = [SourceRecord(**kwargs)]
     mock_fetch.return_value = FetchResult(
         url="https://wrapperai.com.br",
@@ -3111,10 +3414,12 @@ def test_diagnose_gaps_detects_external_api_dependency(
         error=None,
     )
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "gap-001",
-        "startup_name": "WrapperAI",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "gap-001",
+            "startup_name": "WrapperAI",
+        }
+    )
     state = _state_of(result)
     executed = state.get("executed_nodes", [])
     assert "diagnose_gaps" in executed
@@ -3123,9 +3428,7 @@ def test_diagnose_gaps_detects_external_api_dependency(
     assert isinstance(gaps, list)
     assert len(gaps) >= 1
     gap_names = [g.lower() for g in gaps]
-    assert any("external_api" in g for g in gap_names), (
-        f"Expected external_api_dependency gap, got: {gaps}"
-    )
+    assert any("external_api" in g for g in gap_names), f"Expected external_api_dependency gap, got: {gaps}"
     assert "gap_diagnosis" in state, "Expected gap_diagnosis in state"
 
 
@@ -3144,6 +3447,7 @@ def test_diagnose_gaps_no_external_api_gap(
         "</body></html>"
     )
     from src.scraping.source_registry import SourceRecord
+
     kwargs = dict(_SOURCE_RECORD_KWARGS)
     kwargs.update(source_id="gap_src2", source_category="official_website", base_url="https://safeai.com.br")
     mock_list.return_value = [SourceRecord(**kwargs)]
@@ -3155,16 +3459,16 @@ def test_diagnose_gaps_no_external_api_gap(
         error=None,
     )
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "gap-002",
-        "startup_name": "SafeAI",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "gap-002",
+            "startup_name": "SafeAI",
+        }
+    )
     state = _state_of(result)
     gaps = state.get("gaps", [])
     assert isinstance(gaps, list)
-    assert "external_api_dependency" not in gaps, (
-        f"Expected no external_api_dependency, got: {gaps}"
-    )
+    assert "external_api_dependency" not in gaps, f"Expected no external_api_dependency, got: {gaps}"
     assert "gap_diagnosis" in state
 
 
@@ -3175,6 +3479,7 @@ def test_diagnose_gaps_empty_profile(
     mock_fetch: MagicMock,
 ) -> None:
     from src.scraping.source_registry import SourceRecord
+
     kwargs = dict(_SOURCE_RECORD_KWARGS)
     kwargs.update(source_id="gap_src3", source_category="official_website", base_url="https://empty.com")
     mock_list.return_value = [SourceRecord(**kwargs)]
@@ -3186,10 +3491,12 @@ def test_diagnose_gaps_empty_profile(
         error=None,
     )
     graph = _make_graph_with_mocks()
-    result = graph.invoke({
-        "run_id": "gap-003",
-        "startup_name": "EmptyCo",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "gap-003",
+            "startup_name": "EmptyCo",
+        }
+    )
     state = _state_of(result)
     assert state.get("gaps") == []
     assert "diagnose_gaps" in state.get("executed_nodes", [])
@@ -3350,10 +3657,6 @@ def test_quality_needs_review_routes_through_needs_review() -> None:
     assert _route_after_quality_gates(state) == "needs_review"
 
 
-
-
-
-
 def test_quality_needs_review_sets_needs_human_review() -> None:
     from src.agents.graph import _needs_review
 
@@ -3368,15 +3671,17 @@ def test_quality_needs_review_sets_needs_human_review() -> None:
 def test_quality_gate_passed() -> None:
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-pass-001",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 0,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": ["rec1"],
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-pass-001",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 0,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": ["rec1"],
+        }
+    )
     assert result["status"] == "quality_passed"
     assert result["review_required"] is False
     q = result["quality"]
@@ -3390,15 +3695,17 @@ def test_quality_gate_passed() -> None:
 def test_quality_gate_failed_unsupported_claims() -> None:
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-fail-001",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 3,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": ["rec1"],
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-fail-001",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 3,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": ["rec1"],
+        }
+    )
     assert result["status"] == "quality_failed"
     assert result["review_required"] is False
     q = result["quality"]
@@ -3409,15 +3716,17 @@ def test_quality_gate_failed_unsupported_claims() -> None:
 def test_quality_gate_failed_blockers() -> None:
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-fail-002",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 0,
-        "blockers": ["API key missing"],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": ["rec1"],
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-fail-002",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 0,
+            "blockers": ["API key missing"],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": ["rec1"],
+        }
+    )
     assert result["status"] == "quality_failed"
     assert result["review_required"] is False
     q = result["quality"]
@@ -3428,15 +3737,17 @@ def test_quality_gate_failed_blockers() -> None:
 def test_quality_gate_needs_review_no_evidence() -> None:
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-review-001",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 0,
-        "blockers": [],
-        "evidence_items": [],
-        "rag_contexts": ["ctx1"],
-        "recommendations": ["rec1"],
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-review-001",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 0,
+            "blockers": [],
+            "evidence_items": [],
+            "rag_contexts": ["ctx1"],
+            "recommendations": ["rec1"],
+        }
+    )
     assert result["status"] == "needs_human_review"
     assert result["review_required"] is True
     q = result["quality"]
@@ -3447,15 +3758,17 @@ def test_quality_gate_needs_review_no_evidence() -> None:
 def test_quality_gate_needs_review_no_rag_contexts() -> None:
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-review-002",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 0,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": [],
-        "recommendations": ["rec1"],
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-review-002",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 0,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": [],
+            "recommendations": ["rec1"],
+        }
+    )
     assert result["status"] == "needs_human_review"
     assert result["review_required"] is True
     q = result["quality"]
@@ -3466,15 +3779,17 @@ def test_quality_gate_needs_review_no_rag_contexts() -> None:
 def test_quality_gate_needs_review_no_recommendations() -> None:
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-review-003",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 0,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": [],
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-review-003",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 0,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": [],
+        }
+    )
     assert result["status"] == "needs_human_review"
     assert result["review_required"] is True
     q = result["quality"]
@@ -3485,26 +3800,38 @@ def test_quality_gate_needs_review_no_recommendations() -> None:
 def test_quality_gate_metrics_and_thresholds_exist() -> None:
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-meta-001",
-        "executed_nodes": [],
-        "unsupported_critical_claims_count": 0,
-        "blockers": [],
-        "evidence_items": [{"url": "https://a.com"}],
-        "rag_contexts": ["ctx1"],
-        "recommendations": ["rec1"],
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-meta-001",
+            "executed_nodes": [],
+            "unsupported_critical_claims_count": 0,
+            "blockers": [],
+            "evidence_items": [{"url": "https://a.com"}],
+            "rag_contexts": ["ctx1"],
+            "recommendations": ["rec1"],
+        }
+    )
     q = result["quality"]
     metrics = q["metrics"]
     assert isinstance(metrics, dict)
-    for key in ("unsupported_critical_claims_count", "blockers_count",
-                "evidence_items_count", "rag_contexts_count", "recommendation_count"):
+    for key in (
+        "unsupported_critical_claims_count",
+        "blockers_count",
+        "evidence_items_count",
+        "rag_contexts_count",
+        "recommendation_count",
+    ):
         assert key in metrics, f"Missing metric: {key}"
 
     thresholds = q["thresholds"]
     assert isinstance(thresholds, dict)
-    for key in ("unsupported_critical_claims_count", "blockers_count",
-                "evidence_items_count", "rag_contexts_count", "recommendation_count"):
+    for key in (
+        "unsupported_critical_claims_count",
+        "blockers_count",
+        "evidence_items_count",
+        "rag_contexts_count",
+        "recommendation_count",
+    ):
         assert key in thresholds, f"Missing threshold: {key}"
 
 
@@ -3512,10 +3839,12 @@ def test_quality_gate_run_id_preserved() -> None:
     """Quality gate does not overwrite run_id."""
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "preserve-q-001",
-        "executed_nodes": [],
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "preserve-q-001",
+            "executed_nodes": [],
+        }
+    )
     # run_id is not returned by the node (it's preserved in state automatically)
     assert result["executed_nodes"] == ["run_quality_gates"]
 
@@ -3523,10 +3852,12 @@ def test_quality_gate_run_id_preserved() -> None:
 def test_quality_gate_executed_nodes_appended() -> None:
     from src.agents.graph import _run_quality_gates
 
-    result = _run_quality_gates({
-        "run_id": "q-node-001",
-        "executed_nodes": ["preflight", "plan_search"],
-    })
+    result = _run_quality_gates(
+        {
+            "run_id": "q-node-001",
+            "executed_nodes": ["preflight", "plan_search"],
+        }
+    )
     assert result["executed_nodes"] == ["preflight", "plan_search", "run_quality_gates"]
 
 
@@ -3578,7 +3909,11 @@ def _patch_quality_gates_to_needs_review() -> Generator[None, None, None]:
         "src.agents.graph._run_quality_gates",
         return_value={
             "status": "quality_gates_passed",
-            "quality": {"status": "needs_review", "issues": ["Quality gate requires human review"], "checks": {}},
+            "quality": {
+                "status": "needs_review",
+                "issues": ["Quality gate requires human review"],
+                "checks": {},
+            },
             "review_required": True,
             "executed_nodes": [],
         },
@@ -3651,14 +3986,16 @@ def test_needs_review_run_id_preserved() -> None:
 def test_needs_review_reason_from_quality_issues() -> None:
     from src.agents.graph import _needs_review
 
-    result = _needs_review({
-        "run_id": "review-007",
-        "executed_nodes": [],
-        "quality": {
-            "status": "needs_review",
-            "issues": ["No startup brief was generated", "No evidence items were collected"],
-        },
-    })
+    result = _needs_review(
+        {
+            "run_id": "review-007",
+            "executed_nodes": [],
+            "quality": {
+                "status": "needs_review",
+                "issues": ["No startup brief was generated", "No evidence items were collected"],
+            },
+        }
+    )
     payload = result.get("review_payload", {})
     reason = payload.get("reason", "")
     assert "No startup brief was generated" in reason
@@ -3676,12 +4013,14 @@ def test_needs_review_reason_fallback() -> None:
 def test_needs_review_severity_high_with_blockers() -> None:
     from src.agents.graph import _needs_review
 
-    result = _needs_review({
-        "run_id": "review-009",
-        "executed_nodes": [],
-        "quality": {"status": "needs_review", "issues": ["Something wrong"]},
-        "blockers": ["API key missing"],
-    })
+    result = _needs_review(
+        {
+            "run_id": "review-009",
+            "executed_nodes": [],
+            "quality": {"status": "needs_review", "issues": ["Something wrong"]},
+            "blockers": ["API key missing"],
+        }
+    )
     payload = result.get("review_payload", {})
     assert payload.get("severity") == "high"
 
@@ -3699,7 +4038,10 @@ def test_needs_review_executed_nodes_contains_needs_review() -> None:
 def test_route_after_review_approve_routes_to_build_technology_mappings() -> None:
     from src.agents.graph import _route_after_review
 
-    assert _route_after_review({"review_decision": "approve", "rag_retrieval_status": "passed"}) == "build_technology_mappings"
+    assert (
+        _route_after_review({"review_decision": "approve", "rag_retrieval_status": "passed"})
+        == "build_technology_mappings"
+    )
 
 
 def test_route_after_review_reject_routes_to_finish() -> None:
@@ -3712,11 +4054,13 @@ def test_route_after_review_more_evidence_routes_to_plan_search() -> None:
     """Within retry limit routes to plan_search."""
     from src.agents.graph import _route_after_review
 
-    result = _route_after_review({
-        "review_decision": "request_more_evidence",
-        "evidence_retry_count": 1,
-        "max_evidence_retries": 1,
-    })
+    result = _route_after_review(
+        {
+            "review_decision": "request_more_evidence",
+            "evidence_retry_count": 1,
+            "max_evidence_retries": 1,
+        }
+    )
     assert result == "plan_search"
 
 
@@ -3724,11 +4068,13 @@ def test_route_after_review_more_evidence_exceeds_retry_routes_to_finish() -> No
     """When retry count exceeds max_evidence_retries routes to finish."""
     from src.agents.graph import _route_after_review
 
-    result = _route_after_review({
-        "review_decision": "request_more_evidence",
-        "evidence_retry_count": 2,
-        "max_evidence_retries": 1,
-    })
+    result = _route_after_review(
+        {
+            "review_decision": "request_more_evidence",
+            "evidence_retry_count": 2,
+            "max_evidence_retries": 1,
+        }
+    )
     assert result == "finish"
 
 
@@ -3741,45 +4087,58 @@ def test_route_after_review_no_decision_routes_to_finish() -> None:
 def test_route_after_review_approve_with_rag_needs_review_routes_to_build_technology_mappings() -> None:
     from src.agents.graph import _route_after_review
 
-    result = _route_after_review({
-        "review_decision": "approve",
-        "rag_retrieval_status": "needs_review",
-        "executed_nodes": ["diagnose_gaps", "retrieve_nvidia_context"],
-    })
+    result = _route_after_review(
+        {
+            "review_decision": "approve",
+            "rag_retrieval_status": "needs_review",
+            "executed_nodes": ["diagnose_gaps", "retrieve_nvidia_context"],
+        }
+    )
     assert result == "build_technology_mappings"
 
 
 def test_route_after_review_approve_with_rag_failed_routes_to_build_technology_mappings() -> None:
     from src.agents.graph import _route_after_review
 
-    result = _route_after_review({
-        "review_decision": "approve",
-        "rag_retrieval_status": "failed",
-        "executed_nodes": ["diagnose_gaps", "retrieve_nvidia_context"],
-    })
+    result = _route_after_review(
+        {
+            "review_decision": "approve",
+            "rag_retrieval_status": "failed",
+            "executed_nodes": ["diagnose_gaps", "retrieve_nvidia_context"],
+        }
+    )
     assert result == "build_technology_mappings"
 
 
 def test_route_after_review_approve_with_rag_needs_review_but_rank_already_executed_routes_to_finish() -> None:
     from src.agents.graph import _route_after_review
 
-    result = _route_after_review({
-        "review_decision": "approve",
-        "rag_retrieval_status": "needs_review",
-        "executed_nodes": ["diagnose_gaps", "retrieve_nvidia_context", "build_technology_mappings", "rank_recommendations"],
-    })
+    result = _route_after_review(
+        {
+            "review_decision": "approve",
+            "rag_retrieval_status": "needs_review",
+            "executed_nodes": [
+                "diagnose_gaps",
+                "retrieve_nvidia_context",
+                "build_technology_mappings",
+                "rank_recommendations",
+            ],
+        }
+    )
     assert result == "finish"
 
 
 def test_route_after_review_approve_with_mappings_and_rag_passed_routes_to_rank_recommendations() -> None:
     from src.agents.graph import _route_after_review
 
-    result = _route_after_review({
-        "review_decision": "approve",
-        "rag_retrieval_status": "passed",
-        "nvidia_mapping_summary": {"mapping_status": "passed", "production_allowed": True},
-        "executed_nodes": ["retrieve_nvidia_context", "build_technology_mappings"],
-    })
+    result = _route_after_review(
+        {
+            "review_decision": "approve",
+            "rag_retrieval_status": "passed",
+            "nvidia_mapping_summary": {"mapping_status": "passed", "production_allowed": True},
+            "executed_nodes": ["retrieve_nvidia_context", "build_technology_mappings"],
+        }
+    )
     assert result == "rank_recommendations"
 
 
@@ -3923,9 +4282,7 @@ def test_no_interrupt_called_when_graph_is_complete() -> None:
         result = graph.invoke({"run_id": "no-int"}, config)
 
     assert isinstance(result, dict)
-    assert "__interrupt__" not in result, (
-        f"Expected no interrupt, got __interrupt__: {result.get('__interrupt__')}"
-    )
+    assert "__interrupt__" not in result, f"Expected no interrupt, got __interrupt__: {result.get('__interrupt__')}"
     assert result.get("status") != "needs_human_review"
     assert "finish" in result.get("executed_nodes", [])
 
@@ -3940,7 +4297,13 @@ def _patch_quality_to_pass() -> Generator[None, None, None]:
     def _patched_run_quality_gates(state: dict) -> dict[str, Any]:
         return {
             "status": "quality_passed",
-            "quality": {"status": "passed", "metrics": {}, "thresholds": {}, "failed_checks": [], "warning_checks": []},
+            "quality": {
+                "status": "passed",
+                "metrics": {},
+                "thresholds": {},
+                "failed_checks": [],
+                "warning_checks": [],
+            },
             "review_required": False,
             "executed_nodes": list(state.get("executed_nodes", [])) + ["run_quality_gates"],
         }
@@ -3956,7 +4319,11 @@ def _patch_quality_to_needs_review() -> Generator[None, None, None]:
     def _patched_run_quality_gates(state: dict) -> dict[str, Any]:
         return {
             "status": "quality_gates_passed",
-            "quality": {"status": "needs_review", "issues": ["Quality gate requires human review"], "checks": {}},
+            "quality": {
+                "status": "needs_review",
+                "issues": ["Quality gate requires human review"],
+                "checks": {},
+            },
             "review_required": True,
             "executed_nodes": _append_node(state, "run_quality_gates"),
         }
@@ -3978,9 +4345,7 @@ def test_graph_interrupts_at_needs_review() -> None:
         result = graph.invoke({"run_id": "interrupt-test-001"}, config)
 
     assert isinstance(result, dict)
-    assert "__interrupt__" in result, (
-        f"Expected __interrupt__ in result, got keys: {list(result.keys())}"
-    )
+    assert "__interrupt__" in result, f"Expected __interrupt__ in result, got keys: {list(result.keys())}"
     interrupts = result["__interrupt__"]
     assert len(interrupts) >= 1
     payload = interrupts[0].value if hasattr(interrupts[0], "value") else interrupts[0]
@@ -4126,13 +4491,15 @@ def test_graph_request_more_evidence_increments_retry_count() -> None:
     """request_more_evidence increments evidence_retry_count in state."""
     from src.agents.graph import _needs_review
 
-    result = _needs_review({
-        "run_id": "retry-001",
-        "executed_nodes": [],
-        "review_decision": "request_more_evidence",
-        "review_notes": "Need more evidence",
-        "reviewed_by": "tester",
-    })
+    result = _needs_review(
+        {
+            "run_id": "retry-001",
+            "executed_nodes": [],
+            "review_decision": "request_more_evidence",
+            "review_notes": "Need more evidence",
+            "reviewed_by": "tester",
+        }
+    )
     assert result.get("evidence_retry_count") == 1
     assert result.get("status") == "planning_more_evidence"
 
@@ -4141,15 +4508,17 @@ def test_graph_request_more_evidence_exceeds_max_retry_adds_blocker() -> None:
     """When retry count exceeds limit, blocker and max_retry status are set."""
     from src.agents.graph import _needs_review
 
-    result = _needs_review({
-        "run_id": "retry-002",
-        "executed_nodes": [],
-        "evidence_retry_count": 1,
-        "max_evidence_retries": 1,
-        "review_decision": "request_more_evidence",
-        "review_notes": "Still need more",
-        "reviewed_by": "tester",
-    })
+    result = _needs_review(
+        {
+            "run_id": "retry-002",
+            "executed_nodes": [],
+            "evidence_retry_count": 1,
+            "max_evidence_retries": 1,
+            "review_decision": "request_more_evidence",
+            "review_notes": "Still need more",
+            "reviewed_by": "tester",
+        }
+    )
     assert result.get("evidence_retry_count") == 2
     assert result.get("status") == "max_evidence_retries_reached"
     blockers = result.get("blockers", [])
@@ -4160,13 +4529,15 @@ def test_graph_request_more_evidence_sets_evidence_request_reason() -> None:
     """evidence_request_reason is set from review_notes."""
     from src.agents.graph import _needs_review
 
-    result = _needs_review({
-        "run_id": "reason-001",
-        "executed_nodes": [],
-        "review_decision": "request_more_evidence",
-        "review_notes": "Precisa de mais fontes oficiais",
-        "reviewed_by": "tester",
-    })
+    result = _needs_review(
+        {
+            "run_id": "reason-001",
+            "executed_nodes": [],
+            "review_decision": "request_more_evidence",
+            "review_notes": "Precisa de mais fontes oficiais",
+            "reviewed_by": "tester",
+        }
+    )
     assert result.get("evidence_request_reason") == "Precisa de mais fontes oficiais"
 
 
@@ -4270,7 +4641,7 @@ def test_graph_after_resume_rag_needs_review_approve_routes_to_rank_recommendati
     config: dict[str, Any] = {"configurable": {"thread_id": thread_id}}
     graph.invoke({"run_id": "rag-resume-001"}, config)
 
-    result = graph.invoke(
+    graph.invoke(
         Command(resume="approved", update={"review_decision": "approve"}),
         config,
     )
@@ -4296,10 +4667,18 @@ def _finish_state(**overrides: Any) -> dict[str, Any]:
         "startup_name": "TestAI",
         "status": "brief_generated",
         "executed_nodes": [
-            "preflight_configuration_check", "plan_search", "collect_sources",
-            "extract_profile", "validate_evidence", "score_startup",
-            "diagnose_gaps", "retrieve_nvidia_context", "build_technology_mappings",
-            "rank_recommendations", "generate_brief", "run_quality_gates",
+            "preflight_configuration_check",
+            "plan_search",
+            "collect_sources",
+            "extract_profile",
+            "validate_evidence",
+            "score_startup",
+            "diagnose_gaps",
+            "retrieve_nvidia_context",
+            "build_technology_mappings",
+            "rank_recommendations",
+            "generate_brief",
+            "run_quality_gates",
         ],
         "blockers": [],
         "quality": {
@@ -4484,11 +4863,13 @@ def test_workflow_invocation_with_repository_persists_results() -> None:
         generate_brief_service=mock_brief,
         analysis_repository=mock_repo,
     )
-    result = graph.invoke({
-        "run_id": "int-persist-001",
-        "analysis_run_id": "ar-integration-001",
-        "startup_id": "startup-99",
-    })
+    result = graph.invoke(
+        {
+            "run_id": "int-persist-001",
+            "analysis_run_id": "ar-integration-001",
+            "startup_id": "startup-99",
+        }
+    )
     state = _state_of(result)
     executed = state.get("executed_nodes", [])
     assert "finish" in executed
@@ -4528,6 +4909,7 @@ def _calibrated_retriever_strategy_inventory() -> list[Any]:
         DecisionCalibrationRecord,
         DecisionType,
     )
+
     return [
         DecisionCalibrationRecord(
             decision_id="rag.retriever_strategy",
@@ -4709,10 +5091,12 @@ class TestRetrieveNvidiaContextDispatch:
             )
             mock_qdrant_cls.return_value = mock_instance
 
-            result = _retrieve_nvidia_context({
-                "run_id": "dispatch-001",
-                "executed_nodes": ["diagnose_gaps"],
-            })
+            result = _retrieve_nvidia_context(
+                {
+                    "run_id": "dispatch-001",
+                    "executed_nodes": ["diagnose_gaps"],
+                }
+            )
 
         assert result["selected_retriever_strategy"] == "semantic_qdrant"
         assert result["ragas_eval_reference"] is not None
@@ -4745,10 +5129,12 @@ class TestRetrieveNvidiaContextDispatch:
             "src.quality.decision_calibration_registry.get_project_decision_inventory",
             return_value=inventory,
         ):
-            result = _retrieve_nvidia_context({
-                "run_id": "dispatch-002",
-                "executed_nodes": [],
-            })
+            result = _retrieve_nvidia_context(
+                {
+                    "run_id": "dispatch-002",
+                    "executed_nodes": [],
+                }
+            )
 
         assert result["status"] == "rag_blocked_lexical_winner_not_productive"
         assert result["selected_retriever_strategy"] == "lexical_baseline"
@@ -4764,10 +5150,12 @@ class TestRetrieveNvidiaContextDispatch:
             "src.quality.decision_calibration_registry.get_project_decision_inventory",
             return_value=[],
         ):
-            result = _retrieve_nvidia_context({
-                "run_id": "dispatch-003",
-                "executed_nodes": [],
-            })
+            result = _retrieve_nvidia_context(
+                {
+                    "run_id": "dispatch-003",
+                    "executed_nodes": [],
+                }
+            )
 
         assert result["status"] == "rag_blocked_missing_ragas_eval"
         assert result["selected_retriever_strategy"] == ""
@@ -4791,10 +5179,12 @@ class TestRetrieveNvidiaContextDispatch:
             )
             mock_qdrant_cls.return_value = mock_instance
 
-            result = _retrieve_nvidia_context({
-                "run_id": "dispatch-004",
-                "executed_nodes": ["diagnose_gaps"],
-            })
+            result = _retrieve_nvidia_context(
+                {
+                    "run_id": "dispatch-004",
+                    "executed_nodes": ["diagnose_gaps"],
+                }
+            )
 
         assert "selected_retriever_strategy" in result
         assert "ragas_eval_reference" in result
@@ -4808,9 +5198,11 @@ class TestRetrieveNvidiaContextDispatch:
         """When _rag_service is injected, dispatch is skipped."""
         from src.agents.graph import _retrieve_nvidia_context
 
-        mock_svc = MagicMock(return_value=_make_rag_mock_result(
-            rag_contexts=["ctx_injected"],
-        ))
+        mock_svc = MagicMock(
+            return_value=_make_rag_mock_result(
+                rag_contexts=["ctx_injected"],
+            )
+        )
         result = _retrieve_nvidia_context(
             {"run_id": "dispatch-005", "executed_nodes": []},
             _rag_service=mock_svc,
@@ -4856,10 +5248,12 @@ class TestRetrieveNvidiaContextDispatch:
             "src.quality.decision_calibration_registry.get_project_decision_inventory",
             return_value=inventory,
         ):
-            result = _retrieve_nvidia_context({
-                "run_id": "dispatch-006",
-                "executed_nodes": [],
-            })
+            result = _retrieve_nvidia_context(
+                {
+                    "run_id": "dispatch-006",
+                    "executed_nodes": [],
+                }
+            )
 
         assert result["status"] == "rag_blocked_uncalibrated_hybrid"
         assert result["selected_retriever_strategy"] == "hybrid_qdrant"

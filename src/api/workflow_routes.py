@@ -23,6 +23,7 @@ from src.services.product.readiness_gate import ReadinessGate
 
 router = APIRouter(tags=["workflows"])
 DbSession = Annotated[Session, Depends(get_db_session)]
+ProductReady = Annotated[None, Depends(ReadinessGate())]
 
 
 @router.post(
@@ -32,8 +33,8 @@ DbSession = Annotated[Session, Depends(get_db_session)]
 )
 def create_product_workflow_run(
     body: ProductWorkflowRunCreate,
+    _gate: ProductReady,
     session: DbSession,
-    _gate: None = Depends(ReadinessGate()),
 ) -> ProductWorkflowRunRead:
     svc = WorkflowOrchestrationService(session)
     state = svc.create_and_run_workflow(
@@ -123,9 +124,7 @@ def get_workflow_for_analysis_run(
     repo = WorkflowRepository(session)
     run = repo.get_workflow_for_analysis_run(analysis_run_id)
     if run is None:
-        raise HTTPException(
-            status_code=404, detail=f"No workflow found for analysis run: {analysis_run_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"No workflow found for analysis run: {analysis_run_id}")
     node_runs = repo.list_node_runs(run.id)
     return _workflow_run_read(run, node_runs)
 
@@ -242,6 +241,7 @@ def resume_workflow(
             decision=body.decision,
             reviewer=body.reviewer,
             notes=body.notes,
+            resume=True,
         )
     except (LookupError, RuntimeError) as exc:
         raise HTTPException(

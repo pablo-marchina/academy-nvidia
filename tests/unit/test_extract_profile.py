@@ -9,8 +9,6 @@ from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from src.agents.graph import _empty_extraction_metrics, _extract_profile
 
 _AI_HTML = (
@@ -62,13 +60,15 @@ def _make_candidate(
 def test_extract_profile_calls_real_extractor() -> None:
     """extract_profile node calls the real deterministic extractor."""
     candidates = [_make_candidate()]
-    result = _extract_profile({
-        "run_id": "ext-test-001",
-        "startup_id": "startup-42",
-        "startup_name": "NovaAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": ["preflight_configuration_check", "plan_search", "collect_sources"],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-001",
+            "startup_id": "startup-42",
+            "startup_name": "NovaAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": ["preflight_configuration_check", "plan_search", "collect_sources"],
+        }
+    )
     assert result.get("extraction_status") is not None
     assert result.get("extraction_metrics", {}).get("extraction_attempt_count", 0) >= 1
 
@@ -78,12 +78,14 @@ def test_extract_profile_calls_real_extractor() -> None:
 
 def test_html_fixture_generates_evidence_items() -> None:
     candidates = [_make_candidate()]
-    result = _extract_profile({
-        "run_id": "ext-test-002",
-        "startup_name": "NovaAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-002",
+            "startup_name": "NovaAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     items = result.get("evidence_items", [])
     assert len(items) >= 1
     first = items[0]
@@ -103,12 +105,14 @@ def test_html_fixture_generates_evidence_items() -> None:
 
 def test_claims_derived_from_real_text() -> None:
     candidates = [_make_candidate()]
-    result = _extract_profile({
-        "run_id": "ext-test-003",
-        "startup_name": "NovaAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-003",
+            "startup_name": "NovaAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     claims = result.get("claims", [])
     assert len(claims) >= 1
     for c in claims:
@@ -118,10 +122,21 @@ def test_claims_derived_from_real_text() -> None:
         assert "extraction_method" in c
         assert c["extraction_method"] == "deterministic_pattern"
         # Claim text must come from actual evidence patterns, not invented
-        assert any(kw in c["claim_text"].lower() for kw in [
-            "ai", "machine learning", "founder", "funding", "tech stack",
-            "description", "customer",
-        ]) or "signal" in c["claim_text"].lower()
+        assert (
+            any(
+                kw in c["claim_text"].lower()
+                for kw in [
+                    "ai",
+                    "machine learning",
+                    "founder",
+                    "funding",
+                    "tech stack",
+                    "description",
+                    "customer",
+                ]
+            )
+            or "signal" in c["claim_text"].lower()
+        )
 
 
 # ── Test 4: startup_profile contains detected_ai_signals ─────────────────
@@ -129,12 +144,14 @@ def test_claims_derived_from_real_text() -> None:
 
 def test_startup_profile_contains_ai_signals() -> None:
     candidates = [_make_candidate(_AI_HTML)]
-    result = _extract_profile({
-        "run_id": "ext-test-004",
-        "startup_name": "NovaAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-004",
+            "startup_name": "NovaAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     profile = result.get("startup_profile", {})
     assert isinstance(profile, dict)
     ai_signals = profile.get("detected_ai_signals", [])
@@ -148,20 +165,30 @@ def test_startup_profile_contains_ai_signals() -> None:
 
 def test_extraction_metrics_exist() -> None:
     candidates = [_make_candidate()]
-    result = _extract_profile({
-        "run_id": "ext-test-005",
-        "startup_name": "NovaAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-005",
+            "startup_name": "NovaAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     metrics = result.get("extraction_metrics", {})
     assert isinstance(metrics, dict)
-    for key in ("raw_candidates_count", "extraction_attempt_count",
-                "extraction_success_count", "extraction_failure_count",
-                "evidence_items_count", "claims_count",
-                "empty_content_count", "duplicate_content_count",
-                "source_type_coverage", "extraction_success_rate",
-                "profile_field_coverage", "average_extraction_confidence"):
+    for key in (
+        "raw_candidates_count",
+        "extraction_attempt_count",
+        "extraction_success_count",
+        "extraction_failure_count",
+        "evidence_items_count",
+        "claims_count",
+        "empty_content_count",
+        "duplicate_content_count",
+        "source_type_coverage",
+        "extraction_success_rate",
+        "profile_field_coverage",
+        "average_extraction_confidence",
+    ):
         assert key in metrics, f"Missing metric key: {key}"
 
 
@@ -170,12 +197,14 @@ def test_extraction_metrics_exist() -> None:
 
 def test_extraction_success_rate_calculated() -> None:
     candidates = [_make_candidate(), _make_candidate(text=_EMPTY_HTML)]
-    result = _extract_profile({
-        "run_id": "ext-test-006",
-        "startup_name": "PartialAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-006",
+            "startup_name": "PartialAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     metrics = result.get("extraction_metrics", {})
     rate = metrics.get("extraction_success_rate", 0.0)
     assert 0.0 < rate <= 1.0
@@ -187,12 +216,14 @@ def test_extraction_success_rate_calculated() -> None:
 
 
 def test_empty_candidates_blocks() -> None:
-    result = _extract_profile({
-        "run_id": "ext-test-007",
-        "startup_name": "EmptyAI",
-        "raw_evidence_candidates": [],
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-007",
+            "startup_name": "EmptyAI",
+            "raw_evidence_candidates": [],
+            "executed_nodes": [],
+        }
+    )
     assert result.get("extraction_status") == "blocked"
     assert result.get("status") == "extraction_blocked"
     assert result.get("review_required") is True
@@ -207,12 +238,14 @@ def test_empty_candidates_blocks() -> None:
 @patch("src.extraction.extractor.extract_profile", side_effect=ImportError("Mock unavailable"))
 def test_extractor_unavailable_blocks(mock_extractor: MagicMock) -> None:
     """When the extractor is unavailable, extraction is blocked."""
-    result = _extract_profile({
-        "run_id": "ext-test-008",
-        "startup_name": "NoExtractorAI",
-        "raw_evidence_candidates": [_make_candidate()],
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-008",
+            "startup_name": "NoExtractorAI",
+            "raw_evidence_candidates": [_make_candidate()],
+            "executed_nodes": [],
+        }
+    )
     assert result.get("extraction_status") == "blocked"
     assert result.get("status") == "extractor_unavailable"
     assert result.get("review_required") is True
@@ -226,12 +259,14 @@ def test_extractor_unavailable_blocks(mock_extractor: MagicMock) -> None:
 def test_sufficiency_uncalibrated_blocks_passed() -> None:
     """Without calibrated sufficiency decisions, status cannot be 'passed'."""
     candidates = [_make_candidate(_AI_HTML)]
-    result = _extract_profile({
-        "run_id": "ext-test-009",
-        "startup_name": "UncalibratedAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-009",
+            "startup_name": "UncalibratedAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     # Without calibrated decisions, extraction is blocked or partial
     assert result.get("extraction_status") in ("blocked", "partial")
     assert result.get("status") in ("extraction_blocked", "profile_extracted_partial")
@@ -242,12 +277,14 @@ def test_sufficiency_uncalibrated_blocks_passed() -> None:
 
 def test_run_id_preserved() -> None:
     candidates = [_make_candidate()]
-    result = _extract_profile({
-        "run_id": "preserve-ext-001",
-        "startup_name": "PreserveAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "preserve-ext-001",
+            "startup_name": "PreserveAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     assert result.get("run_id") is None  # run_id stays in state, not returned
     # But it's preserved in the state because extract_profile doesn't overwrite it
     assert "extract_profile" in result.get("executed_nodes", [])
@@ -259,12 +296,14 @@ def test_run_id_preserved() -> None:
 def test_executed_nodes_contains_extract_profile() -> None:
     candidates = [_make_candidate()]
     prior = ["preflight_configuration_check", "plan_search", "collect_sources"]
-    result = _extract_profile({
-        "run_id": "ext-test-011",
-        "startup_name": "NodeTestAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": list(prior),
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-011",
+            "startup_name": "NodeTestAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": list(prior),
+        }
+    )
     executed = result.get("executed_nodes", [])
     assert "extract_profile" in executed
     idx = executed.index("extract_profile")
@@ -279,16 +318,27 @@ def test_no_llm_qdrant_scraping() -> None:
     import sys
 
     before = set(sys.modules.keys())
-    _extract_profile({
-        "run_id": "ext-test-012",
-        "startup_name": "SafeAI",
-        "raw_evidence_candidates": [_make_candidate()],
-        "executed_nodes": [],
-    })
+    _extract_profile(
+        {
+            "run_id": "ext-test-012",
+            "startup_name": "SafeAI",
+            "raw_evidence_candidates": [_make_candidate()],
+            "executed_nodes": [],
+        }
+    )
     after = set(sys.modules.keys())
     new_imports = after - before
-    banned = {"langchain", "qdrant_client", "playwright", "openai", "anthropic",
-              "httpx", "requests", "selenium", "scrapy"}
+    banned = {
+        "langchain",
+        "qdrant_client",
+        "playwright",
+        "openai",
+        "anthropic",
+        "httpx",
+        "requests",
+        "selenium",
+        "scrapy",
+    }
     triggered = {m for m in new_imports if any(b in m for b in banned)}
     assert not triggered, f"Banned imports detected: {triggered}"
 
@@ -298,12 +348,14 @@ def test_no_llm_qdrant_scraping() -> None:
 
 def test_startup_profile_no_ai_signals() -> None:
     candidates = [_make_candidate(_NO_AI_HTML, source_url="https://cleantech.com")]
-    result = _extract_profile({
-        "run_id": "ext-test-013",
-        "startup_name": "CleanTech",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-013",
+            "startup_name": "CleanTech",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     profile = result.get("startup_profile", {})
     ai_signals = profile.get("detected_ai_signals", [])
     assert ai_signals == []
@@ -314,12 +366,14 @@ def test_startup_profile_no_ai_signals() -> None:
 
 def test_evidence_items_have_factuality() -> None:
     candidates = [_make_candidate()]
-    result = _extract_profile({
-        "run_id": "ext-test-014",
-        "startup_name": "NovaAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-014",
+            "startup_name": "NovaAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     for ev in result.get("evidence_items", []):
         assert "factuality_status" in ev
         assert ev["factuality_status"] in ("observed", "inferred", "unknown")
@@ -334,12 +388,14 @@ def test_duplicate_content_tracked() -> None:
         _make_candidate(text=text, source_id="src_001"),
         _make_candidate(text=text, source_id="src_002"),
     ]
-    result = _extract_profile({
-        "run_id": "ext-test-015",
-        "startup_name": "DupAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-015",
+            "startup_name": "DupAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     metrics = result.get("extraction_metrics", {})
     assert metrics.get("duplicate_content_count", 0) >= 1
     assert metrics.get("extraction_success_count", 0) == 1
@@ -350,12 +406,14 @@ def test_duplicate_content_tracked() -> None:
 
 def test_evidence_has_source_quality_score() -> None:
     candidates = [_make_candidate()]
-    result = _extract_profile({
-        "run_id": "ext-test-016",
-        "startup_name": "QualityAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-016",
+            "startup_name": "QualityAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     for ev in result.get("evidence_items", []):
         assert "source_quality_score" in ev
         assert isinstance(ev["source_quality_score"], (int, float))
@@ -366,12 +424,14 @@ def test_evidence_has_source_quality_score() -> None:
 
 def test_claims_have_supporting_evidence_ids() -> None:
     candidates = [_make_candidate()]
-    result = _extract_profile({
-        "run_id": "ext-test-017",
-        "startup_name": "LinkAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-017",
+            "startup_name": "LinkAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     for c in result.get("claims", []):
         assert "supporting_evidence_ids" in c
         assert len(c["supporting_evidence_ids"]) >= 1
@@ -382,12 +442,14 @@ def test_claims_have_supporting_evidence_ids() -> None:
 
 def test_empty_text_counts_as_failure() -> None:
     candidates = [_make_candidate(text="", source_url="https://empty.com")]
-    result = _extract_profile({
-        "run_id": "ext-test-018",
-        "startup_name": "EmptyTextAI",
-        "raw_evidence_candidates": candidates,
-        "executed_nodes": [],
-    })
+    result = _extract_profile(
+        {
+            "run_id": "ext-test-018",
+            "startup_name": "EmptyTextAI",
+            "raw_evidence_candidates": candidates,
+            "executed_nodes": [],
+        }
+    )
     metrics = result.get("extraction_metrics", {})
     assert metrics.get("empty_content_count", 0) >= 1
     assert metrics.get("extraction_success_count", 0) == 0

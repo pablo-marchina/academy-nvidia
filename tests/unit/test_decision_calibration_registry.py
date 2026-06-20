@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
-import pytest
+from datetime import UTC, datetime
 
 from src.quality.decision_calibration_registry import (
     CalibrationMethod,
@@ -59,7 +57,7 @@ class TestDecisionCalibrationRecord:
             calibration_method=CalibrationMethod.ROC_PR_CURVE,
             production_allowed=True,
             owner="team-ml",
-            last_calibrated_at=datetime(2026, 6, 1, tzinfo=timezone.utc),
+            last_calibrated_at=datetime(2026, 6, 1, tzinfo=UTC),
             notes="Calibrated via ROC curve at 0.85 threshold.",
         )
         assert record.production_allowed is True
@@ -277,9 +275,7 @@ class TestProjectDecisionInventory:
             "threshold.motion.immediate_outreach",
             "parameter.rrf_k",
         }
-        assert known_real.issubset(real_ids), (
-            f"Missing real decisions. Expected at least: {known_real - real_ids}"
-        )
+        assert known_real.issubset(real_ids), f"Missing real decisions. Expected at least: {known_real - real_ids}"
 
     def test_no_test_only_values_in_inventory(self) -> None:
         """Verify no test-only threshold values leaked into production registry."""
@@ -292,7 +288,10 @@ class TestProjectDecisionInventory:
     def test_quality_thresholds_are_calibrated(self) -> None:
         inventory = get_project_decision_inventory()
         for rec in inventory:
-            if rec.decision_id.startswith("threshold.") and rec.value_origin == "src/quality/constants.py :: THRESHOLDS":
+            if (
+                rec.decision_id.startswith("threshold.")
+                and rec.value_origin == "src/quality/constants.py :: THRESHOLDS"
+            ):
                 assert rec.calibration_status in (
                     CalibrationStatus.CALIBRATED,
                     CalibrationStatus.BENCHMARK_BASED,
@@ -307,7 +306,9 @@ class TestProjectDecisionInventory:
                 CalibrationStatus.BENCHMARK_BASED,
                 CalibrationStatus.BASELINE_MEASURED,
             ):
-                assert rec.production_allowed is True, f"{rec.decision_id} is {rec.calibration_status} but production_allowed={rec.production_allowed}"
+                assert (
+                    rec.production_allowed is True
+                ), f"{rec.decision_id} is {rec.calibration_status} but production_allowed={rec.production_allowed}"
 
     def test_blocked_thresholds_prevent_production(self) -> None:
         inventory = get_project_decision_inventory()
@@ -327,9 +328,9 @@ class TestProjectDecisionInventory:
         }
         for rec in inventory:
             if rec.decision_id in startup_scoring_ids:
-                assert rec.calibration_status == CalibrationStatus.BASELINE_MEASURED, (
-                    f"{rec.decision_id} should be BASELINE_MEASURED but is {rec.calibration_status}"
-                )
+                assert (
+                    rec.calibration_status == CalibrationStatus.BASELINE_MEASURED
+                ), f"{rec.decision_id} should be BASELINE_MEASURED but is {rec.calibration_status}"
                 assert rec.production_allowed is True
 
     def test_startup_scoring_decisions_have_value_origin(self) -> None:
@@ -387,9 +388,7 @@ class TestProjectDecisionInventory:
                 assert rec.calibration_status in (
                     CalibrationStatus.UNCALIBRATED,
                     CalibrationStatus.BLOCKED,
-                ), (
-                    f"{rec.decision_id} should not be production-capable but is {rec.calibration_status}"
-                )
+                ), f"{rec.decision_id} should not be production-capable but is {rec.calibration_status}"
                 assert rec.production_allowed is False
 
     def test_classification_scores_and_motion_thresholds_are_calibrated(self) -> None:
@@ -514,17 +513,15 @@ class TestProjectDecisionInventory:
                     f"{rec.decision_id} should be uncalibrated (new codebase-inventoried) "
                     f"but is {rec.calibration_status}"
                 )
-                assert rec.production_allowed is False, (
-                    f"{rec.decision_id} should not allow production yet"
-                )
+                assert rec.production_allowed is False, f"{rec.decision_id} should not allow production yet"
                 assert rec.value_origin != "", f"{rec.decision_id} must have value_origin"
             if rec.decision_id in calibrated_new:
-                assert rec.calibration_status != CalibrationStatus.UNCALIBRATED, (
-                    f"{rec.decision_id} was expected to be calibrated but is uncalibrated"
-                )
-                assert rec.production_allowed is True, (
-                    f"{rec.decision_id} was calibrated but production_allowed is False"
-                )
+                assert (
+                    rec.calibration_status != CalibrationStatus.UNCALIBRATED
+                ), f"{rec.decision_id} was expected to be calibrated but is uncalibrated"
+                assert (
+                    rec.production_allowed is True
+                ), f"{rec.decision_id} was calibrated but production_allowed is False"
 
     def test_inventory_some_block_production(self) -> None:
         inventory = get_project_decision_inventory()
@@ -535,46 +532,38 @@ class TestProjectDecisionInventory:
     def test_scraping_baseline_records_exist(self) -> None:
         inventory = get_project_decision_inventory()
         ids = {r.decision_id for r in inventory}
-        assert _SCRAPING_IDS.issubset(ids), (
-            f"Missing scraping baseline records: {_SCRAPING_IDS - ids}"
-        )
+        assert _SCRAPING_IDS.issubset(ids), f"Missing scraping baseline records: {_SCRAPING_IDS - ids}"
 
     def test_scraping_baseline_records_calibrated(self) -> None:
         inventory = get_project_decision_inventory()
         for rec in inventory:
             if rec.decision_id in _SCRAPING_IDS:
-                assert rec.calibration_status == CalibrationStatus.BASELINE_MEASURED, (
-                    f"{rec.decision_id} should be BASELINE_MEASURED, got {rec.calibration_status}"
-                )
+                assert (
+                    rec.calibration_status == CalibrationStatus.BASELINE_MEASURED
+                ), f"{rec.decision_id} should be BASELINE_MEASURED, got {rec.calibration_status}"
                 assert rec.production_allowed is True
 
     def test_scraping_baseline_have_evidence_source(self) -> None:
         inventory = get_project_decision_inventory()
         for rec in inventory:
             if rec.decision_id in _SCRAPING_IDS:
-                assert rec.evidence_source is not None, (
-                    f"{rec.decision_id} must have evidence_source"
-                )
+                assert rec.evidence_source is not None, f"{rec.decision_id} must have evidence_source"
                 assert len(rec.evidence_source) > 0
 
     def test_scraping_baseline_have_value_origin(self) -> None:
         inventory = get_project_decision_inventory()
         for rec in inventory:
             if rec.decision_id in _SCRAPING_IDS:
-                assert rec.value_origin is not None, (
-                    f"{rec.decision_id} must have value_origin"
-                )
-                assert "scraping_baseline" in rec.value_origin, (
-                    f"{rec.decision_id} value_origin should reference scraping_baseline"
-                )
+                assert rec.value_origin is not None, f"{rec.decision_id} must have value_origin"
+                assert (
+                    "scraping_baseline" in rec.value_origin
+                ), f"{rec.decision_id} value_origin should reference scraping_baseline"
 
     def test_scraping_baseline_have_calibration_method(self) -> None:
         inventory = get_project_decision_inventory()
         for rec in inventory:
             if rec.decision_id in _SCRAPING_IDS:
-                assert rec.calibration_method is not None, (
-                    f"{rec.decision_id} must have calibration_method"
-                )
+                assert rec.calibration_method is not None, f"{rec.decision_id} must have calibration_method"
 
     def test_scraping_source_priority_is_source_priority_type(self) -> None:
         inventory = get_project_decision_inventory()
@@ -617,9 +606,7 @@ class TestExtendedRagDecisions:
         }
         for rec in inventory:
             if rec.decision_id in still_uncalibrated:
-                assert rec.production_allowed is False, (
-                    f"{rec.decision_id} must have production_allowed=False"
-                )
+                assert rec.production_allowed is False, f"{rec.decision_id} must have production_allowed=False"
             elif rec.decision_id == "rag.min_contexts_per_gap":
                 assert rec.production_allowed is True
                 assert rec.calibration_status == CalibrationStatus.BASELINE_MEASURED
@@ -746,12 +733,10 @@ class TestIngestionCorpusDecisions:
         inventory = get_project_decision_inventory()
         for rec in inventory:
             if rec.decision_id in self._INGESTION_IDS:
-                assert rec.calibration_status == CalibrationStatus.UNCALIBRATED, (
-                    f"{rec.decision_id} should be UNCALIBRATED but is {rec.calibration_status}"
-                )
-                assert rec.production_allowed is False, (
-                    f"{rec.decision_id} should have production_allowed=False"
-                )
+                assert (
+                    rec.calibration_status == CalibrationStatus.UNCALIBRATED
+                ), f"{rec.decision_id} should be UNCALIBRATED but is {rec.calibration_status}"
+                assert rec.production_allowed is False, f"{rec.decision_id} should have production_allowed=False"
 
     def test_all_ingestion_decisions_have_value_origin(self) -> None:
         inventory = get_project_decision_inventory()

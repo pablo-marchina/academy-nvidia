@@ -35,5 +35,12 @@ Each gap is tagged: `FACT` (direct evidence), `INFERRED` (indirect), `HYPOTHESIS
 - Every gap must have at least one candidate technology mapped
 - Gaps inferred without direct evidence are tagged `INFERRED`
 
+## Final Product Readiness Update - 2026-06-19
+
+- Product diagnosis remains data-driven: every detected gap must expose evidence,
+  inference status, confidence, uncertainty, and calibration blockers.
+- Gaps with missing or non-production calibration must block downstream product
+  recommendations instead of silently falling back to heuristic defaults.
+
 ## Contract Version
 1.0 — June 2026

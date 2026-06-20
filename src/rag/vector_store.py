@@ -237,11 +237,7 @@ class InMemoryVectorStore(VectorStore):
         if document_type:
             result = [e for e in result if e.document_type == document_type]
         if not include_deprecated:
-            result = [
-                e
-                for e in result
-                if e.is_active is True and not e.deprecated_at and not e.superseded_by
-            ]
+            result = [e for e in result if e.is_active is True and not e.deprecated_at and not e.superseded_by]
         if not include_expired:
             result = [e for e in result if not _is_expired(e.valid_until)]
         return result
@@ -258,8 +254,7 @@ def _assert_not_production() -> None:
     backend = os.environ.get("RAG_VECTOR_BACKEND", "in_memory").lower()
     if app_mode == "product" and backend == "in_memory":
         raise RuntimeError(
-            "InMemoryVectorStore is FORBIDDEN in production. "
-            "Set RAG_VECTOR_BACKEND=qdrant in your .env file."
+            "InMemoryVectorStore is FORBIDDEN in production. " "Set RAG_VECTOR_BACKEND=qdrant in your .env file."
         )
 
 

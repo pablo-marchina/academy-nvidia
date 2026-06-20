@@ -92,7 +92,7 @@ class WorkflowOrchestrationService:
                 "started_at": r.started_at,
                 "completed_at": r.completed_at,
                 "created_at": r.created_at,
-                    "updated_at": r.updated_at,
+                "updated_at": r.updated_at,
             }
             for r in runs
         ]
@@ -111,18 +111,41 @@ class WorkflowOrchestrationService:
         decision: str,
         reviewer: str,
         notes: str,
+        resume: bool = False,
     ) -> dict[str, Any]:
         run = self.repo.get_workflow_run(workflow_id)
         if run is None:
             raise LookupError(f"Workflow run not found: {workflow_id}")
 
         state_data: dict[str, Any] = dict(run.state_json or {})
+        now = datetime.now(UTC).isoformat()
+        state_data.update(
+            {
+                "review_decision": decision,
+                "reviewer": reviewer,
+                "reviewed_by": reviewer,
+                "review_notes": notes,
+                "reviewed_at": now,
+                "review_required": False,
+            }
+        )
+        run.state_json = state_data
+        self.session.flush()
+
+        if not resume:
+            self.session.commit()
+            return {
+                "workflow_id": workflow_id,
+                "decision": decision,
+                "reviewer": reviewer,
+                "notes": notes,
+                "created_at": now,
+            }
+
         state_data["workflow_id"] = run.id
         state_data["startup_id"] = run.startup_id
         state_data["current_node"] = run.current_node
         workflow_state = ProductWorkflowState(**state_data)
-
-        now = datetime.now(UTC).isoformat()
 
         runner = WorkflowRunner(self.session)
         runner.resume_workflow(workflow_state, decision=decision, notes=notes, reviewed_by=reviewer)

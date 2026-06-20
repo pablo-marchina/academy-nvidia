@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from src.briefing.schemas import (
@@ -16,7 +16,7 @@ from src.briefing.schemas import (
 
 
 def _utc_now_str() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _mean(values: list[float]) -> float:
@@ -58,11 +58,7 @@ def _gap_metric(
         return float(gap_diagnosis_metrics[field])
     if gap_diagnosis_summary and isinstance(gap_diagnosis_summary, dict):
         gaps_raw = gap_diagnosis_summary.get("gaps", [])
-        values = [
-            float(g[field])
-            for g in gaps_raw
-            if isinstance(g, dict) and isinstance(g.get(field), (int, float))
-        ]
+        values = [float(g[field]) for g in gaps_raw if isinstance(g, dict) and isinstance(g.get(field), (int, float))]
         return _mean(values)
     return 0.0
 
@@ -117,15 +113,10 @@ def _has_uncalibrated_status(state: dict[str, Any]) -> bool:
         state.get("rag_retrieval_status"),
         state.get("gap_diagnosis_status"),
         scoring_summary.get("scoring_status") if isinstance(scoring_summary, dict) else None,
-        nvidia_mapping_summary.get("mapping_status")
-        if isinstance(nvidia_mapping_summary, dict)
-        else None,
+        (nvidia_mapping_summary.get("mapping_status") if isinstance(nvidia_mapping_summary, dict) else None),
         evidence_validation.get("status") if isinstance(evidence_validation, dict) else None,
     ]
-    return any(
-        isinstance(status, str) and "blocked_uncalibrated" in status
-        for status in statuses
-    )
+    return any(isinstance(status, str) and "blocked_uncalibrated" in status for status in statuses)
 
 
 def _top_recommendation(
@@ -220,13 +211,9 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
     scores: dict[str, Any] = state.get("scores", {})
     quality: dict[str, Any] | None = state.get("quality")
     nvidia_rec_metrics: dict[str, Any] = state.get("nvidia_recommendation_metrics", {})
-    all_recommendations: list[dict[str, Any]] = list(
-        state.get("nvidia_recommendations", [])
-    )
+    all_recommendations: list[dict[str, Any]] = list(state.get("nvidia_recommendations", []))
     claims: list[dict[str, Any]] = list(state.get("claims", []))
-    accepted_evidence_items: list[dict[str, Any]] = list(
-        state.get("accepted_evidence_items", [])
-    )
+    accepted_evidence_items: list[dict[str, Any]] = list(state.get("accepted_evidence_items", []))
     evidence_items: list[dict[str, Any]] = list(state.get("evidence_items", []))
     rag_contexts: list[Any] = list(state.get("rag_contexts", []))
     existing_blockers = _ids(state.get("blockers", []))
@@ -236,28 +223,20 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
     scoring_summary: dict[str, Any] | None = state.get("startup_scoring_summary")
 
     ai_native_score_value = (
-        _number(scores.get("ai_native_score"))
-        if scores.get("ai_native_score") is not None
-        else None
+        _number(scores.get("ai_native_score")) if scores.get("ai_native_score") is not None else None
     )
     nvidia_fit_score_value = (
-        _number(scores.get("nvidia_fit_score"))
-        if scores.get("nvidia_fit_score") is not None
-        else None
+        _number(scores.get("nvidia_fit_score")) if scores.get("nvidia_fit_score") is not None else None
     )
 
-    raw_production_recs = [
-        rec for rec in all_recommendations if rec.get("production_allowed", False)
-    ]
+    raw_production_recs = [rec for rec in all_recommendations if rec.get("production_allowed", False)]
     final_recs = [
         rec
         for rec in raw_production_recs
         if rec.get("supporting_evidence_ids") and rec.get("supporting_rag_context_ids")
     ]
     inconsistent_recs = [rec for rec in raw_production_recs if rec not in final_recs]
-    blocked_recs = [
-        rec for rec in all_recommendations if not rec.get("production_allowed", False)
-    ]
+    blocked_recs = [rec for rec in all_recommendations if not rec.get("production_allowed", False)]
 
     recommendation_count = len(all_recommendations)
     final_recommendation_count = len(final_recs)
@@ -269,25 +248,17 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
         if isinstance(rec.get("recommendation_priority_score"), (int, float))
     ]
     confidence_scores = [
-        _number(rec.get("confidence"))
-        for rec in final_recs
-        if isinstance(rec.get("confidence"), (int, float))
+        _number(rec.get("confidence")) for rec in final_recs if isinstance(rec.get("confidence"), (int, float))
     ]
     uncertainty_scores = [
-        _number(rec.get("uncertainty"), 1.0)
-        for rec in final_recs
-        if isinstance(rec.get("uncertainty"), (int, float))
+        _number(rec.get("uncertainty"), 1.0) for rec in final_recs if isinstance(rec.get("uncertainty"), (int, float))
     ]
 
     average_priority_score = _mean(priority_scores)
     average_confidence = _mean(confidence_scores)
     uncertainty_mean = _mean(uncertainty_scores)
-    rag_supported_count = sum(
-        1 for rec in final_recs if rec.get("supporting_rag_context_ids")
-    )
-    evidence_supported_count = sum(
-        1 for rec in final_recs if rec.get("supporting_evidence_ids")
-    )
+    rag_supported_count = sum(1 for rec in final_recs if rec.get("supporting_rag_context_ids"))
+    evidence_supported_count = sum(1 for rec in final_recs if rec.get("supporting_evidence_ids"))
     rag_supported_rate = rag_supported_count / max(1, final_recommendation_count)
     evidence_supported_rate = evidence_supported_count / max(1, final_recommendation_count)
 
@@ -306,9 +277,7 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
 
     accepted_evidence_count = len(accepted_evidence_items)
     rag_context_count = len(rag_contexts)
-    unsupported_critical_claims_count = int(
-        state.get("unsupported_critical_claims_count", 0) or 0
-    )
+    unsupported_critical_claims_count = int(state.get("unsupported_critical_claims_count", 0) or 0)
     calibration_decision_ids: list[str] = []
     for rec in all_recommendations:
         calibration_decision_ids.extend(_ids(rec.get("calibration_decision_ids", [])))
@@ -335,9 +304,7 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
 
     ranking_status = state.get("ranking_status")
     quality_status = quality.get("status") if quality else None
-    has_uncalibrated_inputs = (
-        missing_calibration_count > 0 or _has_uncalibrated_status(state)
-    )
+    has_uncalibrated_inputs = missing_calibration_count > 0 or _has_uncalibrated_status(state)
 
     brief_status: ActionBriefStatus
     updates_status: str
@@ -348,9 +315,7 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
         brief_status = ActionBriefStatus.BLOCKED_RANKING_NOT_PASSED
         updates_status = "brief_blocked"
         review_required = True
-        blockers.append(
-            f"generate_brief: ranking_status is '{ranking_status}' (expected 'passed')"
-        )
+        blockers.append(f"generate_brief: ranking_status is '{ranking_status}' (expected 'passed')")
     elif _quality_status_blocks(quality_status):
         brief_status = ActionBriefStatus.BLOCKED_QUALITY_GATE
         updates_status = "brief_blocked"
@@ -361,16 +326,14 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
         updates_status = "brief_failed"
         review_required = False
         blockers.append(
-            "generate_brief: "
-            f"{unsupported_critical_claims_count} critical claim(s) without supported evidence"
+            "generate_brief: " f"{unsupported_critical_claims_count} critical claim(s) without supported evidence"
         )
     elif has_uncalibrated_inputs:
         brief_status = ActionBriefStatus.BLOCKED_UNCALIBRATED_INPUTS
         updates_status = "brief_blocked"
         review_required = True
         blockers.append(
-            "generate_brief: uncalibrated inputs detected "
-            f"(missing_calibration_count={missing_calibration_count})"
+            "generate_brief: uncalibrated inputs detected " f"(missing_calibration_count={missing_calibration_count})"
         )
     elif inconsistency_blockers:
         brief_status = ActionBriefStatus.FAILED
@@ -387,9 +350,7 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
         brief_status = ActionBriefStatus.FAILED
         updates_status = "brief_failed"
         review_required = False
-        blockers.append(
-            "generate_brief: no production recommendations have both evidence and RAG support"
-        )
+        blockers.append("generate_brief: no production recommendations have both evidence and RAG support")
     elif _quality_status_needs_review(quality_status):
         brief_status = ActionBriefStatus.NEEDS_REVIEW
         updates_status = "brief_needs_review"
@@ -414,14 +375,8 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
         for rec in final_recs
     ]
 
-    blocked_entries = [
-        _recommendation_blocker(rec, source="rank_recommendations")
-        for rec in blocked_recs
-    ]
-    blocked_entries.extend(
-        _recommendation_blocker(rec, source="generate_brief")
-        for rec in inconsistent_recs
-    )
+    blocked_entries = [_recommendation_blocker(rec, source="rank_recommendations") for rec in blocked_recs]
+    blocked_entries.extend(_recommendation_blocker(rec, source="generate_brief") for rec in inconsistent_recs)
     for blocker in blockers:
         if not any(entry.description == blocker for entry in blocked_entries):
             blocked_entries.append(
@@ -438,14 +393,10 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
             next_best_actions.append(top_rec.next_best_action)
     if not next_best_actions:
         first_blocker = blockers[0] if blockers else "brief blockers"
-        next_best_actions.append(
-            f"Resolve blocker before brief generation: {first_blocker}"
-        )
+        next_best_actions.append(f"Resolve blocker before brief generation: {first_blocker}")
 
     evidence_ids = _ids([item.get("id") or item.get("evidence_id") for item in accepted_evidence_items])
-    evidence_ids.extend(
-        _ids([item.get("id") or item.get("evidence_id") for item in evidence_items])
-    )
+    evidence_ids.extend(_ids([item.get("id") or item.get("evidence_id") for item in evidence_items]))
     evidence_ids = _unique(evidence_ids)
     rag_context_ids: list[str] = []
     for rec in final_recs:
@@ -469,9 +420,7 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
 
     evidence_validation = state.get("evidence_validation")
     evidence_status = (
-        evidence_validation.get("status", "unknown")
-        if isinstance(evidence_validation, dict)
-        else "unknown"
+        evidence_validation.get("status", "unknown") if isinstance(evidence_validation, dict) else "unknown"
     )
     evidence_summary = (
         f"evidence_items={len(evidence_items)} | "
@@ -489,11 +438,7 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
         f"covered_by_recommendations={covered_gap_count} | "
         f"status={state.get('gap_diagnosis_status', 'unknown')}"
     )
-    scoring_status = (
-        scoring_summary.get("scoring_status", "unknown")
-        if scoring_summary
-        else "unknown"
-    )
+    scoring_status = scoring_summary.get("scoring_status", "unknown") if scoring_summary else "unknown"
     scoring_summary_text = (
         f"ai_native_score={ai_native_score_value} | "
         f"nvidia_fit_score={nvidia_fit_score_value} | "

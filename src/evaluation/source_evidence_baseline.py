@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field
 from math import sqrt
 from pathlib import Path
-from statistics import median, stdev
+from statistics import stdev
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -58,81 +57,131 @@ EC_UNSUPPORTED_SET = frozenset({"unsupported"})
 
 CANDIDATE_WEIGHTS_SOURCE_QUALITY: list[dict[str, float]] = [
     {
-        "source_authority_prior": 0.30, "robots_allowed": 0.10,
-        "compliance_status": 0.10, "fetch_success": 0.15,
-        "extraction_success": 0.10, "duplicate_status": 0.05,
-        "content_bytes": 0.05, "latency_ms": 0.05,
-        "source_freshness_days": 0.05, "source_independence_type": 0.05,
+        "source_authority_prior": 0.30,
+        "robots_allowed": 0.10,
+        "compliance_status": 0.10,
+        "fetch_success": 0.15,
+        "extraction_success": 0.10,
+        "duplicate_status": 0.05,
+        "content_bytes": 0.05,
+        "latency_ms": 0.05,
+        "source_freshness_days": 0.05,
+        "source_independence_type": 0.05,
     },
     {
-        "source_authority_prior": 0.40, "robots_allowed": 0.08,
-        "compliance_status": 0.08, "fetch_success": 0.12,
-        "extraction_success": 0.08, "duplicate_status": 0.04,
-        "content_bytes": 0.04, "latency_ms": 0.04,
-        "source_freshness_days": 0.06, "source_independence_type": 0.06,
+        "source_authority_prior": 0.40,
+        "robots_allowed": 0.08,
+        "compliance_status": 0.08,
+        "fetch_success": 0.12,
+        "extraction_success": 0.08,
+        "duplicate_status": 0.04,
+        "content_bytes": 0.04,
+        "latency_ms": 0.04,
+        "source_freshness_days": 0.06,
+        "source_independence_type": 0.06,
     },
     {
-        "source_authority_prior": 0.20, "robots_allowed": 0.10,
-        "compliance_status": 0.15, "fetch_success": 0.20,
-        "extraction_success": 0.15, "duplicate_status": 0.05,
-        "content_bytes": 0.05, "latency_ms": 0.05,
-        "source_freshness_days": 0.02, "source_independence_type": 0.03,
+        "source_authority_prior": 0.20,
+        "robots_allowed": 0.10,
+        "compliance_status": 0.15,
+        "fetch_success": 0.20,
+        "extraction_success": 0.15,
+        "duplicate_status": 0.05,
+        "content_bytes": 0.05,
+        "latency_ms": 0.05,
+        "source_freshness_days": 0.02,
+        "source_independence_type": 0.03,
     },
     {
-        "source_authority_prior": 0.15, "robots_allowed": 0.10,
-        "compliance_status": 0.10, "fetch_success": 0.15,
-        "extraction_success": 0.10, "duplicate_status": 0.10,
-        "content_bytes": 0.10, "latency_ms": 0.10,
-        "source_freshness_days": 0.05, "source_independence_type": 0.05,
+        "source_authority_prior": 0.15,
+        "robots_allowed": 0.10,
+        "compliance_status": 0.10,
+        "fetch_success": 0.15,
+        "extraction_success": 0.10,
+        "duplicate_status": 0.10,
+        "content_bytes": 0.10,
+        "latency_ms": 0.10,
+        "source_freshness_days": 0.05,
+        "source_independence_type": 0.05,
     },
     {
-        "source_authority_prior": 0.35, "robots_allowed": 0.05,
-        "compliance_status": 0.05, "fetch_success": 0.10,
-        "extraction_success": 0.10, "duplicate_status": 0.05,
-        "content_bytes": 0.15, "latency_ms": 0.10,
-        "source_freshness_days": 0.02, "source_independence_type": 0.03,
+        "source_authority_prior": 0.35,
+        "robots_allowed": 0.05,
+        "compliance_status": 0.05,
+        "fetch_success": 0.10,
+        "extraction_success": 0.10,
+        "duplicate_status": 0.05,
+        "content_bytes": 0.15,
+        "latency_ms": 0.10,
+        "source_freshness_days": 0.02,
+        "source_independence_type": 0.03,
     },
 ]
 
 CANDIDATE_WEIGHTS_EVIDENCE_CONFIDENCE: list[dict[str, float]] = [
     {
-        "source_quality_score": 0.15, "extraction_confidence": 0.15,
-        "snippet_length": 0.05, "text_specificity_score": 0.10,
-        "claim_support_count": 0.10, "supporting_source_count": 0.10,
-        "cross_source_agreement_count": 0.10, "contradiction_count": 0.05,
-        "factuality_status": 0.10, "duplicate_penalty": 0.05,
+        "source_quality_score": 0.15,
+        "extraction_confidence": 0.15,
+        "snippet_length": 0.05,
+        "text_specificity_score": 0.10,
+        "claim_support_count": 0.10,
+        "supporting_source_count": 0.10,
+        "cross_source_agreement_count": 0.10,
+        "contradiction_count": 0.05,
+        "factuality_status": 0.10,
+        "duplicate_penalty": 0.05,
         "unsupported_critical_claim_flag": 0.05,
     },
     {
-        "source_quality_score": 0.25, "extraction_confidence": 0.15,
-        "snippet_length": 0.05, "text_specificity_score": 0.08,
-        "claim_support_count": 0.10, "supporting_source_count": 0.10,
-        "cross_source_agreement_count": 0.08, "contradiction_count": 0.05,
-        "factuality_status": 0.08, "duplicate_penalty": 0.03,
+        "source_quality_score": 0.25,
+        "extraction_confidence": 0.15,
+        "snippet_length": 0.05,
+        "text_specificity_score": 0.08,
+        "claim_support_count": 0.10,
+        "supporting_source_count": 0.10,
+        "cross_source_agreement_count": 0.08,
+        "contradiction_count": 0.05,
+        "factuality_status": 0.08,
+        "duplicate_penalty": 0.03,
         "unsupported_critical_claim_flag": 0.03,
     },
     {
-        "source_quality_score": 0.10, "extraction_confidence": 0.10,
-        "snippet_length": 0.05, "text_specificity_score": 0.08,
-        "claim_support_count": 0.15, "supporting_source_count": 0.15,
-        "cross_source_agreement_count": 0.15, "contradiction_count": 0.07,
-        "factuality_status": 0.08, "duplicate_penalty": 0.03,
+        "source_quality_score": 0.10,
+        "extraction_confidence": 0.10,
+        "snippet_length": 0.05,
+        "text_specificity_score": 0.08,
+        "claim_support_count": 0.15,
+        "supporting_source_count": 0.15,
+        "cross_source_agreement_count": 0.15,
+        "contradiction_count": 0.07,
+        "factuality_status": 0.08,
+        "duplicate_penalty": 0.03,
         "unsupported_critical_claim_flag": 0.04,
     },
     {
-        "source_quality_score": 0.12, "extraction_confidence": 0.12,
-        "snippet_length": 0.05, "text_specificity_score": 0.08,
-        "claim_support_count": 0.08, "supporting_source_count": 0.08,
-        "cross_source_agreement_count": 0.08, "contradiction_count": 0.05,
-        "factuality_status": 0.20, "duplicate_penalty": 0.05,
+        "source_quality_score": 0.12,
+        "extraction_confidence": 0.12,
+        "snippet_length": 0.05,
+        "text_specificity_score": 0.08,
+        "claim_support_count": 0.08,
+        "supporting_source_count": 0.08,
+        "cross_source_agreement_count": 0.08,
+        "contradiction_count": 0.05,
+        "factuality_status": 0.20,
+        "duplicate_penalty": 0.05,
         "unsupported_critical_claim_flag": 0.09,
     },
     {
-        "source_quality_score": 0.12, "extraction_confidence": 0.12,
-        "snippet_length": 0.08, "text_specificity_score": 0.08,
-        "claim_support_count": 0.10, "supporting_source_count": 0.10,
-        "cross_source_agreement_count": 0.10, "contradiction_count": 0.08,
-        "factuality_status": 0.10, "duplicate_penalty": 0.06,
+        "source_quality_score": 0.12,
+        "extraction_confidence": 0.12,
+        "snippet_length": 0.08,
+        "text_specificity_score": 0.08,
+        "claim_support_count": 0.10,
+        "supporting_source_count": 0.10,
+        "cross_source_agreement_count": 0.10,
+        "contradiction_count": 0.08,
+        "factuality_status": 0.10,
+        "duplicate_penalty": 0.06,
         "unsupported_critical_claim_flag": 0.06,
     },
 ]
@@ -275,9 +324,7 @@ def _derive_evidence_support_label(feats: dict[str, Any], claim_support_count: i
 
 
 def _map_category_to_source_type(category: str) -> str:
-    return SCRAPING_CATEGORY_TO_SOURCE_TYPE.get(
-        category, SourceType.DIRECTORY.value
-    )
+    return SCRAPING_CATEGORY_TO_SOURCE_TYPE.get(category, SourceType.DIRECTORY.value)
 
 
 def _build_evidence_item(source_entry: dict[str, Any], claim_text: str) -> dict[str, Any]:
@@ -289,7 +336,7 @@ def _build_evidence_item(source_entry: dict[str, Any], claim_text: str) -> dict[
     return {
         "source_type": source_type,
         "robots_allowed": not source_entry.get("compliance_blocked", False),
-        "compliance_status": "non_compliant" if source_entry.get("compliance_blocked") else "compliant",
+        "compliance_status": ("non_compliant" if source_entry.get("compliance_blocked") else "compliant"),
         "status": "fetched" if fetch_ok else "failed",
         "http_status_code": 200 if fetch_ok else 503,
         "extraction_status": "success" if extract_ok else "failed",
@@ -337,8 +384,8 @@ def _build_entry(
         human_label_source_quality=sq_label,
         human_label_evidence_support=ec_label,
         label_notes=f"Derived label from scraping baseline features. "
-                     f"SQ label rule: authority+fetch+extract+latency. "
-                     f"EC label rule: fetch+extract+dup+claim_support_count={claim_support_count}.",
+        f"SQ label rule: authority+fetch+extract+latency. "
+        f"EC label rule: fetch+extract+dup+claim_support_count={claim_support_count}.",
         label_source="derived_from_scraping_baseline",
     )
 
@@ -369,9 +416,7 @@ def load_golden_set(
     for startup in raw.get("startups", []):
         sid = startup.get("startup_id", "unknown")
         sources = startup.get("sources", [])
-        claims_map: dict[str, dict[str, str]] = {
-            c["claim_id"]: c for c in claims_by_startup.get(sid, [])
-        }
+        claims_map: dict[str, dict[str, str]] = {c["claim_id"]: c for c in claims_by_startup.get(sid, [])}
         support_counts = _compute_claim_support_counts(sources)
 
         for source_entry in sources:
@@ -379,9 +424,7 @@ def load_golden_set(
                 claim = claims_map.get(cid)
                 if claim is None:
                     continue
-                entries.append(
-                    _build_entry(sid, source_entry, claim, support_counts.get(cid, 0))
-                )
+                entries.append(_build_entry(sid, source_entry, claim, support_counts.get(cid, 0)))
 
     return entries
 
@@ -431,9 +474,16 @@ def _make_calibrated_inventory(
 def _compute_distribution(scores: list[float]) -> ScoreDistribution:
     if not scores:
         return ScoreDistribution(
-            count=0, mean=0.0, std=None,
-            p5=0.0, p25=0.0, p50=0.0, p75=0.0, p95=0.0,
-            min=0.0, max=0.0,
+            count=0,
+            mean=0.0,
+            std=None,
+            p5=0.0,
+            p25=0.0,
+            p50=0.0,
+            p75=0.0,
+            p95=0.0,
+            min=0.0,
+            max=0.0,
         )
     sorted_scores = sorted(scores)
     n = len(sorted_scores)
@@ -462,7 +512,8 @@ def _compute_distribution(scores: list[float]) -> ScoreDistribution:
 
 
 def _spearman_rank_correlation(
-    x: list[float], y: list[float],
+    x: list[float],
+    y: list[float],
 ) -> float | None:
     n = len(x)
     if n < 3:
@@ -489,17 +540,19 @@ def _spearman_rank_correlation(
 def _compute_mae(actual: list[float], predicted: list[float]) -> float | None:
     if not actual:
         return None
-    return sum(abs(a - p) for a, p in zip(actual, predicted)) / len(actual)
+    return sum(abs(a - p) for a, p in zip(actual, predicted, strict=False)) / len(actual)
 
 
 def _compute_rmse(actual: list[float], predicted: list[float]) -> float | None:
     if not actual:
         return None
-    return sqrt(sum((a - p) ** 2 for a, p in zip(actual, predicted)) / len(actual))
+    return sqrt(sum((a - p) ** 2 for a, p in zip(actual, predicted, strict=False)) / len(actual))
 
 
 def _compute_calibration_error(
-    actual: list[float], predicted: list[float], bins: int = 10,
+    actual: list[float],
+    predicted: list[float],
+    bins: int = 10,
 ) -> float | None:
     if len(actual) < bins:
         return None
@@ -523,26 +576,22 @@ def _compute_sq_metrics(
 ) -> SourceQualityMetrics:
     labeled = [
         (e, s)
-        for e, s in zip(entries, scores)
+        for e, s in zip(entries, scores, strict=False)
         if e.human_label_source_quality in LABEL_SOURCE_QUALITY_VALUES
     ]
     if not labeled:
         return SourceQualityMetrics()
 
     y_true_scores = [
-        SQ_LABEL_TO_SCORE[label]
-        for e, _ in labeled
-        if (label := e.human_label_source_quality) is not None
+        SQ_LABEL_TO_SCORE[label] for e, _ in labeled if (label := e.human_label_source_quality) is not None
     ]
     y_pred = [s for _, s in labeled]
 
     spearman = _spearman_rank_correlation(y_true_scores, y_pred)
     mae = _compute_mae(y_true_scores, y_pred)
     rmse_val = _compute_rmse(y_true_scores, y_pred)
-    sorted_pairs = sorted(zip(y_pred, y_true_scores), key=lambda x: x[0])
-    cal_error = _compute_calibration_error(
-        [a for _, a in sorted_pairs], [p for p, _ in sorted_pairs]
-    )
+    sorted_pairs = sorted(zip(y_pred, y_true_scores, strict=False), key=lambda x: x[0])
+    cal_error = _compute_calibration_error([a for _, a in sorted_pairs], [p for p, _ in sorted_pairs])
 
     categories: dict[str, int] = {}
     for e in entries:
@@ -584,14 +633,18 @@ def _compute_binary_metrics(
         return {"precision": None, "recall": None, "f1": None, "fp_rate": None, "fn_rate": None}
 
     y_pred = [1 if s >= threshold else 0 for s in y_score]
-    tp = sum(1 for t, p in zip(y_true, y_pred) if t == 1 and p == 1)
-    fp = sum(1 for t, p in zip(y_true, y_pred) if t == 0 and p == 1)
-    fn = sum(1 for t, p in zip(y_true, y_pred) if t == 1 and p == 0)
-    tn = sum(1 for t, p in zip(y_true, y_pred) if t == 0 and p == 0)
+    tp = sum(1 for t, p in zip(y_true, y_pred, strict=False) if t == 1 and p == 1)
+    fp = sum(1 for t, p in zip(y_true, y_pred, strict=False) if t == 0 and p == 1)
+    fn = sum(1 for t, p in zip(y_true, y_pred, strict=False) if t == 1 and p == 0)
+    tn = sum(1 for t, p in zip(y_true, y_pred, strict=False) if t == 0 and p == 0)
 
     precision = tp / (tp + fp) if (tp + fp) > 0 else None
     recall = tp / (tp + fn) if (tp + fn) > 0 else None
-    f1 = 2 * precision * recall / (precision + recall) if (precision is not None and recall is not None and (precision + recall) > 0) else None
+    f1 = (
+        2 * precision * recall / (precision + recall)
+        if (precision is not None and recall is not None and (precision + recall) > 0)
+        else None
+    )
     fp_rate = fp / (fp + tn) if (fp + tn) > 0 else None
     fn_rate = fn / (tp + fn) if (tp + fn) > 0 else None
 
@@ -601,7 +654,10 @@ def _compute_binary_metrics(
         "f1": round(f1, 4) if f1 is not None else None,
         "fp_rate": round(fp_rate, 4) if fp_rate is not None else None,
         "fn_rate": round(fn_rate, 4) if fn_rate is not None else None,
-        "_tp": tp, "_fp": fp, "_fn": fn, "_tn": tn,
+        "_tp": tp,
+        "_fp": fp,
+        "_fn": fn,
+        "_tn": tn,
     }
 
 
@@ -612,7 +668,7 @@ def _compute_ec_metrics(
 ) -> EvidenceConfidenceMetrics:
     supported_pairs = [
         (s, e.human_label_evidence_support)
-        for e, s in zip(entries, scores)
+        for e, s in zip(entries, scores, strict=False)
         if e.human_label_evidence_support in LABEL_EVIDENCE_SUPPORT_VALUES
     ]
     if not supported_pairs:
@@ -626,17 +682,15 @@ def _compute_ec_metrics(
     unsupported_critical_miss = None
     critical_unsupported = [
         (s, e.human_label_evidence_support)
-        for e, s in zip(entries, scores)
+        for e, s in zip(entries, scores, strict=False)
         if e.human_label_evidence_support in EC_UNSUPPORTED_SET
     ]
     if critical_unsupported:
         missed = sum(1 for s, _ in critical_unsupported if s >= threshold)
         unsupported_critical_miss = missed / len(critical_unsupported)
 
-    sorted_pairs = sorted(zip(y_score, y_true), key=lambda x: x[0])
-    cal_error = _compute_calibration_error(
-        [float(t) for _, t in sorted_pairs], [s for s, _ in sorted_pairs]
-    )
+    sorted_pairs = sorted(zip(y_score, y_true, strict=False), key=lambda x: x[0])
+    cal_error = _compute_calibration_error([float(t) for _, t in sorted_pairs], [s for s, _ in sorted_pairs])
 
     return EvidenceConfidenceMetrics(
         precision=binary.get("precision"),
@@ -644,7 +698,9 @@ def _compute_ec_metrics(
         f1=binary.get("f1"),
         false_positive_rate=binary.get("fp_rate"),
         false_negative_rate=binary.get("fn_rate"),
-        unsupported_critical_claim_miss_rate=round(unsupported_critical_miss, 4) if unsupported_critical_miss is not None else None,
+        unsupported_critical_claim_miss_rate=(
+            round(unsupported_critical_miss, 4) if unsupported_critical_miss is not None else None
+        ),
         calibration_error=round(cal_error, 4) if cal_error is not None else None,
     )
 
@@ -796,8 +852,13 @@ def recommend_threshold_from_distribution(
             distribution=distribution,
         )
 
-    sorted_scores = [distribution.p5, distribution.p25, distribution.p50,
-                     distribution.p75, distribution.p95]
+    sorted_scores = [
+        distribution.p5,
+        distribution.p25,
+        distribution.p50,
+        distribution.p75,
+        distribution.p95,
+    ]
     min_score = distribution.min
     max_score = distribution.max
 
@@ -812,8 +873,8 @@ def recommend_threshold_from_distribution(
         method=f"percentile_{percentile}_of_observed_{distribution_label}_distribution",
         production_allowed=False,
         evidence_source=f"Threshold derived from {distribution_label} score distribution over {distribution.count} entries. "
-                        f"P{percentile:.0f}={suggested:.4f}, min={min_score:.4f}, max={max_score:.4f}. "
-                        f"Not for production — requires human-labeled validation.",
+        f"P{percentile:.0f}={suggested:.4f}, min={min_score:.4f}, max={max_score:.4f}. "
+        f"Not for production — requires human-labeled validation.",
         distribution=distribution,
     )
 
@@ -850,10 +911,7 @@ def _format_report(
     lines.append("-" * 80)
     lines.append("SOURCE QUALITY SCORE — Candidate Comparison")
     lines.append("-" * 80)
-    sq_header = (
-        f"{'Candidate':>25} | {'mean':>6} | {'spearman':>8} | {'mae':>6} | "
-        f"{'rmse':>6} | {'cal_err':>8}"
-    )
+    sq_header = f"{'Candidate':>25} | {'mean':>6} | {'spearman':>8} | {'mae':>6} | " f"{'rmse':>6} | {'cal_err':>8}"
     lines.append(sq_header)
     lines.append("-" * len(sq_header))
     for i, r in enumerate(sq_results):
@@ -865,8 +923,7 @@ def _format_report(
         cal_s = f"{sq_metric.calibration_error:.4f}" if sq_metric and sq_metric.calibration_error is not None else "N/A"
         marker = " <-- BEST" if best_sq_idx is not None and i == best_sq_idx else ""
         lines.append(
-            f"{r.label:>25}{marker} | {d.mean:>6.4f} | {spearman_s:>8} | {mae_s:>6} | "
-            f"{rmse_s:>6} | {cal_s:>8}"
+            f"{r.label:>25}{marker} | {d.mean:>6.4f} | {spearman_s:>8} | {mae_s:>6} | " f"{rmse_s:>6} | {cal_s:>8}"
         )
 
     lines.append("")
@@ -876,9 +933,8 @@ def _format_report(
         for true_label in ["high", "medium", "low"]:
             row = sq_metrics.confusion_matrix.get(true_label, {})
             lines.append(
-                f"  {true_label:>10} {row.get('high', 0):>8} "
-                f"{row.get('medium', 0):>8} {row.get('low', 0):>8}"
-        )
+                f"  {true_label:>10} {row.get('high', 0):>8} " f"{row.get('medium', 0):>8} {row.get('low', 0):>8}"
+            )
         lines.append("")
 
     lines.append("-" * 80)
@@ -896,8 +952,12 @@ def _format_report(
         prec_s = f"{ec_metric.precision:.4f}" if ec_metric and ec_metric.precision is not None else "N/A"
         recall_s = f"{ec_metric.recall:.4f}" if ec_metric and ec_metric.recall is not None else "N/A"
         f1_s = f"{ec_metric.f1:.4f}" if ec_metric and ec_metric.f1 is not None else "N/A"
-        fp_s = f"{ec_metric.false_positive_rate:.4f}" if ec_metric and ec_metric.false_positive_rate is not None else "N/A"
-        fn_s = f"{ec_metric.false_negative_rate:.4f}" if ec_metric and ec_metric.false_negative_rate is not None else "N/A"
+        fp_s = (
+            f"{ec_metric.false_positive_rate:.4f}" if ec_metric and ec_metric.false_positive_rate is not None else "N/A"
+        )
+        fn_s = (
+            f"{ec_metric.false_negative_rate:.4f}" if ec_metric and ec_metric.false_negative_rate is not None else "N/A"
+        )
         cal_s = f"{ec_metric.calibration_error:.4f}" if ec_metric and ec_metric.calibration_error is not None else "N/A"
         marker = " <-- BEST" if best_ec_idx is not None and i == best_ec_idx else ""
         lines.append(
@@ -909,18 +969,22 @@ def _format_report(
     lines.append("-" * 80)
     lines.append("THRESHOLD RECOMMENDATIONS")
     lines.append("-" * 80)
-    lines.append(f"Source quality:   suggested={sq_threshold.suggested_value}, "
-                 f"method={sq_threshold.method}, production_allowed={sq_threshold.production_allowed}")
-    lines.append(f"Evidence confidence: suggested={ec_threshold.suggested_value}, "
-                 f"method={ec_threshold.method}, production_allowed={ec_threshold.production_allowed}")
+    lines.append(
+        f"Source quality:   suggested={sq_threshold.suggested_value}, "
+        f"method={sq_threshold.method}, production_allowed={sq_threshold.production_allowed}"
+    )
+    lines.append(
+        f"Evidence confidence: suggested={ec_threshold.suggested_value}, "
+        f"method={ec_threshold.method}, production_allowed={ec_threshold.production_allowed}"
+    )
     lines.append("")
 
     if best_sq_idx is not None and sq_metrics and sq_metrics.spearman is not None:
-        lines.append(f"Best SQ weights (index {best_sq_idx}): "
-                     f"spearman={sq_metrics.spearman}, mae={sq_metrics.mae}")
+        lines.append(f"Best SQ weights (index {best_sq_idx}): " f"spearman={sq_metrics.spearman}, mae={sq_metrics.mae}")
     if best_ec_idx is not None and ec_metrics and ec_metrics.f1 is not None:
-        lines.append(f"Best EC weights (index {best_ec_idx}): "
-                     f"f1={ec_metrics.f1}, fp_rate={ec_metrics.false_positive_rate}")
+        lines.append(
+            f"Best EC weights (index {best_ec_idx}): " f"f1={ec_metrics.f1}, fp_rate={ec_metrics.false_positive_rate}"
+        )
 
     lines.append("")
     lines.append("-" * 80)
@@ -938,7 +1002,11 @@ def _format_report(
             lines.append(f"  - SQ mae ({sq_metrics.mae:.4f}) > maximum ({SQ_MAE_MAX})")
         if ec_metrics and ec_metrics.f1 is not None and ec_metrics.f1 < EC_F1_MIN:
             lines.append(f"  - EC f1 ({ec_metrics.f1:.4f}) < minimum ({EC_F1_MIN})")
-        if ec_metrics and ec_metrics.false_positive_rate is not None and ec_metrics.false_positive_rate > EC_FP_RATE_MAX:
+        if (
+            ec_metrics
+            and ec_metrics.false_positive_rate is not None
+            and ec_metrics.false_positive_rate > EC_FP_RATE_MAX
+        ):
             lines.append(f"  - EC fp_rate ({ec_metrics.false_positive_rate:.4f}) > maximum ({EC_FP_RATE_MAX})")
     else:
         lines.append("Production ALLOWED. All criteria met.")
@@ -956,33 +1024,21 @@ def _check_production_ready(
     blockers: list[str] = []
 
     if sq_label_count < SQ_MIN_LABELED:
-        blockers.append(
-            f"SQ labels ({sq_label_count}) < minimum ({SQ_MIN_LABELED})"
-        )
+        blockers.append(f"SQ labels ({sq_label_count}) < minimum ({SQ_MIN_LABELED})")
     if ec_label_count < EC_MIN_LABELED:
-        blockers.append(
-            f"EC labels ({ec_label_count}) < minimum ({EC_MIN_LABELED})"
-        )
+        blockers.append(f"EC labels ({ec_label_count}) < minimum ({EC_MIN_LABELED})")
 
     if sq_metrics is not None:
         if sq_metrics.spearman is not None and sq_metrics.spearman < SQ_SPEARMAN_MIN:
-            blockers.append(
-                f"SQ spearman ({sq_metrics.spearman:.4f}) < minimum ({SQ_SPEARMAN_MIN})"
-            )
+            blockers.append(f"SQ spearman ({sq_metrics.spearman:.4f}) < minimum ({SQ_SPEARMAN_MIN})")
         if sq_metrics.mae is not None and sq_metrics.mae > SQ_MAE_MAX:
-            blockers.append(
-                f"SQ mae ({sq_metrics.mae:.4f}) > maximum ({SQ_MAE_MAX})"
-            )
+            blockers.append(f"SQ mae ({sq_metrics.mae:.4f}) > maximum ({SQ_MAE_MAX})")
 
     if ec_metrics is not None:
         if ec_metrics.f1 is not None and ec_metrics.f1 < EC_F1_MIN:
-            blockers.append(
-                f"EC f1 ({ec_metrics.f1:.4f}) < minimum ({EC_F1_MIN})"
-            )
+            blockers.append(f"EC f1 ({ec_metrics.f1:.4f}) < minimum ({EC_F1_MIN})")
         if ec_metrics.false_positive_rate is not None and ec_metrics.false_positive_rate > EC_FP_RATE_MAX:
-            blockers.append(
-                f"EC fp_rate ({ec_metrics.false_positive_rate:.4f}) > maximum ({EC_FP_RATE_MAX})"
-            )
+            blockers.append(f"EC fp_rate ({ec_metrics.false_positive_rate:.4f}) > maximum ({EC_FP_RATE_MAX})")
 
     return len(blockers) == 0, blockers
 
@@ -1004,7 +1060,11 @@ def run_full_calibration(
             production_allowed=False,
             golden_set_size=0,
             has_human_labels=False,
-            human_label_coverage={"source_quality_labels": 0, "evidence_support_labels": 0, "total_entries": 0},
+            human_label_coverage={
+                "source_quality_labels": 0,
+                "evidence_support_labels": 0,
+                "total_entries": 0,
+            },
             source_quality_candidates=[],
             evidence_confidence_candidates=[],
             sq_threshold=empty_rec,
@@ -1033,9 +1093,7 @@ def run_full_calibration(
     else:
         scores_sq: list[float] = []
         for entry in entries:
-            inv = _make_calibrated_inventory(
-                "weight.source_quality_score.weights", best_sq_weights
-            )
+            inv = _make_calibrated_inventory("weight.source_quality_score.weights", best_sq_weights)
             r = compute_source_quality_score(entry.source_features_observable, inventory=inv)
             scores_sq.append(r.score)
         best_sq_metrics = _compute_sq_metrics(entries, scores_sq)
@@ -1046,12 +1104,8 @@ def run_full_calibration(
     else:
         scores_ec: list[float] = []
         for entry in entries:
-            inv = _make_calibrated_inventory(
-                "weight.evidence_confidence_score.weights", best_ec_weights
-            )
-            ec_score_result = compute_evidence_confidence_score(
-                entry.source_features_observable, inventory=inv
-            )
+            inv = _make_calibrated_inventory("weight.evidence_confidence_score.weights", best_ec_weights)
+            ec_score_result = compute_evidence_confidence_score(entry.source_features_observable, inventory=inv)
             scores_ec.append(ec_score_result.score)
         best_ec_metrics = _compute_ec_metrics(entries, scores_ec)
 
@@ -1076,11 +1130,11 @@ def run_full_calibration(
         assert best_ec_metrics is not None
         sq_threshold_rec = ThresholdRecommendation(
             decision_id="threshold.source_quality_score.production_min",
-            suggested_value=max(0.1, round(sq_dist.p10 if hasattr(sq_dist, 'p10') else sq_dist.p5, 4)),
+            suggested_value=max(0.1, round(sq_dist.p10 if hasattr(sq_dist, "p10") else sq_dist.p5, 4)),
             method="percentile_10_of_labeled_source_quality_distribution",
             production_allowed=True,
             evidence_source=f"Best SQ candidate index={best_sq_idx}, spearman={best_sq_metrics.spearman}, "
-                            f"mae={best_sq_metrics.mae}, threshold at P10 of distribution.",
+            f"mae={best_sq_metrics.mae}, threshold at P10 of distribution.",
             distribution=sq_dist,
         )
         ec_threshold_rec = ThresholdRecommendation(
@@ -1089,8 +1143,8 @@ def run_full_calibration(
             method="f1_minus_fp_rate_optimization",
             production_allowed=True,
             evidence_source=f"Best EC candidate index={best_ec_idx}, f1={best_ec_metrics.f1}, "
-                            f"fp_rate={best_ec_metrics.false_positive_rate}, "
-                            f"optimized threshold={ec_opt_threshold:.4f}.",
+            f"fp_rate={best_ec_metrics.false_positive_rate}, "
+            f"optimized threshold={ec_opt_threshold:.4f}.",
             distribution=ec_dist,
         )
     else:
@@ -1178,22 +1232,14 @@ def _compute_default_scores(
     is_sq: bool = True,
 ) -> list[float]:
     scores: list[float] = []
-    decision_id = (
-        "weight.source_quality_score.weights"
-        if is_sq
-        else "weight.evidence_confidence_score.weights"
-    )
+    decision_id = "weight.source_quality_score.weights" if is_sq else "weight.evidence_confidence_score.weights"
     inventory = _make_calibrated_inventory(decision_id, weights)
 
     for entry in entries:
         if is_sq:
-            sq_score_result = compute_source_quality_score(
-                entry.source_features_observable, inventory=inventory
-            )
+            sq_score_result = compute_source_quality_score(entry.source_features_observable, inventory=inventory)
             scores.append(sq_score_result.score)
         else:
-            ec_score_result = compute_evidence_confidence_score(
-                entry.source_features_observable, inventory=inventory
-            )
+            ec_score_result = compute_evidence_confidence_score(entry.source_features_observable, inventory=inventory)
             scores.append(ec_score_result.score)
     return scores

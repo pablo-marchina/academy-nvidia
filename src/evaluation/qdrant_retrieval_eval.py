@@ -11,13 +11,11 @@ Hybrid candidate is eval-only — not activated in production by this task.
 
 from __future__ import annotations
 
-import json
 import time
 from pathlib import Path
 from typing import Any
 
 from src.evaluation.qdrant_retrieval_eval_schemas import (
-    MINIMUM_GAP_TYPES_COVERED,
     MINIMUM_GOLDEN_SAMPLES,
     MULTI_OBJECTIVE_WEIGHTS,
     PerGapMetrics,
@@ -26,13 +24,13 @@ from src.evaluation.qdrant_retrieval_eval_schemas import (
     RetrieverDetail,
     RetrieverMetrics,
 )
+from src.evaluation.rag_baseline import RagBaselineCase
 from src.evaluation.ragas_eval import RagasEvalHarness
 from src.evaluation.ragas_eval_schemas import (
     GoldenContext,
     RagasEvalDataset,
     RagasEvalGoldenSample,
 )
-from src.evaluation.rag_baseline import _compute_metrics_for_case, RagBaselineCase
 from src.rag.embeddings import EmbeddingProvider
 from src.rag.hybrid_retrieval import hybrid_retrieve
 from src.rag.retrieval import ChunkIndex
@@ -68,10 +66,9 @@ def _build_rag_baseline_case(sample: RagasEvalGoldenSample) -> RagBaselineCase:
         case_id=sample.gap_id,
         description=sample.gap_type,
         query=_build_query_from_sample(sample),
-        expected_source_ids=list(set(
-            cid.split("_chunk_")[0] if "_chunk_" in cid else cid
-            for cid in sample.expected_context_ids
-        )),
+        expected_source_ids=list(
+            set(cid.split("_chunk_")[0] if "_chunk_" in cid else cid for cid in sample.expected_context_ids)
+        ),
         expected_products=sample.expected_nvidia_topics,
         is_critical=False,
         top_k_for_test=3,
@@ -162,7 +159,13 @@ def _compute_per_gap_metrics(samples: list[RagasEvalGoldenSample]) -> list[PerGa
     for s in samples:
         gt = s.gap_type
         if gt not in gap_map:
-            gap_map[gt] = {"contexts": 0, "sources": set(), "citation": 0, "unsupported": 0, "expected": 0}
+            gap_map[gt] = {
+                "contexts": 0,
+                "sources": set(),
+                "citation": 0,
+                "unsupported": 0,
+                "expected": 0,
+            }
         gap_map[gt]["contexts"] += len(s.retrieved_contexts)
         for ctx in s.retrieved_contexts:
             gap_map[gt]["sources"].add(ctx.source_id)
@@ -178,13 +181,15 @@ def _compute_per_gap_metrics(samples: list[RagasEvalGoldenSample]) -> list[PerGa
         total = data["contexts"]
         citation = data["citation"] / total if total > 0 else 1.0
         unsup = data["unsupported"] / data["expected"] if data["expected"] > 0 else 0.0
-        result.append(PerGapMetrics(
-            gap_type=gt,
-            contexts_retrieved=total,
-            unique_sources=len(data["sources"]),
-            citation_precision=round(citation, 4),
-            unsupported_claim_rate=round(unsup, 4),
-        ))
+        result.append(
+            PerGapMetrics(
+                gap_type=gt,
+                contexts_retrieved=total,
+                unique_sources=len(data["sources"]),
+                citation_precision=round(citation, 4),
+                unsupported_claim_rate=round(unsup, 4),
+            )
+        )
     return result
 
 
@@ -268,11 +273,13 @@ def _produce_calibration_decisions(
     prod_allowed = dataset_sufficient and qdrant_available
 
     sem_m = semantic.summary
-    lex_m = lexical.summary
-    hyb_m = hybrid.summary
 
-    def _dec(decision_id: str, metric_name: str, current_value: float | str | bool | dict,
-             notes: str = "") -> dict:
+    def _dec(
+        decision_id: str,
+        metric_name: str,
+        current_value: float | str | bool | dict,
+        notes: str = "",
+    ) -> dict:
         return {
             "decision_id": decision_id,
             "current_value": current_value,
@@ -286,52 +293,64 @@ def _produce_calibration_decisions(
         }
 
     decisions["rag.semantic_top_k"] = _dec(
-        "rag.semantic_top_k", "rag_semantic_top_k", 8,
+        "rag.semantic_top_k",
+        "rag_semantic_top_k",
+        8,
         f"Semantic retrieval evaluated. recall_at_k={sem_m.recall_at_k}, precision_at_k={sem_m.precision_at_k}",
     )
     decisions["rag.min_contexts_per_gap"] = _dec(
-        "rag.min_contexts_per_gap", "rag_min_contexts_per_gap",
+        "rag.min_contexts_per_gap",
+        "rag_min_contexts_per_gap",
         sem_m.gaps_without_context_count,
         f"Gaps without context = {sem_m.gaps_without_context_count}/{sem_m.sample_count}",
     )
     decisions["rag.context_relevance_threshold"] = _dec(
-        "rag.context_relevance_threshold", "rag_context_relevance_threshold", 0.3,
+        "rag.context_relevance_threshold",
+        "rag_context_relevance_threshold",
+        0.3,
         f"Semantic citation_precision={sem_m.citation_precision}, unsupported={sem_m.unsupported_claim_rate}",
     )
     decisions["rag.citation_precision_threshold"] = _dec(
-        "rag.citation_precision_threshold", "rag_citation_precision_threshold",
+        "rag.citation_precision_threshold",
+        "rag_citation_precision_threshold",
         sem_m.citation_precision,
         f"Observed semantic citation_precision={sem_m.citation_precision} on golden set",
     )
     decisions["rag.unsupported_claim_rate_threshold"] = _dec(
-        "rag.unsupported_claim_rate_threshold", "rag_unsupported_claim_rate_threshold",
+        "rag.unsupported_claim_rate_threshold",
+        "rag_unsupported_claim_rate_threshold",
         sem_m.unsupported_claim_rate,
         f"Observed semantic unsupported_claim_rate={sem_m.unsupported_claim_rate} on golden set",
     )
     decisions["rag.ragas_context_precision_threshold"] = _dec(
-        "rag.ragas_context_precision_threshold", "rag_ragas_context_precision_threshold",
+        "rag.ragas_context_precision_threshold",
+        "rag_ragas_context_precision_threshold",
         sem_m.context_precision if sem_m.context_precision is not None else 0.0,
         f"Semantic context_precision={sem_m.context_precision}, source={sem_m.ragas_metrics_source}",
     )
     decisions["rag.ragas_context_recall_threshold"] = _dec(
-        "rag.ragas_context_recall_threshold", "rag_ragas_context_recall_threshold",
+        "rag.ragas_context_recall_threshold",
+        "rag_ragas_context_recall_threshold",
         sem_m.context_recall if sem_m.context_recall is not None else 0.0,
         f"Semantic context_recall={sem_m.context_recall}, source={sem_m.ragas_metrics_source}",
     )
     decisions["rag.ragas_faithfulness_threshold"] = _dec(
-        "rag.ragas_faithfulness_threshold", "rag_ragas_faithfulness_threshold",
+        "rag.ragas_faithfulness_threshold",
+        "rag_ragas_faithfulness_threshold",
         sem_m.faithfulness if sem_m.faithfulness is not None else 0.0,
         f"Semantic faithfulness={sem_m.faithfulness}, source={sem_m.ragas_metrics_source}",
     )
     decisions["rag.ragas_answer_relevancy_threshold"] = _dec(
-        "rag.ragas_answer_relevancy_threshold", "rag_ragas_answer_relevancy_threshold",
+        "rag.ragas_answer_relevancy_threshold",
+        "rag_ragas_answer_relevancy_threshold",
         sem_m.answer_relevancy if sem_m.answer_relevancy is not None else 0.0,
         f"Semantic answer_relevancy={sem_m.answer_relevancy}, source={sem_m.ragas_metrics_source}",
     )
 
     hybrid_winner = comparison.winner == "hybrid_candidate"
     decisions["rag.hybrid_retrieval_weights"] = _dec(
-        "rag.hybrid_retrieval_weights", "rag_hybrid_retrieval_weights",
+        "rag.hybrid_retrieval_weights",
+        "rag_hybrid_retrieval_weights",
         {"dense": 0.5, "sparse": 0.5},
         f"Hybrid candidate multi-objective score={comparison.multi_objective_scores.get('hybrid_candidate', 0.0)}. "
         f"Winner: {comparison.winner}. {'Registered as calibrated candidate.' if hybrid_winner else 'Hybrid did not win or dataset insufficient.'} "
@@ -379,9 +398,17 @@ class QdrantRetrievalEvaluator:
         if not qdrant_available:
             qdrant_unavailable_reason = "vector_store or embedding_model not provided"
 
-        sem_detail = self._eval_retriever("semantic_qdrant", dataset.samples, self._run_semantic) if qdrant_available else RetrieverDetail()
+        sem_detail = (
+            self._eval_retriever("semantic_qdrant", dataset.samples, self._run_semantic)
+            if qdrant_available
+            else RetrieverDetail()
+        )
         lex_detail = self._eval_retriever("lexical_baseline", dataset.samples, self._run_lexical)
-        hyb_detail = self._eval_retriever("hybrid_candidate", dataset.samples, self._run_hybrid) if qdrant_available else RetrieverDetail()
+        hyb_detail = (
+            self._eval_retriever("hybrid_candidate", dataset.samples, self._run_hybrid)
+            if qdrant_available
+            else RetrieverDetail()
+        )
 
         sem_scores = _multi_objective_score(sem_detail.summary)
         lex_scores = _multi_objective_score(lex_detail.summary)
@@ -426,12 +453,15 @@ class QdrantRetrievalEvaluator:
         )
 
         calibration_decisions = _produce_calibration_decisions(
-            comparison, sem_detail, lex_detail, hyb_detail, dataset_sufficient, qdrant_available,
+            comparison,
+            sem_detail,
+            lex_detail,
+            hyb_detail,
+            dataset_sufficient,
+            qdrant_available,
         )
 
-        calibration_status = (
-            "baseline_measured" if dataset_sufficient else "baseline_dataset_insufficient"
-        )
+        calibration_status = "baseline_measured" if dataset_sufficient else "baseline_dataset_insufficient"
 
         return QdrantRetrievalEvalResult(
             dataset_size=len(dataset.samples),
@@ -451,7 +481,10 @@ class QdrantRetrievalEvaluator:
         assert self._vector_store is not None
         query = _build_query_from_sample(sample)
         return semantic_retrieve(
-            query, self._embedding_model, self._vector_store, top_k=8,
+            query,
+            self._embedding_model,
+            self._vector_store,
+            top_k=8,
             gap_type=sample.gap_type,
         )
 
@@ -466,8 +499,12 @@ class QdrantRetrievalEvaluator:
         assert self._vector_store is not None
         query = _build_query_from_sample(sample)
         return hybrid_retrieve(
-            query, self._chunk_index, self._embedding_model, self._vector_store,
-            top_k=8, gap_type=sample.gap_type,
+            query,
+            self._chunk_index,
+            self._embedding_model,
+            self._vector_store,
+            top_k=8,
+            gap_type=sample.gap_type,
         )
 
     def _eval_retriever(

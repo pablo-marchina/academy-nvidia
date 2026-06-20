@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, model_validator
 
 
 class DecisionType(str, Enum):
@@ -103,23 +103,21 @@ def validate_decision_for_production(record: DecisionCalibrationRecord) -> Decis
         f"{', '.join(s.value for s in PRODUCTION_ALLOWED_STATUSES)}."
     )
     if record.calibration_status in PRODUCTION_BLOCKED_STATUSES:
-        reasons.append(
-            f"Status '{record.calibration_status.value}' explicitly blocks production use."
-        )
+        reasons.append(f"Status '{record.calibration_status.value}' explicitly blocks production use.")
 
     return DecisionValidationResult(passed=False, reasons=reasons)
 
 
-def list_uncalibrated_decisions(records: list[DecisionCalibrationRecord]) -> list[DecisionCalibrationRecord]:
+def list_uncalibrated_decisions(
+    records: list[DecisionCalibrationRecord],
+) -> list[DecisionCalibrationRecord]:
     return [r for r in records if r.calibration_status == CalibrationStatus.UNCALIBRATED]
 
 
-def list_production_blockers(records: list[DecisionCalibrationRecord]) -> list[DecisionCalibrationRecord]:
-    return [
-        r
-        for r in records
-        if r.calibration_status in PRODUCTION_BLOCKED_STATUSES or not r.production_allowed
-    ]
+def list_production_blockers(
+    records: list[DecisionCalibrationRecord],
+) -> list[DecisionCalibrationRecord]:
+    return [r for r in records if r.calibration_status in PRODUCTION_BLOCKED_STATUSES or not r.production_allowed]
 
 
 def summarize_calibration_coverage(records: list[DecisionCalibrationRecord]) -> dict[str, Any]:
@@ -185,7 +183,7 @@ def get_project_decision_inventory() -> list[DecisionCalibrationRecord]:
     return records
 
 
-_CALIBRATION_TS = datetime(2026, 6, 17, tzinfo=timezone.utc)
+_CALIBRATION_TS = datetime(2026, 6, 17, tzinfo=UTC)
 
 
 def _quality_thresholds() -> list[DecisionCalibrationRecord]:
@@ -396,7 +394,10 @@ def _quality_thresholds() -> list[DecisionCalibrationRecord]:
                 evidence_source=cal.get("evidence_source"),
                 owner="team-quality",
                 last_calibrated_at=_CALIBRATION_TS if cal else None,
-                notes=cal.get("notes", f"Severity={cfg['severity']}, operator={cfg['operator']}. Defined in quality constants."),
+                notes=cal.get(
+                    "notes",
+                    f"Severity={cfg['severity']}, operator={cfg['operator']}. Defined in quality constants.",
+                ),
             )
         )
     return records
@@ -461,11 +462,36 @@ def _quantitative_weight_sets() -> list[DecisionCalibrationRecord]:
     )
 
     WEIGHT_SETS: list[tuple[str, str, str, dict[str, float]]] = [
-        ("priority_score", "Priority Score Weight", "src/quantitative/params.py :: PRIORITY_SCORE_WEIGHTS", PRIORITY_SCORE_WEIGHTS),
-        ("opportunity_score", "Opportunity Score Weight", "src/quantitative/params.py :: OPPORTUNITY_SCORE_WEIGHTS", OPPORTUNITY_SCORE_WEIGHTS),
-        ("production_readiness", "Production Readiness Weight", "src/quantitative/params.py :: PRODUCTION_READINESS_WEIGHTS", PRODUCTION_READINESS_WEIGHTS),
-        ("defensibility", "Defensibility Score Weight", "src/quantitative/params.py :: DEFENSIBILITY_WEIGHTS", DEFENSIBILITY_WEIGHTS),
-        ("inception_fit", "Inception Fit Score Weight", "src/quantitative/params.py :: INCEPTION_FIT_WEIGHTS", INCEPTION_FIT_WEIGHTS),
+        (
+            "priority_score",
+            "Priority Score Weight",
+            "src/quantitative/params.py :: PRIORITY_SCORE_WEIGHTS",
+            PRIORITY_SCORE_WEIGHTS,
+        ),
+        (
+            "opportunity_score",
+            "Opportunity Score Weight",
+            "src/quantitative/params.py :: OPPORTUNITY_SCORE_WEIGHTS",
+            OPPORTUNITY_SCORE_WEIGHTS,
+        ),
+        (
+            "production_readiness",
+            "Production Readiness Weight",
+            "src/quantitative/params.py :: PRODUCTION_READINESS_WEIGHTS",
+            PRODUCTION_READINESS_WEIGHTS,
+        ),
+        (
+            "defensibility",
+            "Defensibility Score Weight",
+            "src/quantitative/params.py :: DEFENSIBILITY_WEIGHTS",
+            DEFENSIBILITY_WEIGHTS,
+        ),
+        (
+            "inception_fit",
+            "Inception Fit Score Weight",
+            "src/quantitative/params.py :: INCEPTION_FIT_WEIGHTS",
+            INCEPTION_FIT_WEIGHTS,
+        ),
     ]
 
     VARIANT_NAMES: dict[str, str] = {
@@ -559,7 +585,7 @@ def _quantitative_scores_and_limits() -> list[DecisionCalibrationRecord]:
                 owner="team-scoring",
                 last_calibrated_at=_CALIBRATION_TS,
                 notes=f"Starting score for {cls_name} classification before dimension bonuses. "
-                       "Ablation study confirms monotonic hierarchy and appropriate gaps.",
+                "Ablation study confirms monotonic hierarchy and appropriate gaps.",
             )
         )
 
@@ -584,7 +610,7 @@ def _quantitative_scores_and_limits() -> list[DecisionCalibrationRecord]:
                 owner="team-discovery",
                 last_calibrated_at=_CALIBRATION_TS,
                 notes=f"Reliability weight for source type '{src_label}'. "
-                       "Scores form a clear hierarchy with 0.6 range; ablation confirms differentiation is meaningful.",
+                "Scores form a clear hierarchy with 0.6 range; ablation confirms differentiation is meaningful.",
             )
         )
 
@@ -608,7 +634,7 @@ def _quantitative_scores_and_limits() -> list[DecisionCalibrationRecord]:
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Minimum value for 'high' confidence classification. "
-                   "Benchmarked at 0.7 via ablation — shifting to 0.6 or 0.8 causes ~19% reclassification.",
+            "Benchmarked at 0.7 via ablation — shifting to 0.6 or 0.8 causes ~19% reclassification.",
         )
     )
     records.append(
@@ -628,8 +654,7 @@ def _quantitative_scores_and_limits() -> list[DecisionCalibrationRecord]:
             ),
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
-            notes="Minimum value for 'medium' confidence classification. "
-                   "Benchmarked at 0.4 via ablation.",
+            notes="Minimum value for 'medium' confidence classification. " "Benchmarked at 0.4 via ablation.",
         )
     )
 
@@ -646,7 +671,7 @@ def _quantitative_scores_and_limits() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Penalty applied per missing component in composite score. "
-                   "Requires empirical distribution of missing components to calibrate.",
+            "Requires empirical distribution of missing components to calibrate.",
         )
     )
 
@@ -662,7 +687,7 @@ def _quantitative_scores_and_limits() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Factor applied when no evidence is available for a scoring dimension. "
-                   "Requires empirical distribution of evidence coverage to calibrate.",
+            "Requires empirical distribution of evidence coverage to calibrate.",
         )
     )
 
@@ -679,7 +704,7 @@ def _quantitative_scores_and_limits() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-discovery",
             notes="Ceiling on total keyword contribution to confidence score. "
-                   "Requires keyword distribution analysis to calibrate.",
+            "Requires keyword distribution analysis to calibrate.",
         )
     )
 
@@ -695,7 +720,7 @@ def _quantitative_scores_and_limits() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-discovery",
             notes="Maximum number of discovery sources to collect per startup. "
-                   "Requires distributional analysis of source yield per discovery run.",
+            "Requires distributional analysis of source yield per discovery run.",
         )
     )
 
@@ -710,8 +735,7 @@ def _quantitative_scores_and_limits() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-discovery",
-            notes="Maximum search depth for discovery traversal. "
-                   "Requires search recursion analysis to calibrate.",
+            notes="Maximum search depth for discovery traversal. " "Requires search recursion analysis to calibrate.",
         )
     )
 
@@ -774,8 +798,8 @@ def _scoring_motion_thresholds() -> list[DecisionCalibrationRecord]:
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Composite score >= 75 triggers immediate outreach. "
-                   "Rarely triggered (top ~5% of distribution). 75 is appropriate for exceptional startups. "
-                   "Ablation: shifting to 56 captures only 4/500 additional startups.",
+            "Rarely triggered (top ~5% of distribution). 75 is appropriate for exceptional startups. "
+            "Ablation: shifting to 56 captures only 4/500 additional startups.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.motion.high_priority_outreach",
@@ -791,9 +815,9 @@ def _scoring_motion_thresholds() -> list[DecisionCalibrationRecord]:
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Composite score >= 55 triggers high priority. "
-                   "Sits at the upper quartile of the score distribution. "
-                   "Ablation: shifting -25% (to 41) adds 28% more startups into this bucket — "
-                   "current 55 is a meaningful filter.",
+            "Sits at the upper quartile of the score distribution. "
+            "Ablation: shifting -25% (to 41) adds 28% more startups into this bucket — "
+            "current 55 is a meaningful filter.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.motion.monitor_and_nurture",
@@ -809,9 +833,9 @@ def _scoring_motion_thresholds() -> list[DecisionCalibrationRecord]:
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Composite score >= 35 triggers monitor. "
-                   "Most sensitive threshold: +/-25% shift causes 28-31% reclassification. "
-                   "Removing this category entirely causes 47% reclassification — "
-                   "it is the critical boundary separating 'monitor' from 'lack evidence'.",
+            "Most sensitive threshold: +/-25% shift causes 28-31% reclassification. "
+            "Removing this category entirely causes 47% reclassification — "
+            "it is the critical boundary separating 'monitor' from 'lack evidence'.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.motion.lack_evidence",
@@ -827,9 +851,9 @@ def _scoring_motion_thresholds() -> list[DecisionCalibrationRecord]:
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Composite score < 35 or missing>=2 components + LOW confidence. "
-                   "Shares boundary with monitor_and_nurture at 35. "
-                   "Ablation: shifting this boundary affects ~47% of startups, "
-                   "confirming it as the most consequential split.",
+            "Shares boundary with monitor_and_nurture at 35. "
+            "Ablation: shifting this boundary affects ~47% of startups, "
+            "confirming it as the most consequential split.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.composite_confidence.high",
@@ -845,8 +869,8 @@ def _scoring_motion_thresholds() -> list[DecisionCalibrationRecord]:
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Penalty < 0.4 AND avg_val >= 25 → HIGH confidence. "
-                   "Ablation: removing the 0.4 penalty threshold causes 27.2% reclassification. "
-                   "The avg_val < 25 guard is a minor edge-case protection (7.2% impact).",
+            "Ablation: removing the 0.4 penalty threshold causes 27.2% reclassification. "
+            "The avg_val < 25 guard is a minor edge-case protection (7.2% impact).",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.composite_confidence.medium",
@@ -862,8 +886,8 @@ def _scoring_motion_thresholds() -> list[DecisionCalibrationRecord]:
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Penalty < 0.2 AND avg_val >= 50 → MEDIUM confidence. "
-                   "Ablation: removing the 0.2 penalty threshold causes 17.6% reclassification. "
-                   "The avg_val < 50 guard affects 14.8% — moderate protection for low-score startups.",
+            "Ablation: removing the 0.2 penalty threshold causes 17.6% reclassification. "
+            "The avg_val < 50 guard affects 14.8% — moderate protection for low-score startups.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.inception_fit_motion.approach_now",
@@ -876,11 +900,11 @@ def _scoring_motion_thresholds() -> list[DecisionCalibrationRecord]:
             calibration_method=CalibrationMethod.ABLATION_STUDY,
             production_allowed=True,
             evidence_source="Analogous ablation logic to composite motion thresholds. "
-                           "70 is the top ~10-15% of inception fit distribution.",
+            "70 is the top ~10-15% of inception fit distribution.",
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Inception fit score >= 70 AND HIGH confidence → approach now. "
-                   "Follows same boundary-sensitivity pattern as composite motion.",
+            "Follows same boundary-sensitivity pattern as composite motion.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.inception_fit_motion.validate_manually",
@@ -893,11 +917,11 @@ def _scoring_motion_thresholds() -> list[DecisionCalibrationRecord]:
             calibration_method=CalibrationMethod.ABLATION_STUDY,
             production_allowed=True,
             evidence_source="Analogous ablation logic to composite motion thresholds. "
-                           "50 is the median boundary, splitting moderate from promising fit.",
+            "50 is the median boundary, splitting moderate from promising fit.",
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Inception fit score >= 50 AND confidence >= MEDIUM → validate manually. "
-                   "Functions as the medium-priority tier, analogous to high_priority_outreach(55).",
+            "Functions as the medium-priority tier, analogous to high_priority_outreach(55).",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.inception_fit_motion.monitor",
@@ -910,11 +934,11 @@ def _scoring_motion_thresholds() -> list[DecisionCalibrationRecord]:
             calibration_method=CalibrationMethod.ABLATION_STUDY,
             production_allowed=True,
             evidence_source="Analogous ablation logic to composite motion thresholds. "
-                           "30 is the minimum viable threshold, below which startups need more research.",
+            "30 is the minimum viable threshold, below which startups need more research.",
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Inception fit score >= 30 → monitor. "
-                   "Lowest boundary, analogous to monitor_and_nurture(35) in composite motion.",
+            "Lowest boundary, analogous to monitor_and_nurture(35) in composite motion.",
         ),
     ]
     return records
@@ -968,8 +992,8 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Equal weight for dense/sparse fusion. "
-                   "Min rho across all 0.3/0.7–0.7/0.3 splits: 0.977. "
-                   "Rank ordering is robust to weight choice.",
+            "Min rho across all 0.3/0.7–0.7/0.3 splits: 0.977. "
+            "Rank ordering is robust to weight choice.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.rerank.boost_gap_match",
@@ -985,8 +1009,8 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="+0.3 when chunk gap_type matches query. "
-                   "Ablation rho=0.942, reclass=12.8% — most impactful boost. "
-                   "+/-50% perturbation: rho > 0.969.",
+            "Ablation rho=0.942, reclass=12.8% — most impactful boost. "
+            "+/-50% perturbation: rho > 0.969.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.rerank.boost_technology_match",
@@ -1002,8 +1026,8 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="+0.2 when chunk product matches query technology. "
-                   "Ablation rho=0.953, reclass=8.0%. "
-                   "Moderate impact, smaller than gap_match by design.",
+            "Ablation rho=0.953, reclass=8.0%. "
+            "Moderate impact, smaller than gap_match by design.",
         ),
         DecisionCalibrationRecord(
             decision_id="penalty.rerank.no_provenance",
@@ -1019,8 +1043,8 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="-0.5 when chunk lacks source_id or url. "
-                   "Most sensitive parameter: ablation rho=0.667, reclass=19.8%. "
-                   "Magnitude is justified — provenance is critical for trust.",
+            "Most sensitive parameter: ablation rho=0.667, reclass=19.8%. "
+            "Magnitude is justified — provenance is critical for trust.",
         ),
         DecisionCalibrationRecord(
             decision_id="penalty.rerank.duplicate",
@@ -1036,8 +1060,8 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="-0.3 for duplicate chunks. "
-                   "Ablation rho=0.994, reclass=0.8% — low impact since duplicates are rare. "
-                   "+/-50% perturbation: rho > 0.998.",
+            "Ablation rho=0.994, reclass=0.8% — low impact since duplicates are rare. "
+            "+/-50% perturbation: rho > 0.998.",
         ),
         DecisionCalibrationRecord(
             decision_id="penalty.rerank.irrelevant",
@@ -1053,8 +1077,8 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="-0.2 when chunk has gaps but none matching query. "
-                   "Ablation rho=0.948, reclass=12.8%. "
-                   "-50% shift: rho=0.975; +50%: rho=0.976.",
+            "Ablation rho=0.948, reclass=12.8%. "
+            "-50% shift: rho=0.975; +50%: rho=0.976.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.rerank.boost_known_source",
@@ -1070,8 +1094,8 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="+0.1 when source_id and url both present. "
-                   "Smallest boost — ablation rho=0.977 but reclass=12.0%. "
-                   "Modest impact justified by secondary role.",
+            "Smallest boost — ablation rho=0.977 but reclass=12.0%. "
+            "Modest impact justified by secondary role.",
         ),
         DecisionCalibrationRecord(
             decision_id="limit.packing.max_total",
@@ -1084,7 +1108,7 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-rag",
             notes="Maximum total contexts to pack per query. "
-                   "Needs empirical data from pipeline execution to calibrate.",
+            "Needs empirical data from pipeline execution to calibrate.",
         ),
         DecisionCalibrationRecord(
             decision_id="limit.packing.max_per_technology",
@@ -1097,7 +1121,7 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-rag",
             notes="Max contexts per NVIDIA technology in packed output. "
-                   "Needs empirical data from pipeline execution to calibrate.",
+            "Needs empirical data from pipeline execution to calibrate.",
         ),
         DecisionCalibrationRecord(
             decision_id="limit.packing.max_per_gap",
@@ -1110,7 +1134,7 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-rag",
             notes="Max contexts per gap type in packed output. "
-                   "Needs empirical data from pipeline execution to calibrate.",
+            "Needs empirical data from pipeline execution to calibrate.",
         ),
         DecisionCalibrationRecord(
             decision_id="parameter.rrf_k",
@@ -1126,8 +1150,8 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="RRF smoothing constant. "
-                   "K=60 is deep in the stable zone (K>=30 gives rho=1.0). "
-                   "Rank ordering is perfectly preserved for any K >= 30.",
+            "K=60 is deep in the stable zone (K>=30 gives rho=1.0). "
+            "Rank ordering is perfectly preserved for any K >= 30.",
         ),
         # ── Extended RAG decisions for gap-driven retrieval ─────────────────
         DecisionCalibrationRecord(
@@ -1142,7 +1166,7 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-rag",
             notes="Number of contexts retrieved per gap query. Temporarily set to 3 matching existing "
-                   "hardcoded value. Needs grid search on golden RAG set to calibrate.",
+            "hardcoded value. Needs grid search on golden RAG set to calibrate.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.semantic_top_k",
@@ -1158,9 +1182,9 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Grid search on golden RAG set (21 queries, InMemoryVectorStore + "
-                   "SentenceTransformerProvider). Recommended semantic_top_k=8 — smallest "
-                   "meeting recall>=0.85 (got 0.8969), precision>=0.4 (got 0.6776), "
-                   "citation>=0.95 (got 1.0). Min required contexts p50=1.",
+            "SentenceTransformerProvider). Recommended semantic_top_k=8 — smallest "
+            "meeting recall>=0.85 (got 0.8969), precision>=0.4 (got 0.6776), "
+            "citation>=0.95 (got 1.0). Min required contexts p50=1.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.min_contexts_per_gap",
@@ -1173,11 +1197,11 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.BASELINE_MEASURED,
             production_allowed=True,
             evidence_source="RAGAS eval on data/eval/golden_ragas_rag.json (12 samples, 8 gap types). "
-                           "Retrieved context count avg=1.08/sample. 1 gap (agent_governance_gap) had 0 contexts.",
+            "Retrieved context count avg=1.08/sample. 1 gap (agent_governance_gap) had 0 contexts.",
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Baseline measured at 1 via RAGAS eval. P50=1 context per gap on golden set. "
-                   "Gap agent_governance_gap returned 0 contexts — needs investigation.",
+            "Gap agent_governance_gap returned 0 contexts — needs investigation.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.context_relevance_threshold",
@@ -1190,12 +1214,12 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.BASELINE_MEASURED,
             production_allowed=True,
             evidence_source="RAGAS eval on data/eval/golden_ragas_rag.json (12 samples, 8 gap types). "
-                           "Citation precision=1.0 (all contexts have source+url). "
-                           "Unsupported claim rate=0.3158 (6/19 expected IDs unmatched).",
+            "Citation precision=1.0 (all contexts have source+url). "
+            "Unsupported claim rate=0.3158 (6/19 expected IDs unmatched).",
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Baseline measured at 0.3 via RAGAS eval. At this threshold, citation_precision=1.0 "
-                   "and unsupported_claim_rate=0.3158 on golden set. Accepts single-tech matches.",
+            "and unsupported_claim_rate=0.3158 on golden set. Accepts single-tech matches.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.hybrid_retrieval_weights",
@@ -1209,7 +1233,7 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-rag",
             notes="Dense/sparse fusion weights for gap-driven hybrid retrieval. Temporarily 0.5/0.5 "
-                   "matching existing benchmark-based fusion weight. Needs golden set calibration.",
+            "matching existing benchmark-based fusion weight. Needs golden set calibration.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.reranker_required",
@@ -1218,14 +1242,14 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             current_value=False,
             metric_name="rag_reranker_required",
             value_origin="Deterministic lexical retrieval is sufficient for gap-driven queries — "
-                         "reranking adds latency without proven recall gain for gap_type matches.",
+            "reranking adds latency without proven recall gain for gap_type matches.",
             calibration_method=CalibrationMethod.ABLATION_STUDY,
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-rag",
             notes="Whether reranking is mandatory for gap-driven retrieval. Temporarily False — "
-                   "lexical gap_type/technology matching in ChunkIndex is sufficient. "
-                   "Ablation study on golden RAG set needed to validate.",
+            "lexical gap_type/technology matching in ChunkIndex is sufficient. "
+            "Ablation study on golden RAG set needed to validate.",
         ),
         # ── RAGAS evaluation thresholds (uncalibrated — pending golden set) ──────
         DecisionCalibrationRecord(
@@ -1239,13 +1263,13 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.BASELINE_MEASURED,
             production_allowed=True,
             evidence_source="RAGAS eval on data/eval/golden_ragas_rag.json (12 samples, 8 gap types). "
-                           "RAGAS library unavailable (C extension build issue on Windows/Python 3.14). "
-                           "Metric requires ragas + LLM judge. Custom citation_precision=1.0 used as proxy.",
+            "RAGAS library unavailable (C extension build issue on Windows/Python 3.14). "
+            "Metric requires ragas + LLM judge. Custom citation_precision=1.0 used as proxy.",
             owner="team-evaluation",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Baseline measured via RAGAS eval framework. Current_value=0.0 because ragas library "
-                   "is unavailable (scikit-network C extension fails on Python 3.14/Windows without "
-                   "VS Build Tools). Custom citation_precision (1.0) substitutes until ragas is available.",
+            "is unavailable (scikit-network C extension fails on Python 3.14/Windows without "
+            "VS Build Tools). Custom citation_precision (1.0) substitutes until ragas is available.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.ragas_context_recall_threshold",
@@ -1258,12 +1282,12 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.BASELINE_MEASURED,
             production_allowed=True,
             evidence_source="RAGAS eval on data/eval/golden_ragas_rag.json (12 samples, 8 gap types). "
-                           "RAGAS library unavailable. Custom recall_at_k from baseline used as proxy.",
+            "RAGAS library unavailable. Custom recall_at_k from baseline used as proxy.",
             owner="team-evaluation",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Baseline measured via RAGAS eval framework. Current_value=0.0 because ragas library "
-                   "is unavailable. Custom recall_at_k from rag_baseline substitutes until ragas "
-                   "is available. QdrantRetrievalEvaluator will refine with real retrieval data.",
+            "is unavailable. Custom recall_at_k from rag_baseline substitutes until ragas "
+            "is available. QdrantRetrievalEvaluator will refine with real retrieval data.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.ragas_faithfulness_threshold",
@@ -1276,12 +1300,12 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.BASELINE_MEASURED,
             production_allowed=True,
             evidence_source="RAGAS eval on data/eval/golden_ragas_rag.json (12 samples, 8 gap types). "
-                           "RAGAS library unavailable. Generated_answer present in 10/12 samples.",
+            "RAGAS library unavailable. Generated_answer present in 10/12 samples.",
             owner="team-evaluation",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Baseline measured via RAGAS eval framework. Current_value=0.0 because ragas library "
-                   "is unavailable. Golden set has generated_answer in 10/12 samples — ready when "
-                   "ragas becomes available.",
+            "is unavailable. Golden set has generated_answer in 10/12 samples — ready when "
+            "ragas becomes available.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.ragas_answer_relevancy_threshold",
@@ -1294,12 +1318,12 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.BASELINE_MEASURED,
             production_allowed=True,
             evidence_source="RAGAS eval on data/eval/golden_ragas_rag.json (12 samples, 8 gap types). "
-                           "RAGAS library unavailable. Generated_answer present in 10/12 samples.",
+            "RAGAS library unavailable. Generated_answer present in 10/12 samples.",
             owner="team-evaluation",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Baseline measured via RAGAS eval framework. Current_value=0.0 because ragas library "
-                   "is unavailable. Golden set has generated_answer in 10/12 samples — ready when "
-                   "ragas becomes available.",
+            "is unavailable. Golden set has generated_answer in 10/12 samples — ready when "
+            "ragas becomes available.",
         ),
         # ── Retriever strategy — RAGAS/Qdrant evaluation winner ────────────────
         DecisionCalibrationRecord(
@@ -1309,20 +1333,20 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             current_value="semantic_qdrant",
             metric_name="rag_retriever_strategy",
             value_origin="RAGAS/Qdrant evaluation — semantic_qdrant venceu em context_precision "
-                         "(0.6776) e context_recall (0.8969) contra lexical_baseline (0.49/0.83) "
-                         "e hybrid_candidate (0.65/0.88).",
+            "(0.6776) e context_recall (0.8969) contra lexical_baseline (0.49/0.83) "
+            "e hybrid_candidate (0.65/0.88).",
             calibration_method=CalibrationMethod.BASELINE_MEASUREMENT,
             calibration_status=CalibrationStatus.BASELINE_MEASURED,
             production_allowed=True,
             evidence_source="RAGAS eval: semantic_qdrant precision=0.6776, recall=0.8969, "
-                            "citation=1.0. lexical_baseline precision=0.49, recall=0.83. "
-                            "hybrid_candidate precision=0.65, recall=0.88 but "
-                            "hybrid_retrieval_weights are UNCALIBRATED.",
+            "citation=1.0. lexical_baseline precision=0.49, recall=0.83. "
+            "hybrid_candidate precision=0.65, recall=0.88 but "
+            "hybrid_retrieval_weights are UNCALIBRATED.",
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Semantic Qdrant é o retriever vencedor calibrado via RAGAS eval. "
-                   "lexical_baseline nunca pode ser retriever produtivo. "
-                   "Hybrid requer calibração adicional de rag.hybrid_retrieval_weights.",
+            "lexical_baseline nunca pode ser retriever produtivo. "
+            "Hybrid requer calibração adicional de rag.hybrid_retrieval_weights.",
         ),
     ]
     return records
@@ -1341,7 +1365,7 @@ def _agent_retrieval_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-rag",
             notes="Number of chunks retrieved per gap type from RAG index. "
-                   "Hardcoded top_k=3 in nvidia_rag_agent.py:55. Needs empirical distribution of retrieval recall vs latency.",
+            "Hardcoded top_k=3 in nvidia_rag_agent.py:55. Needs empirical distribution of retrieval recall vs latency.",
         ),
         DecisionCalibrationRecord(
             decision_id="agents.rag.top_k_tech_retrieval",
@@ -1354,7 +1378,7 @@ def _agent_retrieval_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-rag",
             notes="Number of chunks retrieved per technology filter from RAG index. "
-                   "Hardcoded top_k=2 in nvidia_rag_agent.py:65.",
+            "Hardcoded top_k=2 in nvidia_rag_agent.py:65.",
         ),
         DecisionCalibrationRecord(
             decision_id="agents.scraper.max_sources_default",
@@ -1367,7 +1391,7 @@ def _agent_retrieval_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scraping",
             notes="Default maximum number of sources to scrape when search_plan does not specify. "
-                   "Fallback from search_plan dict at scraper_agent.py:30. DISCOVERY_MAX_SOURCES in params.py is a separate limit.",
+            "Fallback from search_plan dict at scraper_agent.py:30. DISCOVERY_MAX_SOURCES in params.py is a separate limit.",
         ),
         DecisionCalibrationRecord(
             decision_id="agents.scraper.max_depth_default",
@@ -1380,7 +1404,7 @@ def _agent_retrieval_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scraping",
             notes="Default traversal depth for scraping when search_plan does not specify. "
-                   "Fallback at scraper_agent.py:31. MAX_SEARCH_DEPTH in params.py is a separate limit.",
+            "Fallback at scraper_agent.py:31. MAX_SEARCH_DEPTH in params.py is a separate limit.",
         ),
         DecisionCalibrationRecord(
             decision_id="agents.scraper.requests_per_second",
@@ -1393,7 +1417,7 @@ def _agent_retrieval_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scraping",
             notes="Rate limit for HTTP requests during scraping. Fallback at scraper_agent.py:34. "
-                   "Applied as 1.0 / max(rps, 0.5) interval calculation.",
+            "Applied as 1.0 / max(rps, 0.5) interval calculation.",
         ),
         DecisionCalibrationRecord(
             decision_id="agents.scraper.concurrent_requests",
@@ -1418,12 +1442,12 @@ def _agent_retrieval_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-pipeline",
             notes="Maximum retries for evidence collection per startup in graph pipeline. "
-                   "Default=3 at graph.py:137 (_plan_search). "
-                   "Codebase-inventoried (auto-detected from source), not yet calibrated. "
-                   "FIXED 2026-06-17: lines 1359 and 1406 had default=1, now aligned to 3. "
-                   "This was a latent bug: the review loop was inconsistent with the initial plan. "
-                   "In practice, _plan_search sets the state value first, so the 1 was "
-                   "usually overridden. Fix ensures consistency regardless of execution order.",
+            "Default=3 at graph.py:137 (_plan_search). "
+            "Codebase-inventoried (auto-detected from source), not yet calibrated. "
+            "FIXED 2026-06-17: lines 1359 and 1406 had default=1, now aligned to 3. "
+            "This was a latent bug: the review loop was inconsistent with the initial plan. "
+            "In practice, _plan_search sets the state value first, so the 1 was "
+            "usually overridden. Fix ensures consistency regardless of execution order.",
         ),
         DecisionCalibrationRecord(
             decision_id="agents.graph.min_required_recommendations",
@@ -1436,7 +1460,7 @@ def _agent_retrieval_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-pipeline",
             notes="Minimum number of activation recommendations required to build brief. "
-                   "Hardcoded min_required_recommendations=1 at graph.py:866.",
+            "Hardcoded min_required_recommendations=1 at graph.py:866.",
         ),
     ]
     return records
@@ -1455,7 +1479,7 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Score boost applied when recommendation has nvidia_mapping. "
-                   "Hardcoded at activation_service.py:55. Needs empirical distribution of mapping impact to calibrate.",
+            "Hardcoded at activation_service.py:55. Needs empirical distribution of mapping impact to calibrate.",
         ),
         DecisionCalibrationRecord(
             decision_id="activation.relevant_claims_boost",
@@ -1468,7 +1492,7 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Score boost applied when recommendation has relevant_claims. "
-                   "Hardcoded at activation_service.py:57.",
+            "Hardcoded at activation_service.py:57.",
         ),
         DecisionCalibrationRecord(
             decision_id="activation.evidence_coverage_penalty_threshold",
@@ -1481,7 +1505,7 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Threshold below which evidence coverage reduces activation score. "
-                   "Hardcoded at activation_service.py:58. Also duplicated in dossier_service.py:223.",
+            "Hardcoded at activation_service.py:58. Also duplicated in dossier_service.py:223.",
         ),
         DecisionCalibrationRecord(
             decision_id="activation.low_evidence_penalty",
@@ -1566,7 +1590,7 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Weight threshold for combined confidence+expected_value to achieve priority 1. "
-                   "Hardcoded at activation_service.py:81.",
+            "Hardcoded at activation_service.py:81.",
         ),
         DecisionCalibrationRecord(
             decision_id="claim_ledger.strong_support_threshold",
@@ -1579,7 +1603,7 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-discovery",
             notes="Confidence float >= 0.8 qualifies as 'strong' support level. "
-                   "Hardcoded at claim_ledger.py:28. Used to classify evidence support tiers.",
+            "Hardcoded at claim_ledger.py:28. Used to classify evidence support tiers.",
         ),
         DecisionCalibrationRecord(
             decision_id="claim_ledger.medium_support_threshold",
@@ -1591,8 +1615,7 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-discovery",
-            notes="Confidence float >= 0.5 qualifies as 'medium' support level. "
-                   "Hardcoded at claim_ledger.py:30.",
+            notes="Confidence float >= 0.5 qualifies as 'medium' support level. " "Hardcoded at claim_ledger.py:30.",
         ),
         DecisionCalibrationRecord(
             decision_id="confidence_float_map.activation_and_ledger_low",
@@ -1605,16 +1628,16 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             calibration_method=CalibrationMethod.BASELINE_MEASUREMENT,
             production_allowed=True,
             evidence_source="Code analysis: activation_service.py, claim_ledger.py, "
-                           "activation_playbook.py now import CONFIDENCE_FLOAT_MAP from params.py. "
-                           "All 3 service files were using {'high':1.0, 'medium':0.6, 'low':0.2} "
-                           "which diverged from the canonical CONFIDENCE_FLOAT_MAP (low=0.3). "
-                           "Reconciled by replacing hardcoded dicts with centralized import.",
+            "activation_playbook.py now import CONFIDENCE_FLOAT_MAP from params.py. "
+            "All 3 service files were using {'high':1.0, 'medium':0.6, 'low':0.2} "
+            "which diverged from the canonical CONFIDENCE_FLOAT_MAP (low=0.3). "
+            "Reconciled by replacing hardcoded dicts with centralized import.",
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
             notes="RECONCILED 2026-06-17: All 3 hardcoded confidence maps replaced with centralized "
-                   "CONFIDENCE_FLOAT_MAP from src/quantitative/params.py. "
-                   "Affected files: activation_service.py:21, claim_ledger.py:18, "
-                   "activation_playbook.py:26. Value changed from 0.2 to 0.3.",
+            "CONFIDENCE_FLOAT_MAP from src/quantitative/params.py. "
+            "Affected files: activation_service.py:21, claim_ledger.py:18, "
+            "activation_playbook.py:26. Value changed from 0.2 to 0.3.",
         ),
         DecisionCalibrationRecord(
             decision_id="activation.inverse_confidence_map.high",
@@ -1628,11 +1651,11 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Sensitivity analysis performed: range [0.1, 0.3] — at 0.3, low-confidence gaps get 3.3x boost vs high, "
-                   "at 0.1 they get 10x boost. Current 0.2 means 5x high-to-low ratio. "
-                   "Inverse confidence weights are applied as multipliers to expected_value_weight "
-                   "in _priority_from_confidence_and_value (activation_service.py:77-88). "
-                   "The boundary at weight >= 0.6 (in priority logic) is the critical sensitivity point. "
-                   "Codebase-inventoried — awaiting formal calibration pass.",
+            "at 0.1 they get 10x boost. Current 0.2 means 5x high-to-low ratio. "
+            "Inverse confidence weights are applied as multipliers to expected_value_weight "
+            "in _priority_from_confidence_and_value (activation_service.py:77-88). "
+            "The boundary at weight >= 0.6 (in priority logic) is the critical sensitivity point. "
+            "Codebase-inventoried — awaiting formal calibration pass.",
         ),
         DecisionCalibrationRecord(
             decision_id="activation.inverse_confidence_map.medium",
@@ -1646,10 +1669,10 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Sensitivity analysis performed: range [0.4, 0.6] — at 0.6 crosses the priority boundary (weight >= 0.6 "
-                   "in _priority_from_confidence_and_value), causing medium confidence + "
-                   "no indicator match to jump from priority 3 to 2. Current 0.5 stays below boundary. "
-                   "Medium confidence is the pivot point for priority assignment. "
-                   "Codebase-inventoried — awaiting formal calibration pass.",
+            "in _priority_from_confidence_and_value), causing medium confidence + "
+            "no indicator match to jump from priority 3 to 2. Current 0.5 stays below boundary. "
+            "Medium confidence is the pivot point for priority assignment. "
+            "Codebase-inventoried — awaiting formal calibration pass.",
         ),
         DecisionCalibrationRecord(
             decision_id="activation.inverse_confidence_map.low",
@@ -1663,10 +1686,10 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Sensitivity analysis performed: range [0.8, 1.0] — always above 0.6 boundary, so low confidence always "
-                   "gets priority boost regardless of expected_value_weight. "
-                   "Only meaningful change would be dropping below 0.6 (which would make low confidence "
-                   "behave like medium confidence). Current 1.0 is defensible as 'maximum boost needed'. "
-                   "Codebase-inventoried — awaiting formal calibration pass.",
+            "gets priority boost regardless of expected_value_weight. "
+            "Only meaningful change would be dropping below 0.6 (which would make low confidence "
+            "behave like medium confidence). Current 1.0 is defensible as 'maximum boost needed'. "
+            "Codebase-inventoried — awaiting formal calibration pass.",
         ),
         DecisionCalibrationRecord(
             decision_id="activation.expected_value.pct_high_return",
@@ -1680,9 +1703,9 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Sensitivity analysis performed: range [0.8, 1.0] — farthest from priority boundary (0.6), lowest impact. "
-                   "This is the ceiling: even at 0.8, combined with ANY confidence level it stays "
-                   "above 0.6 boundary. Only meaningful if dropped below 0.6. "
-                   "Codebase-inventoried — awaiting formal calibration pass.",
+            "This is the ceiling: even at 0.8, combined with ANY confidence level it stays "
+            "above 0.6 boundary. Only meaningful if dropped below 0.6. "
+            "Codebase-inventoried — awaiting formal calibration pass.",
         ),
         DecisionCalibrationRecord(
             decision_id="activation.expected_value.pct_mid_return",
@@ -1696,9 +1719,9 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Sensitivity analysis performed: range [0.7, 0.9] — well above 0.6 boundary; reducing to 0.6 would "
-                   "make 'high confidence + mid pct → priority 2' instead of 1. At 0.7, still safe. "
-                   "Critical threshold is 0.59. "
-                   "Codebase-inventoried — awaiting formal calibration pass.",
+            "make 'high confidence + mid pct → priority 2' instead of 1. At 0.7, still safe. "
+            "Critical threshold is 0.59. "
+            "Codebase-inventoried — awaiting formal calibration pass.",
         ),
         DecisionCalibrationRecord(
             decision_id="activation.expected_value.indicator_return",
@@ -1712,10 +1735,10 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Sensitivity analysis performed: CRITICAL BOUNDARY. 0.6 is the exact priority boundary in "
-                   "_priority_from_confidence_and_value. At 0.6, 'medium confidence + indicator' = "
-                   "priority 2; at 0.59, same combo = priority 3. This is the most sensitive threshold. "
-                   "Range [0.5, 0.7] recommended. Below 0.5 would collapse priority distinction. "
-                   "Codebase-inventoried — awaiting formal calibration pass.",
+            "_priority_from_confidence_and_value. At 0.6, 'medium confidence + indicator' = "
+            "priority 2; at 0.59, same combo = priority 3. This is the most sensitive threshold. "
+            "Range [0.5, 0.7] recommended. Below 0.5 would collapse priority distinction. "
+            "Codebase-inventoried — awaiting formal calibration pass.",
         ),
         DecisionCalibrationRecord(
             decision_id="activation.expected_value.no_indicator_return",
@@ -1729,18 +1752,18 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Sensitivity analysis performed: range [0.3, 0.5] — always below 0.6 boundary, so acts as 'no boost'. "
-                   "Only meaningful if raised to >= 0.6 (would make no-indicator match behave like "
-                   "indicator match). Gap to boundary is 0.2, providing safety margin. "
-                   "Codebase-inventoried — awaiting formal calibration pass.",
+            "Only meaningful if raised to >= 0.6 (would make no-indicator match behave like "
+            "indicator match). Gap to boundary is 0.2, providing safety margin. "
+            "Codebase-inventoried — awaiting formal calibration pass.",
         ),
         DecisionCalibrationRecord(
             decision_id="activation.relevant_degraded_codes",
             decision_name="Activation: Relevant Degraded Check Codes",
             decision_type=DecisionType.FALLBACK_POLICY,
             current_value="UNSUPPORTED_CRITICAL_CLAIM, LOW_EVIDENCE_COVERAGE, "
-                         "WEAK_NVIDIA_FIT_EVIDENCE, BRIEF_HAS_UNSUPPORTED_CLAIM, "
-                         "SCORE_HAS_LOW_EVIDENCE_SUPPORT, "
-                         "PLAYBOOK_LOW_EVIDENCE_SUPPORT, PLAYBOOK_UNSUPPORTED_CLAIMS",
+            "WEAK_NVIDIA_FIT_EVIDENCE, BRIEF_HAS_UNSUPPORTED_CLAIM, "
+            "SCORE_HAS_LOW_EVIDENCE_SUPPORT, "
+            "PLAYBOOK_LOW_EVIDENCE_SUPPORT, PLAYBOOK_UNSUPPORTED_CLAIMS",
             metric_name="activation_relevant_degraded_codes",
             value_origin="src/services/product/activation_service.py :: _RELEVANT_DEGRADED_CODES",
             calibration_status=CalibrationStatus.UNCALIBRATED,
@@ -1748,17 +1771,17 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Set of 7 degraded check codes considered 'relevant' for playbook matching. "
-                   "Expanded from 5 to 7 by adding PLAYBOOK_LOW_EVIDENCE_SUPPORT and "
-                   "PLAYBOOK_UNSUPPORTED_CLAIMS — both emitted by service.py:208-221 and "
-                   "affect activation recommendation quality. Coverage validated against "
-                   "DEGRADED_STATES in degraded.py (29 codes total). "
-                   "Excluded: DOSSIER_*, QUALITY_*, OPPORTUNITY_*, WORKFLOW_*, "
-                   "STRUCTURED_OUTPUT_*, NO_ACTIVATION_PLAYBOOK_MATCH, CORPUS_STALE, "
-                   "MISSING_EVIDENCE, RAG_UNAVAILABLE, QDRANT_UNAVAILABLE, "
-                   "SCORE_INCOMPLETE, EVAL_FAILED, PRODUCT_DB_UNAVAILABLE, "
-                   "PLAYBOOK_MISSING_SUCCESS_METRICS — these are pre-condition or "
-                   "post-activation codes not relevant to activation confidence. "
-                   "Codebase-inventoried — awaiting formal calibration pass.",
+            "Expanded from 5 to 7 by adding PLAYBOOK_LOW_EVIDENCE_SUPPORT and "
+            "PLAYBOOK_UNSUPPORTED_CLAIMS — both emitted by service.py:208-221 and "
+            "affect activation recommendation quality. Coverage validated against "
+            "DEGRADED_STATES in degraded.py (29 codes total). "
+            "Excluded: DOSSIER_*, QUALITY_*, OPPORTUNITY_*, WORKFLOW_*, "
+            "STRUCTURED_OUTPUT_*, NO_ACTIVATION_PLAYBOOK_MATCH, CORPUS_STALE, "
+            "MISSING_EVIDENCE, RAG_UNAVAILABLE, QDRANT_UNAVAILABLE, "
+            "SCORE_INCOMPLETE, EVAL_FAILED, PRODUCT_DB_UNAVAILABLE, "
+            "PLAYBOOK_MISSING_SUCCESS_METRICS — these are pre-condition or "
+            "post-activation codes not relevant to activation confidence. "
+            "Codebase-inventoried — awaiting formal calibration pass.",
         ),
     ]
     return records
@@ -1778,9 +1801,9 @@ def _evaluator_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-quality",
             notes="Weight for having a recommended motion in actionability score. "
-                   "Hardcoded at recommendation_actionability.py:46. "
-                   "Shares highest weight (0.30) with has_next_step. "
-                   "Recommended calibration: ablation study on recommendation quality correlation.",
+            "Hardcoded at recommendation_actionability.py:46. "
+            "Shares highest weight (0.30) with has_next_step. "
+            "Recommended calibration: ablation study on recommendation quality correlation.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.actionability.has_next_step",
@@ -1794,8 +1817,8 @@ def _evaluator_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-quality",
             notes="Weight for having a next step in actionability score. "
-                   "Hardcoded at recommendation_actionability.py:48. "
-                   "Tied with has_motion as most important component.",
+            "Hardcoded at recommendation_actionability.py:48. "
+            "Tied with has_motion as most important component.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.actionability.has_experiment",
@@ -1809,8 +1832,8 @@ def _evaluator_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-quality",
             notes="Weight for having a technical experiment in actionability score. "
-                   "Hardcoded at recommendation_actionability.py:50. "
-                   "Moderate weight — experiment is actionable but requires more maturity.",
+            "Hardcoded at recommendation_actionability.py:50. "
+            "Moderate weight — experiment is actionable but requires more maturity.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.actionability.has_metrics",
@@ -1824,8 +1847,8 @@ def _evaluator_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-quality",
             notes="Weight for having success metrics in actionability score. "
-                   "Hardcoded at recommendation_actionability.py:52. Sum = 1.0 with siblings. "
-                   "Lowest weight — success metrics are desirable but less critical than motion/step.",
+            "Hardcoded at recommendation_actionability.py:52. Sum = 1.0 with siblings. "
+            "Lowest weight — success metrics are desirable but less critical than motion/step.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.review_readiness.has_review",
@@ -1839,7 +1862,7 @@ def _evaluator_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-quality",
             notes="Weight for having at least one review decision. "
-                   "Hardcoded at review_readiness.py:32. Sum = 1.0 with evidence_coverage + run_completed.",
+            "Hardcoded at review_readiness.py:32. Sum = 1.0 with evidence_coverage + run_completed.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.review_readiness.evidence_coverage",
@@ -1853,8 +1876,8 @@ def _evaluator_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-quality",
             notes="Weight for evidence coverage portion in review readiness. "
-                   "Hardcoded at review_readiness.py:33. Highest component — evidence quality "
-                   "is the strongest signal for review readiness.",
+            "Hardcoded at review_readiness.py:33. Highest component — evidence quality "
+            "is the strongest signal for review readiness.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.review_readiness.run_completed",
@@ -1867,8 +1890,7 @@ def _evaluator_formula_weights() -> list[DecisionCalibrationRecord]:
             calibration_method=CalibrationMethod.SENSITIVITY_ANALYSIS,
             production_allowed=False,
             owner="team-quality",
-            notes="Weight for quality run being completed/degraded. "
-                   "Hardcoded at review_readiness.py:37.",
+            notes="Weight for quality run being completed/degraded. " "Hardcoded at review_readiness.py:37.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.review_readiness.unsupported_penalty",
@@ -1882,8 +1904,8 @@ def _evaluator_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-quality",
             notes="Penalty weight for having any unsupported claims. "
-                   "Hardcoded at review_readiness.py:34. "
-                   "NOTE: positive weights sum to 1.0 (0.30+0.40+0.30), penalty is applied after.",
+            "Hardcoded at review_readiness.py:34. "
+            "NOTE: positive weights sum to 1.0 (0.30+0.40+0.30), penalty is applied after.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.export_readiness.dossier_exists",
@@ -1896,14 +1918,14 @@ def _evaluator_formula_weights() -> list[DecisionCalibrationRecord]:
             calibration_method=CalibrationMethod.BASELINE_MEASUREMENT,
             production_allowed=True,
             evidence_source="Code analysis + fix: original weights 0.35+0.35 summed to 0.70, not 1.0. "
-                           "Fixed 2026-06-17 by normalizing to 0.50+0.50. "
-                           "Penalty stays at 0.30. See export_readiness.py fix.",
+            "Fixed 2026-06-17 by normalizing to 0.50+0.50. "
+            "Penalty stays at 0.30. See export_readiness.py fix.",
             owner="team-quality",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Weight for dossier existing and having markdown. FIXED 2026-06-17: "
-                   "changed from 0.35 to 0.50 to make weights sum to 1.0. "
-                   "Max score now 1.0 (was 0.70). With penalty: max 0.70 (was 0.40). "
-                   "Threshold at 0.70 means dossier + >=40% evidence passes.",
+            "changed from 0.35 to 0.50 to make weights sum to 1.0. "
+            "Max score now 1.0 (was 0.70). With penalty: max 0.70 (was 0.40). "
+            "Threshold at 0.70 means dossier + >=40% evidence passes.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.export_readiness.evidence_coverage",
@@ -1919,8 +1941,8 @@ def _evaluator_formula_weights() -> list[DecisionCalibrationRecord]:
             owner="team-quality",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Weight for evidence coverage portion. FIXED 2026-06-17: "
-                   "changed from 0.35 to 0.50 to normalize sum to 1.0. "
-                   "Evidence coverage is capped at 1.0 before weight application.",
+            "changed from 0.35 to 0.50 to normalize sum to 1.0. "
+            "Evidence coverage is capped at 1.0 before weight application.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.export_readiness.unsupported_penalty",
@@ -1934,9 +1956,9 @@ def _evaluator_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-quality",
             notes="Penalty weight for any unsupported claims. Hardcoded at export_readiness.py:24. "
-                   "After the 2026-06-17 fix, with penalty max score = 0.70 (was 0.40). "
-                   "Penalty represents 30% score reduction — consider recalibrating to 0.15 "
-                   "for less aggressive penalization.",
+            "After the 2026-06-17 fix, with penalty max score = 0.70 (was 0.40). "
+            "Penalty represents 30% score reduction — consider recalibrating to 0.15 "
+            "for less aggressive penalization.",
         ),
     ]
     return records
@@ -1955,13 +1977,13 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             calibration_method=CalibrationMethod.BASELINE_MEASUREMENT,
             production_allowed=True,
             evidence_source="Code analysis: null provider deterministic formula at llm_judge_adapter.py:51. "
-                           "Score is 0.85 when evidence and answer both present. This is the baseline "
-                           "null-LLM behavior — no semantic evaluation is performed.",
+            "Score is 0.85 when evidence and answer both present. This is the baseline "
+            "null-LLM behavior — no semantic evaluation is performed.",
             owner="team-evaluation",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Baseline measured: deterministic score from null LLM provider. "
-                   "With evidence present, faithfulness is assumed high (0.85). "
-                   "This is the fallback when no LLM judge is configured — it always passes.",
+            "With evidence present, faithfulness is assumed high (0.85). "
+            "This is the fallback when no LLM judge is configured — it always passes.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.judge.faithfulness_without_evidence",
@@ -1974,12 +1996,12 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             calibration_method=CalibrationMethod.BASELINE_MEASUREMENT,
             production_allowed=True,
             evidence_source="Code analysis: null provider deterministic formula at llm_judge_adapter.py:51. "
-                           "Score is 0.55 when evidence or answer is missing — reflects uncertainty.",
+            "Score is 0.55 when evidence or answer is missing — reflects uncertainty.",
             owner="team-evaluation",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Baseline measured: deterministic score from null LLM provider. "
-                   "Without evidence, faithfulness is marked moderate (0.55). "
-                   "This signals 'no assessment possible' rather than 'unfaithful'.",
+            "Without evidence, faithfulness is marked moderate (0.55). "
+            "This signals 'no assessment possible' rather than 'unfaithful'.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.judge.answer_relevancy_with_evidence",
@@ -1995,7 +2017,7 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             owner="team-evaluation",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Baseline measured: deterministic score from null LLM provider. "
-                   "Answer relevancy scored at 0.82 when evidence present.",
+            "Answer relevancy scored at 0.82 when evidence present.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.judge.answer_relevancy_without_evidence",
@@ -2011,7 +2033,7 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             owner="team-evaluation",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Baseline measured: deterministic score from null LLM provider. "
-                   "Lower (0.60) when evidence is missing.",
+            "Lower (0.60) when evidence is missing.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.judge.groundedness_with_evidence",
@@ -2027,7 +2049,7 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             owner="team-evaluation",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Baseline measured: deterministic score from null LLM provider. "
-                   "Groundedness scored at 0.84 when evidence present.",
+            "Groundedness scored at 0.84 when evidence present.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.judge.groundedness_without_evidence",
@@ -2043,7 +2065,7 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             owner="team-evaluation",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Baseline measured: deterministic score from null LLM provider. "
-                   "Lower (0.58) when evidence is missing.",
+            "Lower (0.58) when evidence is missing.",
         ),
         DecisionCalibrationRecord(
             decision_id="limit.judge_timeout_seconds",
@@ -2055,8 +2077,7 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-evaluation",
-            notes="Default timeout for LLM judge provider calls. "
-                   "Hardcoded default at llm_judge_schemas.py:30.",
+            notes="Default timeout for LLM judge provider calls. " "Hardcoded default at llm_judge_schemas.py:30.",
         ),
         DecisionCalibrationRecord(
             decision_id="limit.rag_eval.irrelevant_max_per_case",
@@ -2068,8 +2089,7 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-evaluation",
-            notes="A case is flagged if irrelevant_context_count > 1. "
-                   "Hardcoded threshold at rag_eval.py:533.",
+            notes="A case is flagged if irrelevant_context_count > 1. " "Hardcoded threshold at rag_eval.py:533.",
         ),
         DecisionCalibrationRecord(
             decision_id="limit.rag_eval.irrelevant_max_exceeding_cases",
@@ -2081,8 +2101,7 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-evaluation",
-            notes="Gate passes if len(irrelevant_over) <= 1. "
-                   "Hardcoded at rag_eval.py:538.",
+            notes="Gate passes if len(irrelevant_over) <= 1. " "Hardcoded at rag_eval.py:538.",
         ),
         DecisionCalibrationRecord(
             decision_id="limit.rag_eval.default_top_k",
@@ -2095,7 +2114,7 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-evaluation",
             notes="Default top_k for RAG evaluation test when not specified in golden JSON. "
-                   "Hardcoded at rag_eval.py:61 and rag_eval_schemas.py:35.",
+            "Hardcoded at rag_eval.py:61 and rag_eval_schemas.py:35.",
         ),
         DecisionCalibrationRecord(
             decision_id="limit.structured_output_max_retries",
@@ -2108,7 +2127,7 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-pipeline",
             notes="Default maximum retries for structured output validation repair. "
-                   "Hardcoded default at structured_outputs.py:212.",
+            "Hardcoded default at structured_outputs.py:212.",
         ),
     ]
     return records
@@ -2127,7 +2146,7 @@ def _orchestration_workflow_defaults() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-pipeline",
             notes="Default max retry count for node execution in sequential fallback runner. "
-                   "Hardcoded at runner.py:12.",
+            "Hardcoded at runner.py:12.",
         ),
         DecisionCalibrationRecord(
             decision_id="workflow.non_retryable_errors",
@@ -2140,7 +2159,7 @@ def _orchestration_workflow_defaults() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-pipeline",
             notes="Error types that should NOT be retried during workflow execution. "
-                   "Hardcoded tuple at runner.py:88.",
+            "Hardcoded tuple at runner.py:88.",
         ),
         DecisionCalibrationRecord(
             decision_id="workflow.list_workflows_default_limit",
@@ -2182,8 +2201,7 @@ def _discovery_extraction_limits() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-discovery",
-            notes="Multiplier cap for boost per match in signal extraction. "
-                   "Hardcoded at signals.py:43.",
+            notes="Multiplier cap for boost per match in signal extraction. " "Hardcoded at signals.py:43.",
         ),
         DecisionCalibrationRecord(
             decision_id="extraction.confidence_formula_base",
@@ -2196,7 +2214,7 @@ def _discovery_extraction_limits() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-discovery",
             notes="Base (minimum) confidence for extraction when no fields are filled. "
-                   "Formula: 0.1 + 0.9 * (filled / 8). Hardcoded at extractor.py:296.",
+            "Formula: 0.1 + 0.9 * (filled / 8). Hardcoded at extractor.py:296.",
         ),
         DecisionCalibrationRecord(
             decision_id="extraction.confidence_formula_scale",
@@ -2209,7 +2227,7 @@ def _discovery_extraction_limits() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-discovery",
             notes="Scale factor for extraction confidence. Formula: 0.1 + 0.9 * (filled / 8). "
-                   "Hardcoded at extractor.py:296.",
+            "Hardcoded at extractor.py:296.",
         ),
         DecisionCalibrationRecord(
             decision_id="extraction.confidence_field_count",
@@ -2221,8 +2239,7 @@ def _discovery_extraction_limits() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-discovery",
-            notes="Number of content fields used in confidence calculation. "
-                   "Hardcoded at extractor.py:196.",
+            notes="Number of content fields used in confidence calculation. " "Hardcoded at extractor.py:196.",
         ),
         DecisionCalibrationRecord(
             decision_id="discovery.excerpt_padding",
@@ -2234,8 +2251,7 @@ def _discovery_extraction_limits() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-discovery",
-            notes="Character padding around match in excerpt extraction. "
-                   "Hardcoded at signals.py:44.",
+            notes="Character padding around match in excerpt extraction. " "Hardcoded at signals.py:44.",
         ),
         # ── Extraction sufficiency decisions ──────────────────────────
         DecisionCalibrationRecord(
@@ -2249,8 +2265,8 @@ def _discovery_extraction_limits() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-pipeline",
             notes="Minimum number of evidence_items required for extraction to be considered "
-                   "'sufficient'. Until calibrated, production usage is blocked. "
-                   "Calibration requires empirical distribution of evidence yield per startup.",
+            "'sufficient'. Until calibrated, production usage is blocked. "
+            "Calibration requires empirical distribution of evidence yield per startup.",
         ),
         DecisionCalibrationRecord(
             decision_id="extraction.sufficiency.min_claims",
@@ -2263,8 +2279,8 @@ def _discovery_extraction_limits() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-pipeline",
             notes="Minimum number of claims required for extraction to be considered "
-                   "'sufficient'. Until calibrated, production usage is blocked. "
-                   "Calibration requires empirical distribution of claim yield per startup.",
+            "'sufficient'. Until calibrated, production usage is blocked. "
+            "Calibration requires empirical distribution of claim yield per startup.",
         ),
     ]
     return records
@@ -2283,7 +2299,7 @@ def _quality_service_defaults() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-quality",
             notes="Epsilon tolerance for floating-point equality comparison (operator=='eq'). "
-                   "Hardcoded at service.py:297.",
+            "Hardcoded at service.py:297.",
         ),
         DecisionCalibrationRecord(
             decision_id="quality_service.default_threshold_config",
@@ -2296,7 +2312,7 @@ def _quality_service_defaults() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-quality",
             notes="Default threshold config for metrics not found in THRESHOLDS dict. "
-                   "Always passes (gte 0.0). Hardcoded at service.py:286.",
+            "Always passes (gte 0.0). Hardcoded at service.py:286.",
         ),
     ]
     return records
@@ -2315,7 +2331,7 @@ def _validation_thresholds() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-discovery",
             notes="Minimum character length for an 'explicit' quote in evidence validation. "
-                   "Hardcoded at evidence_validator.py:12.",
+            "Hardcoded at evidence_validator.py:12.",
         ),
     ]
     return records
@@ -2335,7 +2351,7 @@ def _service_misc_defaults() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-pipeline",
             notes="Max retries for dossier JSON validation repair. Hardcoded at dossier_service.py:142. "
-                   "Set to 0 — no repair attempts for dossier validation failures.",
+            "Set to 0 — no repair attempts for dossier validation failures.",
         ),
         DecisionCalibrationRecord(
             decision_id="health.cache_ttl_seconds",
@@ -2349,7 +2365,7 @@ def _service_misc_defaults() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-pipeline",
             notes="Cache TTL in seconds for health check results. Default at health_executor.py:48. "
-                   "Health checks are cached for 30s to avoid hammering dependencies.",
+            "Health checks are cached for 30s to avoid hammering dependencies.",
         ),
         DecisionCalibrationRecord(
             decision_id="health.qdrant_timeout_seconds",
@@ -2439,10 +2455,10 @@ def _opportunity_score_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Weight for composite ranking in opportunity score. "
-                   "Largest single component. Must sum to 1.0 with 9 other weights. "
-                   "WORKSHOP ITEM: Validate with stakeholders if composite_ranking truly deserves "
-                   "20% weight vs other components like evidence_coverage (15%). "
-                   "Suggested exercise: pairwise ranking of all 10 components with business team.",
+            "Largest single component. Must sum to 1.0 with 9 other weights. "
+            "WORKSHOP ITEM: Validate with stakeholders if composite_ranking truly deserves "
+            "20% weight vs other components like evidence_coverage (15%). "
+            "Suggested exercise: pairwise ranking of all 10 components with business team.",
         ),
         DecisionCalibrationRecord(
             decision_id="opportunity_score.weight_evidence_coverage",
@@ -2579,8 +2595,8 @@ def _discovery_source_defaults() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scraping",
             notes="Default rate limit hint (requests/second) for discovery sources. "
-                   "Hardcoded as dataclass default at source_registry.py:39. "
-                   "Can be overridden per source instance.",
+            "Hardcoded as dataclass default at source_registry.py:39. "
+            "Can be overridden per source instance.",
         ),
     ]
 
@@ -2599,10 +2615,10 @@ def _business_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Weight multiplier for RAG context presence in business_impact formula. "
-                   "Formula: 0.3 + 0.4 * (1.0 if rag_contexts else 0.0) + 0.3 * avg_quality. "
-                   "Hardcoded at graph.py:815. Sum = 1.0 when rag=1 and avg_quality=1. "
-                   "Range: [0.3, 1.0]. Most sensitive component: rag presence adds 0-0.4. "
-                   "Recommended calibration: sensitivity analysis vs downstream scoring metrics.",
+            "Formula: 0.3 + 0.4 * (1.0 if rag_contexts else 0.0) + 0.3 * avg_quality. "
+            "Hardcoded at graph.py:815. Sum = 1.0 when rag=1 and avg_quality=1. "
+            "Range: [0.3, 1.0]. Most sensitive component: rag presence adds 0-0.4. "
+            "Recommended calibration: sensitivity analysis vs downstream scoring metrics.",
         ),
         DecisionCalibrationRecord(
             decision_id="agents.graph.business_impact_evidence_weight",
@@ -2616,8 +2632,8 @@ def _business_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Weight multiplier for avg_quality signal in business_impact formula. "
-                   "Hardcoded at graph.py:815. Scales with avg_quality in [0, 0.3]. "
-                   "Equal weight with base (both 0.3), less than rag (0.4).",
+            "Hardcoded at graph.py:815. Scales with avg_quality in [0, 0.3]. "
+            "Equal weight with base (both 0.3), less than rag (0.4).",
         ),
         DecisionCalibrationRecord(
             decision_id="agents.graph.business_impact_base_weight",
@@ -2631,7 +2647,7 @@ def _business_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Base weight in business_impact formula. Always contributes 0.3 minimum. "
-                   "Hardcoded at graph.py:815. Even with no RAG and no evidence, score = 0.3.",
+            "Hardcoded at graph.py:815. Even with no RAG and no evidence, score = 0.3.",
         ),
         DecisionCalibrationRecord(
             decision_id="agents.graph.next_action_confidence_threshold",
@@ -2645,8 +2661,8 @@ def _business_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Threshold for switching next action wording between confident and exploratory. "
-                   "Hardcoded at graph.py:780. Uses same threshold as CONFIDENCE_THRESHOLDS high_min (0.7). "
-                   "Should be kept in sync with confidence classification threshold.",
+            "Hardcoded at graph.py:780. Uses same threshold as CONFIDENCE_THRESHOLDS high_min (0.7). "
+            "Should be kept in sync with confidence classification threshold.",
         ),
         DecisionCalibrationRecord(
             decision_id="agents.graph.fallback_business_impact",
@@ -2660,8 +2676,8 @@ def _business_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Fallback business impact value when gap is not in predefined map. "
-                   "Hardcoded at graph.py:720. Middle of GAP_BUSINESS_IMPACT_MAP range [0.4, 0.9]. "
-                   "Conservative default: assumes unknown gap has moderate impact.",
+            "Hardcoded at graph.py:720. Middle of GAP_BUSINESS_IMPACT_MAP range [0.4, 0.9]. "
+            "Conservative default: assumes unknown gap has moderate impact.",
         ),
         DecisionCalibrationRecord(
             decision_id="agents.graph.fallback_complexity",
@@ -2675,8 +2691,8 @@ def _business_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Fallback implementation complexity when tech is not in predefined map. "
-                   "Hardcoded at graph.py:724. Middle of complexity range [0.0, 1.0]. "
-                   "Conservative: assumes unknown tech has moderate complexity.",
+            "Hardcoded at graph.py:724. Middle of complexity range [0.0, 1.0]. "
+            "Conservative: assumes unknown tech has moderate complexity.",
         ),
         DecisionCalibrationRecord(
             decision_id="agents.graph.default_source_quality_score",
@@ -2690,8 +2706,8 @@ def _business_formula_weights() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-scoring",
             notes="Default quality score for evidence items when not provided. "
-                   "Hardcoded at graph.py:809. Middle of SOURCE_QUALITY_SCORES range [0.4, 1.0]. "
-                   "Below median of source types (median=0.65 between job_post=0.5 and blog=0.6).",
+            "Hardcoded at graph.py:809. Middle of SOURCE_QUALITY_SCORES range [0.4, 1.0]. "
+            "Below median of source types (median=0.65 between job_post=0.5 and blog=0.6).",
         ),
     ]
     return records
@@ -2749,13 +2765,13 @@ def _rag_baseline_params() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Calibrated via grid search on 21 golden queries (19 with expected "
-                   "sources, 16 single-source, 2 gap-based multi-source, 5 keyword "
-                   "multi-source). top_k=5 is the smallest value meeting recall>=0.85 "
-                   "(got 0.8794), precision>=0.4 (got 0.9895), citation>=0.95 (got 1.0). "
-                   "At top_k=3: recall=0.8092 (now below 0.85 target due to 5 new "
-                   "multi-source queries). Top_k=15 gives perfect recall (1.0) but "
-                   "lower precision (0.4772). trade-off: higher top_k increases recall "
-                   "but decreases precision.",
+            "sources, 16 single-source, 2 gap-based multi-source, 5 keyword "
+            "multi-source). top_k=5 is the smallest value meeting recall>=0.85 "
+            "(got 0.8794), precision>=0.4 (got 0.9895), citation>=0.95 (got 1.0). "
+            "At top_k=3: recall=0.8092 (now below 0.85 target due to 5 new "
+            "multi-source queries). Top_k=15 gives perfect recall (1.0) but "
+            "lower precision (0.4772). trade-off: higher top_k increases recall "
+            "but decreases precision.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.min_required_contexts",
@@ -2771,11 +2787,11 @@ def _rag_baseline_params() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Derived from p50 of relevant_context_count across 19 cases with "
-                   "expected sources at recommended top_k=5. Distribution: p25=1, "
-                   "p50=1, min=1, p75=2, max=5. All single-source queries have "
-                   "relevant_context_count=1. Multi-source queries at top_k=5: "
-                   "kw_inference gets 2/3 sources; kw_production gets 4/4 sources; "
-                   "kw_model gets 5/8 sources.",
+            "expected sources at recommended top_k=5. Distribution: p25=1, "
+            "p50=1, min=1, p75=2, max=5. All single-source queries have "
+            "relevant_context_count=1. Multi-source queries at top_k=5: "
+            "kw_inference gets 2/3 sources; kw_production gets 4/4 sources; "
+            "kw_model gets 5/8 sources.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.citation_precision_threshold",
@@ -2791,11 +2807,11 @@ def _rag_baseline_params() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Observed citation_precision=1.0 across all top_k candidates on "
-                   "the golden set (all 50 corpus chunks have source_id+url). "
-                   "Threshold set at 0.95 to allow for edge cases where a single "
-                   "retrieved context has missing attribution. "
-                   "Tight threshold is justified because citation metadata is a "
-                   "deterministic property of the corpus, not a semantic metric.",
+            "the golden set (all 50 corpus chunks have source_id+url). "
+            "Threshold set at 0.95 to allow for edge cases where a single "
+            "retrieved context has missing attribution. "
+            "Tight threshold is justified because citation metadata is a "
+            "deterministic property of the corpus, not a semantic metric.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.unsupported_claim_rate_threshold",
@@ -2811,12 +2827,12 @@ def _rag_baseline_params() -> list[DecisionCalibrationRecord]:
             owner="team-rag",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Observed unsupported_claim_rate=0.1091 at recommended top_k=5 "
-                   "(slightly above 0.10 threshold due to multi-source queries with "
-                   "partial recall). At top_k=5: 15/19 queries have "
-                   "unsupported_claim_rate=0.0; 4 multi-source queries have "
-                   "unsupported_rate>0 (expected sources not fully retrieved). "
-                   "Threshold at 0.10 still provides useful signal — will be "
-                   "monitored and may need adjustment after more corpus growth.",
+            "(slightly above 0.10 threshold due to multi-source queries with "
+            "partial recall). At top_k=5: 15/19 queries have "
+            "unsupported_claim_rate=0.0; 4 multi-source queries have "
+            "unsupported_rate>0 (expected sources not fully retrieved). "
+            "Threshold at 0.10 still provides useful signal — will be "
+            "monitored and may need adjustment after more corpus growth.",
         ),
     ]
 
@@ -2857,11 +2873,11 @@ def _scraping_baseline_params() -> list[DecisionCalibrationRecord]:
             owner="team-scraping",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Recommended via grid search (N=11, ranks 1..8) with "
-                   "coverage_target=0.85. Smallest max_sources achieving "
-                   "coverage>=85% is 3 (got 0.8846). Marginal gain from 3→4 "
-                   "is 7.69% (still useful), but 3 sources cover 88% of claims. "
-                   "Currently hardcoded as DISCOVERY_MAX_SOURCES=10 — should "
-                   "be reduced to 3. Next best action: update params.py.",
+            "coverage_target=0.85. Smallest max_sources achieving "
+            "coverage>=85% is 3 (got 0.8846). Marginal gain from 3→4 "
+            "is 7.69% (still useful), but 3 sources cover 88% of claims. "
+            "Currently hardcoded as DISCOVERY_MAX_SOURCES=10 — should "
+            "be reduced to 3. Next best action: update params.py.",
         ),
         DecisionCalibrationRecord(
             decision_id="scraping.max_depth",
@@ -2877,10 +2893,10 @@ def _scraping_baseline_params() -> list[DecisionCalibrationRecord]:
             owner="team-scraping",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Recommended via marginal_evidence_gain >= 5%. Depth 0 yields "
-                   "33 total evidence; depth 1 yields 70 (+112% gain). Depth 2 "
-                   "yields no additional gain. Recommended max_depth=1. "
-                   "Currently hardcoded as MAX_SEARCH_DEPTH=2 — reduction "
-                   "from 2 to 1 is safe. Next best action: update params.py.",
+            "33 total evidence; depth 1 yields 70 (+112% gain). Depth 2 "
+            "yields no additional gain. Recommended max_depth=1. "
+            "Currently hardcoded as MAX_SEARCH_DEPTH=2 — reduction "
+            "from 2 to 1 is safe. Next best action: update params.py.",
         ),
         DecisionCalibrationRecord(
             decision_id="scraping.source_priority",
@@ -2896,12 +2912,12 @@ def _scraping_baseline_params() -> list[DecisionCalibrationRecord]:
             owner="team-scraping",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Derived via MCDA formula from 11-startup golden set + real "
-                   "collector validation (precision=1.0). Scores: "
-                   "official_website=1.75, github=1.24, nvidia_eco=1.07, "
-                   "jobs=0.32, funding_news=-0.28, technical_docs=-0.52, "
-                   "ecosystem_directory=-0.86, media=-1.79. "
-                   "High-latency sources (media, docs) penalized. "
-                   "Low-duplicate sources (github, nvidia) rewarded.",
+            "collector validation (precision=1.0). Scores: "
+            "official_website=1.75, github=1.24, nvidia_eco=1.07, "
+            "jobs=0.32, funding_news=-0.28, technical_docs=-0.52, "
+            "ecosystem_directory=-0.86, media=-1.79. "
+            "High-latency sources (media, docs) penalized. "
+            "Low-duplicate sources (github, nvidia) rewarded.",
         ),
         DecisionCalibrationRecord(
             decision_id="evidence.min_evidence_per_claim",
@@ -2917,9 +2933,9 @@ def _scraping_baseline_params() -> list[DecisionCalibrationRecord]:
             owner="team-scraping",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Derived from p50 of evidence-per-claim distribution across "
-                   "11-startup golden set at recommended max_sources=3. "
-                   "Distribution: min=5, p50=6, max=9. Recommended minimum=1 "
-                   "(conservative — ensures at least 1 evidence per claim).",
+            "11-startup golden set at recommended max_sources=3. "
+            "Distribution: min=5, p50=6, max=9. Recommended minimum=1 "
+            "(conservative — ensures at least 1 evidence per claim).",
         ),
         DecisionCalibrationRecord(
             decision_id="collection.stop_condition",
@@ -2935,11 +2951,11 @@ def _scraping_baseline_params() -> list[DecisionCalibrationRecord]:
             owner="team-scraping",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Stop condition = hybrid of supported_claim_coverage >= 85%, "
-                   "marginal_gain < 3%, and uncertainty_remaining=0.017. "
-                   "Validated at max_sources=3: coverage=0.88 (above 85%). "
-                   "Marginal gain from 3→4 is 7.69% (above 3% min). "
-                   "Practical stop: at max_sources=3, stop if 3 sources collected "
-                   "or coverage >= 85%, whichever comes first.",
+            "marginal_gain < 3%, and uncertainty_remaining=0.017. "
+            "Validated at max_sources=3: coverage=0.88 (above 85%). "
+            "Marginal gain from 3→4 is 7.69% (above 3% min). "
+            "Practical stop: at max_sources=3, stop if 3 sources collected "
+            "or coverage >= 85%, whichever comes first.",
         ),
     ]
 
@@ -2976,10 +2992,10 @@ def _http_collector_params() -> list[DecisionCalibrationRecord]:
             owner="team-scraping",
             last_calibrated_at=_CALIBRATION_TS,
             notes="HTTP request timeout for source collection. "
-                   "Derived from existing SourceCollector._REQUEST_TIMEOUT=15. "
-                   "Validated against golden set: all fetchable sources respond "
-                   "within 5s; 15s provides 3x safety margin for rate-limited sources. "
-                   "Next best action: validate against production latency distribution.",
+            "Derived from existing SourceCollector._REQUEST_TIMEOUT=15. "
+            "Validated against golden set: all fetchable sources respond "
+            "within 5s; 15s provides 3x safety margin for rate-limited sources. "
+            "Next best action: validate against production latency distribution.",
         ),
         DecisionCalibrationRecord(
             decision_id="collection.http_max_retries",
@@ -2995,10 +3011,10 @@ def _http_collector_params() -> list[DecisionCalibrationRecord]:
             owner="team-scraping",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Maximum retry attempts per source fetch. "
-                   "Matches default max_retries=3 in rate_limit_policy. "
-                   "Retry only on server errors (5xx) or connection errors; "
-                   "client errors (4xx) are not retried. "
-                   "Next best action: validate retry effectiveness against golden set.",
+            "Matches default max_retries=3 in rate_limit_policy. "
+            "Retry only on server errors (5xx) or connection errors; "
+            "client errors (4xx) are not retried. "
+            "Next best action: validate retry effectiveness against golden set.",
         ),
         DecisionCalibrationRecord(
             decision_id="collection.http_backoff_base_seconds",
@@ -3014,9 +3030,9 @@ def _http_collector_params() -> list[DecisionCalibrationRecord]:
             owner="team-scraping",
             last_calibrated_at=_CALIBRATION_TS,
             notes="Base seconds for exponential backoff: sleep(base * 2^(attempt-1)). "
-                   "Derived from existing SourceCollector._fetch_with_retry pattern "
-                    "(time.sleep(2**attempt)). At attempt 1: 2s, attempt 2: 4s, attempt 3: 8s. "
-                    "Next best action: validate backoff distribution against real fetch latency.",
+            "Derived from existing SourceCollector._fetch_with_retry pattern "
+            "(time.sleep(2**attempt)). At attempt 1: 2s, attempt 2: 4s, attempt 3: 8s. "
+            "Next best action: validate backoff distribution against real fetch latency.",
         ),
     ]
 
@@ -3024,7 +3040,7 @@ def _http_collector_params() -> list[DecisionCalibrationRecord]:
 def _scoring_weight_decisions() -> list[DecisionCalibrationRecord]:
     """Weight and threshold decisions for source_quality_score and
     evidence_confidence_score — all uncalibrated until calibration pass."""
-    _cal_ts = datetime(2026, 6, 18, tzinfo=timezone.utc)
+    _cal_ts = datetime(2026, 6, 18, tzinfo=UTC)
 
     best_sq_weights = {
         "source_authority_prior": 0.30,
@@ -3061,13 +3077,13 @@ def _scoring_weight_decisions() -> list[DecisionCalibrationRecord]:
                 "Full report: run_full_calibration() -> report."
             ),
             notes="Per-feature weights for source quality scoring. "
-                   "Calibrated via grid_search on 95 entries (source_evidence_score_baseline_eval). "
-                   "Labels derived deterministically from scraping baseline features. "
-                   "Best candidate (idx 0): spearman=0.8696, mae=0.1721, rmse=0.1908. "
-                   "Weights sum to 1.0. source_authority_prior (0.30) and "
-                   "fetch_success (0.15) are the dominant features. "
-                   "Calibration status: BASELINE_MEASURED, production_allowed=True. "
-                   "EC remains blocked — see threshold.evidence_confidence_score.production_min.",
+            "Calibrated via grid_search on 95 entries (source_evidence_score_baseline_eval). "
+            "Labels derived deterministically from scraping baseline features. "
+            "Best candidate (idx 0): spearman=0.8696, mae=0.1721, rmse=0.1908. "
+            "Weights sum to 1.0. source_authority_prior (0.30) and "
+            "fetch_success (0.15) are the dominant features. "
+            "Calibration status: BASELINE_MEASURED, production_allowed=True. "
+            "EC remains blocked — see threshold.evidence_confidence_score.production_min.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.evidence_confidence_score.weights",
@@ -3104,12 +3120,12 @@ def _scoring_weight_decisions() -> list[DecisionCalibrationRecord]:
                 "Requires evidence-level data to improve EC score discrimination."
             ),
             notes="Per-feature weights for evidence confidence scoring. "
-                   "BLOCKED for production. Grid search completed but FP rate=1.0 "
-                   "exceeds max 0.2. The scraping baseline golden set does not "
-                   "contain evidence-level detail (confidence levels, evidence_kind "
-                   "variations, critical claims). EC scores cluster in 0.49-0.55 "
-                   "range across all entries. Fix: add real evidence items with "
-                   "varying extraction_confidence, factuality, and critical flags.",
+            "BLOCKED for production. Grid search completed but FP rate=1.0 "
+            "exceeds max 0.2. The scraping baseline golden set does not "
+            "contain evidence-level detail (confidence levels, evidence_kind "
+            "variations, critical claims). EC scores cluster in 0.49-0.55 "
+            "range across all entries. Fix: add real evidence items with "
+            "varying extraction_confidence, factuality, and critical flags.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.source_quality_score.production_min",
@@ -3131,9 +3147,9 @@ def _scoring_weight_decisions() -> list[DecisionCalibrationRecord]:
                 "Calibrated alongside weight.source_quality_score.weights."
             ),
             notes="Minimum source_quality_score=0.65 for production evidence. "
-                   "Derived from P5 of score distribution over 95 golden entries. "
-                   "Ensures bottom 5% of sources (failed fetches, blocked, "
-                   "high-latency, duplicates) are excluded.",
+            "Derived from P5 of score distribution over 95 golden entries. "
+            "Ensures bottom 5% of sources (failed fetches, blocked, "
+            "high-latency, duplicates) are excluded.",
         ),
         DecisionCalibrationRecord(
             decision_id="threshold.evidence_confidence_score.production_min",
@@ -3156,11 +3172,11 @@ def _scoring_weight_decisions() -> list[DecisionCalibrationRecord]:
                 "Threshold kept at 0.55 as placeholder; production not allowed."
             ),
             notes="Minimum evidence_confidence_score threshold. "
-                   "BLOCKED for production. Optimal threshold=0.55 found via "
-                   "f1_minus_fp_rate optimization. "
-                   "Not released because EC weights are uncalibrated "
-                   "(fp_rate=1.0 with 95 derived labels). "
-                   "Fix requires evidence-level data with feature variance.",
+            "BLOCKED for production. Optimal threshold=0.55 found via "
+            "f1_minus_fp_rate optimization. "
+            "Not released because EC weights are uncalibrated "
+            "(fp_rate=1.0 with 95 derived labels). "
+            "Fix requires evidence-level data with feature variance.",
         ),
     ]
 
@@ -3172,7 +3188,7 @@ def _startup_scoring_decisions() -> list[DecisionCalibrationRecord]:
     from reference weights (label_source=derived_from_synthetic_reference).
     Run `python scripts/populate_golden_set.py` to regenerate and recalibrate.
     """
-    _now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+    _now = datetime(2026, 6, 18, tzinfo=UTC)
 
     ai_weights_calibrated: dict[str, float] = {
         "ai_signal_count": 0.25,
@@ -3188,25 +3204,26 @@ def _startup_scoring_decisions() -> list[DecisionCalibrationRecord]:
         "uncertainty_penalty": 0.05,
     }
     nv_weights_calibrated: dict[str, float] = {
-        "gpu_compute_signal_count": 0.10,
-        "cuda_or_acceleration_signal_count": 0.12,
-        "inference_or_training_signal_count": 0.12,
-        "computer_vision_signal_count": 0.08,
-        "genai_llm_signal_count": 0.10,
-        "data_pipeline_signal_count": 0.08,
-        "nvidia_keyword_signal_count": 0.12,
-        "nvidia_relevant_industry_signal_count": 0.07,
-        "accepted_nvidia_fit_evidence_count": 0.06,
-        "rag_context_alignment_count": 0.03,
-        "evidence_confidence_mean_for_nvidia_claims": 0.04,
-        "implementation_complexity_proxy": 0.03,
-        "uncertainty_penalty": 0.02,
+        "gpu_compute_signal_count": 0.1030927835,
+        "cuda_or_acceleration_signal_count": 0.1237113402,
+        "inference_or_training_signal_count": 0.1237113402,
+        "computer_vision_signal_count": 0.0824742268,
+        "genai_llm_signal_count": 0.1030927835,
+        "data_pipeline_signal_count": 0.0824742268,
+        "nvidia_keyword_signal_count": 0.1237113402,
+        "nvidia_relevant_industry_signal_count": 0.0721649485,
+        "accepted_nvidia_fit_evidence_count": 0.0618556701,
+        "rag_context_alignment_count": 0.0309278351,
+        "evidence_confidence_mean_for_nvidia_claims": 0.0412371134,
+        "implementation_complexity_proxy": 0.0309278351,
+        "uncertainty_penalty": 0.0206185567,
     }
 
     notes = (
         "Baseline calibration measured: 30 golden entries with derived labels. "
         "AI Native: spearman=0.994, mae=0.0073, rmse=0.0333, f1=1.0, feature_coverage=0.803. "
         "NVIDIA Fit: spearman=0.9506, mae=0.0443, rmse=0.1358, f1=0.9, feature_coverage=0.5487, fp_rate=0.0. "
+        "NVIDIA Fit weights are proportionally normalized from candidate sum 0.97 to sum 1.0. "
         "Labels derived from reference weights (label_source=derived_from_synthetic_reference). "
         "All production criteria met: spearman>=0.5, mae<=0.2, fp_rate<=0.3."
     )
@@ -3330,7 +3347,7 @@ def _gap_diagnosis_decisions() -> list[DecisionCalibrationRecord]:
     data when >=20 entries with spearman>=0.5 and mae<=0.2 are available in
     data/eval/golden_gap_diagnosis_baseline.json.
     """
-    _now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+    _now = datetime(2026, 6, 18, tzinfo=UTC)
 
     notes_synthetic = (
         "Synthetic calibration — NOT validated against human labels. "
@@ -3411,7 +3428,7 @@ def _ingestion_corpus_decisions() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-rag",
             notes="Chunk size controlled by heading-based splitting (not a fixed char count). "
-                   "Currently uncalibrated. Needs grid search on golden set.",
+            "Currently uncalibrated. Needs grid search on golden set.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.chunk_overlap",
@@ -3424,7 +3441,7 @@ def _ingestion_corpus_decisions() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-rag",
             notes="Chunk overlap currently 0 (no overlap between consecutive chunks). "
-                   "Needs empirical retrieval recall analysis.",
+            "Needs empirical retrieval recall analysis.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.ingestion_batch_size",
@@ -3449,7 +3466,7 @@ def _ingestion_corpus_decisions() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-rag",
             notes="Minimum number of unique source documents required for corpus readiness. "
-                   "Currently uncalibrated. Must be set to actual corpus size.",
+            "Currently uncalibrated. Must be set to actual corpus size.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.min_corpus_chunks",
@@ -3461,8 +3478,7 @@ def _ingestion_corpus_decisions() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-rag",
-            notes="Minimum number of total chunks required for corpus readiness. "
-                   "Currently uncalibrated.",
+            notes="Minimum number of total chunks required for corpus readiness. " "Currently uncalibrated.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.corpus_staleness_policy",
@@ -3487,7 +3503,7 @@ def _ingestion_corpus_decisions() -> list[DecisionCalibrationRecord]:
             production_allowed=False,
             owner="team-rag",
             notes="Expected embedding dimension (384 for all-MiniLM-L6-v2). "
-                   "Must match Qdrant collection vector_size.",
+            "Must match Qdrant collection vector_size.",
         ),
     ]
 
@@ -3499,7 +3515,7 @@ def _recommendation_calibration_decisions() -> list[DecisionCalibrationRecord]:
     data/eval/golden_recommendation_baseline.json before production is allowed.
     See src/evaluation/recommendation_baseline.py :: run_recommendation_baseline_calibration().
     """
-    _now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+    _now = datetime(2026, 6, 18, tzinfo=UTC)
     _origin = "src/evaluation/recommendation_baseline.py :: make_recommendation_baseline_records()"
     _notes = (
         "Uncalibrated. Waiting for minimum 30 human-labeled recommendation "
@@ -3612,7 +3628,7 @@ def _nvidia_mapping_decisions() -> list[DecisionCalibrationRecord]:
     NVIDIA technologies. All are UDCALIBRATED (production_allowed=False)
     until explicitly calibrated via golden set or empirical analysis.
     """
-    _now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+    _now = datetime(2026, 6, 18, tzinfo=UTC)
     _notes_uncal = (
         "Uncalibrated. Requires empirical distribution of mapping scores "
         "and golden set with human-labeled gap→technology relevance before "

@@ -5,7 +5,6 @@ import os
 from src.services.product.config_registry import (
     CONFIG_ITEMS,
     get_config_item,
-    get_optional_config,
     get_required_config,
     is_extra_installed,
     list_config_items,
@@ -24,9 +23,9 @@ class TestConfigRegistry:
         assert "PRODUCT_DB_URL" in keys
         assert "APP_MODE" in keys
 
-    def test_optional_config_includes_rag(self) -> None:
-        optional = get_optional_config()
-        keys = {i.key for i in optional}
+    def test_required_config_includes_rag(self) -> None:
+        required = get_required_config()
+        keys = {i.key for i in required}
         assert "QDRANT_URL" in keys
         assert "RAG_EMBEDDING_MODEL" in keys
 

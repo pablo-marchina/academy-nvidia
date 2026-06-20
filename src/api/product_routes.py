@@ -9,11 +9,12 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from src.api.product_schemas import (
-    ActionBriefRead,
     ActionBriefJsonExportRead,
+    ActionBriefRead,
     ActivationDossierGenerateResponse,
     ActivationDossierMarkdownRead,
     ActivationDossierRead,
+    ActivationDossierSummaryRead,
     ActivationPlaybookListResponse,
     ActivationPlaybookRead,
     ActivationRecommendationListResponse,
@@ -43,6 +44,7 @@ from src.api.product_schemas import (
     OpportunityListResponse,
     OpportunityScoreCreateResponse,
     OpportunityScoreRead,
+    PersistedActionBriefRead,
     ProductCapabilityRead,
     ProductConfigurationItemRead,
     ProductHealthRead,
@@ -52,7 +54,6 @@ from src.api.product_schemas import (
     ProductReadinessRead,
     ProductSetupChecklistItem,
     ProductSetupChecklistRead,
-    PersistedActionBriefRead,
     PromoteCandidateResponse,
     RankedOpportunityListResponse,
     RankedOpportunityRead,
@@ -64,9 +65,9 @@ from src.api.product_schemas import (
     StartupListItem,
     StartupRead,
     StartupUpdate,
-    WorkflowReviewDecisionCreate,
     UrlListRequest,
     UrlListResponse,
+    WorkflowReviewDecisionCreate,
 )
 from src.database.models import (
     ActionBriefRecord,
@@ -96,6 +97,7 @@ from src.services.product.readiness_service import ProductReadinessService
 
 router = APIRouter(tags=["product"])
 DbSession = Annotated[Session, Depends(get_db_session)]
+ProductReady = Annotated[None, Depends(ReadinessGate())]
 
 
 def _startup_read(startup: Startup) -> StartupRead:
@@ -217,9 +219,7 @@ def _build_workflow_response(
                 sd = wf_run.state_json
                 executed = list(
                     dict.fromkeys(
-                        sd.get("completed_nodes", [])
-                        + sd.get("failed_nodes", [])
-                        + sd.get("degraded_nodes", [])
+                        sd.get("completed_nodes", []) + sd.get("failed_nodes", []) + sd.get("degraded_nodes", [])
                     )
                 )
                 review_required = sd.get("review_required", False)
@@ -259,9 +259,7 @@ def _build_workflow_response(
                 recommendation_metrics = output.get("recommendation", {})
                 raw_brief_metrics = output.get("brief_metrics")
                 brief_metrics = (
-                    raw_brief_metrics
-                    if isinstance(raw_brief_metrics, dict)
-                    else output.get("action_brief", {})
+                    raw_brief_metrics if isinstance(raw_brief_metrics, dict) else output.get("action_brief", {})
                 )
         except Exception:
             pass
@@ -297,11 +295,7 @@ def _build_detail_response(analysis_run_id: str, session: Session) -> AnalysisRu
         if wf_run and wf_run.state_json:
             sd = wf_run.state_json
             executed = list(
-                dict.fromkeys(
-                    sd.get("completed_nodes", [])
-                    + sd.get("failed_nodes", [])
-                    + sd.get("degraded_nodes", [])
-                )
+                dict.fromkeys(sd.get("completed_nodes", []) + sd.get("failed_nodes", []) + sd.get("degraded_nodes", []))
             )
             blockers = sd.get("blockers", [])
             review_required = sd.get("review_required", False)
@@ -322,9 +316,7 @@ def _build_detail_response(analysis_run_id: str, session: Session) -> AnalysisRu
     rag_metrics = output.get("rag_output", {})
     recommendation_metrics = output.get("recommendation", {})
     raw_brief_metrics = output.get("brief_metrics")
-    brief_metrics = (
-        raw_brief_metrics if isinstance(raw_brief_metrics, dict) else output.get("action_brief", {})
-    )
+    brief_metrics = raw_brief_metrics if isinstance(raw_brief_metrics, dict) else output.get("action_brief", {})
     if isinstance(rag_metrics, dict):
         pass
     else:
@@ -336,6 +328,12 @@ def _build_detail_response(analysis_run_id: str, session: Session) -> AnalysisRu
             action_brief = _action_brief_read(brief_record)
     except Exception:
         pass
+    dossier_summary: ActivationDossierSummaryRead | None = None
+    try:
+        dossier_svc = ActivationDossierService(session)
+        dossier_summary = ActivationDossierSummaryRead(**dossier_svc.get_dossier_summary(analysis_run_id))
+    except Exception:
+        dossier_summary = None
     return AnalysisRunDetailResponse(
         run_id=run.id,
         startup_id=run.startup_id,
@@ -345,11 +343,10 @@ def _build_detail_response(analysis_run_id: str, session: Session) -> AnalysisRu
         quality=quality,
         evidence_validation=evidence_validation if isinstance(evidence_validation, dict) else {},
         rag_metrics=rag_metrics if isinstance(rag_metrics, dict) else {},
-        recommendation_metrics=recommendation_metrics
-        if isinstance(recommendation_metrics, dict)
-        else {},
+        recommendation_metrics=(recommendation_metrics if isinstance(recommendation_metrics, dict) else {}),
         brief_metrics=brief_metrics if isinstance(brief_metrics, dict) else {},
         action_brief=action_brief,
+        dossier_summary=dossier_summary,
         review_required=review_required,
         review_payload=review_payload,
     )
@@ -415,8 +412,8 @@ def _persisted_action_brief_read(
 @router.post("/startups", response_model=StartupRead, status_code=status.HTTP_201_CREATED)
 def create_startup(
     request: StartupCreate,
+    _gate: ProductReady,
     session: DbSession,
-    _gate: None = Depends(ReadinessGate()),
 ) -> StartupRead:
     service = ProductService(session)
     payload = request.model_dump(mode="python")
@@ -474,9 +471,7 @@ def create_analysis_run_workflow(
     svc = ProductService(session)
     startup = svc.get_startup(startup_id)
     if startup is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Startup not found."
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Startup not found.")
     readiness = ProductReadinessService().get_product_readiness()
     if not readiness.ready:
         msgs: list[str] = []
@@ -496,11 +491,11 @@ def create_analysis_run_workflow(
         state = orch.create_and_run_workflow(
             startup_id=startup_id,
         )
-    except Exception:
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Analysis run failed.",
-        )
+        ) from exc
     return _build_workflow_response(
         state.analysis_run_id,
         startup_id,
@@ -518,8 +513,8 @@ def create_analysis_run_workflow(
 def create_analysis_run(
     startup_id: str,
     request: AnalysisRunCreate,
+    _gate: ProductReady,
     session: DbSession,
-    _gate: None = Depends(ReadinessGate()),
 ) -> AnalysisRunRead:
     service = ProductService(session)
     try:
@@ -571,9 +566,7 @@ def export_action_brief_json(
     if brief is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Action brief not found.")
     try:
-        return ActionBriefJsonExportRead(
-            **persisted_action_brief_json_export_payload(run, brief)
-        )
+        return ActionBriefJsonExportRead(**persisted_action_brief_json_export_payload(run, brief))
     except ValidationError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -596,8 +589,8 @@ def dependency_health(session: DbSession) -> DependencyHealthRead:
 def update_startup(
     startup_id: str,
     request: StartupUpdate,
+    _gate: ProductReady,
     session: DbSession,
-    _gate: None = Depends(ReadinessGate()),
 ) -> StartupRead:
     service = ProductService(session)
     fields = request.model_dump(exclude_unset=True)
@@ -623,8 +616,8 @@ def update_startup(
 def create_review(
     analysis_run_id: str,
     request: ReviewDecisionCreate,
+    _gate: ProductReady,
     session: DbSession,
-    _gate: None = Depends(ReadinessGate()),
 ) -> ReviewDecisionRead:
     service = ProductService(session)
     try:
@@ -721,6 +714,7 @@ def resume_analysis_run(
             decision=body.decision,
             reviewer=body.reviewer,
             notes=body.notes,
+            resume=True,
         )
     except (LookupError, RuntimeError) as exc:
         raise HTTPException(
@@ -797,9 +791,7 @@ def list_opportunities(
         review_decision=review_decision,
         order_by=order_by,
     )
-    run_ids: list[str] = [
-        item["latest_analysis_run_id"] for item in items if item.get("latest_analysis_run_id")
-    ]
+    run_ids: list[str] = [item["latest_analysis_run_id"] for item in items if item.get("latest_analysis_run_id")]
     if run_ids:
         try:
             act_service = ActivationPlaybookService(session)
@@ -840,8 +832,8 @@ def list_opportunities(
 )
 def compute_opportunity_score(
     analysis_run_id: str,
+    _gate: ProductReady,
     session: DbSession,
-    _gate: None = Depends(ReadinessGate()),
 ) -> OpportunityScoreCreateResponse:
     service = OpportunityScoreService(session)
     try:
@@ -858,8 +850,7 @@ def compute_opportunity_score(
     components = result.get("components", {})
     explanation = OpportunityScoreExplainRead(
         components=[
-            OpportunityScoreComponentRead(name=name, value=val, weight=0.0)
-            for name, val in components.items()
+            OpportunityScoreComponentRead(name=name, value=val, weight=0.0) for name, val in components.items()
         ],
         missing_components=[name for name, val in components.items() if val is None],
         penalties=[
@@ -949,8 +940,8 @@ def list_ranked_opportunities(
 def create_export(
     analysis_run_id: str,
     request: ExportCreate,
+    _gate: ProductReady,
     session: DbSession,
-    _gate: None = Depends(ReadinessGate()),
 ) -> ExportRead:
     service = ProductService(session)
     try:
@@ -958,9 +949,7 @@ def create_export(
     except LookupError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
     return ExportRead(
         id=record.id,
         analysis_run_id=record.analysis_run_id,
@@ -1140,8 +1129,8 @@ def list_activation_recommendations(
 )
 def generate_activation_recommendations(
     analysis_run_id: str,
+    _gate: ProductReady,
     session: DbSession,
-    _gate: None = Depends(ReadinessGate()),
 ) -> GenerateActivationRecommendationsResponse:
     service = ProductService(session)
     if service.get_analysis_run(analysis_run_id) is None:
@@ -1178,8 +1167,8 @@ def _dossier_read(record: ActivationDossierRecord) -> ActivationDossierRead:
 )
 def create_dossier(
     analysis_run_id: str,
+    _gate: ProductReady,
     session: DbSession,
-    _gate: None = Depends(ReadinessGate()),
     force: bool = Query(default=False, description="Force regeneration of a new version"),
 ) -> ActivationDossierGenerateResponse:
     service = ProductService(session)
@@ -1189,9 +1178,7 @@ def create_dossier(
     existing = dossier_svc.get_latest_dossier(analysis_run_id)
     is_new = force or existing is None
     if force or existing is None:
-        record = dossier_svc.build_dossier_for_analysis_run(
-            analysis_run_id, force_new_version=force
-        )
+        record = dossier_svc.build_dossier_for_analysis_run(analysis_run_id, force_new_version=force)
     else:
         record = existing
     return ActivationDossierGenerateResponse(
@@ -1254,8 +1241,8 @@ def get_dossier_markdown(
 )
 def create_quality_run(
     analysis_run_id: str,
+    _gate: ProductReady,
     session: DbSession,
-    _gate: None = Depends(ReadinessGate()),
 ) -> ProductQualityRunRead:
     service = ProductService(session)
     if service.get_analysis_run(analysis_run_id) is None:
@@ -1296,9 +1283,7 @@ def get_latest_quality_run(
     if service.get_analysis_run(analysis_run_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
     quality_service = ProductQualityService(session)
-    quality_run = quality_service.repository.get_latest_quality_run_for_analysis_run(
-        analysis_run_id
-    )
+    quality_run = quality_service.repository.get_latest_quality_run_for_analysis_run(analysis_run_id)
     if quality_run is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

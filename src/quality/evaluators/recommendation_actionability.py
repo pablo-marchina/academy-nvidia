@@ -26,11 +26,7 @@ class RecommendationActionabilityEvaluator(BaseQualityEvaluator):
         activation_recs = list(run.activation_recommendations or [])
         has_next_step = any(bool(r.next_step) for r in activation_recs)
         has_experiment = any(bool(r.technical_experiment) for r in activation_recs)
-        has_metrics = any(
-            bool(r.success_metrics_json)
-            for r in activation_recs
-            if hasattr(r, "success_metrics_json")
-        )
+        has_metrics = any(bool(r.success_metrics_json) for r in activation_recs if hasattr(r, "success_metrics_json"))
 
         if not has_motion:
             return {

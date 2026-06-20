@@ -11,6 +11,8 @@ import os
 from dataclasses import dataclass, field
 from typing import Any
 
+from sqlalchemy.engine import make_url
+
 from src.services.product.capability_registry import (
     CAPABILITIES,
     CapabilityDefinition,
@@ -99,8 +101,7 @@ class ProductReadinessService:
                         "key": item.key,
                         "description": item.description,
                         "required_for": item.required_for,
-                        "user_message": item.user_message
-                        or f"Set {item.key} in your .env file or environment.",
+                        "user_message": item.user_message or f"Set {item.key} in your .env file or environment.",
                     }
                 )
         return missing
@@ -109,7 +110,9 @@ class ProductReadinessService:
         capabilities = self.list_capabilities()
         config_items = resolve_config_values()
 
-        rag_required = os.environ.get("RAG_REQUIRED_FOR_PRODUCT", "false").lower() == "true"
+        app_mode = os.environ.get("APP_MODE", "product").lower()
+        strict_product = app_mode == "product"
+        rag_required = strict_product or (os.environ.get("RAG_REQUIRED_FOR_PRODUCT", "false").lower() == "true")
         executor = get_health_executor()
 
         blocking: list[dict[str, Any]] = []
@@ -121,8 +124,10 @@ class ProductReadinessService:
         checklist: list[dict[str, Any]] = []
 
         for cap in capabilities:
-            is_effectively_required = cap.required or (
-                rag_required and cap.category in ("rag",)
+            is_effectively_required = _is_effectively_required(
+                cap,
+                strict_product=strict_product,
+                rag_required=rag_required,
             )
 
             effective_status = cap.status
@@ -139,10 +144,7 @@ class ProductReadinessService:
                         "latency_ms": check.latency_ms,
                     }
                 )
-                if (
-                    effective_status == CapabilityStatus.available
-                    and check.status != CapabilityStatus.available
-                ):
+                if effective_status == CapabilityStatus.available and check.status != CapabilityStatus.available:
                     effective_status = check.status
                     effective_reason = check.detail
 
@@ -160,14 +162,8 @@ class ProductReadinessService:
                         "setup_instructions": cap.setup_instructions,
                     }
                 )
-                messages.append(
-                    f"Required capability '{cap.name}' is not configured: "
-                    f"{effective_reason}"
-                )
-            elif (
-                effective_status == CapabilityStatus.not_configured
-                and not is_effectively_required
-            ):
+                messages.append(f"Required capability '{cap.name}' is not configured: " f"{effective_reason}")
+            elif effective_status == CapabilityStatus.not_configured and not is_effectively_required:
                 optional_missing.append(
                     {
                         **_base,
@@ -181,17 +177,20 @@ class ProductReadinessService:
             ):
                 entry = {**_base, "reason": effective_reason}
                 if is_effectively_required:
-                    blocking.append(
-                        dict(entry, setup_instructions=cap.setup_instructions)
-                    )
-                    messages.append(
-                        f"Required capability '{cap.name}' is unavailable: "
-                        f"{effective_reason}"
-                    )
+                    blocking.append(dict(entry, setup_instructions=cap.setup_instructions))
+                    messages.append(f"Required capability '{cap.name}' is unavailable: " f"{effective_reason}")
                 else:
                     unavailable.append(entry)
             elif effective_status == CapabilityStatus.degraded:
-                degraded.append({**_base, "reason": effective_reason})
+                entry = {**_base, "reason": effective_reason}
+                if is_effectively_required:
+                    blocking.append(dict(entry, setup_instructions=cap.setup_instructions))
+                    messages.append(f"Required capability '{cap.name}' is degraded: " f"{effective_reason}")
+                else:
+                    degraded.append(entry)
+
+        if strict_product:
+            _add_product_mode_blockers(blocking, messages)
 
         for item in config_items:
             if item.required:
@@ -269,6 +268,109 @@ def _resolve_capability(cap: CapabilityDefinition) -> ResolvedCapability:
         user_visible=cap.user_visible,
         documentation_ref=cap.documentation_ref,
     )
+
+
+def _is_effectively_required(
+    cap: ResolvedCapability,
+    *,
+    strict_product: bool,
+    rag_required: bool,
+) -> bool:
+    if cap.capability_id == "sqlite_product_db":
+        return False
+    if cap.category == "rag":
+        product_rag_capabilities = {
+            "qdrant_vector_store",
+            "sentence_transformer_embeddings",
+            "rag_retrieval",
+            "hybrid_rag",
+            "sparse_retrieval",
+            "rag_reranking",
+        }
+        return rag_required and cap.capability_id in product_rag_capabilities
+    if cap.capability_id in ("agent_orchestration", "workflow_runs", "workflow_node_tracing"):
+        return strict_product
+    return cap.required
+
+
+def _add_product_mode_blockers(
+    blocking: list[dict[str, Any]],
+    messages: list[str],
+) -> None:
+    db_url = os.environ.get("PRODUCT_DB_URL", "")
+    if db_url:
+        try:
+            backend = make_url(db_url).get_backend_name()
+        except Exception as exc:
+            _append_blocker(
+                blocking,
+                messages,
+                capability_id="product_database",
+                name="Product Database",
+                reason=f"PRODUCT_DB_URL is invalid: {exc}",
+                setup="Set PRODUCT_DB_URL to a valid PostgreSQL SQLAlchemy URL.",
+            )
+        else:
+            if not backend.startswith("postgresql"):
+                _append_blocker(
+                    blocking,
+                    messages,
+                    capability_id="product_database",
+                    name="Product Database",
+                    reason="APP_MODE=product requires PostgreSQL; SQLite is test/development only.",
+                    setup="Set PRODUCT_DB_URL to postgresql://... and run migrations.",
+                )
+
+    if os.environ.get("RAG_VECTOR_BACKEND", "").lower() != "qdrant":
+        _append_blocker(
+            blocking,
+            messages,
+            capability_id="rag_retrieval",
+            name="RAG Retrieval",
+            reason="APP_MODE=product requires RAG_VECTOR_BACKEND=qdrant.",
+            setup="Set RAG_VECTOR_BACKEND=qdrant and ingest the NVIDIA corpus into Qdrant.",
+        )
+
+    if os.environ.get("RAG_REQUIRED_FOR_PRODUCT", "true").lower() != "true":
+        _append_blocker(
+            blocking,
+            messages,
+            capability_id="rag_retrieval",
+            name="RAG Retrieval",
+            reason="APP_MODE=product requires RAG_REQUIRED_FOR_PRODUCT=true.",
+            setup="Set RAG_REQUIRED_FOR_PRODUCT=true.",
+        )
+
+    if os.environ.get("AGENT_ORCHESTRATION_ENABLED", "").lower() != "true":
+        _append_blocker(
+            blocking,
+            messages,
+            capability_id="agent_orchestration",
+            name="Agent Orchestration",
+            reason="APP_MODE=product requires AGENT_ORCHESTRATION_ENABLED=true.",
+            setup="Install [agent-orchestration] and set AGENT_ORCHESTRATION_ENABLED=true.",
+        )
+
+
+def _append_blocker(
+    blocking: list[dict[str, Any]],
+    messages: list[str],
+    *,
+    capability_id: str,
+    name: str,
+    reason: str,
+    setup: str,
+) -> None:
+    entry = {
+        "capability_id": capability_id,
+        "name": name,
+        "health_check_key": "",
+        "reason": reason,
+        "setup_instructions": setup,
+    }
+    if entry not in blocking:
+        blocking.append(entry)
+    messages.append(f"Required capability '{name}' is not production-ready: {reason}")
 
 
 def _compute_status(

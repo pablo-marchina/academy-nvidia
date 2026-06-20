@@ -92,9 +92,7 @@ sources:
 
     report = run_audit(manifest, now=_now())
 
-    assert report.duplicate_active_versions == [
-        {"source_id": "nim", "active_versions": ["1.0", "1.1"]}
-    ]
+    assert report.duplicate_active_versions == [{"source_id": "nim", "active_versions": ["1.0", "1.1"]}]
 
 
 def test_detects_deprecated_and_superseded_sources(tmp_path: Path) -> None:

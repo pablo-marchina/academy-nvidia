@@ -145,13 +145,9 @@ class ActivationPlaybookService:
             if not matched_gap_types:
                 continue
 
-            gap_confidences = [
-                g.confidence for g in detected_gaps if g.gap_type in matched_gap_types
-            ]
+            gap_confidences = [g.confidence for g in detected_gaps if g.gap_type in matched_gap_types]
 
-            has_nvidia_mapping = any(
-                m.technology_name in pb.nvidia_technologies for m in mapping_records
-            )
+            has_nvidia_mapping = any(m.technology_name in pb.nvidia_technologies for m in mapping_records)
 
             has_relevant_claims = bool(matched_gap_types)
 
@@ -168,15 +164,11 @@ class ActivationPlaybookService:
             priority = _priority_from_confidence_and_value(confidence_label, pb.expected_value)
 
             reasoning_parts: list[str] = []
-            reasoning_parts.append(
-                f"Playbook '{pb.name}' matched on gap(s): {', '.join(matched_gap_types)}"
-            )
+            reasoning_parts.append(f"Playbook '{pb.name}' matched on gap(s): {', '.join(matched_gap_types)}")
             reasoning_parts.append(f"Gap confidence: {', '.join(gap_confidences)}")
             reasoning_parts.append(f"Evidence coverage: {evidence_coverage:.0%}")
             if unsupported_claim_count > 0:
-                reasoning_parts.append(
-                    f"Unsupported claims: {unsupported_claim_count} (penalty applied)"
-                )
+                reasoning_parts.append(f"Unsupported claims: {unsupported_claim_count} (penalty applied)")
             if relevant_degraded:
                 reasoning_parts.append(f"Relevant degraded states: {', '.join(relevant_degraded)}")
             reasoning_parts.append(f"Confidence score: {confidence_score:.2f} ({confidence_label})")
@@ -190,9 +182,7 @@ class ActivationPlaybookService:
                     "matched_gap_types": matched_gap_types,
                     "matched_claim_ids": [],
                     "nvidia_technologies": pb.nvidia_technologies,
-                    "technical_experiment": (
-                        f"{pb.technical_experiment.title}: {pb.technical_experiment.description}"
-                    ),
+                    "technical_experiment": (f"{pb.technical_experiment.title}: {pb.technical_experiment.description}"),
                     "success_metrics": pb.success_metrics,
                     "recommended_motion": pb.recommended_motion,
                     "priority": priority,
@@ -213,9 +203,7 @@ class ActivationPlaybookService:
         analysis_run_id: str,
     ) -> list[dict[str, Any]]:
         recommendations = self.generate_recommendations_for_run(analysis_run_id)
-        self.activation_repo.replace_recommendations_for_analysis_run(
-            analysis_run_id, recommendations
-        )
+        self.activation_repo.replace_recommendations_for_analysis_run(analysis_run_id, recommendations)
         self.session.commit()
         return recommendations
 

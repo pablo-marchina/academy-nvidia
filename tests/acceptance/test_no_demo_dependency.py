@@ -19,12 +19,14 @@ from src.database.session import configure_product_database, reset_product_datab
 
 @pytest.fixture
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
-    monkeypatch.setenv("APP_MODE", "product")
+    monkeypatch.setenv("APP_MODE", "test")
     monkeypatch.setenv("ENABLE_PRODUCT_PERSISTENCE", "true")
     monkeypatch.setenv("QDRANT_URL", "")
     monkeypatch.setenv("RAG_REQUIRED_FOR_PRODUCT", "false")
     monkeypatch.setenv("PRODUCT_DATA_DIR", str(tmp_path / "product_data"))
-    configure_product_database(f"sqlite:///{(tmp_path / 'guard.db').as_posix()}")
+    db_url = f"sqlite:///{(tmp_path / 'guard.db').as_posix()}"
+    monkeypatch.setenv("PRODUCT_DB_URL", db_url)
+    configure_product_database(db_url)
     with TestClient(app) as test_client:
         yield test_client
     reset_product_database_runtime()
@@ -68,9 +70,7 @@ def test_golden_fixture_shape() -> None:
     """Validate that the golden fixture matches expected schema."""
     import json
 
-    fixture_path = (
-        Path(__file__).resolve().parent.parent / "fixtures" / "product_golden_path" / "startup.json"
-    )
+    fixture_path = Path(__file__).resolve().parent.parent / "fixtures" / "product_golden_path" / "startup.json"
     assert fixture_path.exists(), f"Fixture not found: {fixture_path}"
 
     with open(fixture_path, encoding="utf-8") as f:

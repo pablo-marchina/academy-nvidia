@@ -93,9 +93,7 @@ def _compute_claim_penalties(
 
     unsupported = sum(1 for c in claims if c.support_level == "unsupported")
     critical_unsupported = sum(
-        1
-        for c in claims
-        if c.support_level == "unsupported" and c.claim_type in ("ai_native_claim", "gap_claim")
+        1 for c in claims if c.support_level == "unsupported" and c.claim_type in ("ai_native_claim", "gap_claim")
     )
 
     if unsupported > 0:
@@ -518,9 +516,7 @@ class OpportunityScoreService:
         all_penalties.extend(_compute_claim_penalties(claims, len(claims)))
         all_penalties.extend(_compute_evidence_coverage_penalty(evidence_coverage))
 
-        degraded_count = sum(
-            1 for rc in analysis_run.readiness_checks if rc.status in ("degraded", "error")
-        )
+        degraded_count = sum(1 for rc in analysis_run.readiness_checks if rc.status in ("degraded", "error"))
         all_penalties.extend(_compute_degraded_penalty(degraded_count))
 
         all_penalties.extend(_compute_contraindication_penalty(claims))
@@ -531,9 +527,7 @@ class OpportunityScoreService:
         all_penalties.extend(_compute_non_ai_penalty(classification_score))
 
         all_penalties.extend(_compute_low_confidence_penalty(composite_conf))
-        all_penalties.extend(
-            _compute_incomplete_data_penalty(missing_components, list(component_values.keys()))
-        )
+        all_penalties.extend(_compute_incomplete_data_penalty(missing_components, list(component_values.keys())))
 
         penalty_total = sum(p["value"] for p in all_penalties)
         has_contraindication = any(p["type"] == PENALTY_CONTRAINDICATION for p in all_penalties)
@@ -544,9 +538,7 @@ class OpportunityScoreService:
 
         evidence_refs = _aggregate_evidence_refs(claims, recommendations, dossiers, rag_snapshot)
 
-        recommended_action = _determine_recommended_action(
-            recommendations, dossiers, composite_conf, score_tier
-        )
+        recommended_action = _determine_recommended_action(recommendations, dossiers, composite_conf, score_tier)
 
         # Build reasoning
         reasoning_lines = [
@@ -555,9 +547,7 @@ class OpportunityScoreService:
         for name, val, weight in present_components:
             orig_weight = dict(_COMPONENT_WEIGHTS)[name]
             redistributed_weight = weight / total_weight if total_weight > 0 else 0
-            reasoning_lines.append(
-                f"  {name}: {val:.4f} (w: {orig_weight}, redist: {redistributed_weight:.4f})"
-            )
+            reasoning_lines.append(f"  {name}: {val:.4f} (w: {orig_weight}, redist: {redistributed_weight:.4f})")
         if missing_components:
             reasoning_lines.append(f"  Missing components: {', '.join(missing_components)}")
         if all_penalties:
@@ -572,8 +562,7 @@ class OpportunityScoreService:
             opportunity_score=round(final_score, 4),
             score_tier=score_tier,
             components={
-                name: {"value": val, "weight": dict(_COMPONENT_WEIGHTS)[name]}
-                for name, val in component_values.items()
+                name: {"value": val, "weight": dict(_COMPONENT_WEIGHTS)[name]} for name, val in component_values.items()
             },
             penalties=all_penalties,
             penalty_total=round(penalty_total, 4),

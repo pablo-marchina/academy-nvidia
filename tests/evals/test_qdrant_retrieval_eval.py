@@ -15,11 +15,6 @@ from src.evaluation.qdrant_retrieval_eval_schemas import (
     MULTI_OBJECTIVE_WEIGHTS,
     QdrantRetrievalEvalResult,
     RetrieverDetail,
-    RetrieverMetrics,
-)
-from src.evaluation.ragas_eval_schemas import (
-    RagasEvalDataset,
-    RagasEvalGoldenSample,
 )
 from src.rag.embeddings import MockEmbeddingProvider
 from src.rag.ingestion import load_and_chunk_corpus
@@ -265,7 +260,11 @@ class TestComparison:
 
     def test_winner_selected(self, eval_result: QdrantRetrievalEvalResult) -> None:
         assert eval_result.comparison.winner
-        assert eval_result.comparison.winner in ("semantic_qdrant", "lexical_baseline", "hybrid_candidate")
+        assert eval_result.comparison.winner in (
+            "semantic_qdrant",
+            "lexical_baseline",
+            "hybrid_candidate",
+        )
 
     def test_selection_justification_provided(self, eval_result: QdrantRetrievalEvalResult) -> None:
         assert eval_result.comparison.selection_justification
@@ -308,12 +307,15 @@ class TestRegistryDecisions:
         assert not missing, f"Missing decisions: {missing}"
 
     def test_decisions_have_calibration_status(self, eval_result: QdrantRetrievalEvalResult) -> None:
-        for dec_id, dec in eval_result.calibration_decisions.items():
+        for _dec_id, dec in eval_result.calibration_decisions.items():
             assert "calibration_status" in dec
-            assert dec["calibration_status"] in ("baseline_measured", "baseline_dataset_insufficient")
+            assert dec["calibration_status"] in (
+                "baseline_measured",
+                "baseline_dataset_insufficient",
+            )
 
     def test_production_allowed_matches_status(self, eval_result: QdrantRetrievalEvalResult) -> None:
-        for dec_id, dec in eval_result.calibration_decisions.items():
+        for _dec_id, dec in eval_result.calibration_decisions.items():
             if dec["calibration_status"] == "baseline_dataset_insufficient":
                 assert dec["production_allowed"] is False
 
@@ -333,6 +335,7 @@ class TestDatasetInsufficient:
 
     def test_minimum_golden_samples_constant(self) -> None:
         from src.evaluation.qdrant_retrieval_eval_schemas import MINIMUM_GOLDEN_SAMPLES
+
         assert MINIMUM_GOLDEN_SAMPLES >= 5
 
 
@@ -363,9 +366,12 @@ class TestNoExternalCalls:
     def test_no_internet_calls(self, evaluator: QdrantRetrievalEvaluator) -> None:
         import subprocess
         import sys
+
         r = subprocess.run(
             [sys.executable, "-c", "import src.evaluation.qdrant_retrieval_eval; print('ok')"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         assert r.returncode == 0
 
@@ -374,7 +380,9 @@ class TestNoExternalCalls:
 
 
 class TestEmptyStore:
-    def test_empty_store_returns_empty_contexts(self, chunk_index: ChunkIndex, embedding: MockEmbeddingProvider) -> None:
+    def test_empty_store_returns_empty_contexts(
+        self, chunk_index: ChunkIndex, embedding: MockEmbeddingProvider
+    ) -> None:
         empty_store = InMemoryVectorStore()
         evaluator = QdrantRetrievalEvaluator(
             vector_store=empty_store,

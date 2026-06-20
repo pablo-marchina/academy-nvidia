@@ -43,5 +43,9 @@ Raw text → Extraction → Evidence (with initial confidence)
 4. Confidence can be recalibrated down but never up during validation
 5. Evidence without a verifiable source is `UNVERIFIED`
 
+## Final Product Readiness Update - 2026-06-19
+
+Product analysis requires persisted, source-backed evidence. Mock, sample, fixture, synthetic, or placeholder evidence is limited to tests and cannot satisfy product readiness. Product outputs must keep evidence provenance visible and classify every downstream claim as fact, inference, hypothesis, or unverified so recommendations never appear more certain than the source trail supports.
+
 ## Contract Version
 1.0 — June 2026

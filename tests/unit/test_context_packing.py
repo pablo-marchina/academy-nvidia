@@ -126,9 +126,7 @@ def test_pack_dropped_contexts_record_reason() -> None:
 
 def test_build_supporting_contexts() -> None:
     ctx = _make_ctx("a", product="NVIDIA NIM", gap_types=["high_inference_cost"])
-    packing = pack_contexts(
-        [ctx], RetrievalQuery(gap_type="high_inference_cost", technology="NVIDIA NIM")
-    )
+    packing = pack_contexts([ctx], RetrievalQuery(gap_type="high_inference_cost", technology="NVIDIA NIM"))
     supporting = build_supporting_contexts(packing)
     assert len(supporting) >= 1
     for sc in supporting:

@@ -21,8 +21,7 @@ class SourceScraper(ABC):
             scraper_registry[sid] = cls
 
     @abstractmethod
-    def extract_entries(self, html: str, source: DiscoverySource) -> list[dict[str, Any]]:
-        ...
+    def extract_entries(self, html: str, source: DiscoverySource) -> list[dict[str, Any]]: ...
 
     def scrape(self, source: DiscoverySource) -> list[dict[str, Any]]:
         if not source.base_url:

@@ -5,10 +5,7 @@ from pathlib import Path
 from src.playbook.schemas import ActivationPlaybook
 
 _DEFAULT_PLAYBOOK_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "config"
-    / "playbooks"
-    / "nvidia_activation_playbooks.yaml"
+    Path(__file__).resolve().parent.parent / "config" / "playbooks" / "nvidia_activation_playbooks.yaml"
 )
 
 
@@ -54,17 +51,11 @@ def _validate_playbook_dict(pb: dict, path: Path, index: int) -> None:
     if not pb.get("playbook_id"):
         raise ValueError(f"Playbook at index {index} in {path} is missing 'playbook_id'")
     if not pb.get("target_gap_types"):
-        raise ValueError(
-            f"Playbook '{pb.get('playbook_id', '?')}' in {path} has empty target_gap_types"
-        )
+        raise ValueError(f"Playbook '{pb.get('playbook_id', '?')}' in {path} has empty target_gap_types")
     if not pb.get("nvidia_technologies"):
-        raise ValueError(
-            f"Playbook '{pb.get('playbook_id', '?')}' in {path} has empty nvidia_technologies"
-        )
+        raise ValueError(f"Playbook '{pb.get('playbook_id', '?')}' in {path} has empty nvidia_technologies")
     if not pb.get("success_metrics"):
-        raise ValueError(
-            f"Playbook '{pb.get('playbook_id', '?')}' in {path} has empty success_metrics"
-        )
+        raise ValueError(f"Playbook '{pb.get('playbook_id', '?')}' in {path} has empty success_metrics")
     motion = pb.get("recommended_motion", "")
     if motion not in _VALID_MOTIONS:
         raise ValueError(

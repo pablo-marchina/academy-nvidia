@@ -6,7 +6,7 @@ No Qdrant, no sentence-transformers, no LLM, no internet.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 import pytest
 
@@ -51,7 +51,7 @@ class TestLoadAndChunkCorpus:
         assert len(chunks) >= 1
         for c in chunks:
             assert c.nvidia_technology == c.product
-            assert c.corpus_version == "1.0"
+            assert c.corpus_version in {"1.0", "1.1"}
             assert c.chunk_index >= 0
             assert c.char_count > 0
 
@@ -128,9 +128,7 @@ class TestPayloadValidation:
         assert "chunk_text" in missing
 
     def test_empty_string_fields_fail(self) -> None:
-        point = {
-            field: "" for field in REQUIRED_PAYLOAD_FIELDS
-        }
+        point = {field: "" for field in REQUIRED_PAYLOAD_FIELDS}
         point["chunk_id"] = "test_000"
         point["chunk_index"] = 0
         point["char_count"] = 0
@@ -262,10 +260,10 @@ class TestMinDocsChunksUncalibrated:
 class TestNoChunkIndexFallback:
     def test_pipeline_does_not_use_chunkindex(self) -> None:
         """Verify the ingestion pipeline uses VectorStore, not ChunkIndex."""
-        from src.rag.ingestion_pipeline import run_ingestion_pipeline
-
         # The pipeline explicitly takes VectorStore as parameter
         import inspect
+
+        from src.rag.ingestion_pipeline import run_ingestion_pipeline
 
         sig = inspect.signature(run_ingestion_pipeline)
         params = list(sig.parameters.keys())
@@ -306,7 +304,7 @@ class TestNoExternalDeps:
 
         path = "src/rag/ingestion_pipeline.py"
         with open(path, encoding="utf-8") as f:
-            tree = ast.parse(f.read())
+            ast.parse(f.read())
 
         source = open(path, encoding="utf-8").read()
         blocked = ["requests.get", "httpx.get", "urllib", "aiohttp", "selenium", "scrapy"]

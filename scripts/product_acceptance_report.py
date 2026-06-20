@@ -42,9 +42,7 @@ def build_report(api_url: str) -> dict:
             "blocking_missing_config": (
                 readiness.get("blocking_missing_config") if isinstance(readiness, dict) else []
             ),
-            "user_messages": (
-                readiness.get("user_messages", []) if isinstance(readiness, dict) else []
-            ),
+            "user_messages": (readiness.get("user_messages", []) if isinstance(readiness, dict) else []),
         },
         "capabilities": {
             "total": len(capabilities) if isinstance(capabilities, list) else 0,

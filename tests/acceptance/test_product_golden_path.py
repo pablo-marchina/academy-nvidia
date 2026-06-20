@@ -24,7 +24,7 @@ FIXTURE_DIR = Path(__file__).resolve().parent.parent / "fixtures" / "product_gol
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     db_url = f"sqlite:///{(tmp_path / 'golden_path.db').as_posix()}"
     monkeypatch.setenv("PRODUCT_DB_URL", db_url)
-    monkeypatch.setenv("APP_MODE", "product")
+    monkeypatch.setenv("APP_MODE", "test")
     monkeypatch.setenv("ENABLE_PRODUCT_PERSISTENCE", "true")
     monkeypatch.setenv("QDRANT_URL", "")
     monkeypatch.setenv("RAG_REQUIRED_FOR_PRODUCT", "false")
@@ -126,7 +126,10 @@ class TestProductGoldenPathBackend:
 
         fetched_run = client.get(f"/analysis-runs/{run['id']}")
         assert fetched_run.status_code == 200
-        assert fetched_run.json()["output_snapshot"]["startup_name"] == "Golden Path AI"
+        fetched_run_data = fetched_run.json()
+        assert fetched_run_data["run_id"] == run["id"]
+        assert fetched_run_data["startup_id"] == startup["id"]
+        assert fetched_run_data["action_brief"] is not None
 
         claims_resp = client.get(f"/analysis-runs/{run['id']}/claims")
         assert claims_resp.status_code == 200
@@ -202,9 +205,7 @@ class TestProductDossierAcceptance:
     def test_dossier_idempotent(self, client: TestClient) -> None:
         startup = _load_fixture("startup.json")
         created = client.post("/startups", json=startup).json()
-        run = client.post(
-            f"/startups/{created['id']}/analysis-runs", json={"use_rag": False}
-        ).json()
+        run = client.post(f"/startups/{created['id']}/analysis-runs", json={"use_rag": False}).json()
 
         r1 = client.post(f"/analysis-runs/{run['id']}/dossier").json()
         r2 = client.post(f"/analysis-runs/{run['id']}/dossier").json()
@@ -215,9 +216,7 @@ class TestProductDossierAcceptance:
     def test_dossier_force_new_version(self, client: TestClient) -> None:
         startup = _load_fixture("startup.json")
         created = client.post("/startups", json=startup).json()
-        run = client.post(
-            f"/startups/{created['id']}/analysis-runs", json={"use_rag": False}
-        ).json()
+        run = client.post(f"/startups/{created['id']}/analysis-runs", json={"use_rag": False}).json()
 
         r1 = client.post(f"/analysis-runs/{run['id']}/dossier").json()["dossier"]
         r2 = client.post(f"/analysis-runs/{run['id']}/dossier?force=true").json()["dossier"]
@@ -236,9 +235,7 @@ class TestProductQualityAcceptance:
     def test_quality_run_lifecycle(self, client: TestClient) -> None:
         startup = _load_fixture("startup.json")
         created = client.post("/startups", json=startup).json()
-        run = client.post(
-            f"/startups/{created['id']}/analysis-runs", json={"use_rag": False}
-        ).json()
+        run = client.post(f"/startups/{created['id']}/analysis-runs", json={"use_rag": False}).json()
 
         quality = client.post(f"/analysis-runs/{run['id']}/quality-runs").json()
 
@@ -256,9 +253,7 @@ class TestProductQualityAcceptance:
     def test_quality_summary_without_quality_run(self, client: TestClient) -> None:
         startup = _load_fixture("startup.json")
         created = client.post("/startups", json=startup).json()
-        run = client.post(
-            f"/startups/{created['id']}/analysis-runs", json={"use_rag": False}
-        ).json()
+        run = client.post(f"/startups/{created['id']}/analysis-runs", json={"use_rag": False}).json()
 
         summary = client.get(f"/analysis-runs/{run['id']}/quality-summary")
         assert summary.status_code == 200

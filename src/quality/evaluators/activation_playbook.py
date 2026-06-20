@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.quantitative.params import CONFIDENCE_FLOAT_MAP
 from src.quality.evaluators.base import BaseQualityEvaluator
+from src.quantitative.params import CONFIDENCE_FLOAT_MAP
 from src.services.product.activation_service import ActivationPlaybookService
 
 

@@ -1,5 +1,23 @@
 # Final Evaluation Report — NVIDIA Startup AI Radar
 
+## Readiness Branch Update - 2026-06-19
+
+The evaluation target is now strict product readiness. Verified in the branch:
+
+- Python lint, format, and `mypy src` are green.
+- Full `pytest -q --basetemp .pytest_tmp_full` is green with `2085 passed`, `27 skipped`, and `166 warnings`.
+- The targeted product test battery passed with `1585 passed, 124 warnings`.
+- Focused regression runs after final readiness fixes pass for acceptance, workflow API, product workflow API, workflow runner, pipeline golden evals, answer quality golden evals, and NVIDIA corpus ingestion unit tests.
+- Demo dependency, scope, docs-closure, and magic-value guards pass.
+- `scripts/scan_magic_values.py --check` reports 0 unregistered productive values; evaluation-only findings are explicitly classified.
+- Frontend reproducible install and production build pass.
+- Docker Compose PostgreSQL + Qdrant validation passed with product readiness healthy and Qdrant collection `nvidia_corpus` populated with 53 real-embedding points.
+- Product Playwright E2E passed against the live local backend (`6 passed`) and screenshots were stored in `docs/screenshots/`.
+
+Remaining before declaring the best-case final product:
+
+- Run `make validate-full` on an environment with GNU Make installed, or publish a Windows-native equivalent target.
+
 **Versão:** 1.0
 **Data:** 2026-06-13
 **Épico:** 45

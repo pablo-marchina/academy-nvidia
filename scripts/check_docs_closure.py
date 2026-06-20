@@ -86,12 +86,8 @@ def check_obsidian_backfill(repo_root: Path) -> bool:
     if not vault.is_dir():
         print(f"  {SKIP} Obsidian vault not found -- skipping")
         return True
-    decisions = list(vault.glob("**/04 Decisions/*Epic 16*")) + list(
-        vault.glob("**/04 Decisions/*epic-16*")
-    )
-    research = list(vault.glob("**/03 Research/*Epic 16*")) + list(
-        vault.glob("**/03 Research/*epic-16*")
-    )
+    decisions = list(vault.glob("**/04 Decisions/*Epic 16*")) + list(vault.glob("**/04 Decisions/*epic-16*"))
+    research = list(vault.glob("**/03 Research/*Epic 16*")) + list(vault.glob("**/03 Research/*epic-16*"))
     ok = True
     if not decisions:
         print(f"  {SKIP} Obsidian: no Epic 16 decision note found (may be intentional)")

@@ -136,9 +136,7 @@ def _compute_metrics(
     noise = 0.0
 
     if packing_result:
-        dup_count = (
-            packing_result.total_raw - packing_result.total_packed - packing_result.total_dropped
-        )
+        dup_count = packing_result.total_raw - packing_result.total_packed - packing_result.total_dropped
         packed_count = packing_result.total_packed
         dropped_count = packing_result.total_dropped
         prov_cov = packing_result.provenance_coverage
@@ -191,9 +189,7 @@ def _eval_one_case(
 
     if case.is_critical and case.expected_source_ids:
         if not metrics.hit_at_k:
-            failure_reasons.append(
-                f"critical case '{case.case_id}': hit_at_k=False " f"(top_{case.top_k_for_test})"
-            )
+            failure_reasons.append(f"critical case '{case.case_id}': hit_at_k=False " f"(top_{case.top_k_for_test})")
         if not metrics.top_1_expected_match:
             failure_reasons.append(f"critical case '{case.case_id}': top_1_expected_match=False")
     if case.expected_source_ids and metrics.missing_context_count > 0:
@@ -210,9 +206,7 @@ def _eval_one_case(
     passed = len(failure_reasons) == 0
     if not case.expected_source_ids and len(retrieved) > 0:
         passed = False
-        failure_reasons.append(
-            f"case '{case.case_id}': expected empty but got {len(retrieved)} results"
-        )
+        failure_reasons.append(f"case '{case.case_id}': expected empty but got {len(retrieved)} results")
 
     return RagEvalResult(
         case_id=case.case_id,
@@ -275,9 +269,7 @@ def _retrieve_for_mode(
         if vector_store is None or vector_store.size == 0:
             retrieved = idx.retrieve(case.query, top_k=case.top_k_for_test)
         else:
-            retrieved = hybrid_retrieve(
-                case.query, idx, emb, vector_store, top_k=case.top_k_for_test
-            )
+            retrieved = hybrid_retrieve(case.query, idx, emb, vector_store, top_k=case.top_k_for_test)
     elif mode == RetrievalMode.HYBRID_RERANKED:
         if emb is None:
             raise ValueError("embedding_model is required for hybrid RAG evaluation")
@@ -349,8 +341,12 @@ def run_mode_eval(
         Evaluation results + quality gates for this mode.
     """
     idx = chunk_index if chunk_index is not None else build_default_index()
-    needs_embedding = mode in (RetrievalMode.SEMANTIC, RetrievalMode.HYBRID,
-                               RetrievalMode.HYBRID_RERANKED, RetrievalMode.HYBRID_RERANKED_PACKED)
+    needs_embedding = mode in (
+        RetrievalMode.SEMANTIC,
+        RetrievalMode.HYBRID,
+        RetrievalMode.HYBRID_RERANKED,
+        RetrievalMode.HYBRID_RERANKED_PACKED,
+    )
     if needs_embedding:
         if embedding_model is None:
             raise ValueError("embedding_model is required for semantic/hybrid RAG evaluation")
@@ -464,9 +460,7 @@ def run_quality_gates(
     gates: list[RagQualityGateResult] = []
 
     critical_hits: list[str] = [
-        r.case_id
-        for r in eval_results
-        if r.is_critical and r.expected_source_ids and not r.metrics.hit_at_k
+        r.case_id for r in eval_results if r.is_critical and r.expected_source_ids and not r.metrics.hit_at_k
     ]
     gates.append(
         RagQualityGateResult(
@@ -500,9 +494,7 @@ def run_quality_gates(
     )
 
     missing_known: list[str] = [
-        r.case_id
-        for r in eval_results
-        if r.expected_source_ids and r.metrics.missing_context_count > 0
+        r.case_id for r in eval_results if r.expected_source_ids and r.metrics.missing_context_count > 0
     ]
     gates.append(
         RagQualityGateResult(

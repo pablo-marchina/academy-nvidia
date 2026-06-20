@@ -172,17 +172,14 @@ class ClaimRepository:
 
         from src.services.product.claim_constants import CRITICAL_CLAIM_TYPES
 
-        supported = sum(
-            1 for c in all_claims if c.support_level != "unsupported" and c.support_level != "weak"
-        )
+        supported = sum(1 for c in all_claims if c.support_level != "unsupported" and c.support_level != "weak")
         unsupported = sum(1 for c in all_claims if c.support_level == "unsupported")
         weak = sum(1 for c in all_claims if c.support_level == "weak")
         critical = sum(1 for c in all_claims if c.claim_type in CRITICAL_CLAIM_TYPES)
         critical_supported = sum(
             1
             for c in all_claims
-            if c.claim_type in CRITICAL_CLAIM_TYPES
-            and c.support_level not in ("unsupported", "weak")
+            if c.claim_type in CRITICAL_CLAIM_TYPES and c.support_level not in ("unsupported", "weak")
         )
 
         confidence_map = {"high": 1.0, "medium": 0.6, "low": 0.2}

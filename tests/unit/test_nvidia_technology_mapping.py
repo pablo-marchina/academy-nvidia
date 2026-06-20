@@ -3,33 +3,25 @@ from __future__ import annotations
 from typing import Any
 
 from src.diagnosis.schemas import (
-    GAP_TECH_MAP,
     GapConfidenceFeatures,
     GapDiagnosisFeatures,
-    GapDiagnosisMetrics,
     GapDiagnosisResultItem,
     GapDiagnosisStatus,
     GapSeverityFeatures,
     GapType,
 )
 from src.quality.decision_calibration_registry import (
-    CalibrationMethod,
     CalibrationStatus,
     DecisionCalibrationRecord,
-    DecisionType,
     get_project_decision_inventory,
 )
 from src.recommendation.nvidia_technology_mapping import (
-    GAP_TECHNOLOGY_CANDIDATES,
     GOLDEN_SET_STATUS,
-    NVIDIA_TECHNOLOGIES,
     REQUIRED_MAPPING_DECISIONS,
-    NvidiaMappingStatus,
     NvidiaTechnologyMappingRecord,
     build_nvidia_technology_mappings,
     compute_mapping_metrics,
 )
-
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -307,7 +299,9 @@ class TestMappingRequiresEvidenceIdsOrNeedsMoreEvidence:
             # Every mapping must have at least one of rag_ids, ev_ids, or needs_more_evidence flag
             is_needs_evidence = "needs_more_evidence" in m.get("mapping_status", "")
             is_needs_evidence = is_needs_evidence or ("Insufficient evidence" in m.get("explanation", ""))
-            is_needs_evidence = is_needs_evidence or (m.get("production_allowed") is False and not has_rag_ids and not has_ev_ids)
+            is_needs_evidence = is_needs_evidence or (
+                m.get("production_allowed") is False and not has_rag_ids and not has_ev_ids
+            )
             assert has_rag_ids or has_ev_ids or is_needs_evidence, (
                 f"Mapping {m['mapping_id']} ({m['nvidia_technology']}) has no supporting IDs "
                 f"and is not flagged as needs_more_evidence"
