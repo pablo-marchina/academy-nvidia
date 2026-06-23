@@ -19,6 +19,7 @@ from src.api.product_schemas import (
     ActivationPlaybookRead,
     ActivationRecommendationListResponse,
     ActivationRecommendationRead,
+    AnalysisEvidenceBundleRead,
     AnalysisRunCreate,
     AnalysisRunDetailResponse,
     AnalysisRunRead,
@@ -98,6 +99,13 @@ from src.services.product.readiness_service import ProductReadinessService
 router = APIRouter(tags=["product"])
 DbSession = Annotated[Session, Depends(get_db_session)]
 ProductReady = Annotated[None, Depends(ReadinessGate())]
+
+_CRITICAL_CLAIM_TYPES = {
+    "gap_claim",
+    "defensibility_claim",
+    "nvidia_fit_claim",
+    "production_readiness_claim",
+}
 
 
 def _startup_read(startup: Startup) -> StartupRead:
@@ -1049,6 +1057,266 @@ def get_evidence_coverage(
     ledger = ClaimLedgerService(session)
     coverage = ledger.get_evidence_coverage_for_analysis_run(analysis_run_id)
     return EvidenceCoverageRead(**coverage)
+
+
+def _readiness_check_read(item: Any) -> ReadinessCheckRead:
+    return ReadinessCheckRead(
+        code=item.code,
+        severity=item.severity,
+        status=item.status,
+        user_message=item.user_message,
+        internal_detail=item.internal_detail,
+        recommended_action=item.recommended_action,
+        metadata=item.metadata_json,
+        observed_at=item.observed_at,
+    )
+
+
+def _group_claims(claims: list[ClaimRead]) -> dict[str, list[ClaimRead]]:
+    grouped: dict[str, list[ClaimRead]] = {
+        "supported": [],
+        "weak": [],
+        "unsupported": [],
+        "critical": [],
+    }
+    for claim in claims:
+        if claim.support_level == "unsupported":
+            grouped["unsupported"].append(claim)
+        elif claim.support_level == "weak":
+            grouped["weak"].append(claim)
+        else:
+            grouped["supported"].append(claim)
+
+        if (
+            claim.claim_type in _CRITICAL_CLAIM_TYPES
+            or claim.used_in_score
+            or claim.used_in_gap
+            or claim.used_in_mapping
+            or claim.used_in_brief
+        ):
+            grouped["critical"].append(claim)
+    return grouped
+
+
+def _bundle_confidence(coverage: EvidenceCoverageRead, degraded_count: int) -> str:
+    if coverage.total_claims <= 0:
+        return "unknown"
+    if coverage.evidence_coverage >= 0.75 and coverage.unsupported_claims == 0 and degraded_count == 0:
+        return "high"
+    if coverage.evidence_coverage >= 0.4 and coverage.unsupported_claim_rate < 0.5:
+        return "medium"
+    return "low"
+
+
+def _bundle_readiness(run: AnalysisRun, degraded_checks: list[ReadinessCheckRead]) -> str:
+    if run.status == "failed":
+        return "failed"
+    if any(check.status == "error" for check in degraded_checks):
+        return "blocked"
+    if run.status == "degraded" or degraded_checks:
+        return "degraded"
+    if run.status == "completed":
+        return "ready"
+    return run.status
+
+
+def _collect_missing_evidence(
+    run: AnalysisRun,
+    claims: list[ClaimRead],
+    degraded_checks: list[ReadinessCheckRead],
+) -> list[dict[str, Any]]:
+    missing: list[dict[str, Any]] = []
+    for claim in claims:
+        if claim.support_level in {"unsupported", "weak"}:
+            missing.append(
+                {
+                    "type": "claim",
+                    "claim_id": claim.id,
+                    "claim_type": claim.claim_type,
+                    "support_level": claim.support_level,
+                    "claim_text": claim.claim_text,
+                    "recommended_action": "Collect stronger public evidence before treating this as proven.",
+                }
+            )
+
+    for score in run.scores:
+        if score.missing_evidence_json:
+            missing.append(
+                {
+                    "type": "score",
+                    "score_type": score.score_type,
+                    "missing_evidence": score.missing_evidence_json,
+                }
+            )
+
+    for gap in run.gaps:
+        if gap.missing_evidence_json:
+            missing.append(
+                {
+                    "type": "gap",
+                    "gap_type": gap.gap_type,
+                    "missing_evidence": gap.missing_evidence_json,
+                }
+            )
+
+    for check in degraded_checks:
+        if check.recommended_action:
+            missing.append(
+                {
+                    "type": "readiness_check",
+                    "code": check.code,
+                    "status": check.status,
+                    "recommended_action": check.recommended_action,
+                }
+            )
+    return missing
+
+
+def _collect_contradictions(
+    claims: list[ClaimRead],
+    readiness_checks: list[ReadinessCheckRead],
+) -> list[dict[str, Any]]:
+    contradictions: list[dict[str, Any]] = []
+    for claim in claims:
+        if claim.review_status == "rejected":
+            contradictions.append(
+                {
+                    "type": "rejected_claim",
+                    "claim_id": claim.id,
+                    "claim_text": claim.claim_text,
+                    "reviewer_notes": claim.reviewer_notes,
+                }
+            )
+    for check in readiness_checks:
+        if "contradiction" in check.code.lower() or "contradiction" in check.user_message.lower():
+            contradictions.append(
+                {
+                    "type": "readiness_check",
+                    "code": check.code,
+                    "message": check.user_message,
+                }
+            )
+    return contradictions
+
+
+def _rag_support_summary(
+    run: AnalysisRun,
+    claims: list[ClaimRead],
+    recommendations: list[ActivationRecommendationRead],
+) -> dict[str, Any]:
+    output_snapshot = run.output_snapshot_json or {}
+    readiness_codes = {check.code for check in run.readiness_checks}
+    supporting_refs = sum(len(claim.evidence_refs) for claim in claims)
+    supporting_refs += sum(len(rec.evidence_refs) for rec in recommendations)
+    rag_metrics = output_snapshot.get("rag_metrics") or output_snapshot.get("rag_summary") or {}
+    rag_degraded_codes = sorted(code for code in readiness_codes if "RAG" in code or "QDRANT" in code)
+    rag_available = not any(
+        check.code in rag_degraded_codes and check.status in {"degraded", "error"} for check in run.readiness_checks
+    )
+    return {
+        "required": True,
+        "backend": output_snapshot.get("rag_backend") or "qdrant",
+        "available": rag_available,
+        "supporting_refs_count": supporting_refs,
+        "metrics": rag_metrics if isinstance(rag_metrics, dict) else {"summary": rag_metrics},
+        "degraded_codes": rag_degraded_codes,
+    }
+
+
+def _alternatives_lost(
+    run: AnalysisRun,
+    recommendations: list[ActivationRecommendationRead],
+) -> list[dict[str, Any]]:
+    promoted_ids = {rec.playbook_id for rec in recommendations}
+    detected_gaps = {gap.gap_type for gap in run.gaps if gap.detected}
+    alternatives: list[dict[str, Any]] = []
+    for playbook in ActivationPlaybookService.get_playbooks():
+        if playbook.playbook_id in promoted_ids:
+            continue
+        matched_gaps = [gap for gap in playbook.target_gap_types if gap in detected_gaps]
+        reason = (
+            "Matched persisted gaps, but was not promoted by the persisted recommendation set."
+            if matched_gaps
+            else "No detected persisted gap matched this playbook."
+        )
+        alternatives.append(
+            {
+                "playbook_id": playbook.playbook_id,
+                "playbook_name": playbook.name,
+                "matched_gap_types": matched_gaps,
+                "nvidia_technologies": playbook.nvidia_technologies,
+                "reason_lost": reason,
+                "evidence_needed": playbook.evidence_requirements,
+            }
+        )
+    return alternatives
+
+
+def _analysis_evidence_bundle_read(run: AnalysisRun, session: Session) -> AnalysisEvidenceBundleRead:
+    ledger = ClaimLedgerService(session)
+    coverage = EvidenceCoverageRead(**ledger.get_evidence_coverage_for_analysis_run(run.id))
+    claims = [_claim_read(record) for record in ledger.get_claims_for_analysis_run(run.id)]
+    grouped_claims = _group_claims(claims)
+    readiness_checks = [_readiness_check_read(item) for item in run.readiness_checks]
+    degraded_checks = [check for check in readiness_checks if check.status in {"degraded", "error"}]
+
+    act_service = ActivationPlaybookService(session)
+    recommendations = [_activation_rec_read(record) for record in act_service.get_recommendations_for_run(run.id)]
+
+    dossier_record = ActivationDossierService(session).get_latest_dossier(run.id)
+    dossier = _dossier_read(dossier_record) if dossier_record is not None else None
+
+    latest_observed_at = max((check.observed_at for check in readiness_checks), default=run.updated_at)
+    latest_brief = max(run.briefs, key=lambda item: item.version, default=None)
+    return AnalysisEvidenceBundleRead(
+        analysis_run_id=run.id,
+        startup_id=run.startup_id,
+        status=run.status,
+        readiness=_bundle_readiness(run, degraded_checks),
+        confidence=_bundle_confidence(coverage, len(degraded_checks)),
+        evidence_coverage=coverage,
+        claims=grouped_claims,
+        recommendations=recommendations,
+        dossier=dossier,
+        readiness_checks=readiness_checks,
+        missing_evidence=_collect_missing_evidence(run, claims, degraded_checks),
+        contradictions=_collect_contradictions(claims, readiness_checks),
+        degraded_checks=degraded_checks,
+        rag_support=_rag_support_summary(run, claims, recommendations),
+        trust_freshness={
+            "pipeline_version": run.pipeline_version,
+            "corpus_version": run.corpus_version,
+            "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+            "latest_readiness_check_at": latest_observed_at.isoformat() if latest_observed_at else None,
+            "evidence_coverage": coverage.evidence_coverage,
+            "avg_claim_confidence": coverage.avg_claim_confidence,
+        },
+        lineage={
+            "analysis_run_id": run.id,
+            "startup_id": run.startup_id,
+            "action_brief_id": latest_brief.id if latest_brief is not None else None,
+            "dossier_id": dossier.id if dossier is not None else None,
+            "claim_count": len(claims),
+            "recommendation_count": len(recommendations),
+            "readiness_check_count": len(readiness_checks),
+        },
+        alternatives_lost=_alternatives_lost(run, recommendations),
+    )
+
+
+@router.get(
+    "/analysis-runs/{analysis_run_id}/evidence-bundle",
+    response_model=AnalysisEvidenceBundleRead,
+)
+def get_analysis_evidence_bundle(
+    analysis_run_id: str,
+    session: DbSession,
+) -> AnalysisEvidenceBundleRead:
+    service = ProductService(session)
+    run = service.get_analysis_run(analysis_run_id)
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found.")
+    return _analysis_evidence_bundle_read(run, session)
 
 
 @router.patch(

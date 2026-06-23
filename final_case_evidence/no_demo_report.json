@@ -1,0 +1,8 @@
+{
+  "final_proof_ref": "final_case_evidence/final_proof_summary.json",
+  "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_no_demo_dependency.py",
+  "returncode": 0,
+  "status": "PASS",
+  "stderr_tail": "",
+  "stdout_tail": "============================================================\nNO DEMO DEPENDENCY CHECK - P A S S E D\n============================================================\nScanned: ['src', 'frontend\\\\src']\nResult: No forbidden demo references found.\nThe product flow uses DB/API real, not demo data.\n============================================================\n"
+}

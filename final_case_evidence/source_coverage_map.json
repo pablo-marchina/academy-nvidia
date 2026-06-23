@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-06-23T02:05:06.977465+00:00",
+  "live": true,
+  "records": [
+    {
+      "checked_at": "2026-06-23T02:05:06.578557+00:00",
+      "reason": "200",
+      "source_url": "https://developer.nvidia.com/nemo-retriever",
+      "status": "reachable"
+    },
+    {
+      "checked_at": "2026-06-23T02:05:06.887695+00:00",
+      "reason": "200",
+      "source_url": "https://docs.nvidia.com/",
+      "status": "reachable"
+    }
+  ]
+}

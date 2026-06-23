@@ -1,7 +1,7 @@
-"""Placeholder interface entrypoint for a future Streamlit or FastAPI UI."""
+"""Experimental interface entrypoint kept outside the product runtime path."""
 
 
 def render_interface() -> str:
-    """Return a placeholder status message for the future interface layer."""
+    """Return the non-runtime interface status message."""
 
-    return "Interface scaffold ready. Implementation deferred until pipeline foundations mature."
+    return "Experimental interface layer is not part of the active product runtime."

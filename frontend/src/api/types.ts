@@ -234,6 +234,26 @@ export interface ActivationDossierSummaryRead {
   review_status: string | null;
 }
 
+export interface AnalysisEvidenceBundle {
+  analysis_run_id: string;
+  startup_id: string;
+  status: string;
+  readiness: string;
+  confidence: string;
+  evidence_coverage: EvidenceCoverageRead;
+  claims: Record<string, ClaimRead[]>;
+  recommendations: ActivationRecommendationRead[];
+  dossier: ActivationDossierRead | null;
+  readiness_checks: ReadinessCheckRead[];
+  missing_evidence: Record<string, JsonValue>[];
+  contradictions: Record<string, JsonValue>[];
+  degraded_checks: ReadinessCheckRead[];
+  rag_support: Record<string, JsonValue>;
+  trust_freshness: Record<string, JsonValue>;
+  lineage: Record<string, JsonValue>;
+  alternatives_lost: Record<string, JsonValue>[];
+}
+
 export interface ProductCapabilityRead {
   capability_id: string;
   name: string;

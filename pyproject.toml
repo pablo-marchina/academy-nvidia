@@ -15,6 +15,7 @@ dependencies = [
   "pydantic-settings",
   "python-dotenv",
   "requests",
+  "PyYAML",
   "beautifulsoup4",
   "trafilatura",
   "playwright",
@@ -32,17 +33,53 @@ dev = [
   "mypy",
 ]
 rag = [
+  "qdrant-client",
   "sentence-transformers>=2.2.0",
+  "rank-bm25",
+  "bm25s",
 ]
 llm-judge = [
   "instructor>=1.8,<2",
+]
+agents = [
+  "langgraph>=0.2,<1",
+  "langchain",
 ]
 agent-orchestration = [
   "langgraph>=0.2,<1",
   "langgraph-checkpoint-postgres>=3.1.0",
 ]
+postgres = [
+  "psycopg2-binary",
+]
+eval = [
+  "ragas>=0.2.0",
+  "deepeval",
+  "datasets",
+]
 ragas-eval = [
   "ragas>=0.2.0",
+]
+security = [
+  "bandit",
+  "pip-audit",
+  "detect-secrets",
+]
+full = [
+  "qdrant-client",
+  "sentence-transformers>=2.2.0",
+  "rank-bm25",
+  "bm25s",
+  "langgraph>=0.2,<1",
+  "langchain",
+  "langgraph-checkpoint-postgres>=3.1.0",
+  "psycopg2-binary",
+  "ragas>=0.2.0",
+  "deepeval",
+  "datasets",
+  "bandit",
+  "pip-audit",
+  "detect-secrets",
 ]
 
 [tool.setuptools]

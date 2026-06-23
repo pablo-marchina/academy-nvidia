@@ -1,0 +1,687 @@
+{
+  "decisions": [
+    {
+      "baseline_score": 0.247,
+      "case_count": 1,
+      "cases": [
+        {
+          "baseline_output": {
+            "action": "approach_now",
+            "alternatives_lost": [],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "marketing_ai_claim"
+                ],
+                "text": "The startup is ready for NVIDIA acceleration."
+              }
+            ],
+            "confidence": 0.82,
+            "detected_contradiction_ids": [],
+            "estimated_cost_units": 1.0,
+            "estimated_latency_ms": 900,
+            "lineage_edges": [],
+            "missing_evidence": [],
+            "next_action": {
+              "action": "schedule technical discussion"
+            },
+            "query_variants": [],
+            "recommendation": "Consider NVIDIA acceleration for the startup.",
+            "retrieved_evidence_ids": [
+              "marketing_ai_claim"
+            ]
+          },
+          "baseline_score": 0.247,
+          "case_id": "query_vocab_recovery",
+          "metric_deltas": {
+            "alternatives_lost_rationale": 0.0,
+            "contradiction_handling": 0.0,
+            "evaluator_auditability": 0.0,
+            "evidence_sufficiency": 1.0,
+            "lineage_traceability": 0.0,
+            "next_action_quality": 0.0,
+            "operational_efficiency": 0.0,
+            "recommendation_specificity": 0.0,
+            "robustness_to_query_variance": 1.0,
+            "source_trust_freshness": 0.2554,
+            "uncertainty_calibration": 0.3,
+            "unsupported_claim_control": 0.0
+          },
+          "name": "Business wording should recover technical evidence",
+          "quality_delta": 0.267,
+          "spike_output": {
+            "action": "approach_now",
+            "alternatives_lost": [],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "marketing_ai_claim"
+                ],
+                "text": "The startup is ready for NVIDIA acceleration."
+              }
+            ],
+            "confidence": 0.82,
+            "detected_contradiction_ids": [],
+            "estimated_cost_units": 1.0,
+            "estimated_latency_ms": 900,
+            "lineage_edges": [],
+            "missing_evidence": [],
+            "next_action": {
+              "action": "schedule technical discussion"
+            },
+            "query_variants": [
+              "scale ai delivery for enterprise customers",
+              "gpu inference model serving triton nvidia",
+              "production ai deployment optimization nvidia"
+            ],
+            "recommendation": "Consider NVIDIA acceleration for the startup.",
+            "retrieved_evidence_ids": [
+              "marketing_ai_claim",
+              "nvidia_triton_doc"
+            ]
+          },
+          "spike_score": 0.514
+        }
+      ],
+      "decision": "PROMISING_NEEDS_PRODUCT_SPIKE",
+      "family_id": "query_rewriting_multiquery",
+      "metric_deltas": {
+        "alternatives_lost_rationale": 0.0,
+        "contradiction_handling": 0.0,
+        "evaluator_auditability": 0.0,
+        "evidence_sufficiency": 1.0,
+        "lineage_traceability": 0.0,
+        "next_action_quality": 0.0,
+        "operational_efficiency": 0.0,
+        "recommendation_specificity": 0.0,
+        "robustness_to_query_variance": 1.0,
+        "source_trust_freshness": 0.2554,
+        "uncertainty_calibration": 0.3,
+        "unsupported_claim_control": 0.0
+      },
+      "next_step": "Build a narrow product spike, then rerun quality, latency, cost, and risk benchmarks.",
+      "quality_delta": 0.267,
+      "rationale": "Disposable spike improved measured system value over baseline.",
+      "spike_score": 0.514
+    },
+    {
+      "baseline_score": 0.577,
+      "case_count": 1,
+      "cases": [
+        {
+          "baseline_output": {
+            "action": "approach_now",
+            "alternatives_lost": [],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "nvidia_triton_doc"
+                ],
+                "text": "The startup is ready for NVIDIA acceleration."
+              }
+            ],
+            "confidence": 0.82,
+            "detected_contradiction_ids": [],
+            "estimated_cost_units": 1.0,
+            "estimated_latency_ms": 900,
+            "lineage_edges": [],
+            "missing_evidence": [],
+            "next_action": {
+              "action": "schedule technical discussion"
+            },
+            "query_variants": [],
+            "recommendation": "Consider NVIDIA acceleration for the startup.",
+            "retrieved_evidence_ids": [
+              "nvidia_triton_doc"
+            ]
+          },
+          "baseline_score": 0.577,
+          "case_id": "next_action_specificity",
+          "metric_deltas": {
+            "alternatives_lost_rationale": 1.0,
+            "contradiction_handling": 0.0,
+            "evaluator_auditability": 0.0,
+            "evidence_sufficiency": 0.0,
+            "lineage_traceability": 0.0,
+            "next_action_quality": 1.0,
+            "operational_efficiency": 0.0,
+            "recommendation_specificity": 1.0,
+            "robustness_to_query_variance": 0.0,
+            "source_trust_freshness": 0.0,
+            "uncertainty_calibration": 0.0,
+            "unsupported_claim_control": 0.0
+          },
+          "name": "Recommendation should become a measurable experiment",
+          "quality_delta": 0.25,
+          "spike_output": {
+            "action": "approach_now",
+            "alternatives_lost": [
+              {
+                "evidence_ids": [
+                  "nvidia_triton_doc"
+                ],
+                "name": "manual model-serving tuning",
+                "reason": "Lower repeatability and weaker measurement path than a Triton benchmark."
+              }
+            ],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "nvidia_triton_doc"
+                ],
+                "text": "The startup is ready for NVIDIA acceleration."
+              }
+            ],
+            "confidence": 0.82,
+            "detected_contradiction_ids": [],
+            "estimated_cost_units": 1.0,
+            "estimated_latency_ms": 900,
+            "lineage_edges": [],
+            "missing_evidence": [],
+            "next_action": {
+              "metric": "p95 latency and GPU utilization",
+              "owner": "technical champion",
+              "technology": "NVIDIA Triton",
+              "threshold": ">=20% latency reduction or >=15% utilization gain",
+              "timeframe": "10 business days"
+            },
+            "query_variants": [],
+            "recommendation": "Run an NVIDIA Triton inference benchmark for p95 latency and GPU utilization.",
+            "retrieved_evidence_ids": [
+              "nvidia_triton_doc"
+            ]
+          },
+          "spike_score": 0.827
+        }
+      ],
+      "decision": "PROMISING_NEEDS_PRODUCT_SPIKE",
+      "family_id": "recommendation_specificity_next_action",
+      "metric_deltas": {
+        "alternatives_lost_rationale": 1.0,
+        "contradiction_handling": 0.0,
+        "evaluator_auditability": 0.0,
+        "evidence_sufficiency": 0.0,
+        "lineage_traceability": 0.0,
+        "next_action_quality": 1.0,
+        "operational_efficiency": 0.0,
+        "recommendation_specificity": 1.0,
+        "robustness_to_query_variance": 0.0,
+        "source_trust_freshness": 0.0,
+        "uncertainty_calibration": 0.0,
+        "unsupported_claim_control": 0.0
+      },
+      "next_step": "Build a narrow product spike, then rerun quality, latency, cost, and risk benchmarks.",
+      "quality_delta": 0.25,
+      "rationale": "Disposable spike improved measured system value over baseline.",
+      "spike_score": 0.827
+    },
+    {
+      "baseline_score": 0.5013,
+      "case_count": 1,
+      "cases": [
+        {
+          "baseline_output": {
+            "action": "approach_now",
+            "alternatives_lost": [],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "official_gpu_claim"
+                ],
+                "text": "The startup is ready for NVIDIA acceleration."
+              }
+            ],
+            "confidence": 0.82,
+            "detected_contradiction_ids": [],
+            "estimated_cost_units": 1.0,
+            "estimated_latency_ms": 900,
+            "lineage_edges": [],
+            "missing_evidence": [],
+            "next_action": {
+              "action": "schedule technical discussion"
+            },
+            "query_variants": [],
+            "recommendation": "Consider NVIDIA acceleration for the startup.",
+            "retrieved_evidence_ids": [
+              "official_gpu_claim"
+            ]
+          },
+          "baseline_score": 0.5013,
+          "case_id": "graph_lineage_mapping",
+          "metric_deltas": {
+            "alternatives_lost_rationale": 1.0,
+            "contradiction_handling": 0.0,
+            "evaluator_auditability": 0.2,
+            "evidence_sufficiency": 0.5,
+            "lineage_traceability": 1.0,
+            "next_action_quality": 0.0,
+            "operational_efficiency": 0.0,
+            "recommendation_specificity": 0.0,
+            "robustness_to_query_variance": 0.0,
+            "source_trust_freshness": 0.0074,
+            "uncertainty_calibration": 0.3,
+            "unsupported_claim_control": 0.0
+          },
+          "name": "Source-gap-technology path should be auditable",
+          "quality_delta": 0.2317,
+          "spike_output": {
+            "action": "approach_now",
+            "alternatives_lost": [
+              {
+                "evidence_ids": [
+                  "official_gpu_claim"
+                ],
+                "name": "generic cloud CPU scaling",
+                "reason": "Does not address GPU inference throughput evidence."
+              }
+            ],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "official_gpu_claim"
+                ],
+                "text": "The startup is ready for NVIDIA acceleration."
+              }
+            ],
+            "confidence": 0.82,
+            "detected_contradiction_ids": [],
+            "estimated_cost_units": 1.0,
+            "estimated_latency_ms": 900,
+            "lineage_edges": [
+              {
+                "relation": "supports",
+                "source": "startup_evidence",
+                "target": "technical_gap"
+              },
+              {
+                "relation": "mapped_to",
+                "source": "technical_gap",
+                "target": "nvidia_capability"
+              },
+              {
+                "relation": "validated_by",
+                "source": "nvidia_capability",
+                "target": "recommended_experiment"
+              },
+              {
+                "relation": "lost_to",
+                "source": "rejected_alternative",
+                "target": "nvidia_capability"
+              }
+            ],
+            "missing_evidence": [],
+            "next_action": {
+              "action": "schedule technical discussion"
+            },
+            "query_variants": [],
+            "recommendation": "Consider NVIDIA acceleration for the startup.",
+            "retrieved_evidence_ids": [
+              "official_gpu_claim",
+              "nvidia_triton_doc"
+            ]
+          },
+          "spike_score": 0.733
+        }
+      ],
+      "decision": "PROMISING_NEEDS_PRODUCT_SPIKE",
+      "family_id": "graphrag_evidence_graph",
+      "metric_deltas": {
+        "alternatives_lost_rationale": 1.0,
+        "contradiction_handling": 0.0,
+        "evaluator_auditability": 0.2,
+        "evidence_sufficiency": 0.5,
+        "lineage_traceability": 1.0,
+        "next_action_quality": 0.0,
+        "operational_efficiency": 0.0,
+        "recommendation_specificity": 0.0,
+        "robustness_to_query_variance": 0.0,
+        "source_trust_freshness": 0.0074,
+        "uncertainty_calibration": 0.3,
+        "unsupported_claim_control": 0.0
+      },
+      "next_step": "Build a narrow product spike, then rerun quality, latency, cost, and risk benchmarks.",
+      "quality_delta": 0.2317,
+      "rationale": "Disposable spike improved measured system value over baseline.",
+      "spike_score": 0.733
+    },
+    {
+      "baseline_score": 0.4556,
+      "case_count": 1,
+      "cases": [
+        {
+          "baseline_output": {
+            "action": "approach_now",
+            "alternatives_lost": [],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "official_gpu_claim"
+                ],
+                "text": "The startup is ready for NVIDIA acceleration."
+              }
+            ],
+            "confidence": 0.82,
+            "detected_contradiction_ids": [],
+            "estimated_cost_units": 1.0,
+            "estimated_latency_ms": 900,
+            "lineage_edges": [],
+            "missing_evidence": [],
+            "next_action": {
+              "action": "schedule technical discussion"
+            },
+            "query_variants": [],
+            "recommendation": "Consider NVIDIA acceleration for the startup.",
+            "retrieved_evidence_ids": [
+              "official_gpu_claim"
+            ]
+          },
+          "baseline_score": 0.4556,
+          "case_id": "counter_evidence_signal",
+          "metric_deltas": {
+            "alternatives_lost_rationale": 0.0,
+            "contradiction_handling": 1.0,
+            "evaluator_auditability": 0.4,
+            "evidence_sufficiency": 0.0,
+            "lineage_traceability": 0.0,
+            "next_action_quality": 0.0,
+            "operational_efficiency": 0.0,
+            "recommendation_specificity": 0.0,
+            "robustness_to_query_variance": 0.0,
+            "source_trust_freshness": -0.1787,
+            "uncertainty_calibration": 0.26,
+            "unsupported_claim_control": 0.0
+          },
+          "name": "Contradictory maturity signal should be surfaced",
+          "quality_delta": 0.1187,
+          "spike_output": {
+            "action": "approach_now",
+            "alternatives_lost": [],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "official_gpu_claim"
+                ],
+                "text": "The startup is ready for NVIDIA acceleration."
+              }
+            ],
+            "confidence": 0.56,
+            "detected_contradiction_ids": [
+              "stale_hiring_signal"
+            ],
+            "estimated_cost_units": 1.0,
+            "estimated_latency_ms": 900,
+            "lineage_edges": [],
+            "missing_evidence": [
+              "manual review of conflicting signals"
+            ],
+            "next_action": {
+              "action": "schedule technical discussion"
+            },
+            "query_variants": [],
+            "recommendation": "Consider NVIDIA acceleration for the startup.",
+            "retrieved_evidence_ids": [
+              "official_gpu_claim",
+              "stale_hiring_signal"
+            ]
+          },
+          "spike_score": 0.5744
+        }
+      ],
+      "decision": "PROMISING_NEEDS_PRODUCT_SPIKE",
+      "family_id": "counter_evidence_retrieval",
+      "metric_deltas": {
+        "alternatives_lost_rationale": 0.0,
+        "contradiction_handling": 1.0,
+        "evaluator_auditability": 0.4,
+        "evidence_sufficiency": 0.0,
+        "lineage_traceability": 0.0,
+        "next_action_quality": 0.0,
+        "operational_efficiency": 0.0,
+        "recommendation_specificity": 0.0,
+        "robustness_to_query_variance": 0.0,
+        "source_trust_freshness": -0.1787,
+        "uncertainty_calibration": 0.26,
+        "unsupported_claim_control": 0.0
+      },
+      "next_step": "Build a narrow product spike, then rerun quality, latency, cost, and risk benchmarks.",
+      "quality_delta": 0.1188,
+      "rationale": "Disposable spike improved measured system value over baseline.",
+      "spike_score": 0.5744
+    },
+    {
+      "baseline_score": 0.4446,
+      "case_count": 1,
+      "cases": [
+        {
+          "baseline_output": {
+            "action": "approach_now",
+            "alternatives_lost": [],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "old_blog_claim"
+                ],
+                "text": "The startup is ready for NVIDIA acceleration."
+              }
+            ],
+            "confidence": 0.82,
+            "detected_contradiction_ids": [],
+            "estimated_cost_units": 1.0,
+            "estimated_latency_ms": 900,
+            "lineage_edges": [],
+            "missing_evidence": [],
+            "next_action": {
+              "action": "schedule technical discussion"
+            },
+            "query_variants": [],
+            "recommendation": "Consider NVIDIA acceleration for the startup.",
+            "retrieved_evidence_ids": [
+              "old_blog_claim",
+              "marketing_ai_claim",
+              "official_gpu_claim"
+            ]
+          },
+          "baseline_score": 0.4446,
+          "case_id": "source_quality_ordering",
+          "metric_deltas": {
+            "alternatives_lost_rationale": 0.0,
+            "contradiction_handling": 0.0,
+            "evaluator_auditability": 0.0,
+            "evidence_sufficiency": 0.5,
+            "lineage_traceability": 0.0,
+            "next_action_quality": 0.0,
+            "operational_efficiency": 0.0,
+            "recommendation_specificity": 0.0,
+            "robustness_to_query_variance": 0.0,
+            "source_trust_freshness": 0.2416,
+            "uncertainty_calibration": 0.24,
+            "unsupported_claim_control": 0.0
+          },
+          "name": "Fresh official evidence should outrank stale weak evidence",
+          "quality_delta": 0.1159,
+          "spike_output": {
+            "action": "approach_now",
+            "alternatives_lost": [],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "old_blog_claim"
+                ],
+                "text": "The startup is ready for NVIDIA acceleration."
+              }
+            ],
+            "confidence": 0.88,
+            "detected_contradiction_ids": [],
+            "estimated_cost_units": 1.0,
+            "estimated_latency_ms": 900,
+            "lineage_edges": [],
+            "missing_evidence": [],
+            "next_action": {
+              "action": "schedule technical discussion"
+            },
+            "query_variants": [],
+            "recommendation": "Consider NVIDIA acceleration for the startup.",
+            "retrieved_evidence_ids": [
+              "nvidia_triton_doc",
+              "official_gpu_claim",
+              "stale_hiring_signal",
+              "old_blog_claim",
+              "marketing_ai_claim"
+            ]
+          },
+          "spike_score": 0.5606
+        }
+      ],
+      "decision": "PROMISING_NEEDS_PRODUCT_SPIKE",
+      "family_id": "source_trust_freshness_ranking",
+      "metric_deltas": {
+        "alternatives_lost_rationale": 0.0,
+        "contradiction_handling": 0.0,
+        "evaluator_auditability": 0.0,
+        "evidence_sufficiency": 0.5,
+        "lineage_traceability": 0.0,
+        "next_action_quality": 0.0,
+        "operational_efficiency": 0.0,
+        "recommendation_specificity": 0.0,
+        "robustness_to_query_variance": 0.0,
+        "source_trust_freshness": 0.2416,
+        "uncertainty_calibration": 0.24,
+        "unsupported_claim_control": 0.0
+      },
+      "next_step": "Build a narrow product spike, then rerun quality, latency, cost, and risk benchmarks.",
+      "quality_delta": 0.116,
+      "rationale": "Disposable spike improved measured system value over baseline.",
+      "spike_score": 0.5606
+    },
+    {
+      "baseline_score": 0.206,
+      "case_count": 1,
+      "cases": [
+        {
+          "baseline_output": {
+            "action": "approach_now",
+            "alternatives_lost": [],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "marketing_ai_claim"
+                ],
+                "text": "The startup is ready for NVIDIA acceleration."
+              }
+            ],
+            "confidence": 0.82,
+            "detected_contradiction_ids": [],
+            "estimated_cost_units": 1.0,
+            "estimated_latency_ms": 900,
+            "lineage_edges": [],
+            "missing_evidence": [],
+            "next_action": {
+              "action": "schedule technical discussion"
+            },
+            "query_variants": [],
+            "recommendation": "Consider NVIDIA acceleration for the startup.",
+            "retrieved_evidence_ids": [
+              "marketing_ai_claim"
+            ]
+          },
+          "baseline_score": 0.206,
+          "case_id": "thin_support_abstention",
+          "metric_deltas": {
+            "alternatives_lost_rationale": 0.0,
+            "contradiction_handling": 0.0,
+            "evaluator_auditability": 0.2,
+            "evidence_sufficiency": 0.0,
+            "lineage_traceability": 0.0,
+            "next_action_quality": 0.0,
+            "operational_efficiency": 0.0,
+            "recommendation_specificity": 0.0,
+            "robustness_to_query_variance": 0.0,
+            "source_trust_freshness": 0.0,
+            "uncertainty_calibration": 0.26,
+            "unsupported_claim_control": 0.5
+          },
+          "name": "Thin support should downgrade the recommendation",
+          "quality_delta": 0.0878,
+          "spike_output": {
+            "action": "validate_manually",
+            "alternatives_lost": [],
+            "claims": [
+              {
+                "evidence_ids": [
+                  "marketing_ai_claim"
+                ],
+                "text": "The startup is ready for NVIDIA acceleration."
+              }
+            ],
+            "confidence": 0.48,
+            "detected_contradiction_ids": [],
+            "estimated_cost_units": 1.0,
+            "estimated_latency_ms": 900,
+            "lineage_edges": [],
+            "missing_evidence": [
+              "direct RAG support",
+              "fresh technical proof",
+              "contradiction review"
+            ],
+            "next_action": {
+              "action": "schedule technical discussion"
+            },
+            "query_variants": [],
+            "recommendation": "Consider NVIDIA acceleration for the startup.",
+            "retrieved_evidence_ids": [
+              "marketing_ai_claim"
+            ]
+          },
+          "spike_score": 0.2938
+        }
+      ],
+      "decision": "PROMISING_NEEDS_PRODUCT_SPIKE",
+      "family_id": "evidence_sufficiency_abstention",
+      "metric_deltas": {
+        "alternatives_lost_rationale": 0.0,
+        "contradiction_handling": 0.0,
+        "evaluator_auditability": 0.2,
+        "evidence_sufficiency": 0.0,
+        "lineage_traceability": 0.0,
+        "next_action_quality": 0.0,
+        "operational_efficiency": 0.0,
+        "recommendation_specificity": 0.0,
+        "robustness_to_query_variance": 0.0,
+        "source_trust_freshness": 0.0,
+        "uncertainty_calibration": 0.26,
+        "unsupported_claim_control": 0.5
+      },
+      "next_step": "Build a narrow product spike, then rerun quality, latency, cost, and risk benchmarks.",
+      "quality_delta": 0.0878,
+      "rationale": "Disposable spike improved measured system value over baseline.",
+      "spike_score": 0.2938
+    }
+  ],
+  "generated_at": "2026-06-23T02:21:38.078271+00:00",
+  "methodology": "Each family is tested with an executable local micro-spike against product-like outputs. The result can justify a product spike, but it does not promote runtime adoption.",
+  "product_spike_candidate_count": 6,
+  "quality_weights": {
+    "alternatives_lost_rationale": 0.05,
+    "contradiction_handling": 0.09,
+    "evaluator_auditability": 0.06,
+    "evidence_sufficiency": 0.15,
+    "lineage_traceability": 0.07,
+    "next_action_quality": 0.09,
+    "operational_efficiency": 0.03,
+    "recommendation_specificity": 0.11,
+    "robustness_to_query_variance": 0.07,
+    "source_trust_freshness": 0.09,
+    "uncertainty_calibration": 0.08,
+    "unsupported_claim_control": 0.11
+  },
+  "recommended_order": [
+    "query_rewriting_multiquery",
+    "recommendation_specificity_next_action",
+    "graphrag_evidence_graph",
+    "counter_evidence_retrieval",
+    "source_trust_freshness_ranking",
+    "evidence_sufficiency_abstention"
+  ],
+  "report_id": "family_spike_benchmark_report",
+  "tested_family_count": 6
+}

@@ -697,3 +697,32 @@ Sem alterações em backend, scoring, RAG, Qdrant ou LangGraph.
 - Optional dependency or evidence problems are represented as explicit
   readiness checks and a `degraded` run.
 - Product modules do not read `data/demo_runs`.
+
+## Epic 50 — Final Benchmark-First Governance
+
+### New Validation Targets
+
+| Command | Purpose |
+|---|---|
+| `make evidence-pack` | Generate `final_case_evidence/` ledgers, manifests, reports, and candidate catalog |
+| `python scripts/check_candidate_catalog.py` | Verify generated catalog covers section 8 of the canonical roadmap |
+| `python scripts/check_numeric_governance.py` | Run magic-value scan and require calibration registry artifact |
+| `python scripts/check_repository_clean.py` | Ensure forbidden generated artifacts are not tracked |
+| `python scripts/check_lineage_coverage.py` | Require final lineage and evidence-to-decision artifacts |
+| `python scripts/check_security_release.py` | Require final security/release artifacts |
+| `make prove-final-product` | Orchestrate the final proof and print `FINAL_PRODUCT_STATUS=PASS_OR_FAIL` |
+
+### Notes
+
+The initial benchmark harness records configured, blocked, failed, or passed
+benchmark runs. It does not promote every roadmap candidate to runtime. Promotion
+requires benchmark evidence and a decision ledger record.
+
+### Latest Local Evidence
+
+- `final_case_evidence/candidate_status_summary.json` covers 408 candidates.
+- 17 candidates have local benchmark results recorded as `BENCHMARKED`.
+- 37 candidates are marked `FUTURE_RESEARCH` due to external SaaS, license,
+  hardware, credential, or service-access requirements.
+- `final_case_evidence/final_proof_summary.json` records the latest quick proof
+  with all required gates passing.

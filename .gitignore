@@ -49,6 +49,7 @@ test_exports/
 
 # Environment file variants (e.g. .env.local, .env.prod)
 .env.*
+!.env.production.example
 
 # Generated product exports
 data/product/exports/

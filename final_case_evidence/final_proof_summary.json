@@ -1,0 +1,335 @@
+{
+  "blocked_by_environment": 2,
+  "environment_doctor": {
+    "can_retry_without_code_changes": true,
+    "effective_service_route": "blocked_no_service_route",
+    "exact_commands": [
+      "python scripts/local_proof_doctor.py",
+      "docker compose up -d postgres qdrant",
+      "python scripts/prove_final_product.py --full --skip-live",
+      "# If Docker is blocked, start PostgreSQL/Qdrant externally and set PRODUCT_DB_URL/QDRANT_URL."
+    ],
+    "human_summary": "Doctor is blocked by environment via blocked_no_service_route. Blocking checks: langgraph_import, qdrant_client_import, postgres_driver_import, docker_cli, postgres_port, postgres_connection, qdrant_port, qdrant_service, qdrant_collection, embedding_provider. Fix services or provide external PostgreSQL/Qdrant, then retry without code changes.",
+    "recommended_route": "Fix Docker access or start PostgreSQL and Qdrant outside Codex, then rerun full proof.",
+    "report_path": "C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\local_proof_doctor_report.json",
+    "status": "BLOCKED_BY_ENVIRONMENT"
+  },
+  "failed": 0,
+  "final_status": "BLOCKED_BY_ENVIRONMENT",
+  "generated_at": "2026-06-23T02:23:44.976700+00:00",
+  "mode": "full",
+  "passed": 35,
+  "results": [
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/generate_final_evidence_pack.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "tems_justification.csv\n  robots_terms_report: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\robots_terms_report.json\n  runtime_bill_of_materials: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\runtime_bill_of_materials.csv\n  runtime_bom_json: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\runtime_bom.json\n  runtime_bom_md: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\runtime_bom.md\n  runtime_value_policy_report: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\runtime_value_policy_report.json\n  sast_report: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\sast_report.json\n  sbom: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\sbom.json\n  secret_scan_report: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\secret_scan_report.json\n  security_scan_report: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\security_scan_report.json\n  source_compliance_report: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\source_compliance_report.json\n  source_coverage_map: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\source_coverage_map.json\n  source_coverage_report: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\source_coverage_report.json\n  source_quality_product_spike_report: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\source_quality_product_spike_report.json\n  source_quality_product_spike_report_md: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\source_quality_product_spike_report.md\n  value_family_completeness_report: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\value_family_completeness_report.json\n  value_family_completeness_report_md: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\value_family_completeness_report.md\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/generate_finalization_evidence.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "PASS: finalization evidence generated in C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_llm_security_suite.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "......                                                                   [100%]\n============================== warnings summary ===============================\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:179: 236 warnings\n  C:\\Users\\Inteli\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:179: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    return asyncio.iscoroutinefunction(obj) or inspect.isasyncgenfunction(obj)\n\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450\n  C:\\Users\\Inteli\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    return asyncio.iscoroutinefunction(func)\n\ntests/security/test_indirect_prompt_injection.py::test_indirect_prompt_injection_in_scraped_page_is_sanitized\n  C:\\Users\\Inteli\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:1056: DeprecationWarning: 'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16\n    return asyncio.get_event_loop_policy()\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n6 passed, 243 warnings in 0.15s\nLLM_SECURITY_SUITE_STATUS=PASS\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_benchmark.py --suite complete-catalog --candidate-catalog C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\candidate_catalog.csv --results-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\benchmark_results.jsonl --report-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\benchmark_report.json",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\scripts\\run_benchmark.py:207: DeprecationWarning: MockEmbeddingProvider is for tests only.\n  embedding = MockEmbeddingProvider()\n",
+      "stdout_tail": " passed\n8-19-human-review-active-learning-and-labeling__human-override-governance: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__repository-purpose-manifest: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__repository-cleanliness-gate: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__documentation-consistency-gate: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__final-delivery-index: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__external-reviewer-mode: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__cold-start-reproducibility-test: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__no-hidden-state-rule: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__no-hidden-manual-step-gate: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__supply-chain-maturity-gate: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__license-and-third-party-compliance: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__ai-incident-response-plan: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__root-cause-analysis-workflow: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__deprecation-policy: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__data-retention-policy: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__final-evaluator-checklist: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__evidence-first-ui-mode: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__operational-runbooks: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__ai-governance-maturity-report: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__reproducible-case-package: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__final-case-evidence-pack: passed\n8-20-release-supply-chain-repo-cleanliness-and-delivery__make-prove-final-product: passed\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_candidate_catalog.py --catalog C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\candidate_catalog.csv --require-benchmark-coverage",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "PASS: candidate catalog covers 408 canonical candidates\nPASS: benchmark coverage includes 408 candidate results\nPASS: output-value report includes 408 candidate decisions\nPASS: benchmark documentation report exists\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_external_free_verification.py --catalog C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\candidate_catalog.csv --report-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\external_free_verification_report.json --markdown-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\external_free_verification_report.md",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "External free verification checked: status=PASS, external_unique=36, eligible=20, blocked=16\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/review_free_external_candidates.py --catalog C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\candidate_catalog.csv --report-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\free_external_candidate_review.json --markdown-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\free_external_candidate_review.md",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Free external candidates reviewed: eligible=20, needs_verification=14, matched=36\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/rank_value_candidates.py --catalog C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\candidate_catalog.csv --free-external-review C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\free_external_candidate_review.json --queue-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\ranked_value_candidate_queue.json --markdown-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\ranked_value_candidate_queue.md",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Ranked 391 candidates by expected output-quality value.\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_free_external_candidate_benchmarks.py --review-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\free_external_candidate_review.json --report-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\free_external_candidate_benchmark_report.json --markdown-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\free_external_candidate_benchmark_report.md",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Free external benchmark probes completed: ready=1, blocked=19\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_ranked_value_benchmarks.py --catalog C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\candidate_catalog.csv --queue-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\ranked_value_candidate_queue.json --report-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\ranked_value_benchmark_report.json --markdown-path C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence\\ranked_value_benchmark_report.md",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Ranked value benchmark completed: 3 executed, 0 adopted, stop_reason=NO_QUALITY_LIFT_IN_LAST_3_EXECUTABLE_BENCHMARKS\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_diagnostic_value_triage.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Diagnostic value triage completed: 6 spike candidates, top_family=counter_evidence_retrieval\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_family_spike_benchmarks.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Family spike benchmarks completed: 6 families tested, 6 product spike candidates\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_query_rewriting_product_spike.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Query rewriting product spike completed: decision=PROMOTE_TO_PRODUCT_SPIKE, quality_delta=0.425\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_next_action_enrichment_product_spike.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Next-action enrichment product spike completed: decision=PROMOTE_TO_PRODUCT_SPIKE, quality_delta=0.9524\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_graphrag_evidence_graph_product_spike.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "GraphRAG evidence graph product spike completed: decision=PROMOTE_TO_PRODUCT_SPIKE, quality_delta=0.8\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_counter_evidence_product_spike.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Counter-evidence product spike completed: decision=PROMOTE_TO_PRODUCT_SPIKE, quality_delta=0.6925\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_source_quality_product_spike.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Source quality product spike completed: decision=PROMOTE_TO_PRODUCT_SPIKE, quality_delta=0.6\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_evidence_sufficiency_product_spike.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Evidence sufficiency product spike completed: decision=PROMOTE_TO_PRODUCT_SPIKE, quality_delta=0.5419\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_implemented_family_best_tool.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Implemented family best-tool audit: status=PASS current_best_with_evidence=6 needs_direct_alternative_benchmark=6 global_best_guarantee=False\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/run_direct_alternative_gap_benchmarks.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Direct alternative gap benchmarks completed: resolved=63, remaining=0, lifts=0\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_implemented_family_best_tool.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Implemented family best-tool audit: status=PASS current_best_with_evidence=6 needs_direct_alternative_benchmark=0 global_best_guarantee=False\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_value_family_completeness.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Value family completeness audit: status=PASS exhaustive=False implemented=6 direct_alternative_gaps=0\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_roadmap_closure_audit.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Roadmap closure audit: status=PASS marcos=23 counts={'PASS': 14, 'BLOCKED_BY_ENVIRONMENT': 4, 'NOT_REQUIRED_FOR_FINAL_RUNTIME': 4, 'FUTURE_RESEARCH': 1}\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_repository_clean.py",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "PASS: repository cleanliness checked 761 tracked files\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/package_final_release.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "PASS: built final release ZIP: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\release\\academy-nvidia-final-case.zip\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_final_release_zip.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "PASS: final release ZIP clean: C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\release\\academy-nvidia-final-case.zip\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_benchmark_type_policy.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "PASS: benchmark_type policy\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_runtime_value_policy.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "Runtime value policy checked: status=PASS, runtime_components=3, needs_comparison=0\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_numeric_governance.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "=== Magic Value Scanner ===\nHits found: 60\nIn registered files: 44\nClassified non-product: 16\nIn UNREGISTERED files: 0\n\nPASS: numeric governance\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_source_compliance.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "PASS: source compliance\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_lineage_coverage.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "PASS: lineage coverage artifacts exist\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_security_release.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "PASS: security/release artifact gate\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_finalization_governance.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "PASS: finalization governance artifacts\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_no_demo_dependency.py",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "============================================================\nNO DEMO DEPENDENCY CHECK - P A S S E D\n============================================================\nScanned: ['src', 'frontend\\\\src']\nResult: No forbidden demo references found.\nThe product flow uses DB/API real, not demo data.\n============================================================\n"
+    },
+    {
+      "label": "C:\\Users\\Inteli\\AppData\\Roaming\\Python\\Python314\\Scripts\\pytest.EXE tests/unit/test_governance_schemas.py tests/unit/test_governance_artifacts.py tests/unit/test_benchmark_runner.py tests/unit/test_final_gate_scripts.py tests/unit/test_real_service_proof.py tests/unit/test_local_proof_doctor.py tests/unit/test_full_proof_pass_attempt.py tests/unit/test_ingest_nvidia_corpus.py tests/unit/test_product_acceptance_script.py --basetemp .pytest_tmp_final --tb=short",
+      "required": true,
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_tail": "",
+      "stdout_tail": "\\plugin.py:179: 2565 warnings\n  C:\\Users\\Inteli\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:179: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    return asyncio.iscoroutinefunction(obj) or inspect.isasyncgenfunction(obj)\n\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450: 60 warnings\n  C:\\Users\\Inteli\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    return asyncio.iscoroutinefunction(func)\n\ntests/unit/test_governance_schemas.py::test_candidate_status_values_match_final_roadmap\n  C:\\Users\\Inteli\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:1056: DeprecationWarning: 'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16\n    return asyncio.get_event_loop_policy()\n\ntests/unit/test_ingest_nvidia_corpus.py::TestDryRun::test_dry_run_does_not_upsert\ntests/unit/test_ingest_nvidia_corpus.py::TestIngestionWithInMemory::test_ingest_to_in_memory\ntests/unit/test_ingest_nvidia_corpus.py::TestIngestionWithInMemory::test_ingest_recreate_collection\ntests/unit/test_ingest_nvidia_corpus.py::TestPayload::test_payload_contains_provenance\ntests/unit/test_ingest_nvidia_corpus.py::TestPayload::test_report_counters\ntests/unit/test_ingest_nvidia_corpus.py::TestReport::test_report_has_all_fields\ntests/unit/test_ingest_nvidia_corpus.py::TestReport::test_report_saved_to_path\n  C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\scripts\\ingest_nvidia_corpus.py:153: DeprecationWarning: MockEmbeddingProvider is for tests only.\n    return MockEmbeddingProvider()\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================ 60 passed, 2633 warnings in 83.88s (0:01:23) =================\n"
+    },
+    {
+      "blocking_checks": [
+        "langgraph_import",
+        "qdrant_client_import",
+        "postgres_driver_import",
+        "docker_cli",
+        "postgres_port",
+        "postgres_connection",
+        "qdrant_port",
+        "qdrant_service",
+        "qdrant_collection",
+        "embedding_provider"
+      ],
+      "effective_service_route": "blocked_no_service_route",
+      "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/local_proof_doctor.py --evidence-dir C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_case_evidence",
+      "required": false,
+      "returncode": 0,
+      "status": "BLOCKED_BY_ENVIRONMENT",
+      "stderr_tail": "",
+      "stdout_tail": "op and confirm the current user can access the Docker engine.\",\n    \"On Windows, verify access to npipe:////./pipe/docker_engine.\",\n    \"Start the service listening on localhost:5432 or update the env var for this endpoint.\",\n    \"Install backend dependencies with `pip install -e .[postgres]` or `pip install -e .[full]`.\",\n    \"Start the service listening on localhost:6333 or update the env var for this endpoint.\",\n    \"Start Qdrant locally or set QDRANT_URL to a reachable Qdrant instance.\",\n    \"Make Qdrant reachable before validating or ingesting the configured collection.\",\n    \"Install the RAG extra or package: `pip install -e .[rag]`.\",\n    \"Either fix Docker access or start PostgreSQL and Qdrant outside Codex, then rerun the proof.\"\n  ],\n  \"recommended_route\": \"Fix Docker access or start PostgreSQL and Qdrant outside Codex, then rerun full proof.\",\n  \"report_id\": \"local_proof_doctor_report\",\n  \"settings\": {\n    \"database_url\": \"postgresql://***:***@localhost:5432/startup_radar\",\n    \"embedding_model\": \"all-MiniLM-L6-v2\",\n    \"external_services_ok\": true,\n    \"qdrant_collection\": \"nvidia_corpus\",\n    \"qdrant_url\": \"http://localhost:6333\",\n    \"require_docker_compose\": false,\n    \"timeout_seconds\": 5\n  },\n  \"status\": \"BLOCKED_BY_ENVIRONMENT\",\n  \"warnings\": [\n    {\n      \"check_id\": \"env_configuration\",\n      \"component\": \"Configuration\",\n      \"details\": {\n        \"database_url\": \"postgresql://***:***@localhost:5432/startup_radar\",\n        \"defaults_used\": [\n          \"PRODUCT_DB_URL\",\n          \"QDRANT_URL\",\n          \"QDRANT_COLLECTION\",\n          \"RAG_EMBEDDING_MODEL\"\n        ],\n        \"embedding_model\": \"all-MiniLM-L6-v2\",\n        \"qdrant_collection\": \"nvidia_corpus\",\n        \"qdrant_url\": \"http://localhost:6333\"\n      },\n      \"errors\": [],\n      \"remediation\": [\n        \"Set explicit PRODUCT_DB_URL, QDRANT_URL, QDRANT_COLLECTION, and RAG_EMBEDDING_MODEL in .env.\"\n      ],\n      \"status\": \"WARN\"\n    }\n  ]\n}\nLOCAL_PROOF_DOCTOR_STATUS=BLOCKED_BY_ENVIRONMENT\n"
+    },
+    {
+      "label": "scripts/real_service_proof.py (skipped by local proof doctor)",
+      "required": false,
+      "returncode": 0,
+      "status": "BLOCKED_BY_ENVIRONMENT",
+      "stderr_tail": "Skipped because local proof doctor status is BLOCKED_BY_ENVIRONMENT. Blocking checks: ['langgraph_import', 'qdrant_client_import', 'postgres_driver_import', 'docker_cli', 'postgres_port', 'postgres_connection', 'qdrant_port', 'qdrant_service', 'qdrant_collection', 'embedding_provider']",
+      "stdout_tail": ""
+    }
+  ],
+  "total_gates": 37,
+  "warnings": 0
+}

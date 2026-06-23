@@ -1,0 +1,13 @@
+{
+  "cases": [
+    "tool_abuse",
+    "secret_leakage"
+  ],
+  "command": "C:\\Users\\Inteli\\AppData\\Roaming\\Python\\Python314\\Scripts\\pytest.EXE tests/security -q",
+  "generated_at": "2026-06-23T02:21:22.670330+00:00",
+  "report_id": "tool_abuse_test_report",
+  "returncode": 0,
+  "status": "PASS",
+  "stderr_tail": "",
+  "stdout_tail": "......                                                                   [100%]\n============================== warnings summary ===============================\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:179: 236 warnings\n  C:\\Users\\Inteli\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:179: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    return asyncio.iscoroutinefunction(obj) or inspect.isasyncgenfunction(obj)\n\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450\n..\\..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450\n  C:\\Users\\Inteli\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:450: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    return asyncio.iscoroutinefunction(func)\n\ntests/security/test_indirect_prompt_injection.py::test_indirect_prompt_injection_in_scraped_page_is_sanitized\n  C:\\Users\\Inteli\\AppData\\Roaming\\Python\\Python314\\site-packages\\pytest_asyncio\\plugin.py:1056: DeprecationWarning: 'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16\n    return asyncio.get_event_loop_policy()\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n6 passed, 243 warnings in 0.15s\n"
+}

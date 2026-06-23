@@ -39,6 +39,19 @@ Lifecycle values implemented in this build are `queued`, `running`,
 `completed`, `degraded`, and `failed`. `reviewed` and `exported` are reserved
 for later workflows.
 
+### Analysis Evidence Bundle
+
+`AnalysisEvidenceBundleRead` is the evidence-first read model for an analysis
+run. It aggregates persisted claims, evidence coverage, activation
+recommendations, latest dossier, readiness/degraded checks, missing evidence,
+contradictions, RAG support status, trust/freshness metadata, lineage, and
+non-promoted activation alternatives in one response.
+
+The bundle never recalculates scoring, retrieval, LLM output, recommendations,
+or dossier content. Missing RAG/Qdrant support, weak claims, unsupported claims,
+and absent dossier/recommendations are exposed explicitly instead of being
+treated as success.
+
 ### ActionBrief
 
 `PersistedActionBriefRead` returned by `GET /analysis-runs/{id}/brief` is the
@@ -120,6 +133,7 @@ metadata.
 | PATCH | `/startups/{id}` | `200 StartupRead` | `404`, `409` duplicate name, `422` |
 | POST | `/startups/{id}/analysis-runs` | `201 AnalysisRunRead` | `404`, `422` |
 | GET | `/analysis-runs/{id}` | `200 AnalysisRunRead` | `404` unknown run |
+| GET | `/analysis-runs/{id}/evidence-bundle` | `200 AnalysisEvidenceBundleRead` | `404` unknown run |
 | GET | `/analysis-runs/{id}/brief` | `200 PersistedActionBriefRead` | `404` |
 | GET | `/analysis-runs/{id}/brief/export/json` | `200 ActionBriefJsonExportRead` | `404` |
 | POST | `/analysis-runs/{id}/dossier` | `201 ActivationDossierRead` | `404`, `409` draft run |

@@ -20,7 +20,7 @@ import sys
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 # Ensure project root is on sys.path
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -118,7 +118,7 @@ def load_sources_raw() -> dict[str, Any]:
     if not _SOURCES_FILE.exists():
         return {}
     raw = yaml.safe_load(_SOURCES_FILE.read_text(encoding="utf-8"))
-    return raw.get("sources", {})
+    return cast(dict[str, Any], raw.get("sources", {}))
 
 
 # ---------------------------------------------------------------------------
@@ -141,16 +141,23 @@ def compute_chunk_hash(content: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def build_embedding_provider(mock: bool = False) -> Any:
+def build_embedding_provider(
+    mock: bool = False,
+    *,
+    model_name: str = "all-MiniLM-L6-v2",
+    require_real: bool = False,
+) -> Any:
     """Build embedding provider (Mock or SentenceTransformer)."""
     if mock:
         print("  Using MockEmbeddingProvider (deterministic, low-dim)")
         return MockEmbeddingProvider()
     try:
-        provider = SentenceTransformerProvider()
+        provider = SentenceTransformerProvider(model_name)
         print(f"  Using SentenceTransformerProvider (dim={provider.vector_size})")
         return provider
     except ImportError:
+        if require_real:
+            raise
         print(
             "  WARNING: sentence-transformers not installed. " "Falling back to MockEmbeddingProvider.",
             file=sys.stderr,
@@ -163,13 +170,19 @@ def build_embedding_provider(mock: bool = False) -> Any:
 # ---------------------------------------------------------------------------
 
 
-def build_vector_store(backend: str, collection_name: str) -> VectorStore:
+def build_vector_store(args: argparse.Namespace) -> VectorStore:
     """Build vector store (Qdrant or InMemory)."""
-    if backend == "in_memory":
+    if args.backend == "in_memory":
         print("  Backend: InMemoryVectorStore")
         return InMemoryVectorStore()
-    print(f"  Backend: QdrantStore (collection='{collection_name}')")
-    config = QdrantConfig(collection_name=collection_name)
+    print(f"  Backend: QdrantStore (collection='{args.collection_name}')")
+    config = QdrantConfig(
+        url=args.qdrant_url,
+        api_key=args.qdrant_api_key or None,
+        collection_name=args.collection_name,
+        vector_size=args.vector_size,
+        timeout=args.qdrant_timeout,
+    )
     try:
         store = QdrantStore(config=config)
         store._ensure_client()  # test connection
@@ -267,7 +280,11 @@ def run_ingestion(args: argparse.Namespace) -> IngestionReport:
 
     # 5. Generate embeddings
     print("Step 5/7: Generating embeddings...")
-    embedding_provider = build_embedding_provider(mock=args.mock_embeddings)
+    embedding_provider = build_embedding_provider(
+        mock=args.mock_embeddings,
+        model_name=args.embedding_model,
+        require_real=args.require_real_embeddings,
+    )
     texts = [c.content for c in all_chunks]
     embeddings = embedding_provider.embed_batch(texts)
     print(f"  Generated {len(embeddings)} embedding(s)")
@@ -312,7 +329,7 @@ def run_ingestion(args: argparse.Namespace) -> IngestionReport:
         print("  DRY RUN — no upsert performed")
         report.chunks_upserted = 0
     else:
-        store = build_vector_store(args.backend, args.collection_name)
+        store = build_vector_store(args)
 
         if args.recreate_collection:
             print("  Recreating collection...")
@@ -393,8 +410,40 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--collection-name",
-        default="nvidia_corpus",
+        default=None,
         help="Qdrant collection name (default: nvidia_corpus)",
+    )
+    parser.add_argument(
+        "--qdrant-url",
+        default=None,
+        help="Qdrant URL (default: env QDRANT_URL or http://localhost:6333)",
+    )
+    parser.add_argument(
+        "--qdrant-api-key",
+        default=None,
+        help="Qdrant API key (default: env QDRANT_API_KEY)",
+    )
+    parser.add_argument(
+        "--qdrant-timeout",
+        type=int,
+        default=10,
+        help="Qdrant client timeout seconds (default: 10)",
+    )
+    parser.add_argument(
+        "--vector-size",
+        type=int,
+        default=None,
+        help="Qdrant vector dimension (default: env QDRANT_VECTOR_SIZE or 384)",
+    )
+    parser.add_argument(
+        "--embedding-model",
+        default=None,
+        help="SentenceTransformer model (default: env RAG_EMBEDDING_MODEL or all-MiniLM-L6-v2)",
+    )
+    parser.add_argument(
+        "--require-real-embeddings",
+        action="store_true",
+        help="Fail instead of falling back to mock embeddings when the real provider is unavailable.",
     )
     parser.add_argument(
         "--batch-size",
@@ -413,7 +462,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Save ingestion report to this path (JSON)",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    import os
+
+    args.collection_name = args.collection_name or os.getenv("QDRANT_COLLECTION", "nvidia_corpus")
+    args.qdrant_url = args.qdrant_url or os.getenv("QDRANT_URL", "http://localhost:6333")
+    args.qdrant_api_key = args.qdrant_api_key if args.qdrant_api_key is not None else os.getenv("QDRANT_API_KEY", "")
+    args.vector_size = args.vector_size or int(os.getenv("QDRANT_VECTOR_SIZE", "384"))
+    args.embedding_model = args.embedding_model or os.getenv("RAG_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+    return args
 
 
 def print_report(report: IngestionReport) -> None:

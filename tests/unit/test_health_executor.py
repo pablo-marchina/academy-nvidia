@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from unittest.mock import patch
 
 from src.services.product.capability_registry import CapabilityStatus
@@ -146,3 +147,47 @@ class TestHealthCheckExecutor:
         executor = HealthCheckExecutor()
         result = executor.check("llm_judge")
         assert result.status == CapabilityStatus.unavailable
+
+    def test_llm_judge_uses_canonical_provider_env(self) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                "ANSWER_QUALITY_LLM_JUDGE_ENABLED": "true",
+                "ANSWER_QUALITY_LLM_JUDGE_PROVIDER": "null",
+            },
+            clear=True,
+        ):
+            executor = HealthCheckExecutor()
+            result = executor.check("llm_judge")
+
+        assert result.status == CapabilityStatus.degraded
+        assert "ANSWER_QUALITY_LLM_JUDGE_PROVIDER=null" in result.detail
+        assert "not a semantic quality judge" in result.detail
+
+    def test_llm_judge_reports_missing_canonical_provider(self) -> None:
+        with patch.dict(
+            os.environ,
+            {"ANSWER_QUALITY_LLM_JUDGE_ENABLED": "true"},
+            clear=True,
+        ):
+            executor = HealthCheckExecutor()
+            result = executor.check("llm_judge")
+
+        assert result.status == CapabilityStatus.degraded
+        assert "ANSWER_QUALITY_LLM_JUDGE_PROVIDER env var is not set" in result.detail
+
+    def test_llm_judge_does_not_mark_unimplemented_provider_available(self) -> None:
+        with patch.dict(
+            os.environ,
+            {
+                "ANSWER_QUALITY_LLM_JUDGE_ENABLED": "true",
+                "ANSWER_QUALITY_LLM_JUDGE_PROVIDER": "openai",
+                "OPENAI_API_KEY": "test-key",
+            },
+            clear=True,
+        ):
+            executor = HealthCheckExecutor()
+            result = executor.check("llm_judge")
+
+        assert result.status == CapabilityStatus.degraded
+        assert "has no active runtime provider implementation" in result.detail

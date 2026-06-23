@@ -198,25 +198,32 @@ class HealthCheckExecutor:
                 status=CapabilityStatus.unavailable,
                 detail="ANSWER_QUALITY_LLM_JUDGE_ENABLED is not set to true",
             )
-        provider = os.environ.get("LLM_PROVIDER", "")
+        provider = os.environ.get("ANSWER_QUALITY_LLM_JUDGE_PROVIDER", "")
+        legacy_provider = os.environ.get("LLM_PROVIDER", "")
+        if not provider and legacy_provider:
+            provider = legacy_provider
         if not provider:
             return HealthCheckResult(
                 status=CapabilityStatus.degraded,
-                detail="LLM judge enabled but LLM_PROVIDER env var is not set",
+                detail=(
+                    "LLM judge enabled but ANSWER_QUALITY_LLM_JUDGE_PROVIDER "
+                    "env var is not set"
+                ),
             )
-        if provider == "openai":
-            if not os.environ.get("OPENAI_API_KEY"):
-                return HealthCheckResult(
-                    status=CapabilityStatus.degraded,
-                    detail=f"LLM_PROVIDER={provider} but OPENAI_API_KEY is not set",
-                )
+        if provider == "null":
             return HealthCheckResult(
-                status=CapabilityStatus.available,
-                detail=f"LLM judge configured with provider={provider}",
+                status=CapabilityStatus.degraded,
+                detail=(
+                    "ANSWER_QUALITY_LLM_JUDGE_PROVIDER=null uses the offline "
+                    "NullLLMJudgeProvider and is not a semantic quality judge"
+                ),
             )
         return HealthCheckResult(
             status=CapabilityStatus.degraded,
-            detail=f"Unknown LLM_PROVIDER={provider}",
+            detail=(
+                f"ANSWER_QUALITY_LLM_JUDGE_PROVIDER={provider} has no active "
+                "runtime provider implementation"
+            ),
         )
 
 

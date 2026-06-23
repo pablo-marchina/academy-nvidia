@@ -1,5 +1,11 @@
 """Recommendation engine — deterministic gap-based NVIDIA technology recommendations."""
 
+from src.recommendation.next_action_enrichment import (
+    EnrichedNextAction,
+    NextActionEnrichmentConfig,
+    enrich_next_action,
+    score_next_action,
+)
 from src.recommendation.nvidia_technology_mapping import (
     GAP_TECHNOLOGY_CANDIDATES,
     GOLDEN_MAPPING_SAMPLES,
@@ -46,6 +52,8 @@ __all__ = [
     "NvidiaRecommendationRecord",
     "NvidiaRecommendationMetrics",
     "RecommendationRankingStatus",
+    "EnrichedNextAction",
+    "NextActionEnrichmentConfig",
     "GoldenMappingSample",
     "GAP_TECHNOLOGY_CANDIDATES",
     "REQUIRED_MAPPING_DECISIONS",
@@ -57,4 +65,6 @@ __all__ = [
     "extract_mapping_features",
     "rank_recommendations_from_mappings",
     "compute_recommendation_metrics",
+    "enrich_next_action",
+    "score_next_action",
 ]

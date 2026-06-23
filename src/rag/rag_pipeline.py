@@ -11,6 +11,7 @@ from src.diagnosis.schemas import GapDiagnosisResult
 from src.rag.context_packing import pack_contexts
 from src.rag.embeddings import EmbeddingProvider
 from src.rag.hybrid_retrieval import hybrid_retrieve
+from src.rag.query_rewriting import QueryRewriteConfig, retrieve_multi_query
 from src.rag.reranking import rerank_contexts
 from src.rag.retrieval import ChunkIndex, build_default_index
 from src.rag.schemas import (
@@ -31,6 +32,7 @@ def run_rag_pipeline(
     vector_store: VectorStore | None = None,
     reranking_config: RerankingConfig | None = None,
     packing_config: PackingConfig | None = None,
+    query_rewrite_config: QueryRewriteConfig | None = None,
 ) -> RagPipelineOutput:
     """Orchestrate hybrid retrieval → reranking → context packing for the pipeline.
 
@@ -89,7 +91,12 @@ def run_rag_pipeline(
     for gap_val, techs in tech_by_gap.items():
         if not techs:
             query = RetrievalQuery(gap_type=gap_val)
-            ctxs = idx.retrieve(query, top_k=3)
+            if query_rewrite_config is not None and query_rewrite_config.enabled:
+                ctxs = retrieve_multi_query(idx, query, top_k=3, config=query_rewrite_config)
+                if retrieval_mode == "lexical":
+                    retrieval_mode = "lexical_multi_query"
+            else:
+                ctxs = idx.retrieve(query, top_k=3)
             all_contexts.extend(ctxs)
         else:
             for tech in sorted(techs):
@@ -98,6 +105,10 @@ def run_rag_pipeline(
                     ctxs = hybrid_retrieve(query, idx, embedding_model, vector_store, top_k=3)
                     if retrieval_mode == "lexical":
                         retrieval_mode = "hybrid"
+                elif query_rewrite_config is not None and query_rewrite_config.enabled:
+                    ctxs = retrieve_multi_query(idx, query, top_k=3, config=query_rewrite_config)
+                    if retrieval_mode == "lexical":
+                        retrieval_mode = "lexical_multi_query"
                 else:
                     ctxs = idx.retrieve(query, top_k=3)
                 all_contexts.extend(ctxs)
@@ -121,13 +132,20 @@ def run_rag_pipeline(
     # Rerank (if configured)
     if reranking_config is not None:
         deduped = rerank_contexts(deduped, RetrievalQuery(), config=reranking_config)
-        retrieval_mode = "hybrid_reranked"
+        retrieval_mode = (
+            "lexical_multi_query_reranked" if retrieval_mode == "lexical_multi_query" else "hybrid_reranked"
+        )
 
     # Pack (if configured)
     packing_result: PackingResult | None = None
     if packing_config is not None:
         packing_result = pack_contexts(deduped, RetrievalQuery(), config=packing_config)
-        retrieval_mode = "hybrid_reranked_packed"
+        if retrieval_mode == "lexical_multi_query_reranked":
+            retrieval_mode = "lexical_multi_query_reranked_packed"
+        elif retrieval_mode == "lexical_multi_query":
+            retrieval_mode = "lexical_multi_query_packed"
+        else:
+            retrieval_mode = "hybrid_reranked_packed"
     else:
         # Build a minimal packing result with deduped contexts
         from src.rag.schemas import PackedContext

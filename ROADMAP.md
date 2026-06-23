@@ -735,3 +735,16 @@
 - Human-in-the-loop review implementation
 - Professional exports
 - Optional real LLM judge provider
+
+### Epic 50 — Final Benchmark-First Roadmap 0-22 (em progresso)
+
+- [x] Plano aprovado salvo em `docs/plans/2026-06-21_epic-50_final-benchmark-first-roadmap.md`
+- [x] `src/governance/` com status taxonomy, schemas Pydantic e geracao de evidence pack
+- [x] Benchmark harness inicial em `src/evaluation/benchmark_runner.py`, `dataset_registry.py`, `result_store.py`
+- [x] Scripts iniciais: evidence pack, benchmark, live collect, candidate catalog, numeric governance, repository clean, source compliance, lineage, security/release, final proof
+- [x] Make targets: `setup`, `benchmark`, `evidence-pack`, `live-collect`, `prove-final-product`
+- [x] 17 benchmarks locais registrados em `final_case_evidence/benchmark_results.jsonl`
+- [x] `product_readiness_report` e `final_proof_summary` agregam gates com PASS/FAIL/WARN
+- [ ] Benchmarks reais para todos os candidatos do catalogo
+- [ ] UI evidence-first completa
+- [ ] Supply-chain scans reais com SBOM, license inventory e vulnerability report

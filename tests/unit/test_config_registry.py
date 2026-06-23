@@ -22,6 +22,7 @@ class TestConfigRegistry:
         keys = {i.key for i in required}
         assert "PRODUCT_DB_URL" in keys
         assert "APP_MODE" in keys
+        assert "AGENT_ORCHESTRATION_ENABLED" in keys
 
     def test_required_config_includes_rag(self) -> None:
         required = get_required_config()
@@ -36,6 +37,12 @@ class TestConfigRegistry:
 
     def test_get_config_item_missing(self) -> None:
         assert get_config_item("NONEXISTENT_VAR") is None
+
+    def test_llm_judge_provider_is_canonical_optional_key(self) -> None:
+        item = get_config_item("ANSWER_QUALITY_LLM_JUDGE_PROVIDER")
+        assert item is not None
+        assert item.required is False
+        assert item.default == "null"
 
     def test_resolve_config_values_returns_current(self) -> None:
         items = resolve_config_values()

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import type { AnalysisRunRead, ClaimSummaryRead, ProductQualitySummaryRead } from "../api/types";
-import { getAnalysisRun, getQualitySummary } from "../api/product";
+import type { AnalysisEvidenceBundle, AnalysisRunRead, ProductQualitySummaryRead } from "../api/types";
+import { getAnalysisEvidenceBundle, getAnalysisRun, getQualitySummary } from "../api/product";
+import { EvidenceFirstRunView } from "./EvidenceFirstRunView";
 
 interface AnalysisRunDetailViewProps {
   runId: string;
@@ -25,6 +26,7 @@ export function AnalysisRunDetailView({
   onViewDossier,
 }: AnalysisRunDetailViewProps) {
   const [run, setRun] = useState<AnalysisRunRead | null>(null);
+  const [bundle, setBundle] = useState<AnalysisEvidenceBundle | null>(null);
   const [quality, setQuality] = useState<ProductQualitySummaryRead | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +35,13 @@ export function AnalysisRunDetailView({
     setLoading(true);
     setError(null);
     try {
-      const [r, q] = await Promise.all([
+      const [r, evidenceBundle, q] = await Promise.all([
         getAnalysisRun(runId),
+        getAnalysisEvidenceBundle(runId).catch(() => null),
         getQualitySummary(runId).catch(() => null),
       ]);
       setRun(r);
+      setBundle(evidenceBundle);
       setQuality(q);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -91,6 +95,8 @@ export function AnalysisRunDetailView({
           </table>
         </div>
       </div>
+
+      <EvidenceFirstRunView bundle={bundle} />
 
       {run.scores.length > 0 && (
         <div className="panel">

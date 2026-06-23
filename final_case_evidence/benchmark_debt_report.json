@@ -1,0 +1,318 @@
+{
+  "items": [
+    {
+      "candidate_id": "8-1-runtime-core__fastapi",
+      "category": "8.1 Runtime core",
+      "name": "FastAPI",
+      "reason": "No module named 'sqlalchemy'",
+      "required_configuration": ".env.example and project manifests",
+      "status": "failed"
+    },
+    {
+      "candidate_id": "8-1-runtime-core__sqlalchemy",
+      "category": "8.1 Runtime core",
+      "name": "SQLAlchemy",
+      "reason": "No module named 'sqlalchemy'",
+      "required_configuration": ".env.example and project manifests",
+      "status": "failed"
+    },
+    {
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__whylabs",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "name": "WhyLabs",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__bigquery-snowflake",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "name": "BigQuery/Snowflake",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-3-vector-search-retrieval__nvidia-nemo-retriever-embedding-nim",
+      "category": "8.3 Vector/search/retrieval",
+      "name": "NVIDIA NeMo Retriever Embedding NIM",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-3-vector-search-retrieval__nvidia-nemo-retriever-reranker",
+      "category": "8.3 Vector/search/retrieval",
+      "name": "NVIDIA NeMo Retriever Reranker",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-6-reranking__nvidia-reranker-benchmark",
+      "category": "8.6 Reranking",
+      "name": "NVIDIA reranker benchmark",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__nvidia-nemo-retriever-extraction",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "name": "NVIDIA NeMo Retriever extraction",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__llamaparse",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "name": "LlamaParse",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__openai-evals",
+      "category": "8.13 Evaluation frameworks and judges",
+      "name": "OpenAI Evals",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__parea-ai",
+      "category": "8.13 Evaluation frameworks and judges",
+      "name": "Parea AI",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__opik",
+      "category": "8.13 Evaluation frameworks and judges",
+      "name": "Opik",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__custom-nvidia-eval-harness",
+      "category": "8.13 Evaluation frameworks and judges",
+      "name": "Custom NVIDIA eval harness",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__phoenix",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "name": "Phoenix",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__langfuse",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "name": "Langfuse",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__langsmith",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "name": "LangSmith",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__braintrust",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "name": "Braintrust",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__weights-biases-weave",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "name": "Weights & Biases Weave",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__helicone",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "name": "Helicone",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__maxim",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "name": "Maxim",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__fiddler",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "name": "Fiddler",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__agentops",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "name": "AgentOps",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__weights-biases",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "name": "Weights & Biases",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__neptune",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "name": "Neptune",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__whylabs",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "name": "WhyLabs",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-15-security-guardrails-and-red-team__lakera-guard",
+      "category": "8.15 Security, guardrails and red team",
+      "name": "Lakera Guard",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-15-security-guardrails-and-red-team__openssf-scorecard",
+      "category": "8.15 Security, guardrails and red team",
+      "name": "OpenSSF Scorecard",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-15-security-guardrails-and-red-team__sigstore-cosign",
+      "category": "8.15 Security, guardrails and red team",
+      "name": "Sigstore Cosign",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-15-security-guardrails-and-red-team__renovate",
+      "category": "8.15 Security, guardrails and red team",
+      "name": "Renovate",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-15-security-guardrails-and-red-team__dependabot",
+      "category": "8.15 Security, guardrails and red team",
+      "name": "Dependabot",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__temporal-activities",
+      "category": "8.16 MCP, tools and agent protocols",
+      "name": "Temporal activities",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__a2a-agent-to-agent-protocol",
+      "category": "8.16 MCP, tools and agent protocols",
+      "name": "A2A / Agent-to-Agent Protocol",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__agntcy-agent-connect",
+      "category": "8.16 MCP, tools and agent protocols",
+      "name": "AGNTCY / Agent Connect",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-18-sourcing-and-crawling__firecrawl",
+      "category": "8.18 Sourcing and crawling",
+      "name": "Firecrawl",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-18-sourcing-and-crawling__apify",
+      "category": "8.18 Sourcing and crawling",
+      "name": "Apify",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__label-studio",
+      "category": "8.19 Human review, active learning and labeling",
+      "name": "Label Studio",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__argilla",
+      "category": "8.19 Human review, active learning and labeling",
+      "name": "Argilla",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__humanloop",
+      "category": "8.19 Human review, active learning and labeling",
+      "name": "Humanloop",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    },
+    {
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__prodigy",
+      "category": "8.19 Human review, active learning and labeling",
+      "name": "Prodigy",
+      "reason": "Original candidate requires unavailable SaaS, license, hardware, or credentials.",
+      "required_configuration": "external credentials, service access, license, or hardware",
+      "status": "future_research"
+    }
+  ],
+  "report_id": "benchmark_debt_report",
+  "total_debt_items": 39
+}

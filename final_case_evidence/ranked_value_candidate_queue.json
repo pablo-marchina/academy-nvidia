@@ -1,0 +1,3918 @@
+{
+  "executable_candidates": 26,
+  "items": [
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-6-reranking__source-trust-aware-reranking",
+      "category": "8.6 Reranking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "source-trust-aware reranking",
+      "priority_score": 270,
+      "ranking_rationale": "source-trust, ranking, source-trust"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__counter-evidence-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "counter-evidence retrieval",
+      "priority_score": 255,
+      "ranking_rationale": "counter-evidence, evidence, retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__counter-evidence-retrieval",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "counter-evidence retrieval",
+      "priority_score": 255,
+      "ranking_rationale": "counter-evidence, evidence, retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__evidence-graph-construction",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "evidence graph construction",
+      "priority_score": 225,
+      "ranking_rationale": "evidence graph, evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-6-reranking__nvidia-reranker-benchmark",
+      "category": "8.6 Reranking",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "NVIDIA reranker benchmark",
+      "priority_score": 210,
+      "ranking_rationale": "reranking, ranking, free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__visual-reranking",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "visual reranking",
+      "priority_score": 200,
+      "ranking_rationale": "reranking, ranking"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-6-reranking__cross-encoder-reranking",
+      "category": "8.6 Reranking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "cross-encoder reranking",
+      "priority_score": 200,
+      "ranking_rationale": "reranking, ranking"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-6-reranking__freshness-aware-reranking",
+      "category": "8.6 Reranking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "freshness-aware reranking",
+      "priority_score": 200,
+      "ranking_rationale": "freshness-aware, ranking"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-6-reranking__listwise-reranking",
+      "category": "8.6 Reranking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "listwise reranking",
+      "priority_score": 200,
+      "ranking_rationale": "reranking, ranking"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-6-reranking__llm-reranking",
+      "category": "8.6 Reranking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "LLM reranking",
+      "priority_score": 200,
+      "ranking_rationale": "reranking, ranking"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-6-reranking__neural-reranking",
+      "category": "8.6 Reranking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "neural reranking",
+      "priority_score": 200,
+      "ranking_rationale": "reranking, ranking"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-6-reranking__pointwise-reranking",
+      "category": "8.6 Reranking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "pointwise reranking",
+      "priority_score": 200,
+      "ranking_rationale": "reranking, ranking"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-6-reranking__visual-reranking",
+      "category": "8.6 Reranking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "visual reranking",
+      "priority_score": 200,
+      "ranking_rationale": "reranking, ranking"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__missing-evidence-prediction",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "missing evidence prediction",
+      "priority_score": 195,
+      "ranking_rationale": "evidence, recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__probabilistic-evidence-aggregation",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "probabilistic evidence aggregation",
+      "priority_score": 195,
+      "ranking_rationale": "evidence, recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__factual-consistency-scoring",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "factual consistency scoring",
+      "priority_score": 195,
+      "ranking_rationale": "evidence, scoring"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-4-graph-and-graphrag__drift-like-search",
+      "category": "8.4 Graph and GraphRAG",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "DRIFT-like search",
+      "priority_score": 180,
+      "ranking_rationale": "graphrag, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-4-graph-and-graphrag__falkordb",
+      "category": "8.4 Graph and GraphRAG",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "FalkorDB",
+      "priority_score": 180,
+      "ranking_rationale": "graphrag, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-4-graph-and-graphrag__graphrag-global-search",
+      "category": "8.4 Graph and GraphRAG",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "GraphRAG global search",
+      "priority_score": 180,
+      "ranking_rationale": "graphrag, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-4-graph-and-graphrag__graphrag-local-search",
+      "category": "8.4 Graph and GraphRAG",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "GraphRAG local search",
+      "priority_score": 180,
+      "ranking_rationale": "graphrag, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-4-graph-and-graphrag__k-zu",
+      "category": "8.4 Graph and GraphRAG",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "K\u00f9zu",
+      "priority_score": 180,
+      "ranking_rationale": "graphrag, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-4-graph-and-graphrag__llamaindex-propertygraphindex",
+      "category": "8.4 Graph and GraphRAG",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "LlamaIndex PropertyGraphIndex",
+      "priority_score": 180,
+      "ranking_rationale": "graphrag, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-4-graph-and-graphrag__memgraph",
+      "category": "8.4 Graph and GraphRAG",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Memgraph",
+      "priority_score": 180,
+      "ranking_rationale": "graphrag, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-4-graph-and-graphrag__neo4j",
+      "category": "8.4 Graph and GraphRAG",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Neo4j",
+      "priority_score": 180,
+      "ranking_rationale": "graphrag, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-4-graph-and-graphrag__networkx",
+      "category": "8.4 Graph and GraphRAG",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "NetworkX",
+      "priority_score": 180,
+      "ranking_rationale": "graphrag, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-4-graph-and-graphrag__temporal-graphrag",
+      "category": "8.4 Graph and GraphRAG",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Temporal GraphRAG",
+      "priority_score": 180,
+      "ranking_rationale": "graphrag, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-4-graph-and-graphrag__temporal-knowledge-graph",
+      "category": "8.4 Graph and GraphRAG",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Temporal Knowledge Graph",
+      "priority_score": 180,
+      "ranking_rationale": "graphrag, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-18-sourcing-and-crawling__source-trust-scoring-service",
+      "category": "8.18 Sourcing and crawling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Source trust scoring service",
+      "priority_score": 170,
+      "ranking_rationale": "scoring, sourcing"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__corrective-rag-crag",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "corrective RAG / CRAG",
+      "priority_score": 170,
+      "ranking_rationale": "crag, retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__hyde",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "HyDE",
+      "priority_score": 170,
+      "ranking_rationale": "hyde, retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__self-rag",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "self-RAG",
+      "priority_score": 170,
+      "ranking_rationale": "self-rag, retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__skeptical-rag",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "skeptical RAG",
+      "priority_score": 170,
+      "ranking_rationale": "skeptical rag, retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__multi-query-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "multi-query retrieval",
+      "priority_score": 165,
+      "ranking_rationale": "multi-query, retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__query-expansion",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "query expansion",
+      "priority_score": 165,
+      "ranking_rationale": "query expansion, retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__query-rewriting",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "query rewriting",
+      "priority_score": 165,
+      "ranking_rationale": "query rewriting, retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__query-transformation",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "query transformation",
+      "priority_score": 165,
+      "ranking_rationale": "query transformation, retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__bayesian-model-averaging",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "bayesian model averaging",
+      "priority_score": 155,
+      "ranking_rationale": "evidence, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__evidence-coverage-score",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "evidence coverage score",
+      "priority_score": 155,
+      "ranking_rationale": "evidence, rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__evidence-first-ui-mode",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Evidence-first UI mode",
+      "priority_score": 130,
+      "ranking_rationale": "evidence, release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__final-case-evidence-pack",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Final Case Evidence Pack",
+      "priority_score": 130,
+      "ranking_rationale": "evidence, release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__knowledge-graph-construction",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "knowledge graph construction",
+      "priority_score": 130,
+      "ranking_rationale": "knowledge graph"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__multi-hop-graph-traversal",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "multi-hop graph traversal",
+      "priority_score": 130,
+      "ranking_rationale": "multi-hop graph"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__multimodal-evidence-fusion",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "multimodal evidence fusion",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__active-learning-by-uncertainty",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "active learning by uncertainty",
+      "priority_score": 105,
+      "ranking_rationale": "uncertainty"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__abstention-refusal-policy",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "abstention / refusal policy",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__answerability-detection",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "answerability detection",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__claim-decomposition",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "claim decomposition",
+      "priority_score": 105,
+      "ranking_rationale": "claim"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__claim-evidence-alignment",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "claim-evidence alignment",
+      "priority_score": 105,
+      "ranking_rationale": "claim"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__claim-verification",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "claim verification",
+      "priority_score": 105,
+      "ranking_rationale": "claim"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__confidence-calibration",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "confidence calibration",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__conformal-prediction",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "conformal prediction",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__conformal-risk-control",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "conformal risk control",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__contradiction-detection",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "contradiction detection",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__data-sufficiency-score",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "data sufficiency score",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__ensemble-of-evaluators",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "ensemble of evaluators",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__entailment-based-verification",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "entailment-based verification",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__evidence-extraction-before-generation",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "evidence extraction before generation",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__evidence-sufficiency-classifier",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "evidence sufficiency classifier",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__hallucination-detection-p-s-gera-o",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "hallucination detection p\u00f3s-gera\u00e7\u00e3o",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__knowledge-conflict-resolution",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "knowledge conflict resolution",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__model-disagreement-detection",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "model disagreement detection",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__selective-prediction",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "selective prediction",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__source-diversity-enforcement",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "source diversity enforcement",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__stepwise-evidence-accumulation",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "stepwise evidence accumulation",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-7-evidence-verification-uncertainty-and-abstention__uncertainty-estimation",
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "uncertainty estimation",
+      "priority_score": 105,
+      "ranking_rationale": "evidence"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__contradiction-aware-summarization",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "contradiction-aware summarization",
+      "priority_score": 105,
+      "ranking_rationale": "contradiction"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__uncertainty-aware-prompting",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "uncertainty-aware prompting",
+      "priority_score": 105,
+      "ranking_rationale": "uncertainty"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__bandit-style-exploration",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "bandit-style exploration",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__bayesian-scoring",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Bayesian scoring",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__confidence-based-model-routing",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "confidence-based model routing",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__constraint-based-recommendation",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "constraint-based recommendation",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__cost-aware-ai-routing",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "cost-aware AI routing",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__decision-theoretic-ranking",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "decision-theoretic ranking",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__expected-information-gain",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "expected information gain",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__expected-utility",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "expected utility",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__latency-aware-pipeline-selection",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "latency-aware pipeline selection",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__learning-to-rank",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "learning-to-rank",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__learning-to-recommend",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "learning-to-recommend",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__multi-objective-optimization",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "multi-objective optimization",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__pareto-frontier",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Pareto frontier",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__quality-cost-pareto-routing",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "quality-cost Pareto routing",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__recommendation-system",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "recommendation system",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__test-time-compute-control",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "test-time compute control",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-10-recommendation-ranking-and-scoring__value-of-information",
+      "category": "8.10 Recommendation, ranking and scoring",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "value of information",
+      "priority_score": 100,
+      "ranking_rationale": "recommendation"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__dependabot",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "Dependabot",
+      "priority_score": 100,
+      "ranking_rationale": "guardrails, free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__openssf-scorecard",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "OpenSSF Scorecard",
+      "priority_score": 100,
+      "ranking_rationale": "guardrails, free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__renovate",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "Renovate",
+      "priority_score": 100,
+      "ranking_rationale": "guardrails, free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__sigstore-cosign",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "Sigstore Cosign",
+      "priority_score": 100,
+      "ranking_rationale": "guardrails, free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__context-priority-scoring",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "context priority scoring",
+      "priority_score": 100,
+      "ranking_rationale": "scoring"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__graph-neural-ranking",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "graph neural ranking",
+      "priority_score": 100,
+      "ranking_rationale": "ranking"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__bandit",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Bandit",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__context-firewall",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Context Firewall",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__data-poisoning-detection",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Data poisoning detection",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__detect-secrets",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "detect-secrets",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__garak",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Garak",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__giskard",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Giskard",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__gitleaks",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Gitleaks",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__grype",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Grype",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__guardrails-ai",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Guardrails AI",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__jailbreak-resistant-tool-policy",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Jailbreak-resistant tool policy",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__llama-guard",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Llama Guard",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__llm-guard",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "LLM Guard",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__nemo-guardrails",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "NeMo Guardrails",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__nist-ai-rmf-mapping",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "NIST AI RMF mapping",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__npm-audit",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "npm audit",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__openguardrails",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "OpenGuardrails",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__owasp-llm-top-10-controls",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "OWASP LLM Top 10 controls",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__pip-audit",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "pip-audit",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__prompt-injection-defenses",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Prompt injection defenses",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__promptfoo",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Promptfoo",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__rebuff",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Rebuff",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__sbom",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "SBOM",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__semgrep",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Semgrep",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__slsa",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "SLSA",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__source-poisoning-detection",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Source poisoning detection",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__syft",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Syft",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-15-security-guardrails-and-red-team__trivy",
+      "category": "8.15 Security, guardrails and red team",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Trivy",
+      "priority_score": 90,
+      "ranking_rationale": "guardrails"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-18-sourcing-and-crawling__firecrawl",
+      "category": "8.18 Sourcing and crawling",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "Firecrawl",
+      "priority_score": 90,
+      "ranking_rationale": "sourcing, free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-18-sourcing-and-crawling__crawl4ai",
+      "category": "8.18 Sourcing and crawling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Crawl4AI",
+      "priority_score": 80,
+      "ranking_rationale": "sourcing"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-18-sourcing-and-crawling__data-rights-registry",
+      "category": "8.18 Sourcing and crawling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Data rights registry",
+      "priority_score": 80,
+      "ranking_rationale": "sourcing"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-18-sourcing-and-crawling__expected-information-gain-sourcing",
+      "category": "8.18 Sourcing and crawling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Expected information gain sourcing",
+      "priority_score": 80,
+      "ranking_rationale": "sourcing"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-18-sourcing-and-crawling__playwright",
+      "category": "8.18 Sourcing and crawling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Playwright",
+      "priority_score": 80,
+      "ranking_rationale": "sourcing"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-18-sourcing-and-crawling__robots-compliance-checker",
+      "category": "8.18 Sourcing and crawling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Robots compliance checker",
+      "priority_score": 80,
+      "ranking_rationale": "sourcing"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-18-sourcing-and-crawling__scrapy",
+      "category": "8.18 Sourcing and crawling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Scrapy",
+      "priority_score": 80,
+      "ranking_rationale": "sourcing"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-18-sourcing-and-crawling__source-compliance-registry",
+      "category": "8.18 Sourcing and crawling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Source compliance registry",
+      "priority_score": 80,
+      "ranking_rationale": "sourcing"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-18-sourcing-and-crawling__value-of-information-sourcing",
+      "category": "8.18 Sourcing and crawling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Value of information sourcing",
+      "priority_score": 80,
+      "ranking_rationale": "sourcing"
+    },
+    {
+      "benchmark_key": "rag_mode_quality",
+      "candidate_id": "8-3-vector-search-retrieval__bm25",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": true,
+      "external_free_api_allowed": false,
+      "name": "BM25",
+      "priority_score": 75,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "rag_mode_quality",
+      "candidate_id": "8-3-vector-search-retrieval__hybrid-retrieval",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": true,
+      "external_free_api_allowed": false,
+      "name": "Hybrid retrieval",
+      "priority_score": 75,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "rag_mode_quality",
+      "candidate_id": "8-5-rag-retrieval-techniques__bm25-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": true,
+      "external_free_api_allowed": false,
+      "name": "BM25 retrieval",
+      "priority_score": 75,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "rag_mode_quality",
+      "candidate_id": "8-5-rag-retrieval-techniques__fusion-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": true,
+      "external_free_api_allowed": false,
+      "name": "fusion retrieval",
+      "priority_score": 75,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "rag_mode_quality",
+      "candidate_id": "8-5-rag-retrieval-techniques__hybrid-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": true,
+      "external_free_api_allowed": false,
+      "name": "hybrid retrieval",
+      "priority_score": 75,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "rag_mode_quality",
+      "candidate_id": "8-5-rag-retrieval-techniques__reciprocal-rank-fusion",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": true,
+      "external_free_api_allowed": false,
+      "name": "Reciprocal Rank Fusion",
+      "priority_score": 75,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__nvidia-nemo-retriever-embedding-nim",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "NVIDIA NeMo Retriever Embedding NIM",
+      "priority_score": 70,
+      "ranking_rationale": "vector, free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__nvidia-nemo-retriever-reranker",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "NVIDIA NeMo Retriever Reranker",
+      "priority_score": 70,
+      "ranking_rationale": "vector, free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__late-interaction-visual-retrieval",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "late-interaction visual retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__multimodal-rag",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "multimodal RAG",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__ocr-aware-retrieval",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "OCR-aware retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__page-image-retrieval",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "page-image retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__pdf-layout-aware-retrieval",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "PDF layout-aware retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__table-aware-rag",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "table-aware RAG",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__visual-document-retrieval",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "visual document retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__ragas",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "RAGAS",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__apache-iceberg",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Apache Iceberg",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__clickhouse",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "ClickHouse",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__datahub",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "DataHub",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__dataset-cards",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Dataset cards",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__dbt",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "dbt",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__deequ",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Deequ",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__delta-lake",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Delta Lake",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__dolt",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Dolt",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__duckdb",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "DuckDB",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__dvc",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "DVC",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__evidently",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Evidently",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__feast",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Feast",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__git-lfs",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Git LFS",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__great-expectations",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Great Expectations",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__lakefs",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "LakeFS",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__marquez",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Marquez",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__minio",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "MinIO",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__model-cards",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Model cards",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__openlineage",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "OpenLineage",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__openmetadata",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "OpenMetadata",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__polars",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Polars",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__soda",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Soda",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-2-data-layer-storage-versioning-and-governance__system-cards",
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "System cards",
+      "priority_score": 60,
+      "ranking_rationale": "rag"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__colbert",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "ColBERT",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__elasticsearch",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Elasticsearch",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__jina-ai-docarray",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Jina AI / DocArray",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__lancedb",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "LanceDB",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__learned-sparse-retrieval",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Learned sparse retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__marqo",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Marqo",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__milvus",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Milvus",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__opensearch",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "OpenSearch",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__postgres-pgvector",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Postgres pgvector",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__qdrant",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Qdrant",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__vespa",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Vespa",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-3-vector-search-retrieval__weaviate",
+      "category": "8.3 Vector/search/retrieval",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Weaviate",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__access-control-aware-rag",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "access-control-aware RAG",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__active-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "active retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__adaptive-rag",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "adaptive RAG",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__atomic-fact-extraction",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "atomic fact extraction",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__auto-merging-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "auto-merging retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__cache-aware-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "cache-aware retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__colbert-late-interaction-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "ColBERT / late-interaction retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__contextual-compression",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "contextual compression",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__contextual-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "contextual retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__cross-lingual-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "cross-lingual retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__hierarchical-summarization",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "hierarchical summarization",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__iterative-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "iterative retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__learned-sparse-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "learned sparse retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__least-context-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "least-context retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__long-context-rag",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "long-context RAG",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__meta-retrieval-router-de-retrievers",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "meta-retrieval / router de retrievers",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__metadata-aware-chunking",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "metadata-aware chunking",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__metadata-filtering",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "metadata filtering",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__multi-hop-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "multi-hop retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__parent-child-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "parent-child retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__permission-preserving-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "permission-preserving retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__proposition-based-chunking",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "proposition-based chunking",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__query-intent-classification",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "query intent classification",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__rag-fusion",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "RAG-Fusion",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__raptor-hierarchical-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "RAPTOR / hierarchical retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__retrieval-budget-allocation",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "retrieval budget allocation",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__semantic-cache",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "semantic cache",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__semantic-chunking",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "semantic chunking",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__sentence-window-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "sentence-window retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__small-to-big-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "small-to-big retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__translation-aware-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "translation-aware retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-5-rag-retrieval-techniques__vector-retrieval",
+      "category": "8.5 RAG/retrieval techniques",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "vector retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "vector"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__similar-startup-retrieval",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "similar startup retrieval",
+      "priority_score": 60,
+      "ranking_rationale": "retrieval"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__helicone",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "Helicone",
+      "priority_score": 45,
+      "ranking_rationale": "observability, free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__langfuse",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "Langfuse",
+      "priority_score": 45,
+      "ranking_rationale": "observability, free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__phoenix",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "Phoenix",
+      "priority_score": 45,
+      "ranking_rationale": "observability, free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-1-runtime-core__alembic",
+      "category": "8.1 Runtime core",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Alembic",
+      "priority_score": 35,
+      "ranking_rationale": "runtime"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-1-runtime-core__docker-compose",
+      "category": "8.1 Runtime core",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Docker Compose",
+      "priority_score": 35,
+      "ranking_rationale": "runtime"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-1-runtime-core__fastapi",
+      "category": "8.1 Runtime core",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "FastAPI",
+      "priority_score": 35,
+      "ranking_rationale": "runtime"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-1-runtime-core__postgresql",
+      "category": "8.1 Runtime core",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "PostgreSQL",
+      "priority_score": 35,
+      "ranking_rationale": "runtime"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-1-runtime-core__qdrant",
+      "category": "8.1 Runtime core",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Qdrant",
+      "priority_score": 35,
+      "ranking_rationale": "runtime"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-1-runtime-core__react",
+      "category": "8.1 Runtime core",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "React",
+      "priority_score": 35,
+      "ranking_rationale": "runtime"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-1-runtime-core__sqlalchemy",
+      "category": "8.1 Runtime core",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "SQLAlchemy",
+      "priority_score": 35,
+      "ranking_rationale": "runtime"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-1-runtime-core__typescript",
+      "category": "8.1 Runtime core",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "TypeScript",
+      "priority_score": 35,
+      "ranking_rationale": "runtime"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-1-runtime-core__vite",
+      "category": "8.1 Runtime core",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Vite",
+      "priority_score": 35,
+      "ranking_rationale": "runtime"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__aim",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Aim",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__evidently",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Evidently",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__grafana",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Grafana",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__grafana-alloy",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Grafana Alloy",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__jaeger",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Jaeger",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__loki",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Loki",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__mlflow",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "MLflow",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__openinference",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "OpenInference",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__openllmetry-traceloop",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "OpenLLMetry / Traceloop",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__opentelemetry",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "OpenTelemetry",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__opentelemetry-genai-semantic-conventions",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "OpenTelemetry GenAI semantic conventions",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__prometheus",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Prometheus",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-14-observability-llmops-and-experiment-tracking__sentry",
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Sentry",
+      "priority_score": 35,
+      "ranking_rationale": "observability"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__ai-governance-maturity-report",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "AI governance maturity report",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__ai-incident-response-plan",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "AI Incident Response Plan",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__cold-start-reproducibility-test",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Cold Start Reproducibility Test",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__data-retention-policy",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Data retention policy",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__deprecation-policy",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Deprecation policy",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__documentation-consistency-gate",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Documentation Consistency Gate",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__external-reviewer-mode",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "External Reviewer Mode",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__final-delivery-index",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Final Delivery Index",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__final-evaluator-checklist",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Final Evaluator Checklist",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__license-and-third-party-compliance",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "License and Third-Party Compliance",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__make-prove-final-product",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "make prove-final-product",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__no-hidden-manual-step-gate",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "No Hidden Manual Step Gate",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__no-hidden-state-rule",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "No Hidden State Rule",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__operational-runbooks",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Operational runbooks",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__repository-cleanliness-gate",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Repository Cleanliness Gate",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__repository-purpose-manifest",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Repository Purpose Manifest",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__reproducible-case-package",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Reproducible case package",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__root-cause-analysis-workflow",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Root Cause Analysis workflow",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-20-release-supply-chain-repo-cleanliness-and-delivery__supply-chain-maturity-gate",
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Supply Chain Maturity Gate",
+      "priority_score": 35,
+      "ranking_rationale": "release"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__nvidia-nemo-retriever-extraction",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "NVIDIA NeMo Retriever extraction",
+      "priority_score": 20,
+      "ranking_rationale": "free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__custom-nvidia-eval-harness",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "Custom NVIDIA eval harness",
+      "priority_score": 20,
+      "ranking_rationale": "free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__openai-evals",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "OpenAI Evals",
+      "priority_score": 20,
+      "ranking_rationale": "free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__opik",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "Opik",
+      "priority_score": 20,
+      "ranking_rationale": "free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__a2a-agent-to-agent-protocol",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "A2A / Agent-to-Agent Protocol",
+      "priority_score": 20,
+      "ranking_rationale": "free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__agntcy-agent-connect",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "AGNTCY / Agent Connect",
+      "priority_score": 20,
+      "ranking_rationale": "free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__temporal-activities",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "Temporal activities",
+      "priority_score": 20,
+      "ranking_rationale": "free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__argilla",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "Argilla",
+      "priority_score": 20,
+      "ranking_rationale": "free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__label-studio",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": true,
+      "external_free_api_allowed": true,
+      "name": "Label Studio",
+      "priority_score": 20,
+      "ranking_rationale": "free external benchmark path"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__chart-understanding",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "chart understanding",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__document-layout-understanding",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "document layout understanding",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__multimodal-ingestion",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "multimodal ingestion",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-11-multimodal-ai-and-document-ai__table-to-graph-extraction",
+      "category": "8.11 Multimodal AI and Document AI",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "table-to-graph extraction",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__apache-tika",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Apache Tika",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__camelot",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Camelot",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__chart-extraction",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Chart extraction",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__docling",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Docling",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__grobid",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "GROBID",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__image-extraction",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Image extraction",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__layoutparser",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "LayoutParser",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__marker",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Marker",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__paddleocr",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "PaddleOCR",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__pdf-parsing",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "PDF parsing",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__pitch-deck-parsing",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Pitch deck parsing",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__pymupdf",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "PyMuPDF",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__surya-ocr",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Surya OCR",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__table-extraction",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Table extraction",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__tabula",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Tabula",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__tesseract",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Tesseract",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-12-parsing-ocr-and-extraction-tools__unstructured",
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Unstructured",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__deepchecks",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Deepchecks",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__deepeval",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "DeepEval",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__giskard",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Giskard",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__human-adjudication-protocol",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Human adjudication protocol",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__llm-as-a-judge-calibrado",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "LLM-as-a-judge calibrado",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__promptfoo",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Promptfoo",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__trulens",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "TruLens",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__uptrain",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "UpTrain",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-13-evaluation-frameworks-and-judges__verifier-model",
+      "category": "8.13 Evaluation frameworks and judges",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Verifier model",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__agent-blast-radius-controls",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "agent blast-radius controls",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__function-calling",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Function calling",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__grpc-tools",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "gRPC tools",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__langchain-tools",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "LangChain Tools",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__llamaindex-tools",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "LlamaIndex Tools",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__mcp",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "MCP",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__openapi-tool-calling",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "OpenAPI tool calling",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__rest-tools",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "REST tools",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__secure-mcp-gateway",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Secure MCP gateway",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__semantic-kernel-plugins",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Semantic Kernel plugins",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__tool-allowlist",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "tool allowlist",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__tool-audit-ledger",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "tool audit ledger",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-16-mcp-tools-and-agent-protocols__tool-schema-validation",
+      "category": "8.16 MCP, tools and agent protocols",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "tool schema validation",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__apache-arrow",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Apache Arrow",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__avro",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Avro",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__context-compression",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "context compression",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__context-diffing",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "context diffing",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__context-packer",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "context packer",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__context-registry",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "context registry",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__csv-tsv",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "CSV/TSV",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__guidance",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Guidance",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__instructor",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Instructor",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__json",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "JSON",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__json-lines-ndjson",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "JSON Lines / NDJSON",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__json-schema-constrained-decoding",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "JSON Schema constrained decoding",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__lmql",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "LMQL",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__markdown-tables",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Markdown tables",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__messagepack",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "MessagePack",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__outlines",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Outlines",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__parquet",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Parquet",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__prompt-assembler",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "prompt assembler",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__prompt-registry",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "prompt registry",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__prompt-snapshotting",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "prompt snapshotting",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__protocol-buffers",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Protocol Buffers",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__pydantic-json-schema",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Pydantic JSON Schema",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__structured-context-dsl",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "structured context DSL",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__token-budgeter",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "token budgeter",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__tool-result-schema-validation",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "tool result schema validation",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__toon",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "TOON",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__tron",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "TRON",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__xgrammar",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "xgrammar",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__xml-tags",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "XML tags",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-17-toon-context-formats-and-structured-interfaces__yaml",
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "YAML",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__active-error-discovery",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "active error discovery",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__active-learning",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "active learning",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__custom-review-ui",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "custom review UI",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__dataset-curation-with-disagreement-sampling",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "dataset curation with disagreement sampling",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__disagreement-based-sampling",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "disagreement-based sampling",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__distillation",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "distillation",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__fine-tuning-lora-if-justified",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "fine-tuning / LoRA if justified",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__human-feedback-loop",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "human feedback loop",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__human-override-governance",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "human override governance",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__human-preference-optimization",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "human preference optimization",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__knowledge-distillation-from-expert-reviews",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "knowledge distillation from expert reviews",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__labeling-functions",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "labeling functions",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__learning-to-rank-from-review-data",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "learning-to-rank from review data",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__mixture-of-experts-routing",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "mixture-of-experts routing",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__programmatic-labeling",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "programmatic labeling",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-19-human-review-active-learning-and-labeling__weak-supervision",
+      "category": "8.19 Human review, active learning and labeling",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "weak supervision",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__abductive-reasoning",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "abductive reasoning",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__automatic-prompt-repair",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "automatic prompt repair",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__belief-state-tracking",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "belief state tracking",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__blackboard-architecture",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "blackboard architecture",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__causal-graph-light",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "causal graph light",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__citation-aware-generation",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "citation-aware generation",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__code-assisted-reasoning",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "code-assisted reasoning",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__constrained-decoding",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "constrained decoding",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__counterfactual-reasoning",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "counterfactual reasoning",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__critic-as-tool",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "critic-as-tool",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__debate-multi-agent-critique",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "debate / multi-agent critique",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__decomposition-prompting",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "decomposition prompting",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__factored-decomposition",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "factored decomposition",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__grammar-based-output",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "grammar-based output",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__hypothesis-generation-testing",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "hypothesis generation + testing",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__least-to-most-prompting",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "least-to-most prompting",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__plan-and-execute",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "plan-and-execute",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__program-of-thought",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Program-of-Thought",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__prompt-ensembling",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "prompt ensembling",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__provenance-aware-generation",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "provenance-aware generation",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__react",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "ReAct",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__reflection-loops",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "reflection loops",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__reliability-aware-generation",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "reliability-aware generation",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__rubric-based-generation",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "rubric-based generation",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__selective-generation",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "selective generation",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__self-consistency",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "self-consistency",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__step-back-prompting",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "step-back prompting",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__structured-outputs",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "structured outputs",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__toolformer-style-function-calling",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "toolformer-style function calling",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__tree-of-thought",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "Tree-of-Thought",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-8-reasoning-agents-and-generation__verifier-guided-decoding",
+      "category": "8.8 Reasoning, agents and generation",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "verifier-guided decoding",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__case-based-reasoning",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "case-based reasoning",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__community-detection",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "community detection",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__graph-consistency-checking",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "graph consistency checking",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__ontology-guided-extraction",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "ontology-guided extraction",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__ontology-learning-semi-autom-tico",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "ontology learning semi-autom\u00e1tico",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__schema-linking",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "schema linking",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__table-to-graph-extraction",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "table-to-graph extraction",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    },
+    {
+      "benchmark_key": "",
+      "candidate_id": "8-9-graph-intelligence__truth-maintenance-system",
+      "category": "8.9 Graph intelligence",
+      "executable": false,
+      "external_free_api_allowed": false,
+      "name": "truth maintenance system",
+      "priority_score": 10,
+      "ranking_rationale": "lower expected output-quality leverage"
+    }
+  ],
+  "ranking_policy": "Candidates are ranked by expected ability to improve output quality. Free external API candidates are allowed when metadata documents a no-cost, reproducible benchmark path. Paid, licensed, hardware-only, or unavailable credentials remain excluded.",
+  "report_id": "ranked_value_candidate_queue",
+  "total_candidates": 391
+}

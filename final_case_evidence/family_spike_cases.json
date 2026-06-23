@@ -1,0 +1,690 @@
+{
+  "cases": [
+    {
+      "baseline_output": {
+        "action": "approach_now",
+        "alternatives_lost": [],
+        "claims": [
+          {
+            "evidence_ids": [
+              "official_gpu_claim"
+            ],
+            "text": "The startup is ready for NVIDIA acceleration."
+          }
+        ],
+        "confidence": 0.82,
+        "detected_contradiction_ids": [],
+        "estimated_cost_units": 1.0,
+        "estimated_latency_ms": 900,
+        "lineage_edges": [],
+        "missing_evidence": [],
+        "next_action": {
+          "action": "schedule technical discussion"
+        },
+        "query_variants": [],
+        "recommendation": "Consider NVIDIA acceleration for the startup.",
+        "retrieved_evidence_ids": [
+          "official_gpu_claim"
+        ]
+      },
+      "case_id": "counter_evidence_signal",
+      "evidence_docs": [
+        {
+          "age_days": 25,
+          "contradicts_recommendation": false,
+          "doc_id": "official_gpu_claim",
+          "source_type": "official_site",
+          "supports_recommendation": true,
+          "tags": [
+            "gpu",
+            "inference",
+            "startup"
+          ],
+          "title": "Official GPU inference statement",
+          "trust_score": 0.92
+        },
+        {
+          "age_days": 40,
+          "contradicts_recommendation": false,
+          "doc_id": "nvidia_triton_doc",
+          "source_type": "technical_doc",
+          "supports_recommendation": true,
+          "tags": [
+            "nvidia",
+            "triton",
+            "latency",
+            "gpu"
+          ],
+          "title": "NVIDIA Triton inference documentation",
+          "trust_score": 0.95
+        },
+        {
+          "age_days": 380,
+          "contradicts_recommendation": false,
+          "doc_id": "marketing_ai_claim",
+          "source_type": "blog",
+          "supports_recommendation": false,
+          "tags": [
+            "ai",
+            "marketing"
+          ],
+          "title": "Generic AI marketing claim",
+          "trust_score": 0.42
+        },
+        {
+          "age_days": 700,
+          "contradicts_recommendation": false,
+          "doc_id": "old_blog_claim",
+          "source_type": "blog",
+          "supports_recommendation": true,
+          "tags": [
+            "serving",
+            "old"
+          ],
+          "title": "Old model-serving blog",
+          "trust_score": 0.5
+        },
+        {
+          "age_days": 520,
+          "contradicts_recommendation": true,
+          "doc_id": "stale_hiring_signal",
+          "source_type": "job_posting",
+          "supports_recommendation": false,
+          "tags": [
+            "hiring",
+            "immature-infra"
+          ],
+          "title": "Stale hiring signal",
+          "trust_score": 0.7
+        }
+      ],
+      "expected_alternatives_lost": 0,
+      "expected_contradiction_ids": [
+        "stale_hiring_signal"
+      ],
+      "expected_lineage_edges": 0,
+      "expected_terms": [
+        "gpu",
+        "inference"
+      ],
+      "family_id": "counter_evidence_retrieval",
+      "name": "Contradictory maturity signal should be surfaced",
+      "query": "startup says production gpu inference is mature",
+      "required_evidence_ids": [
+        "official_gpu_claim"
+      ]
+    },
+    {
+      "baseline_output": {
+        "action": "approach_now",
+        "alternatives_lost": [],
+        "claims": [
+          {
+            "evidence_ids": [
+              "official_gpu_claim"
+            ],
+            "text": "The startup is ready for NVIDIA acceleration."
+          }
+        ],
+        "confidence": 0.82,
+        "detected_contradiction_ids": [],
+        "estimated_cost_units": 1.0,
+        "estimated_latency_ms": 900,
+        "lineage_edges": [],
+        "missing_evidence": [],
+        "next_action": {
+          "action": "schedule technical discussion"
+        },
+        "query_variants": [],
+        "recommendation": "Consider NVIDIA acceleration for the startup.",
+        "retrieved_evidence_ids": [
+          "official_gpu_claim"
+        ]
+      },
+      "case_id": "graph_lineage_mapping",
+      "evidence_docs": [
+        {
+          "age_days": 25,
+          "contradicts_recommendation": false,
+          "doc_id": "official_gpu_claim",
+          "source_type": "official_site",
+          "supports_recommendation": true,
+          "tags": [
+            "gpu",
+            "inference",
+            "startup"
+          ],
+          "title": "Official GPU inference statement",
+          "trust_score": 0.92
+        },
+        {
+          "age_days": 40,
+          "contradicts_recommendation": false,
+          "doc_id": "nvidia_triton_doc",
+          "source_type": "technical_doc",
+          "supports_recommendation": true,
+          "tags": [
+            "nvidia",
+            "triton",
+            "latency",
+            "gpu"
+          ],
+          "title": "NVIDIA Triton inference documentation",
+          "trust_score": 0.95
+        },
+        {
+          "age_days": 380,
+          "contradicts_recommendation": false,
+          "doc_id": "marketing_ai_claim",
+          "source_type": "blog",
+          "supports_recommendation": false,
+          "tags": [
+            "ai",
+            "marketing"
+          ],
+          "title": "Generic AI marketing claim",
+          "trust_score": 0.42
+        },
+        {
+          "age_days": 700,
+          "contradicts_recommendation": false,
+          "doc_id": "old_blog_claim",
+          "source_type": "blog",
+          "supports_recommendation": true,
+          "tags": [
+            "serving",
+            "old"
+          ],
+          "title": "Old model-serving blog",
+          "trust_score": 0.5
+        },
+        {
+          "age_days": 520,
+          "contradicts_recommendation": true,
+          "doc_id": "stale_hiring_signal",
+          "source_type": "job_posting",
+          "supports_recommendation": false,
+          "tags": [
+            "hiring",
+            "immature-infra"
+          ],
+          "title": "Stale hiring signal",
+          "trust_score": 0.7
+        }
+      ],
+      "expected_alternatives_lost": 1,
+      "expected_contradiction_ids": [],
+      "expected_lineage_edges": 4,
+      "expected_terms": [
+        "nvidia",
+        "triton",
+        "gpu"
+      ],
+      "family_id": "graphrag_evidence_graph",
+      "name": "Source-gap-technology path should be auditable",
+      "query": "map deployment gap to nvidia technology and alternatives",
+      "required_evidence_ids": [
+        "official_gpu_claim",
+        "nvidia_triton_doc"
+      ]
+    },
+    {
+      "baseline_output": {
+        "action": "approach_now",
+        "alternatives_lost": [],
+        "claims": [
+          {
+            "evidence_ids": [
+              "marketing_ai_claim"
+            ],
+            "text": "The startup is ready for NVIDIA acceleration."
+          }
+        ],
+        "confidence": 0.82,
+        "detected_contradiction_ids": [],
+        "estimated_cost_units": 1.0,
+        "estimated_latency_ms": 900,
+        "lineage_edges": [],
+        "missing_evidence": [],
+        "next_action": {
+          "action": "schedule technical discussion"
+        },
+        "query_variants": [],
+        "recommendation": "Consider NVIDIA acceleration for the startup.",
+        "retrieved_evidence_ids": [
+          "marketing_ai_claim"
+        ]
+      },
+      "case_id": "query_vocab_recovery",
+      "evidence_docs": [
+        {
+          "age_days": 25,
+          "contradicts_recommendation": false,
+          "doc_id": "official_gpu_claim",
+          "source_type": "official_site",
+          "supports_recommendation": true,
+          "tags": [
+            "gpu",
+            "inference",
+            "startup"
+          ],
+          "title": "Official GPU inference statement",
+          "trust_score": 0.92
+        },
+        {
+          "age_days": 40,
+          "contradicts_recommendation": false,
+          "doc_id": "nvidia_triton_doc",
+          "source_type": "technical_doc",
+          "supports_recommendation": true,
+          "tags": [
+            "nvidia",
+            "triton",
+            "latency",
+            "gpu"
+          ],
+          "title": "NVIDIA Triton inference documentation",
+          "trust_score": 0.95
+        },
+        {
+          "age_days": 380,
+          "contradicts_recommendation": false,
+          "doc_id": "marketing_ai_claim",
+          "source_type": "blog",
+          "supports_recommendation": false,
+          "tags": [
+            "ai",
+            "marketing"
+          ],
+          "title": "Generic AI marketing claim",
+          "trust_score": 0.42
+        },
+        {
+          "age_days": 700,
+          "contradicts_recommendation": false,
+          "doc_id": "old_blog_claim",
+          "source_type": "blog",
+          "supports_recommendation": true,
+          "tags": [
+            "serving",
+            "old"
+          ],
+          "title": "Old model-serving blog",
+          "trust_score": 0.5
+        },
+        {
+          "age_days": 520,
+          "contradicts_recommendation": true,
+          "doc_id": "stale_hiring_signal",
+          "source_type": "job_posting",
+          "supports_recommendation": false,
+          "tags": [
+            "hiring",
+            "immature-infra"
+          ],
+          "title": "Stale hiring signal",
+          "trust_score": 0.7
+        }
+      ],
+      "expected_alternatives_lost": 0,
+      "expected_contradiction_ids": [],
+      "expected_lineage_edges": 0,
+      "expected_terms": [
+        "triton",
+        "inference"
+      ],
+      "family_id": "query_rewriting_multiquery",
+      "name": "Business wording should recover technical evidence",
+      "query": "scale ai delivery for enterprise customers",
+      "required_evidence_ids": [
+        "nvidia_triton_doc"
+      ]
+    },
+    {
+      "baseline_output": {
+        "action": "approach_now",
+        "alternatives_lost": [],
+        "claims": [
+          {
+            "evidence_ids": [
+              "nvidia_triton_doc"
+            ],
+            "text": "The startup is ready for NVIDIA acceleration."
+          }
+        ],
+        "confidence": 0.82,
+        "detected_contradiction_ids": [],
+        "estimated_cost_units": 1.0,
+        "estimated_latency_ms": 900,
+        "lineage_edges": [],
+        "missing_evidence": [],
+        "next_action": {
+          "action": "schedule technical discussion"
+        },
+        "query_variants": [],
+        "recommendation": "Consider NVIDIA acceleration for the startup.",
+        "retrieved_evidence_ids": [
+          "nvidia_triton_doc"
+        ]
+      },
+      "case_id": "next_action_specificity",
+      "evidence_docs": [
+        {
+          "age_days": 25,
+          "contradicts_recommendation": false,
+          "doc_id": "official_gpu_claim",
+          "source_type": "official_site",
+          "supports_recommendation": true,
+          "tags": [
+            "gpu",
+            "inference",
+            "startup"
+          ],
+          "title": "Official GPU inference statement",
+          "trust_score": 0.92
+        },
+        {
+          "age_days": 40,
+          "contradicts_recommendation": false,
+          "doc_id": "nvidia_triton_doc",
+          "source_type": "technical_doc",
+          "supports_recommendation": true,
+          "tags": [
+            "nvidia",
+            "triton",
+            "latency",
+            "gpu"
+          ],
+          "title": "NVIDIA Triton inference documentation",
+          "trust_score": 0.95
+        },
+        {
+          "age_days": 380,
+          "contradicts_recommendation": false,
+          "doc_id": "marketing_ai_claim",
+          "source_type": "blog",
+          "supports_recommendation": false,
+          "tags": [
+            "ai",
+            "marketing"
+          ],
+          "title": "Generic AI marketing claim",
+          "trust_score": 0.42
+        },
+        {
+          "age_days": 700,
+          "contradicts_recommendation": false,
+          "doc_id": "old_blog_claim",
+          "source_type": "blog",
+          "supports_recommendation": true,
+          "tags": [
+            "serving",
+            "old"
+          ],
+          "title": "Old model-serving blog",
+          "trust_score": 0.5
+        },
+        {
+          "age_days": 520,
+          "contradicts_recommendation": true,
+          "doc_id": "stale_hiring_signal",
+          "source_type": "job_posting",
+          "supports_recommendation": false,
+          "tags": [
+            "hiring",
+            "immature-infra"
+          ],
+          "title": "Stale hiring signal",
+          "trust_score": 0.7
+        }
+      ],
+      "expected_alternatives_lost": 1,
+      "expected_contradiction_ids": [],
+      "expected_lineage_edges": 0,
+      "expected_terms": [
+        "triton",
+        "latency",
+        "gpu"
+      ],
+      "family_id": "recommendation_specificity_next_action",
+      "name": "Recommendation should become a measurable experiment",
+      "query": "what should nvidia suggest next",
+      "required_evidence_ids": [
+        "nvidia_triton_doc"
+      ]
+    },
+    {
+      "baseline_output": {
+        "action": "approach_now",
+        "alternatives_lost": [],
+        "claims": [
+          {
+            "evidence_ids": [
+              "marketing_ai_claim"
+            ],
+            "text": "The startup is ready for NVIDIA acceleration."
+          }
+        ],
+        "confidence": 0.82,
+        "detected_contradiction_ids": [],
+        "estimated_cost_units": 1.0,
+        "estimated_latency_ms": 900,
+        "lineage_edges": [],
+        "missing_evidence": [],
+        "next_action": {
+          "action": "schedule technical discussion"
+        },
+        "query_variants": [],
+        "recommendation": "Consider NVIDIA acceleration for the startup.",
+        "retrieved_evidence_ids": [
+          "marketing_ai_claim"
+        ]
+      },
+      "case_id": "thin_support_abstention",
+      "evidence_docs": [
+        {
+          "age_days": 25,
+          "contradicts_recommendation": false,
+          "doc_id": "official_gpu_claim",
+          "source_type": "official_site",
+          "supports_recommendation": true,
+          "tags": [
+            "gpu",
+            "inference",
+            "startup"
+          ],
+          "title": "Official GPU inference statement",
+          "trust_score": 0.92
+        },
+        {
+          "age_days": 40,
+          "contradicts_recommendation": false,
+          "doc_id": "nvidia_triton_doc",
+          "source_type": "technical_doc",
+          "supports_recommendation": true,
+          "tags": [
+            "nvidia",
+            "triton",
+            "latency",
+            "gpu"
+          ],
+          "title": "NVIDIA Triton inference documentation",
+          "trust_score": 0.95
+        },
+        {
+          "age_days": 380,
+          "contradicts_recommendation": false,
+          "doc_id": "marketing_ai_claim",
+          "source_type": "blog",
+          "supports_recommendation": false,
+          "tags": [
+            "ai",
+            "marketing"
+          ],
+          "title": "Generic AI marketing claim",
+          "trust_score": 0.42
+        },
+        {
+          "age_days": 700,
+          "contradicts_recommendation": false,
+          "doc_id": "old_blog_claim",
+          "source_type": "blog",
+          "supports_recommendation": true,
+          "tags": [
+            "serving",
+            "old"
+          ],
+          "title": "Old model-serving blog",
+          "trust_score": 0.5
+        },
+        {
+          "age_days": 520,
+          "contradicts_recommendation": true,
+          "doc_id": "stale_hiring_signal",
+          "source_type": "job_posting",
+          "supports_recommendation": false,
+          "tags": [
+            "hiring",
+            "immature-infra"
+          ],
+          "title": "Stale hiring signal",
+          "trust_score": 0.7
+        }
+      ],
+      "expected_alternatives_lost": 0,
+      "expected_contradiction_ids": [
+        "stale_hiring_signal"
+      ],
+      "expected_lineage_edges": 0,
+      "expected_terms": [
+        "nvidia",
+        "evidence"
+      ],
+      "family_id": "evidence_sufficiency_abstention",
+      "name": "Thin support should downgrade the recommendation",
+      "query": "recommend nvidia approach with thin evidence",
+      "required_evidence_ids": [
+        "nvidia_triton_doc",
+        "official_gpu_claim"
+      ]
+    },
+    {
+      "baseline_output": {
+        "action": "approach_now",
+        "alternatives_lost": [],
+        "claims": [
+          {
+            "evidence_ids": [
+              "old_blog_claim"
+            ],
+            "text": "The startup is ready for NVIDIA acceleration."
+          }
+        ],
+        "confidence": 0.82,
+        "detected_contradiction_ids": [],
+        "estimated_cost_units": 1.0,
+        "estimated_latency_ms": 900,
+        "lineage_edges": [],
+        "missing_evidence": [],
+        "next_action": {
+          "action": "schedule technical discussion"
+        },
+        "query_variants": [],
+        "recommendation": "Consider NVIDIA acceleration for the startup.",
+        "retrieved_evidence_ids": [
+          "old_blog_claim",
+          "marketing_ai_claim",
+          "official_gpu_claim"
+        ]
+      },
+      "case_id": "source_quality_ordering",
+      "evidence_docs": [
+        {
+          "age_days": 25,
+          "contradicts_recommendation": false,
+          "doc_id": "official_gpu_claim",
+          "source_type": "official_site",
+          "supports_recommendation": true,
+          "tags": [
+            "gpu",
+            "inference",
+            "startup"
+          ],
+          "title": "Official GPU inference statement",
+          "trust_score": 0.92
+        },
+        {
+          "age_days": 40,
+          "contradicts_recommendation": false,
+          "doc_id": "nvidia_triton_doc",
+          "source_type": "technical_doc",
+          "supports_recommendation": true,
+          "tags": [
+            "nvidia",
+            "triton",
+            "latency",
+            "gpu"
+          ],
+          "title": "NVIDIA Triton inference documentation",
+          "trust_score": 0.95
+        },
+        {
+          "age_days": 380,
+          "contradicts_recommendation": false,
+          "doc_id": "marketing_ai_claim",
+          "source_type": "blog",
+          "supports_recommendation": false,
+          "tags": [
+            "ai",
+            "marketing"
+          ],
+          "title": "Generic AI marketing claim",
+          "trust_score": 0.42
+        },
+        {
+          "age_days": 700,
+          "contradicts_recommendation": false,
+          "doc_id": "old_blog_claim",
+          "source_type": "blog",
+          "supports_recommendation": true,
+          "tags": [
+            "serving",
+            "old"
+          ],
+          "title": "Old model-serving blog",
+          "trust_score": 0.5
+        },
+        {
+          "age_days": 520,
+          "contradicts_recommendation": true,
+          "doc_id": "stale_hiring_signal",
+          "source_type": "job_posting",
+          "supports_recommendation": false,
+          "tags": [
+            "hiring",
+            "immature-infra"
+          ],
+          "title": "Stale hiring signal",
+          "trust_score": 0.7
+        }
+      ],
+      "expected_alternatives_lost": 0,
+      "expected_contradiction_ids": [],
+      "expected_lineage_edges": 0,
+      "expected_terms": [
+        "source",
+        "fresh"
+      ],
+      "family_id": "source_trust_freshness_ranking",
+      "name": "Fresh official evidence should outrank stale weak evidence",
+      "query": "which source should support the recommendation",
+      "required_evidence_ids": [
+        "official_gpu_claim",
+        "nvidia_triton_doc"
+      ]
+    }
+  ],
+  "generated_at": "2026-06-23T02:21:38.048572+00:00",
+  "purpose": "Disposable local cases for real family-level spike benchmarking.",
+  "report_id": "family_spike_cases"
+}

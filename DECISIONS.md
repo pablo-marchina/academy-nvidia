@@ -1,5 +1,17 @@
 # DECISIONS
 
+## Decision 050 - Benchmark-First Final Roadmap as Canonical Delivery Source
+
+- **Context:** The final roadmap consolidates product readiness, benchmark-first adoption, zero mock/demo policy, numeric governance, repository cleanliness, live sourcing, security, release, and final evidence pack requirements across 22 marcos.
+- **Decision:** Treat `final_final_benchmark_first_roadmap_all_changes.md` as the canonical final-product roadmap. Generate the candidate catalog and final evidence pack from typed governance code, not hand-maintained spreadsheets. Add `make prove-final-product` as the final proof command.
+- **Alternatives considered:** Keep the roadmap as advisory documentation only (rejected because it would not create enforceable gates). Implement every candidate directly in runtime (rejected because it violates benchmark-first adoption).
+- **Rationale:** The project should prove value by evidence, benchmark, traceability, and repository cleanliness. Candidates can be documented and benchmarked without being promoted to runtime.
+- **Risks:** The catalog is large and includes paid or unavailable technologies. Mitigation: local substitutes can benchmark categories, but original candidates remain blocked or future research without direct evidence.
+- **Validation:** Governance schemas, artifact generation, benchmark harness, and final gates are covered by focused unit tests and scripts.
+- **Status:** Em progresso no Epic 50.
+
+---
+
 ## Decision 001 - Use LangGraph for multi-agent orchestration
 
 - Context: The project needs modular agent workflows with explicit state transitions and future human review points.

@@ -1,0 +1,384 @@
+{
+  "catalog_candidate_count": 408,
+  "categories_without_direct_quality_lift": [
+    "8.1 Runtime core"
+  ],
+  "categories_without_direct_quality_lift_count": 1,
+  "category_summaries": [
+    {
+      "candidate_count": 9,
+      "catalog_status_counts": {
+        "BENCHMARKED": 7,
+        "REJECTED_BY_EVIDENCE": 2
+      },
+      "category": "8.1 Runtime core",
+      "output_decisions": {
+        "KEEP_REQUIRED_RUNTIME": 7,
+        "REJECT_BY_EVIDENCE": 2
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 0,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 19,
+      "catalog_status_counts": {
+        "BENCHMARKED": 19
+      },
+      "category": "8.10 Recommendation, ranking and scoring",
+      "output_decisions": {
+        "KEEP_BASELINE": 19
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 19,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 13,
+      "catalog_status_counts": {
+        "BENCHMARKED": 13
+      },
+      "category": "8.11 Multimodal AI and Document AI",
+      "output_decisions": {
+        "KEEP_BASELINE": 13
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 13,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 19,
+      "catalog_status_counts": {
+        "BENCHMARKED": 17,
+        "FUTURE_RESEARCH": 2
+      },
+      "category": "8.12 Parsing, OCR and extraction tools",
+      "output_decisions": {
+        "FUTURE_RESEARCH": 2,
+        "KEEP_BASELINE": 17
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 17,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 14,
+      "catalog_status_counts": {
+        "BENCHMARKED": 10,
+        "FUTURE_RESEARCH": 4
+      },
+      "category": "8.13 Evaluation frameworks and judges",
+      "output_decisions": {
+        "FUTURE_RESEARCH": 4,
+        "KEEP_BASELINE": 10
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 10,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 25,
+      "catalog_status_counts": {
+        "BENCHMARKED": 13,
+        "FUTURE_RESEARCH": 12
+      },
+      "category": "8.14 Observability, LLMOps and experiment tracking",
+      "output_decisions": {
+        "FUTURE_RESEARCH": 12,
+        "KEEP_BASELINE": 13
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 13,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 32,
+      "catalog_status_counts": {
+        "BENCHMARKED": 27,
+        "FUTURE_RESEARCH": 5
+      },
+      "category": "8.15 Security, guardrails and red team",
+      "output_decisions": {
+        "FUTURE_RESEARCH": 5,
+        "KEEP_BASELINE": 27
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 27,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 16,
+      "catalog_status_counts": {
+        "BENCHMARKED": 13,
+        "FUTURE_RESEARCH": 3
+      },
+      "category": "8.16 MCP, tools and agent protocols",
+      "output_decisions": {
+        "FUTURE_RESEARCH": 3,
+        "KEEP_BASELINE": 13
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 13,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 31,
+      "catalog_status_counts": {
+        "BENCHMARKED": 31
+      },
+      "category": "8.17 TOON, context formats and structured interfaces",
+      "output_decisions": {
+        "KEEP_BASELINE": 31
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 31,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 11,
+      "catalog_status_counts": {
+        "BENCHMARKED": 9,
+        "FUTURE_RESEARCH": 2
+      },
+      "category": "8.18 Sourcing and crawling",
+      "output_decisions": {
+        "FUTURE_RESEARCH": 2,
+        "KEEP_BASELINE": 9
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 9,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 21,
+      "catalog_status_counts": {
+        "BENCHMARKED": 17,
+        "FUTURE_RESEARCH": 4
+      },
+      "category": "8.19 Human review, active learning and labeling",
+      "output_decisions": {
+        "FUTURE_RESEARCH": 4,
+        "KEEP_BASELINE": 17
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 17,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 25,
+      "catalog_status_counts": {
+        "BENCHMARKED": 23,
+        "FUTURE_RESEARCH": 2
+      },
+      "category": "8.2 Data layer, storage, versioning and governance",
+      "output_decisions": {
+        "FUTURE_RESEARCH": 2,
+        "KEEP_BASELINE": 23
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 23,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 21,
+      "catalog_status_counts": {
+        "BENCHMARKED": 21
+      },
+      "category": "8.20 Release, supply chain, repo cleanliness and delivery",
+      "output_decisions": {
+        "KEEP_BASELINE": 18,
+        "KEEP_REQUIRED_RUNTIME": 3
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 18,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 16,
+      "catalog_status_counts": {
+        "BENCHMARKED": 14,
+        "FUTURE_RESEARCH": 2
+      },
+      "category": "8.3 Vector/search/retrieval",
+      "output_decisions": {
+        "FUTURE_RESEARCH": 2,
+        "KEEP_BASELINE": 13,
+        "KEEP_REQUIRED_RUNTIME": 1
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 13,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 11,
+      "catalog_status_counts": {
+        "BENCHMARKED": 11
+      },
+      "category": "8.4 Graph and GraphRAG",
+      "output_decisions": {
+        "KEEP_BASELINE": 11
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 11,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 45,
+      "catalog_status_counts": {
+        "BENCHMARKED": 45
+      },
+      "category": "8.5 RAG/retrieval techniques",
+      "output_decisions": {
+        "KEEP_BASELINE": 45
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 45,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 9,
+      "catalog_status_counts": {
+        "BENCHMARKED": 8,
+        "FUTURE_RESEARCH": 1
+      },
+      "category": "8.6 Reranking",
+      "output_decisions": {
+        "FUTURE_RESEARCH": 1,
+        "KEEP_BASELINE": 8
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 8,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 25,
+      "catalog_status_counts": {
+        "BENCHMARKED": 25
+      },
+      "category": "8.7 Evidence, verification, uncertainty and abstention",
+      "output_decisions": {
+        "KEEP_BASELINE": 25
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 25,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 33,
+      "catalog_status_counts": {
+        "BENCHMARKED": 33
+      },
+      "category": "8.8 Reasoning, agents and generation",
+      "output_decisions": {
+        "KEEP_BASELINE": 33
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 33,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    },
+    {
+      "candidate_count": 13,
+      "catalog_status_counts": {
+        "BENCHMARKED": 13
+      },
+      "category": "8.9 Graph intelligence",
+      "output_decisions": {
+        "KEEP_BASELINE": 13
+      },
+      "promotion_allowed_count": 0,
+      "quality_lift_measured_count": 13,
+      "status": "CATALOGED_NOT_EXHAUSTIVELY_VALUE_TESTED"
+    }
+  ],
+  "conclusion": "Value discovery is not exhaustive: the product has implemented proven high-value families, but not every roadmap category and technique has direct output-quality evidence.",
+  "diagnostic_case_count": 7,
+  "diagnostic_family_count": 7,
+  "diagnostic_signal_not_implemented_count": 1,
+  "direct_alternative_gap_total": 0,
+  "exhaustive_value_family_discovery": false,
+  "families": [
+    {
+      "affected_case_count": 1,
+      "direct_alternative_gap_count": 0,
+      "display_name": "Cost, latency, and reliability controls",
+      "family_id": "cost_latency_reliability_controls",
+      "has_diagnostic_signal": true,
+      "has_product_spike": false,
+      "matching_candidate_count": 5,
+      "quality_delta": 0.0035,
+      "status": "DIAGNOSTIC_SIGNAL_NOT_IMPLEMENTED"
+    },
+    {
+      "affected_case_count": 1,
+      "direct_alternative_gap_count": 0,
+      "display_name": "Counter-evidence retrieval and contradiction handling",
+      "family_id": "counter_evidence_retrieval",
+      "has_diagnostic_signal": true,
+      "has_product_spike": true,
+      "matching_candidate_count": 5,
+      "quality_delta": 0.6925,
+      "status": "IMPLEMENTED_VALUE_FAMILY"
+    },
+    {
+      "affected_case_count": 2,
+      "direct_alternative_gap_count": 0,
+      "display_name": "Evidence sufficiency and abstention",
+      "family_id": "evidence_sufficiency_abstention",
+      "has_diagnostic_signal": true,
+      "has_product_spike": true,
+      "matching_candidate_count": 5,
+      "quality_delta": 0.5419,
+      "status": "IMPLEMENTED_VALUE_FAMILY"
+    },
+    {
+      "affected_case_count": 1,
+      "direct_alternative_gap_count": 0,
+      "display_name": "GraphRAG and evidence graph",
+      "family_id": "graphrag_evidence_graph",
+      "has_diagnostic_signal": true,
+      "has_product_spike": true,
+      "matching_candidate_count": 5,
+      "quality_delta": 0.8,
+      "status": "IMPLEMENTED_VALUE_FAMILY"
+    },
+    {
+      "affected_case_count": 1,
+      "direct_alternative_gap_count": 0,
+      "display_name": "Query rewriting and multi-query retrieval",
+      "family_id": "query_rewriting_multiquery",
+      "has_diagnostic_signal": true,
+      "has_product_spike": true,
+      "matching_candidate_count": 4,
+      "quality_delta": 0.425,
+      "status": "IMPLEMENTED_VALUE_FAMILY"
+    },
+    {
+      "affected_case_count": 1,
+      "direct_alternative_gap_count": 0,
+      "display_name": "Recommendation specificity and next action",
+      "family_id": "recommendation_specificity_next_action",
+      "has_diagnostic_signal": true,
+      "has_product_spike": true,
+      "matching_candidate_count": 0,
+      "quality_delta": 0.9524,
+      "status": "IMPLEMENTED_VALUE_FAMILY"
+    },
+    {
+      "affected_case_count": 1,
+      "direct_alternative_gap_count": 0,
+      "display_name": "Source trust, quality, and freshness",
+      "family_id": "source_quality_trust_freshness",
+      "has_diagnostic_signal": true,
+      "has_product_spike": true,
+      "matching_candidate_count": 2,
+      "quality_delta": 0.6,
+      "status": "IMPLEMENTED_VALUE_FAMILY"
+    }
+  ],
+  "generated_at": "2026-06-23T02:21:45.134362+00:00",
+  "global_no_more_value_guarantee": false,
+  "implemented_value_family_count": 6,
+  "report_id": "value_family_completeness_report",
+  "roadmap_category_count": 20,
+  "status": "PASS"
+}

@@ -492,6 +492,26 @@ class ActivationDossierSummaryRead(BaseModel):
     review_status: str | None = None
 
 
+class AnalysisEvidenceBundleRead(BaseModel):
+    analysis_run_id: str
+    startup_id: str
+    status: str
+    readiness: str
+    confidence: str
+    evidence_coverage: EvidenceCoverageRead
+    claims: dict[str, list[ClaimRead]] = Field(default_factory=dict)
+    recommendations: list[ActivationRecommendationRead] = Field(default_factory=list)
+    dossier: ActivationDossierRead | None = None
+    readiness_checks: list[ReadinessCheckRead] = Field(default_factory=list)
+    missing_evidence: list[dict[str, Any]] = Field(default_factory=list)
+    contradictions: list[dict[str, Any]] = Field(default_factory=list)
+    degraded_checks: list[ReadinessCheckRead] = Field(default_factory=list)
+    rag_support: dict[str, Any] = Field(default_factory=dict)
+    trust_freshness: dict[str, Any] = Field(default_factory=dict)
+    lineage: dict[str, Any] = Field(default_factory=dict)
+    alternatives_lost: list[dict[str, Any]] = Field(default_factory=list)
+
+
 # ---------------------------------------------------------------------------
 # Opportunity Score Schemas (Epic 43)
 # ---------------------------------------------------------------------------

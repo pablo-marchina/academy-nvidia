@@ -428,8 +428,14 @@ _reg(
     category=CapabilityCategory.llm_judge,
     required=False,
     enabled_by_default=False,
-    required_env_vars=["ANSWER_QUALITY_LLM_JUDGE_ENABLED"],
-    setup_instructions=("Set ANSWER_QUALITY_LLM_JUDGE_ENABLED=true and choose a provider " "(default: null)."),
+    required_env_vars=[
+        "ANSWER_QUALITY_LLM_JUDGE_ENABLED",
+        "ANSWER_QUALITY_LLM_JUDGE_PROVIDER",
+    ],
+    setup_instructions=(
+        "Set ANSWER_QUALITY_LLM_JUDGE_ENABLED=true and choose "
+        "ANSWER_QUALITY_LLM_JUDGE_PROVIDER. Only null is implemented today."
+    ),
     failure_mode="Disabled by default; deterministic NullLLMJudgeProvider used.",
     health_check_key="llm_judge",
     documentation_ref="docs/48_optional_llm_judge.md",
@@ -472,7 +478,7 @@ _reg(
 _reg(
     capability_id="frontend_workspace",
     name="Frontend Workspace (Optional)",
-    description="React + Vite + TypeScript demo UI",
+    description="React + Vite + TypeScript product workspace",
     category=CapabilityCategory.frontend,
     required=False,
     enabled_by_default=False,
@@ -531,6 +537,7 @@ _reg(
     category=CapabilityCategory.core,
     required=True,
     required_extras=["agent-orchestration"],
+    required_env_vars=["AGENT_ORCHESTRATION_ENABLED"],
     setup_instructions=(
         "Install with `pip install -e .[agent-orchestration]` and set " "AGENT_ORCHESTRATION_ENABLED=true."
     ),

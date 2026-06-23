@@ -71,6 +71,9 @@ class TestCliArgs:
         assert args.collection_name == "nvidia_corpus"
         assert args.batch_size == 32
         assert args.mock_embeddings is False
+        assert args.qdrant_url == "http://localhost:6333"
+        assert args.vector_size == 384
+        assert args.embedding_model
 
     def test_dry_run_flag(self) -> None:
         from scripts.ingest_nvidia_corpus import parse_args
@@ -83,6 +86,32 @@ class TestCliArgs:
 
         args = parse_args(["--source-id", "nim", "triton"])
         assert args.source_id == ["nim", "triton"]
+
+    def test_qdrant_and_embedding_options(self) -> None:
+        from scripts.ingest_nvidia_corpus import parse_args
+
+        args = parse_args(
+            [
+                "--qdrant-url",
+                "http://qdrant.local:6333",
+                "--qdrant-api-key",
+                "secret",
+                "--collection-name",
+                "custom_corpus",
+                "--vector-size",
+                "384",
+                "--embedding-model",
+                "all-MiniLM-L6-v2",
+                "--require-real-embeddings",
+            ]
+        )
+
+        assert args.qdrant_url == "http://qdrant.local:6333"
+        assert args.qdrant_api_key == "secret"
+        assert args.collection_name == "custom_corpus"
+        assert args.vector_size == 384
+        assert args.embedding_model == "all-MiniLM-L6-v2"
+        assert args.require_real_embeddings is True
 
 
 # ---------------------------------------------------------------------------

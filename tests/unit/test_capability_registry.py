@@ -50,3 +50,11 @@ class TestCapabilityRegistry:
     def test_rag_category_exists(self) -> None:
         rag = list_capabilities_by_category(CapabilityCategory.rag)
         assert len(rag) >= 3
+
+    def test_frontend_workspace_is_not_described_as_demo(self) -> None:
+        cap = CAPABILITIES["frontend_workspace"]
+        assert "demo" not in cap.description.lower()
+
+    def test_agent_orchestration_declares_required_env(self) -> None:
+        cap = CAPABILITIES["agent_orchestration"]
+        assert "AGENT_ORCHESTRATION_ENABLED" in cap.required_env_vars

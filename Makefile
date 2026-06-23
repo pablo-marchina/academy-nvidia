@@ -1,4 +1,4 @@
-.PHONY: test test-unit test-integration test-acceptance test-e2e test-slow test-optional lint format-check typecheck validate validate-fast validate-full validate-backend validate-frontend validate-docs validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e ui-e2e-product product-ui-acceptance db-upgrade db-downgrade db-migrate db-current db-history acceptance acceptance-backend prepare-release product-readiness-report ui-lint ui-lint-fix validate-no-demo
+.PHONY: test test-unit test-integration test-acceptance test-e2e test-slow test-optional lint format-check typecheck validate validate-fast validate-full validate-backend validate-frontend validate-docs validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant ingest-real-sources run-evals run sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e ui-e2e-product product-ui-acceptance db-upgrade db-downgrade db-migrate db-current db-history acceptance acceptance-backend prepare-release product-readiness-report ui-lint ui-lint-fix validate-no-demo setup benchmark benchmark-free-external evidence-pack package-final-release package-release check-repository-clean check-final-release-zip audit-release-package live-collect local-services-up local-proof-doctor doctor full-proof-pass-attempt prove-final-product candidate-governance check-candidate-governance graphrag-direct-benchmark source-quality-direct-benchmark test-security-llm scan-secrets scan-dependencies scan-release check-product-configuration check-no-mock-runtime
 
 test:
 	python -m pytest -m "not (integration or acceptance or e2e or slow or optional or external_service)" --tb=short
@@ -87,6 +87,12 @@ ingest:
 ingest-qdrant:
 	python scripts/ingest_nvidia_corpus.py
 
+ingest-real-sources: sync-corpus ingest-qdrant
+
+run-evals: rag-eval
+
+run: api
+
 sync-corpus-dry-run:
 	python scripts/sync_nvidia_sources.py --dry-run
 
@@ -147,3 +153,80 @@ prepare-release: validate-full acceptance
 
 product-readiness-report:
 	python scripts/product_acceptance_report.py --api-url http://localhost:8000
+
+setup:
+	python scripts/generate_final_evidence_pack.py
+	python scripts/generate_finalization_evidence.py
+	python scripts/generate_candidate_governance_final_closure.py
+
+benchmark:
+	python scripts/run_benchmark.py
+
+benchmark-free-external:
+	python scripts/review_free_external_candidates.py
+	python scripts/run_free_external_candidate_benchmarks.py
+
+evidence-pack:
+	python scripts/generate_final_evidence_pack.py
+	python scripts/generate_finalization_evidence.py
+	python scripts/generate_candidate_governance_final_closure.py
+
+candidate-governance:
+	python scripts/generate_candidate_governance_final_closure.py
+
+check-candidate-governance:
+	python scripts/check_candidate_governance_final_closure.py
+
+graphrag-direct-benchmark:
+	python scripts/run_graphrag_direct_benchmark.py
+
+source-quality-direct-benchmark:
+	python scripts/run_source_quality_direct_benchmark.py
+
+test-security-llm:
+	python scripts/run_llm_security_suite.py
+
+scan-secrets:
+	python scripts/check_security_release.py
+
+scan-dependencies:
+	python scripts/check_security_release.py
+
+scan-release:
+	python scripts/check_final_release_zip.py
+
+check-product-configuration:
+	python scripts/check_product_configuration.py
+
+check-no-mock-runtime:
+	python scripts/check_no_mock_runtime.py
+
+package-final-release:
+	python scripts/package_final_release.py
+
+package-release: package-final-release
+
+check-repository-clean:
+	python scripts/check_repository_clean.py
+
+check-final-release-zip:
+	python scripts/check_final_release_zip.py
+
+audit-release-package: package-final-release check-final-release-zip
+
+live-collect:
+	python scripts/live_collect.py --live
+
+local-services-up:
+	docker compose up -d postgres qdrant
+
+local-proof-doctor:
+	python scripts/local_proof_doctor.py
+
+doctor: local-proof-doctor
+
+full-proof-pass-attempt:
+	python scripts/full_proof_pass_attempt.py
+
+prove-final-product:
+	python scripts/prove_final_product.py $(PROVE_ARGS)

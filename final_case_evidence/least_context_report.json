@@ -1,0 +1,9 @@
+{
+  "controls": [
+    "least_context_packer",
+    "prompt_context_budgeter"
+  ],
+  "generated_at": "2026-06-23T02:21:26.222353+00:00",
+  "policy": "Send the minimum evidence needed to answer with support.",
+  "status": "PASS"
+}

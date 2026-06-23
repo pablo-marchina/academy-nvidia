@@ -270,11 +270,21 @@ _reg(
 )
 _reg(
     key="ANSWER_QUALITY_LLM_JUDGE_PROVIDER",
-    description="LLM judge provider name (null, instructor_trial)",
+    description="LLM judge provider name. Only null is implemented; real providers are future research.",
     required=False,
     required_for=["optional_llm_judge"],
     default="null",
     example="null",
+)
+_reg(
+    key="AGENT_ORCHESTRATION_ENABLED",
+    description="Enable LangGraph orchestration for product analysis workflows",
+    required=True,
+    required_for=["agent_orchestration"],
+    default="",
+    example="true",
+    validation_rule="APP_MODE=product requires AGENT_ORCHESTRATION_ENABLED=true.",
+    user_message="Set AGENT_ORCHESTRATION_ENABLED=true and install .[agent-orchestration].",
 )
 _reg(
     key="ENABLE_INSTRUCTOR_TRIAL",

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from src.rag.ingestion import load_and_chunk_corpus
 from src.rag.schemas import RagChunk, RetrievalQuery, RetrievedContext
 
 _DEFAULT_TOP_K = 3
@@ -152,5 +151,7 @@ def _is_expired(valid_until: str | None) -> bool:
 
 def build_default_index() -> ChunkIndex:
     """Build index from the default corpus directory."""
+    from src.rag.ingestion import load_and_chunk_corpus
+
     chunks = load_and_chunk_corpus()
     return ChunkIndex(chunks)

@@ -1,0 +1,14 @@
+{
+  "controls": [
+    "document_acl",
+    "source_acl",
+    "chunk_acl",
+    "evidence_acl",
+    "retrieval_acl_filter",
+    "evidence_access_policy",
+    "permission_preserving_rag"
+  ],
+  "generated_at": "2026-06-23T02:21:26.222353+00:00",
+  "policy": "Retrieval must preserve source and evidence permissions before context assembly.",
+  "status": "PASS"
+}

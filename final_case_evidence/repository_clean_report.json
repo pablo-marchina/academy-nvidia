@@ -1,0 +1,8 @@
+{
+  "final_proof_ref": "final_case_evidence/final_proof_summary.json",
+  "label": "C:\\Users\\Inteli\\AppData\\Local\\Programs\\Python\\Python311\\python.exe scripts/check_repository_clean.py",
+  "returncode": 0,
+  "status": "PASS",
+  "stderr_tail": "",
+  "stdout_tail": "PASS: repository cleanliness checked 761 tracked files\n"
+}

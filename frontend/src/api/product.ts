@@ -8,6 +8,7 @@ import type {
   StartupCreatePayload,
   StartupUpdatePayload,
   AnalysisRunRead,
+  AnalysisEvidenceBundle,
   ActionBriefRead,
   ReviewDecisionRead,
   OpportunityListResponse,
@@ -101,6 +102,14 @@ export function createAnalysisRun(
 
 export function getAnalysisRun(id: string): Promise<AnalysisRunRead> {
   return requestJson<AnalysisRunRead>(`/analysis-runs/${id}`);
+}
+
+export function getAnalysisEvidenceBundle(
+  id: string,
+): Promise<AnalysisEvidenceBundle> {
+  return requestJson<AnalysisEvidenceBundle>(
+    `/analysis-runs/${id}/evidence-bundle`,
+  );
 }
 
 export function getAnalysisRunBrief(
