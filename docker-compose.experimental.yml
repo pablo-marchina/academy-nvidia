@@ -1,0 +1,64 @@
+services:
+  redis:
+    image: redis:7.4.1
+    profiles: ["experimental"]
+    ports:
+      - "6379:6379"
+
+  phoenix:
+    image: arizephoenix/phoenix:8.18.0
+    profiles: ["experimental"]
+    ports:
+      - "6006:6006"
+
+  neo4j:
+    image: neo4j:5.25.1
+    profiles: ["experimental"]
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/startupradar
+
+  weaviate:
+    image: semitechnologies/weaviate:1.26.6
+    profiles: ["experimental"]
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    environment:
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      DEFAULT_VECTORIZER_MODULE: "none"
+      CLUSTER_HOSTNAME: "node1"
+
+  triton:
+    image: nvcr.io/nvidia/tritonserver:25.06-py3
+    profiles: ["experimental"]
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+    volumes:
+      - ./models:/models
+    command: ["tritonserver", "--model-repository=/models", "--http-port=8000", "--grpc-port=8001"]
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    profiles: ["experimental"]
+    ports:
+      - "3000:3000"
+
+  minio:
+    image: minio/minio:RELEASE.2024-10-13T13-34-11Z
+    profiles: ["experimental"]
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: ["server", "/data", "--console-address", ":9001"]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    profiles: ["experimental"]
+    ports:
+      - "9090:9090"

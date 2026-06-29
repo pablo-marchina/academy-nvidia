@@ -1,4 +1,4 @@
-"""Tests for src.rag.semantic_retrieval — semantic_retrieve()."""
+﻿"""Tests for src.rag.semantic_retrieval â€” semantic_retrieve()."""
 
 from src.rag.embeddings import MockEmbeddingProvider
 from src.rag.schemas import RetrievalQuery, RetrievedContext

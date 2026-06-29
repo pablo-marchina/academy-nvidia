@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -24,9 +25,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+def _cors_origins() -> list[str]:
+    configured = os.environ.get("CORS_ALLOWED_ORIGINS", "").strip()
+    app_mode = os.environ.get("APP_MODE", "product").casefold()
+    if configured:
+        origins = [origin.strip() for origin in configured.split(",") if origin.strip()]
+    elif app_mode == "product":
+        origins = []
+    else:
+        origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    if app_mode == "product" and "*" in origins:
+        msg = "APP_MODE=product does not allow wildcard CORS origins."
+        raise RuntimeError(msg)
+    return origins
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

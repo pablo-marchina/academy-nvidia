@@ -1,6 +1,0 @@
-{
-  "generated_at": "2026-06-23T02:21:26.222353+00:00",
-  "policy": "Build artifacts are reproducible outputs and are excluded from the source release ZIP.",
-  "required_command": "npm ci && npm run build",
-  "status": "PENDING_FRONTEND_BUILD"
-}

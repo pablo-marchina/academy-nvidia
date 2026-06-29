@@ -347,10 +347,10 @@ def _collect_sources(state: StartupRadarState) -> dict[str, Any]:
                 validation_result = validate_decision_for_production(rec)
                 if not validation_result.passed:
                     blockers.append(
-                        f"Calibrated decision '{decision_id}' blocked: " f"{'; '.join(validation_result.reasons)}"
+                        f"Calibrated decision '{decision_id}' blocked: {'; '.join(validation_result.reasons)}"
                     )
                 elif rec.calibration_status in ("UNCALIBRATED", "BLOCKED"):
-                    blockers.append(f"Calibrated decision '{decision_id}' is " f"{rec.calibration_status}")
+                    blockers.append(f"Calibrated decision '{decision_id}' is {rec.calibration_status}")
                 elif limit_key is not None:
                     calibrated_limits[limit_key] = rec.current_value
                 break
@@ -854,7 +854,7 @@ def _validate_evidence(state: StartupRadarState) -> dict[str, Any]:
                 validation = validate_decision_for_production(rec)
                 if not validation.passed:
                     calibration_blockers.append(
-                        f"Calibrated decision '{decision_id}' blocked: " f"{'; '.join(validation.reasons)}"
+                        f"Calibrated decision '{decision_id}' blocked: {'; '.join(validation.reasons)}"
                     )
                 elif value_key is not None:
                     if isinstance(rec.current_value, (int, float)):
@@ -1034,7 +1034,7 @@ def _validate_evidence(state: StartupRadarState) -> dict[str, Any]:
     if unsupported_critical_claims_count > 0:
         validation_status = "failed"
         top_status = "evidence_validation_failed"
-        msg = f"validate_evidence: {unsupported_critical_claims_count}" " critical claim(s) without supported evidence"
+        msg = f"validate_evidence: {unsupported_critical_claims_count} critical claim(s) without supported evidence"
         if msg not in blockers:
             blockers.append(msg)
         review_required = False
@@ -1863,9 +1863,7 @@ def _rank_recommendations(
 
     # ── 1. Check critical claims ─────────────────────────────────────────
     if unsupported_critical_claims_count > 0:
-        msg = (
-            f"rank_recommendations: {unsupported_critical_claims_count}" " critical claim(s) without supported evidence"
-        )
+        msg = f"rank_recommendations: {unsupported_critical_claims_count} critical claim(s) without supported evidence"
         if msg not in blockers:
             blockers.append(msg)
         return {
@@ -2183,7 +2181,7 @@ def _run_quality_gates(state: StartupRadarState) -> dict[str, Any]:
         failed_checks.append(f"gap_diagnosis_status is {gap_diagnosis_status}")
 
     if total_gap_count > 0 and production_allowed_gap_count < total_gap_count:
-        failed_checks.append(f"not all gaps allow production " f"({production_allowed_gap_count}/{total_gap_count})")
+        failed_checks.append(f"not all gaps allow production ({production_allowed_gap_count}/{total_gap_count})")
     if missing_gap_calibration_count > 0:
         failed_checks.append(f"missing_gap_calibration_count is {missing_gap_calibration_count}")
 

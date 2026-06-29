@@ -1583,7 +1583,7 @@ def run_startup_scoring_baseline_calibration(
             nv_uncertainty=None,
             production_blockers=["Insufficient human labels for calibration."],
             labels_missing_notes=(
-                f"Found {ai_labels} AI labels and {nv_labels} NVIDIA labels. " f"Need at least 3 of each for metrics."
+                f"Found {ai_labels} AI labels and {nv_labels} NVIDIA labels. Need at least 3 of each for metrics."
             ),
             report="Insufficient labels — cannot compute calibration metrics.",
         )
@@ -1663,8 +1663,7 @@ def run_startup_scoring_baseline_calibration(
         production_allowed = False
 
     labels_missing_notes = (
-        f"AI labels: {ai_labels}, NVIDIA labels: {nv_labels}. "
-        f"Blockers: {'; '.join(blockers) if blockers else 'none'}"
+        f"AI labels: {ai_labels}, NVIDIA labels: {nv_labels}. Blockers: {'; '.join(blockers) if blockers else 'none'}"
     )
 
     report = _format_startup_scoring_report(

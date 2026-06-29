@@ -65,7 +65,7 @@ def _build_uncertainties(result: PipelineResult) -> list[BriefUncertainty]:
                     BriefUncertainty(
                         description=f"Gap '{gap.gap.value}' detected as {gap.evidence_tag.value}",
                         source="gap_diagnosis",
-                        impact=("Recommendation reliability is reduced; " "collect direct evidence to confirm."),
+                        impact=("Recommendation reliability is reduced; collect direct evidence to confirm."),
                     )
                 )
     return uncertainties
@@ -121,15 +121,14 @@ def build_action_brief(
         for g in result.gap_diagnosis.diagnosed_gaps:
             if g.detected:
                 gap_lines.append(
-                    f"- **{g.gap.value}** — {g.evidence_tag.value} "
-                    f"(confidence: {g.confidence.value})\n  {g.reasoning}"
+                    f"- **{g.gap.value}** — {g.evidence_tag.value} (confidence: {g.confidence.value})\n  {g.reasoning}"
                 )
 
     tech_lines: list[str] = []
     if diag:
         for tc in diag.nvidia_technology_candidates:
             tech_lines.append(
-                f"- **{tc.technology_name}** addresses **{tc.addresses_gap.value}**" f"\n  {tc.justification}"
+                f"- **{tc.technology_name}** addresses **{tc.addresses_gap.value}**\n  {tc.justification}"
             )
 
     exp_lines: list[str] = []
@@ -147,9 +146,7 @@ def build_action_brief(
     rec_action_lines: list[str] = []
     if result.recommendation:
         for r in result.recommendation.recommendations:
-            rec_action_lines.append(
-                f"- [{r.action.value}] {r.diagnosed_gap.value}: " f"{r.next_action_for_nvidia_team}"
-            )
+            rec_action_lines.append(f"- [{r.action.value}] {r.diagnosed_gap.value}: {r.next_action_for_nvidia_team}")
 
     next_action = ""
     if result.recommendation and result.recommendation.top_recommendation:
@@ -167,8 +164,7 @@ def build_action_brief(
             "Executive Summary",
             [
                 (
-                    f"{profile.startup_name} ({profile.sector}) — "
-                    f"{' '.join(classification.reasoning.split()[:20])}..."
+                    f"{profile.startup_name} ({profile.sector}) — {' '.join(classification.reasoning.split()[:20])}..."
                     if classification.reasoning
                     else f"{profile.startup_name} ({profile.sector})"
                 ),
@@ -176,7 +172,7 @@ def build_action_brief(
                 f"Priority Score: {result.final_priority_score}/100 | "
                 f"Motion: {motion} | "
                 f"Confidence: {confidence.value}",
-                f"Gaps detected: {total_gaps} | " f"Evidence items: {evidence_count} | " f"Next action: {next_action}",
+                f"Gaps detected: {total_gaps} | Evidence items: {evidence_count} | Next action: {next_action}",
             ],
         ),
         _build_section(
@@ -280,9 +276,7 @@ def build_action_brief(
             ctx_lines.append(f"- **{sc.technology}** for *{sc.gap_type}*:")
             for pc in sc.contexts:
                 ctx_lines.append(
-                    f"  - {pc.title}: {pc.content[:120]}... "
-                    f"(score: {pc.relevance_score}, "
-                    f"[source]({pc.url or '#'}))"
+                    f"  - {pc.title}: {pc.content[:120]}... (score: {pc.relevance_score}, [source]({pc.url or '#'}))"
                 )
         if ctx_lines:
             sections.append(_build_section("Supporting NVIDIA Context", ctx_lines))

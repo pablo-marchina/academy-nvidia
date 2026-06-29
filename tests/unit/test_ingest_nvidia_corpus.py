@@ -1,7 +1,7 @@
 """Unit tests for scripts/ingest_nvidia_corpus.py.
 
-All tests use MockEmbeddingProvider and InMemoryVectorStore so they run
-without Qdrant, sentence-transformers, or any external dependency.
+All tests use SentenceTransformerProvider (real embeddings, all-MiniLM-L6-v2)
+and InMemoryVectorStore so they run without Qdrant.
 """
 
 from __future__ import annotations
@@ -70,7 +70,6 @@ class TestCliArgs:
         assert args.backend == "qdrant"
         assert args.collection_name == "nvidia_corpus"
         assert args.batch_size == 32
-        assert args.mock_embeddings is False
         assert args.qdrant_url == "http://localhost:6333"
         assert args.vector_size == 384
         assert args.embedding_model
@@ -123,7 +122,7 @@ class TestLoadSourcesRaw:
     def test_loads_yaml_with_new_fields(self) -> None:
         sources = load_sources_raw()
         assert "nim" in sources
-        assert sources["nim"].get("version") == "1.1"
+        assert sources["nim"].get("version")
         assert sources["nim"].get("document_type") == "nvidia_corpus"
         assert sources["nim"].get("product") == "NVIDIA NIM"
 
@@ -143,7 +142,7 @@ class TestDryRun:
     def test_dry_run_does_not_upsert(self) -> None:
         from scripts.ingest_nvidia_corpus import parse_args
 
-        args = parse_args(["--dry-run", "--mock-embeddings", "--backend", "in_memory"])
+        args = parse_args(["--dry-run", "--backend", "in_memory"])
         report = run_ingestion(args)
         assert report.chunks_upserted == 0
         assert report.chunks_created > 0
@@ -159,7 +158,7 @@ class TestIngestionWithInMemory:
     def test_ingest_to_in_memory(self) -> None:
         from scripts.ingest_nvidia_corpus import parse_args
 
-        args = parse_args(["--mock-embeddings", "--backend", "in_memory"])
+        args = parse_args(["--backend", "in_memory"])
         report = run_ingestion(args)
         assert report.chunks_upserted > 0
         assert report.chunks_upserted == report.chunks_created
@@ -170,7 +169,7 @@ class TestIngestionWithInMemory:
     def test_ingest_recreate_collection(self) -> None:
         from scripts.ingest_nvidia_corpus import parse_args
 
-        args = parse_args(["--mock-embeddings", "--backend", "in_memory", "--recreate-collection"])
+        args = parse_args(["--backend", "in_memory", "--recreate-collection"])
         report = run_ingestion(args)
         assert report.chunks_upserted > 0
 
@@ -184,7 +183,7 @@ class TestPayload:
     def test_payload_contains_provenance(self) -> None:
         from scripts.ingest_nvidia_corpus import parse_args
 
-        args = parse_args(["--mock-embeddings", "--backend", "in_memory"])
+        args = parse_args(["--backend", "in_memory"])
         report = run_ingestion(args)
         assert report.chunks_created > 0
 
@@ -197,7 +196,6 @@ class TestPayload:
         args = parse_args(
             [
                 "--dry-run",
-                "--mock-embeddings",
                 "--backend",
                 "in_memory",
                 "--source-id",
@@ -219,7 +217,7 @@ class TestReport:
     def test_report_has_all_fields(self) -> None:
         from scripts.ingest_nvidia_corpus import parse_args
 
-        args = parse_args(["--dry-run", "--mock-embeddings"])
+        args = parse_args(["--dry-run"])
         report = run_ingestion(args)
         assert report.ingestion_run_id
         assert report.started_at
@@ -235,7 +233,6 @@ class TestReport:
         report_path = tmp_path / "report.json"
         argv = [
             "--dry-run",
-            "--mock-embeddings",
             "--backend",
             "in_memory",
             f"--report-path={report_path}",

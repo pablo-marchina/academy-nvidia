@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from src.rag.embeddings import EmbeddingProvider
 from src.rag.retrieval import ChunkIndex
 from src.rag.schemas import RetrievalQuery, RetrievedContext
@@ -137,3 +139,30 @@ def _apply_filters(
     if source_id:
         result = [c for c in result if c.source_id == source_id]
     return result
+
+
+class HybridRetrieval:
+    def run(self, contexts: list[RetrievedContext], **kwargs: Any) -> list[RetrievedContext]:
+        query = kwargs.get("query")
+        chunk_index = kwargs.get("chunk_index")
+        embedding_model = kwargs.get("embedding_model")
+        vector_store = kwargs.get("vector_store")
+        if (
+            not isinstance(query, RetrievalQuery)
+            or not isinstance(chunk_index, ChunkIndex)
+            or not isinstance(embedding_model, EmbeddingProvider)
+            or not isinstance(vector_store, VectorStore)
+        ):
+            return contexts
+        return hybrid_retrieve(
+            query=query,
+            chunk_index=chunk_index,
+            embedding_model=embedding_model,
+            vector_store=vector_store,
+            top_k=kwargs.get("top_k", 3),
+            product=kwargs.get("product"),
+            gap_type=kwargs.get("gap_type"),
+            source_id=kwargs.get("source_id"),
+            include_deprecated=kwargs.get("include_deprecated", False),
+            include_expired=kwargs.get("include_expired", False),
+        )

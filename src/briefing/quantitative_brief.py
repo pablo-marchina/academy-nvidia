@@ -326,14 +326,14 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
         updates_status = "brief_failed"
         review_required = False
         blockers.append(
-            "generate_brief: " f"{unsupported_critical_claims_count} critical claim(s) without supported evidence"
+            f"generate_brief: {unsupported_critical_claims_count} critical claim(s) without supported evidence"
         )
     elif has_uncalibrated_inputs:
         brief_status = ActionBriefStatus.BLOCKED_UNCALIBRATED_INPUTS
         updates_status = "brief_blocked"
         review_required = True
         blockers.append(
-            "generate_brief: uncalibrated inputs detected " f"(missing_calibration_count={missing_calibration_count})"
+            f"generate_brief: uncalibrated inputs detected (missing_calibration_count={missing_calibration_count})"
         )
     elif inconsistency_blockers:
         brief_status = ActionBriefStatus.FAILED
@@ -440,9 +440,7 @@ def build_quantitative_brief(state: dict[str, Any]) -> dict[str, Any]:
     )
     scoring_status = scoring_summary.get("scoring_status", "unknown") if scoring_summary else "unknown"
     scoring_summary_text = (
-        f"ai_native_score={ai_native_score_value} | "
-        f"nvidia_fit_score={nvidia_fit_score_value} | "
-        f"status={scoring_status}"
+        f"ai_native_score={ai_native_score_value} | nvidia_fit_score={nvidia_fit_score_value} | status={scoring_status}"
     )
 
     risk_parts: list[str] = []

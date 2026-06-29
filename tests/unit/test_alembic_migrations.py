@@ -27,14 +27,17 @@ def test_alembic_metadata_imports() -> None:
     )
 
 
-def test_alembic_env_prefers_product_db_url_over_ini_default() -> None:
+def test_alembic_env_prefers_product_db_url_in_product_mode() -> None:
     env_source = (PROJECT_ROOT / "migrations" / "env.py").read_text(encoding="utf-8")
-    product_env_pos = env_source.index('os.getenv("PRODUCT_DB_URL")')
-    ini_default_pos = env_source.index('config.get_main_option("sqlalchemy.url")')
-    assert product_env_pos < ini_default_pos
+    assert 'os.getenv("APP_MODE") == "product"' in env_source
+    assert 'if os.getenv("APP_MODE") == "product" and product_database_url' in env_source
+    assert "else configured_database_url or product_database_url" in env_source
 
 
-def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path) -> None:
+def test_alembic_upgrade_and_downgrade_sqlite(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("APP_MODE", "test")
+    monkeypatch.delenv("PRODUCT_DB_URL", raising=False)
+
     db_path = tmp_path / "test_migrate.db"
     db_url = f"sqlite:///{db_path.as_posix()}"
 

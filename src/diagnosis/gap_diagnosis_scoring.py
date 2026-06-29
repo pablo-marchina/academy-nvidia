@@ -92,9 +92,7 @@ def _lookup_calibration_group(
                 found = True
                 validation = validate_decision_for_production(rec)
                 if not validation.passed:
-                    blockers.append(
-                        f"Decision '{decision_id}' blocked for production: " f"{'; '.join(validation.reasons)}"
-                    )
+                    blockers.append(f"Decision '{decision_id}' blocked for production: {'; '.join(validation.reasons)}")
                 elif rec.calibration_status.value in ("uncalibrated", "blocked"):
                     blockers.append(f"Decision '{decision_id}' is {rec.calibration_status.value}")
                 else:
@@ -505,7 +503,7 @@ def _diagnose_single_gap(
             claim_ids.append(str(cid))
 
     explanation_parts: list[str] = [
-        f"Gap '{gap_type.value}': severity={round(final_severity, 4)}, " f"confidence={round(final_confidence, 4)}",
+        f"Gap '{gap_type.value}': severity={round(final_severity, 4)}, confidence={round(final_confidence, 4)}",
         f"Severity features: {severity_features.model_dump(mode='json')}",
         f"Confidence features: {confidence_features.model_dump(mode='json')}",
     ]

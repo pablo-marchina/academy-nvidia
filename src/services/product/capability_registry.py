@@ -181,13 +181,13 @@ _reg(
     capability_id="rag_retrieval",
     name="RAG Retrieval",
     description=(
-        "Lexical, semantic, and hybrid retrieval from NVIDIA corpus. " "Required for all NVIDIA recommendations."
+        "Lexical, semantic, and hybrid retrieval from NVIDIA corpus. Required for all NVIDIA recommendations."
     ),
     category=CapabilityCategory.rag,
     required=True,
     required_env_vars=["RAG_VECTOR_BACKEND"],
     setup_instructions=(
-        "Set RAG_VECTOR_BACKEND=qdrant. " "Ingest the NVIDIA corpus with: python scripts/ingest_nvidia_corpus.py"
+        "Set RAG_VECTOR_BACKEND=qdrant. Ingest the NVIDIA corpus with: python scripts/ingest_nvidia_corpus.py"
     ),
     health_check_key="rag",
     documentation_ref="docs/35_product_rag_design.md",
@@ -205,7 +205,7 @@ _reg(
         "RAG_DENSE_WEIGHT",
         "RAG_SPARSE_WEIGHT",
     ],
-    setup_instructions=("Set RAG_RETRIEVAL_MODE to hybrid or hybrid_with_rerank. " "Install extras as needed."),
+    setup_instructions=("Set RAG_RETRIEVAL_MODE to hybrid or hybrid_with_rerank. Install extras as needed."),
     failure_mode="Falls back to dense_only if sparse or reranker unavailable.",
     documentation_ref="docs/69_hybrid_rag_reranking.md",
 )
@@ -215,7 +215,7 @@ _reg(
     description="BM25-style keyword retrieval over NVIDIA corpus chunks",
     category=CapabilityCategory.rag,
     required=False,
-    setup_instructions=("Built into Hybrid RAG; no extra dependencies required. " "Uses local BM25 implementation."),
+    setup_instructions=("Built into Hybrid RAG; no extra dependencies required. Uses local BM25 implementation."),
     failure_mode="Falls back to dense_only if corpus is empty or index not built.",
     documentation_ref="docs/69_hybrid_rag_reranking.md",
 )
@@ -228,7 +228,7 @@ _reg(
     enabled_by_default=False,
     required_env_vars=["RERANKER_PROVIDER"],
     setup_instructions=(
-        "Set RERANKER_PROVIDER=local_cross_encoder. " "Requires sentence-transformers with CrossEncoder support."
+        "Set RERANKER_PROVIDER=local_cross_encoder. Requires sentence-transformers with CrossEncoder support."
     ),
     failure_mode="Falls back to NoOpReranker (no reranking) if model unavailable.",
     documentation_ref="docs/69_hybrid_rag_reranking.md",
@@ -414,7 +414,7 @@ _reg(
     required=False,
     enabled_by_default=False,
     required_extras=["llm-judge"],
-    setup_instructions=("Install with `pip install -e .[llm-judge]` and configure " "ENABLE_INSTRUCTOR_TRIAL=true."),
+    setup_instructions=("Install with `pip install -e .[llm-judge]` and configure ENABLE_INSTRUCTOR_TRIAL=true."),
     failure_mode="Not installed; LLM Judge uses NullLLMJudgeProvider (deterministic offline).",
 )
 
@@ -492,16 +492,16 @@ _reg(
 _reg(
     capability_id="startup_discovery",
     name="Startup Discovery Engine",
-    description=("Multi-source discovery of AI-native Brazilian startups" " with signal detection and dedup"),
+    description=("Multi-source discovery of AI-native Brazilian startups with signal detection and dedup"),
     category=CapabilityCategory.core,
     required=False,
     setup_instructions="Available once product_database is configured.",
-    failure_mode=("Manual seed discovery works without external sources;" " URL list discovery requires httpx."),
+    failure_mode=("Manual seed discovery works without external sources; URL list discovery requires httpx."),
 )
 _reg(
     capability_id="discovery_sources",
     name="Discovery Source Registry",
-    description=("Configurable registry of discovery sources" " (manual, URL list, incubators, accelerators)"),
+    description=("Configurable registry of discovery sources (manual, URL list, incubators, accelerators)"),
     category=CapabilityCategory.core,
     required=False,
     setup_instructions="Sources defined in src/config/discovery_sources.json.",
@@ -539,7 +539,7 @@ _reg(
     required_extras=["agent-orchestration"],
     required_env_vars=["AGENT_ORCHESTRATION_ENABLED"],
     setup_instructions=(
-        "Install with `pip install -e .[agent-orchestration]` and set " "AGENT_ORCHESTRATION_ENABLED=true."
+        "Install with `pip install -e .[agent-orchestration]` and set AGENT_ORCHESTRATION_ENABLED=true."
     ),
     failure_mode=("LangGraph is not installed or enabled. Product mode blocks workflow execution."),
     documentation_ref="docs/68_langgraph_orchestration_layer.md",
@@ -568,7 +568,7 @@ _reg(
     category=CapabilityCategory.core,
     required=False,
     setup_instructions=(
-        "Available once workflow_runs capability is active. " "Tracing is built into the WorkflowNodeRun model."
+        "Available once workflow_runs capability is active. Tracing is built into the WorkflowNodeRun model."
     ),
 )
 
@@ -579,7 +579,7 @@ _reg(
     capability_id="opportunity_scoring",
     name="Opportunity Score & Pipeline Ranking",
     description=(
-        "Evidence-backed opportunity scoring with 10 weighted components, " "8 penalty types, and ranked pipeline view"
+        "Evidence-backed opportunity scoring with 10 weighted components, 8 penalty types, and ranked pipeline view"
     ),
     category=CapabilityCategory.opportunity_scoring,
     required=True,

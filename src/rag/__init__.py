@@ -69,6 +69,7 @@ _EXPORTS: dict[str, str] = {
     "RetrievalQuery": "src.rag.schemas",
     "RetrievedContext": "src.rag.schemas",
     "SupportingNvidiaContext": "src.rag.schemas",
+    "TechniquesConfig": "src.rag.schemas",
 }
 
 __all__ = sorted(_EXPORTS)

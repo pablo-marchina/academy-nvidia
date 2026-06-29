@@ -1,4 +1,4 @@
-"""End-to-end golden evaluation tests for the full pipeline.
+﻿"""End-to-end golden evaluation tests for the full pipeline.
 
 Each test loads a golden case from examples/golden/, runs the pipeline,
 builds the Action Brief, and asserts expected outputs.
@@ -281,8 +281,8 @@ def test_golden_evals_run_offline():
     assert_pipeline_contract(result)
 
 
-def test_offline_rag_with_mock_embeddings():
-    """RAG golden cases work with MockEmbeddingProvider (no sentence-transformers)."""
+def test_offline_rag_with_local_embeddings():
+    """RAG golden cases work with MockEmbeddingProvider (all-MiniLM-L6-v2)."""
     case = _load("startup_rag_supported")
     _, result = run_pipeline_with_rag(case)
     assert result.rag_output is not None

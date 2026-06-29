@@ -160,11 +160,7 @@ def run_answer_quality_gates(
             "unsupported_claim_limit",
             metrics.unsupported_claim_count <= case.max_unsupported_claim_count,
             "unsupported claim count within limit",
-            (
-                "unsupported_claim_count="
-                f"{metrics.unsupported_claim_count} exceeds "
-                f"{case.max_unsupported_claim_count}"
-            ),
+            (f"unsupported_claim_count={metrics.unsupported_claim_count} exceeds {case.max_unsupported_claim_count}"),
         ),
         _gate(
             "required_evidence_ids_present",

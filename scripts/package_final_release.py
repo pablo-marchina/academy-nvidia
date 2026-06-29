@@ -4,17 +4,20 @@ from __future__ import annotations
 import argparse
 import json
 import zipfile
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_ZIP_PATH = PROJECT_ROOT / "release" / "academy-nvidia-final-case.zip"
+DEFAULT_ZIP_PATH = PROJECT_ROOT / "release" / "academy-nvidia-final-product.zip"
 DEFAULT_EVIDENCE_DIR = PROJECT_ROOT / "final_case_evidence"
 
 ALLOWLIST_FILES = {
     ".env.example",
+    ".env.product.example",
     ".env.production.example",
+    ".env.release.example",
+    ".env.test.example",
     "CONTRIBUTING.md",
     "LICENSE",
     "Makefile",
@@ -27,6 +30,9 @@ ALLOWLIST_FILES = {
     "pyproject.toml",
     "frontend/package-lock.json",
     "frontend/package.json",
+    "data/free_external_tool_registry.csv",
+    "data/source_registry.csv",
+    "data/data_rights_registry.csv",
 }
 
 ALLOWLIST_DIRS = {
@@ -39,6 +45,7 @@ ALLOWLIST_DIRS = {
     "frontend/public",
     "frontend/src",
     "docs/contracts",
+    "docs/adr",
 }
 
 ALLOWLIST_DOC_PREFIXES = ("docs/final_",)
@@ -142,7 +149,14 @@ def is_forbidden(relative: str) -> bool:
     parts = set(normalized.split("/"))
     if normalized == ".env":
         return True
-    if normalized.startswith(".env.") and normalized not in {".env.example", ".env.production.example"}:
+    allowed_env_examples = {
+        ".env.example",
+        ".env.product.example",
+        ".env.production.example",
+        ".env.release.example",
+        ".env.test.example",
+    }
+    if normalized.startswith(".env.") and normalized not in allowed_env_examples:
         return True
     if normalized == ".ai.zip":
         return True
@@ -161,7 +175,14 @@ def build_release_reports(files: list[str]) -> dict[str, dict[str, object]]:
         top_level = path.split("/", 1)[0]
         by_top_level[top_level] = by_top_level.get(top_level, 0) + 1
     status = "PASS" if not forbidden else "FAIL"
-    zip_ref = "release/academy-nvidia-final-case.zip"
+    zip_ref = "release/academy-nvidia-final-product.zip"
+    allowed_env_examples = {
+        ".env.example",
+        ".env.product.example",
+        ".env.production.example",
+        ".env.release.example",
+        ".env.test.example",
+    }
     return {
         "final_release_manifest": {
             "report_id": "final_release_manifest",
@@ -223,8 +244,7 @@ def build_release_reports(files: list[str]) -> dict[str, dict[str, object]]:
             generated_at,
             "no_env_in_release_report",
             files,
-            lambda item: item == ".env"
-            or (item.startswith(".env.") and item not in {".env.example", ".env.production.example"}),
+            lambda item: item == ".env" or (item.startswith(".env.") and item not in allowed_env_examples),
         ),
         "no_git_dir_in_release_report": _single_policy_report(
             generated_at,

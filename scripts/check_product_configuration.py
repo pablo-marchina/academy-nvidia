@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterable
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from scripts.load_product_env import load_product_env
 from src.config.product_config_validator import validate_product_configuration
 from src.governance.artifacts import DEFAULT_EVIDENCE_DIR, write_json
 
@@ -22,10 +23,15 @@ def main() -> int:
     parser.add_argument("--actual-env-only", action="store_true")
     args = parser.parse_args()
 
-    env = None if args.actual_env_only else _load_env_example(PROJECT_ROOT / ".env.example")
+    if args.actual_env_only:
+        load_product_env()
+        env = None
+    else:
+        env = _load_env_example(PROJECT_ROOT / ".env.example")
     report = validate_product_configuration(env).model_dump()
     report["generated_at"] = datetime.now(UTC).isoformat()
     write_json(args.evidence_dir / "product_configuration_report.json", report)
+    write_json(args.evidence_dir / "product_configuration_proof.json", report)
     if report["status"] == "PASS":
         print("PASS: product configuration")
         return 0

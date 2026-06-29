@@ -31,7 +31,7 @@ from src.scraping.source_registry import SourceRecord, list_production_enabled_s
 logger = logging.getLogger(__name__)
 
 _HTTP_COLLECTOR_USER_AGENT = (
-    "Mozilla/5.0 (compatible; NVIDIAStartupAIRadar-HttpCollector/0.1; " "+https://github.com/nvidia/startup-ai-radar)"
+    "Mozilla/5.0 (compatible; NVIDIAStartupAIRadar-HttpCollector/0.1; +https://github.com/nvidia/startup-ai-radar)"
 )
 
 # ── Calibration Decision IDs ─────────────────────────────────────────────

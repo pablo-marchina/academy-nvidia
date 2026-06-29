@@ -1,4 +1,4 @@
-"""Helper functions for end-to-end golden pipeline evaluation."""
+﻿"""Helper functions for end-to-end golden pipeline evaluation."""
 
 from __future__ import annotations
 

@@ -34,17 +34,73 @@ class SourceRecord(BaseModel):
 
 def default_source_registry() -> list[SourceRecord]:
     return [
-        SourceRecord(source_id="official_site", category=SourceCategory.OFFICIAL_SITE, name="Startup official site", authority_weight=1.0),
-        SourceRecord(source_id="official_blog", category=SourceCategory.OFFICIAL_BLOG, name="Startup official blog", authority_weight=0.9),
-        SourceRecord(source_id="careers", category=SourceCategory.CAREERS, name="Startup careers page", authority_weight=0.75),
-        SourceRecord(source_id="product_docs", category=SourceCategory.PRODUCT_DOCS, name="Product or technical docs", authority_weight=0.85),
-        SourceRecord(source_id="linkedin_public", category=SourceCategory.LINKEDIN_PUBLIC, name="Allowed public LinkedIn page", authority_weight=0.7),
-        SourceRecord(source_id="github_public", category=SourceCategory.GITHUB_PUBLIC, name="Allowed public GitHub profile", authority_weight=0.7),
-        SourceRecord(source_id="trusted_news", category=SourceCategory.TRUSTED_NEWS, name="Trusted news", authority_weight=0.65),
-        SourceRecord(source_id="accelerator", category=SourceCategory.ACCELERATOR, name="Accelerator profile", authority_weight=0.65),
-        SourceRecord(source_id="startup_directory", category=SourceCategory.STARTUP_DIRECTORY, name="Startup directory", authority_weight=0.55),
-        SourceRecord(source_id="investor_portfolio", category=SourceCategory.INVESTOR_PORTFOLIO, name="Investor or portfolio page", authority_weight=0.75),
-        SourceRecord(source_id="nvidia_official", category=SourceCategory.NVIDIA_OFFICIAL, name="NVIDIA official product page", authority_weight=1.0),
-        SourceRecord(source_id="nvidia_docs", category=SourceCategory.NVIDIA_DOCS, name="NVIDIA documentation", authority_weight=1.0),
-        SourceRecord(source_id="case_material", category=SourceCategory.CASE_MATERIAL, name="Case material", authority_weight=0.8),
+        SourceRecord(
+            source_id="official_site",
+            category=SourceCategory.OFFICIAL_SITE,
+            name="Startup official site",
+            authority_weight=1.0,
+        ),
+        SourceRecord(
+            source_id="official_blog",
+            category=SourceCategory.OFFICIAL_BLOG,
+            name="Startup official blog",
+            authority_weight=0.9,
+        ),
+        SourceRecord(
+            source_id="careers", category=SourceCategory.CAREERS, name="Startup careers page", authority_weight=0.75
+        ),
+        SourceRecord(
+            source_id="product_docs",
+            category=SourceCategory.PRODUCT_DOCS,
+            name="Product or technical docs",
+            authority_weight=0.85,
+        ),
+        SourceRecord(
+            source_id="linkedin_public",
+            category=SourceCategory.LINKEDIN_PUBLIC,
+            name="Allowed public LinkedIn page",
+            authority_weight=0.7,
+        ),
+        SourceRecord(
+            source_id="github_public",
+            category=SourceCategory.GITHUB_PUBLIC,
+            name="Allowed public GitHub profile",
+            authority_weight=0.7,
+        ),
+        SourceRecord(
+            source_id="trusted_news", category=SourceCategory.TRUSTED_NEWS, name="Trusted news", authority_weight=0.65
+        ),
+        SourceRecord(
+            source_id="accelerator",
+            category=SourceCategory.ACCELERATOR,
+            name="Accelerator profile",
+            authority_weight=0.65,
+        ),
+        SourceRecord(
+            source_id="startup_directory",
+            category=SourceCategory.STARTUP_DIRECTORY,
+            name="Startup directory",
+            authority_weight=0.55,
+        ),
+        SourceRecord(
+            source_id="investor_portfolio",
+            category=SourceCategory.INVESTOR_PORTFOLIO,
+            name="Investor or portfolio page",
+            authority_weight=0.75,
+        ),
+        SourceRecord(
+            source_id="nvidia_official",
+            category=SourceCategory.NVIDIA_OFFICIAL,
+            name="NVIDIA official product page",
+            authority_weight=1.0,
+        ),
+        SourceRecord(
+            source_id="nvidia_docs",
+            category=SourceCategory.NVIDIA_DOCS,
+            name="NVIDIA documentation",
+            authority_weight=1.0,
+        ),
+        SourceRecord(
+            source_id="case_material", category=SourceCategory.CASE_MATERIAL, name="Case material", authority_weight=0.8
+        ),
     ]

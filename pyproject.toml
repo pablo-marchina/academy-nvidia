@@ -23,6 +23,8 @@ dependencies = [
   "sqlalchemy",
   "alembic",
   "psycopg2-binary",
+  "langgraph>=1.2,<2",
+  "langgraph-checkpoint-postgres>=3.1.0",
 ]
 
 [project.optional-dependencies]
@@ -42,19 +44,16 @@ llm-judge = [
   "instructor>=1.8,<2",
 ]
 agents = [
-  "langgraph>=0.2,<1",
-  "langchain",
+  "langgraph>=1.2,<2",
 ]
 agent-orchestration = [
-  "langgraph>=0.2,<1",
+  "langgraph>=1.2,<2",
   "langgraph-checkpoint-postgres>=3.1.0",
 ]
 postgres = [
   "psycopg2-binary",
 ]
 eval = [
-  "ragas>=0.2.0",
-  "deepeval",
   "datasets",
 ]
 ragas-eval = [
@@ -70,16 +69,16 @@ full = [
   "sentence-transformers>=2.2.0",
   "rank-bm25",
   "bm25s",
-  "langgraph>=0.2,<1",
-  "langchain",
+  "langgraph>=1.2,<2",
   "langgraph-checkpoint-postgres>=3.1.0",
   "psycopg2-binary",
-  "ragas>=0.2.0",
-  "deepeval",
   "datasets",
   "bandit",
   "pip-audit",
   "detect-secrets",
+  "instructor>=1.8,<2",
+  "cyclonedx-bom",
+  "ragas>=0.2.0",
 ]
 
 [tool.setuptools]
@@ -123,6 +122,11 @@ ignore = ["UP042"]
 [tool.ruff.lint.per-file-ignores]
 "scripts/calibrate_recommendation_parameters.py" = ["E501"]
 "scripts/calibrate_scoring_ablation.py" = ["E501"]
+"scripts/batch_implement_all.py" = ["E501"]
+"scripts/map_catalog_to_implementation.py" = ["E402", "E501", "E722", "F601"]
+"src/governance/impl_*.py" = ["E501"]
+"src/governance/final_closure.py" = ["E501"]
+"src/rag/*.py" = ["E501"]
 "src/evaluation/gap_diagnosis_baseline.py" = ["E501"]
 "src/evaluation/qdrant_retrieval_eval.py" = ["E501"]
 "src/evaluation/rag_baseline.py" = ["E501"]
@@ -131,6 +135,8 @@ ignore = ["UP042"]
 "src/evaluation/source_evidence_baseline.py" = ["E501"]
 "src/evaluation/startup_scoring_calibration.py" = ["E501"]
 "src/quality/decision_calibration_registry.py" = ["E501"]
+"tests/evals/test_qdrant_retrieval_eval.py" = ["E501"]
+"tests/unit/test_qdrant_rag_service.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -143,5 +149,5 @@ packages = ["src"]
 exclude = ["src/agents/"]
 
 [[tool.mypy.overrides]]
-module = ["sentence_transformers", "yaml", "ragas", "datasets", "ragas.metrics"]
+module = ["requests", "sentence_transformers", "yaml", "ragas", "datasets", "ragas.metrics"]
 ignore_missing_imports = true

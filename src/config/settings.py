@@ -1,6 +1,18 @@
 """Runtime settings for the project."""
 
+import os
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _settings_env_file() -> str | None:
+    """Load a local env file only for explicit development mode."""
+
+    if os.getenv("APP_MODE", "").casefold() != "development":
+        return None
+    local_file = Path(".env.development.local")
+    return str(local_file) if local_file.exists() else None
 
 
 class Settings(BaseSettings):
@@ -15,4 +27,4 @@ class Settings(BaseSettings):
     langsmith_api_key: str = ""
     langsmith_project: str = "nvidia-startup-ai-radar"
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=_settings_env_file(), env_file_encoding="utf-8")

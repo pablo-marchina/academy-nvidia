@@ -189,7 +189,7 @@ def _eval_one_case(
 
     if case.is_critical and case.expected_source_ids:
         if not metrics.hit_at_k:
-            failure_reasons.append(f"critical case '{case.case_id}': hit_at_k=False " f"(top_{case.top_k_for_test})")
+            failure_reasons.append(f"critical case '{case.case_id}': hit_at_k=False (top_{case.top_k_for_test})")
         if not metrics.top_1_expected_match:
             failure_reasons.append(f"critical case '{case.case_id}': top_1_expected_match=False")
     if case.expected_source_ids and metrics.missing_context_count > 0:

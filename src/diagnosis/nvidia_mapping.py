@@ -13,7 +13,7 @@ _TECH_MATRIX: dict[TechnicalGap, list[tuple[str, str]]] = {
     TechnicalGap.EXTERNAL_API_DEPENDENCY: [
         (
             "NVIDIA NIM",
-            "NIM provides optimized microservices for inference, " "reducing external API dependencies.",
+            "NIM provides optimized microservices for inference, reducing external API dependencies.",
         ),
         (
             "NVIDIA AI Enterprise",

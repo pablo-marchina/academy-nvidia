@@ -81,7 +81,6 @@ def compute_source_coverage(
         robots_compliance_status=compliance.robots_compliance_status,
         tos_compliance_status=compliance.tos_compliance_status,
         remaining_gaps=[
-            category.value
-            for category in sorted(expected - successful_categories, key=lambda item: item.value)
+            category.value for category in sorted(expected - successful_categories, key=lambda item: item.value)
         ],
     )

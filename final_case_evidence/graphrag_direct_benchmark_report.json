@@ -1,9 +1,0 @@
-{
-  "current_evidence": "final_case_evidence/graphrag_evidence_graph_product_spike_report.json",
-  "generated_at": "2026-06-23T02:21:18.883713+00:00",
-  "minimum_required_cases": 30,
-  "promotion_allowed": false,
-  "report_id": "graphrag_direct_benchmark_report",
-  "status": "PENDING_BENCHMARK_RUN",
-  "target_case_count": 50
-}

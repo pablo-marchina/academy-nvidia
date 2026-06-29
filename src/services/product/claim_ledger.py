@@ -33,6 +33,40 @@ def _calculate_support_level(
     return SupportLevel.weak.value
 
 
+def _normalize_evidence_refs(
+    items: list[Any],
+    refs_by_id: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    refs: list[dict[str, Any]] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        raw_id = item.get("id") or item.get("evidence_id")
+        if raw_id is not None and str(raw_id) in refs_by_id:
+            refs.append(refs_by_id[str(raw_id)])
+            continue
+        if item.get("source_url") or item.get("claim") or item.get("chunk_id"):
+            refs.append(
+                {
+                    key: item[key]
+                    for key in (
+                        "evidence_id",
+                        "chunk_id",
+                        "source_id",
+                        "source_url",
+                        "title",
+                        "claim",
+                        "confidence",
+                        "evidence_kind",
+                        "matched_gap",
+                        "matched_technology",
+                    )
+                    if key in item and item[key] not in (None, "")
+                }
+            )
+    return refs
+
+
 class ClaimLedgerService:
     def __init__(self, session: Session) -> None:
         self.session = session
@@ -91,11 +125,10 @@ class ClaimLedgerService:
             }
             claim_type = score_type_to_claim.get(s.score_type)
             if claim_type:
-                evidence_refs: list[dict[str, Any]] = []
-                for item in s.components_json.get("evidence_used", []):
-                    if isinstance(item, dict) and "id" in item:
-                        ref = refs_by_id.get(str(item["id"]), item)
-                        evidence_refs.append(ref)
+                evidence_refs = _normalize_evidence_refs(
+                    list(s.components_json.get("evidence_used", [])),
+                    refs_by_id,
+                )
                 support = _calculate_support_level(evidence_refs, s.confidence)
                 missing = s.missing_evidence_json or []
                 claims.append(
@@ -137,19 +170,15 @@ class ClaimLedgerService:
                     )
 
         for gap in analysis_run.gaps:
-            gap_refs: list[dict[str, Any]] = []
-            for item in gap.evidence_refs_json:
-                if isinstance(item, dict) and "id" in item:
-                    ref = refs_by_id.get(str(item["id"]), item)
-                    gap_refs.append(ref)
-                else:
-                    gap_refs.append(item)
+            gap_refs = _normalize_evidence_refs(list(gap.evidence_refs_json), refs_by_id)
+            if not gap.detected and not gap_refs:
+                continue
             support = _calculate_support_level(gap_refs, gap.confidence)
             claims.append(
                 {
                     "startup_id": startup_id,
                     "analysis_run_id": run_id,
-                    "claim_text": (f"Gap: {gap.gap_type} (detected={gap.detected}, " f"confidence={gap.confidence})"),
+                    "claim_text": (f"Gap: {gap.gap_type} (detected={gap.detected}, confidence={gap.confidence})"),
                     "claim_type": ClaimType.gap_claim.value,
                     "support_level": support,
                     "confidence": gap.confidence,
@@ -167,7 +196,11 @@ class ClaimLedgerService:
             )
 
         for mapping in analysis_run.mappings:
-            mapping_refs: list[dict[str, Any]] = []
+            mapping_refs = _normalize_evidence_refs(
+                list(mapping.details_json.get("evidence_used", []))
+                + list(mapping.details_json.get("rag_support_refs", [])),
+                refs_by_id,
+            )
             support = _calculate_support_level(mapping_refs, "medium")
             claims.append(
                 {

@@ -2,12 +2,6 @@
 
 from __future__ import annotations
 
-from src.rag.citation import CitationPackage, build_rag_citation_package
-from src.rag.evidence_refs import (
-    citation_section_for_dossier,
-    evidence_refs_from_chunks,
-    evidence_refs_from_result,
-)
 from src.rag.fusion import reciprocal_rank_fusion, weighted_score_fusion
 from src.rag.query_planner import build_query_plan
 from src.rag.reranker import NoOpReranker, OptionalCrossEncoderReranker, build_reranker
@@ -16,7 +10,6 @@ from src.rag.schemas import (
     QueryPlan,
     RagChunk,
     RagEvidenceChunk,
-    RagEvidenceChunkList,
     RetrievalMode,
 )
 from src.rag.sparse_retrieval import SparseRetriever
@@ -261,88 +254,6 @@ class TestBuildReranker:
     def test_build_invalid(self) -> None:
         reranker = build_reranker(provider="invalid_provider")
         assert isinstance(reranker, NoOpReranker)
-
-
-# =============================================================================
-# Test Citation Package
-# =============================================================================
-
-
-class TestCitationPackage:
-    def test_empty_result(self) -> None:
-        result = RagEvidenceChunkList()
-        pkg = CitationPackage(result)
-        assert pkg.citations_json == []
-        assert pkg.evidence_refs_json == []
-        summary = pkg.source_coverage_summary
-        assert summary["total_chunks"] == 0
-
-    def test_single_chunk(self) -> None:
-        chunk = _make_chunk("c1", text="NVIDIA NIM is optimized for inference.")
-        result = RagEvidenceChunkList(chunks=[chunk])
-        pkg = CitationPackage(result)
-        citations = pkg.citations_json
-        assert len(citations) == 1
-        assert citations[0]["chunk_id"] == "c1"
-        assert citations[0]["excerpt"] == "NVIDIA NIM is optimized for inference."
-
-    def test_evidence_refs_format(self) -> None:
-        chunk = _make_chunk("c1")
-        result = RagEvidenceChunkList(chunks=[chunk])
-        pkg = CitationPackage(result)
-        refs = pkg.evidence_refs_json
-        assert len(refs) == 1
-        assert refs[0]["chunk_id"] == "c1"
-        assert refs[0]["source_url"] == "https://docs.nvidia.com/test"
-
-    def test_source_coverage_summary(self) -> None:
-        chunks = [
-            _make_chunk("c1", source_url="https://docs.nvidia.com/a"),
-            _make_chunk("c2", source_url="https://docs.nvidia.com/b"),
-            _make_chunk("c3", source_url=None),
-        ]
-        result = RagEvidenceChunkList(chunks=chunks, degraded=True, fallback_reason="sparse_empty")
-        pkg = CitationPackage(result)
-        summary = pkg.source_coverage_summary
-        assert summary["total_chunks"] == 3
-        assert summary["unique_sources"] == 3
-        assert summary["with_url"] == 2
-        assert summary["degraded"] is True
-        assert summary["fallback_reason"] == "sparse_empty"
-
-    def test_factory(self) -> None:
-        result = RagEvidenceChunkList(chunks=[_make_chunk("a")])
-        pkg = build_rag_citation_package(result)
-        assert isinstance(pkg, CitationPackage)
-        assert len(pkg.citations_json) == 1
-
-
-# =============================================================================
-# Test Evidence Refs
-# =============================================================================
-
-
-class TestEvidenceRefs:
-    def test_from_chunks(self) -> None:
-        chunks = [_make_chunk("c1"), _make_chunk("c2")]
-        refs = evidence_refs_from_chunks(chunks)
-        assert len(refs) == 2
-        assert refs[0]["chunk_id"] == "c1"
-        assert refs[1]["chunk_id"] == "c2"
-
-    def test_from_result(self) -> None:
-        result = RagEvidenceChunkList(chunks=[_make_chunk("c1")])
-        refs = evidence_refs_from_result(result)
-        assert len(refs) == 1
-
-    def test_citation_section_for_dossier(self) -> None:
-        chunks = [_make_chunk("c1"), _make_chunk("c2")]
-        result = RagEvidenceChunkList(chunks=chunks, total_raw=2, retrieval_mode="hybrid")
-        section = citation_section_for_dossier(result)
-        assert "rag_citations" in section
-        assert "source_coverage" in section
-        assert section["total_citations"] == 2
-        assert section["retrieval_mode"] == "hybrid"
 
 
 # =============================================================================

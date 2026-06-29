@@ -60,7 +60,7 @@ def _validate_semantic_calibrations() -> tuple[dict[str, Any], list[str]]:
                 found = True
                 validation = validate_decision_for_production(rec)
                 if not validation.passed:
-                    blockers.append(f"RAG decision '{decision_id}' blocked: " f"{'; '.join(validation.reasons)}")
+                    blockers.append(f"RAG decision '{decision_id}' blocked: {'; '.join(validation.reasons)}")
                 elif rec.calibration_status in (
                     CalibrationStatus.UNCALIBRATED,
                     CalibrationStatus.BLOCKED,

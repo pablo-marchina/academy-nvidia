@@ -1,9 +1,0 @@
-{
-  "controls": [
-    "context_minimization_policy",
-    "data_retention_policy",
-    "source_storage_policy"
-  ],
-  "generated_at": "2026-06-23T02:21:26.222353+00:00",
-  "status": "PASS"
-}

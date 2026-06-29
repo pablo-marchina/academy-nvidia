@@ -10,7 +10,7 @@ import os
 
 import pytest
 
-from src.rag.embeddings import MockEmbeddingProvider
+from src.rag.embeddings import SentenceTransformerProvider
 from src.rag.ingestion_pipeline import (
     CORPUS_VERSION,
     check_corpus_readiness,
@@ -164,7 +164,7 @@ def test_connection_error_when_unavailable() -> None:
 @_REQUIRE_QDRANT
 def test_qdrant_rag_service_validates_against_real_qdrant() -> None:
     """QdrantRagService can validate against a real Qdrant instance."""
-    from src.rag.embeddings import MockEmbeddingProvider
+    from src.rag.embeddings import SentenceTransformerProvider
     from src.rag.rag_service_factory import QdrantRagService
 
     cfg = QdrantConfig(
@@ -175,7 +175,7 @@ def test_qdrant_rag_service_validates_against_real_qdrant() -> None:
     )
     store = QdrantStore(config=cfg)
     store.clear()
-    emb = MockEmbeddingProvider(vector_size=4)
+    emb = SentenceTransformerProvider("all-MiniLM-L6-v2")
     svc = QdrantRagService(qdrant_config=cfg, embedding_model=emb, vector_store=store)
 
     svc._validate()
@@ -199,7 +199,7 @@ def test_empty_collection_readiness_blocked(store: QdrantStore) -> None:
 @_REQUIRE_QDRANT
 def test_populated_collection_payload_fields(store: QdrantStore) -> None:
     """Populated collection stores new payload fields."""
-    emb = MockEmbeddingProvider(vector_size=4)
+    emb = SentenceTransformerProvider("all-MiniLM-L6-v2")
     report = run_ingestion_pipeline(emb, store, batch_size=32, allow_uncalibrated=True)
     assert report.upserted_point_count > 0
     # Check payload fields on stored entries
@@ -237,7 +237,7 @@ def test_readiness_detects_dimension_mismatch(store: QdrantStore) -> None:
 def test_readiness_reports_corpus_version(store: QdrantStore) -> None:
     """Readiness reports the corpus version from stored points."""
     store.clear()
-    emb = MockEmbeddingProvider(vector_size=4)
+    emb = SentenceTransformerProvider("all-MiniLM-L6-v2")
     run_ingestion_pipeline(emb, store, batch_size=32, allow_uncalibrated=True)
     readiness = check_corpus_readiness(store)
     assert readiness.corpus_version_found == CORPUS_VERSION
@@ -247,7 +247,7 @@ def test_readiness_reports_corpus_version(store: QdrantStore) -> None:
 def test_ingestion_pipeline_to_qdrant(store: QdrantStore) -> None:
     """Ingestion pipeline works end-to-end with Qdrant."""
     store.clear()
-    emb = MockEmbeddingProvider(vector_size=4)
+    emb = SentenceTransformerProvider("all-MiniLM-L6-v2")
     report = run_ingestion_pipeline(emb, store, batch_size=32, allow_uncalibrated=True)
     assert report.ingestion_status == "completed"
     assert report.upserted_point_count > 0

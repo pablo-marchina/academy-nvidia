@@ -14,8 +14,14 @@ FORBIDDEN = [
 ]
 ALLOWED = {
     "scripts/check_no_mock_runtime.py",
+    "scripts/check_no_demo_dependency.py",
     "src/config/product_config_validator.py",
 }
+NEGATIVE_CONTEXT = (
+    re.compile(r"(do|does|must|should|will|shall)\s+not\s+(access|use|read|depend|rely)", re.IGNORECASE),
+    re.compile(r"never\s+(access|use|read|depend|rely)", re.IGNORECASE),
+    re.compile(r"no\s+(demo|mock)\s+(runtime|dependency|fallback|access|reference)", re.IGNORECASE),
+)
 
 
 def main() -> int:
@@ -33,6 +39,9 @@ def main() -> int:
             for pattern in FORBIDDEN:
                 for match in pattern.finditer(text):
                     line = text.count("\n", 0, match.start()) + 1
+                    line_text = text.splitlines()[line - 1]
+                    if any(context.search(line_text) for context in NEGATIVE_CONTEXT):
+                        continue
                     violations.append(f"{rel}:{line}: {match.group(0)[:120]}")
     truthy = {"1", "true", "yes", "on"}
     for key in ("DEMO_MODE", "USE_DEMO_DATA", "MOCK_PROVIDER", "USE_MOCK_PROVIDER", "ALLOW_MOCK_RUNTIME"):

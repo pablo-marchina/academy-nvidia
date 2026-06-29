@@ -26,7 +26,7 @@ from typing import Any, cast
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_PROJECT_ROOT))
 
-from src.rag.embeddings import MockEmbeddingProvider, SentenceTransformerProvider  # noqa: E402
+from src.rag.embeddings import SentenceTransformerProvider  # noqa: E402
 from src.rag.ingestion import (  # noqa: E402
     _CORPUS_DIR,
     _SOURCES_FILE,
@@ -142,15 +142,11 @@ def compute_chunk_hash(content: str) -> str:
 
 
 def build_embedding_provider(
-    mock: bool = False,
     *,
     model_name: str = "all-MiniLM-L6-v2",
     require_real: bool = False,
-) -> Any:
-    """Build embedding provider (Mock or SentenceTransformer)."""
-    if mock:
-        print("  Using MockEmbeddingProvider (deterministic, low-dim)")
-        return MockEmbeddingProvider()
+) -> SentenceTransformerProvider:
+    """Build a SentenceTransformer embedding provider."""
     try:
         provider = SentenceTransformerProvider(model_name)
         print(f"  Using SentenceTransformerProvider (dim={provider.vector_size})")
@@ -159,10 +155,10 @@ def build_embedding_provider(
         if require_real:
             raise
         print(
-            "  WARNING: sentence-transformers not installed. " "Falling back to MockEmbeddingProvider.",
+            "  WARNING: sentence-transformers not installed. " "Falling back to all-MiniLM-L6-v2.",
             file=sys.stderr,
         )
-        return MockEmbeddingProvider()
+        return SentenceTransformerProvider("all-MiniLM-L6-v2")
 
 
 # ---------------------------------------------------------------------------
@@ -281,7 +277,6 @@ def run_ingestion(args: argparse.Namespace) -> IngestionReport:
     # 5. Generate embeddings
     print("Step 5/7: Generating embeddings...")
     embedding_provider = build_embedding_provider(
-        mock=args.mock_embeddings,
         model_name=args.embedding_model,
         require_real=args.require_real_embeddings,
     )
@@ -443,18 +438,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--require-real-embeddings",
         action="store_true",
-        help="Fail instead of falling back to mock embeddings when the real provider is unavailable.",
+        help="Fail if sentence-transformers is not installed.",
     )
     parser.add_argument(
         "--batch-size",
         type=int,
         default=32,
         help="Number of chunks per upsert batch (default: 32)",
-    )
-    parser.add_argument(
-        "--mock-embeddings",
-        action="store_true",
-        help="Use MockEmbeddingProvider instead of SentenceTransformer",
     )
     parser.add_argument(
         "--report-path",

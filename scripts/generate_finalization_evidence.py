@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ruff: noqa: E402
+# ruff: noqa: E402,E501
 from __future__ import annotations
 
 import argparse
@@ -57,7 +57,10 @@ def generate_finalization_evidence(evidence_dir: Path) -> None:
     generated_at = datetime.now(UTC).isoformat()
     reports = _reports(generated_at, frontend_build_passed=_frontend_build_passed())
     for name, payload in reports.items():
-        _write_json(evidence_dir / f"{name}.json", payload)
+        path = evidence_dir / f"{name}.json"
+        if _should_preserve_existing(path):
+            continue
+        _write_json(path, payload)
     _write_csv_if_missing(evidence_dir / "data_rights_registry.csv", DATA_RIGHTS_FIELDS)
     _write_csv_if_missing(
         evidence_dir / "roadmap_non_runtime_items_justification.csv",
@@ -89,9 +92,17 @@ def _reports(generated_at: str, *, frontend_build_passed: bool) -> dict[str, dic
         "dependency_vulnerability_report": {**blocked, "recommended_tools": ["pip-audit", "npm audit"]},
         "sast_report": {**blocked, "recommended_tools": ["semgrep", "bandit"]},
         "sbom": {**blocked, "recommended_tools": ["syft"], "sbom_format": "TBD_BY_RELEASE_TOOLING"},
+        "sbom_report": {**blocked, "recommended_tools": ["syft"], "sbom_format": "TBD_BY_RELEASE_TOOLING"},
         "container_scan_report": {**blocked, "recommended_tools": ["trivy", "grype"]},
         "openssf_scorecard_report": {**blocked, "recommended_tools": ["OpenSSF Scorecard"]},
         "frontend_build_reproducibility_report": {
+            "status": "PASS" if frontend_build_passed else "PENDING_FRONTEND_BUILD",
+            "generated_at": generated_at,
+            "required_command": "npm ci && npm run build",
+            "validated_command": "npm ci && npm run build" if frontend_build_passed else "",
+            "artifact": "frontend/dist/index.html" if frontend_build_passed else "",
+        },
+        "frontend_reproducible_build_report": {
             "status": "PASS" if frontend_build_passed else "PENDING_FRONTEND_BUILD",
             "generated_at": generated_at,
             "required_command": "npm ci && npm run build",
@@ -262,6 +273,12 @@ def _reports(generated_at: str, *, frontend_build_passed: bool) -> dict[str, dic
             "current_evidence": "final_case_evidence/source_quality_product_spike_report.json",
             "promotion_allowed": False,
         },
+        "source_quality_live_report": {
+            "status": "PENDING_LIVE_SOURCE_REVIEW",
+            "generated_at": generated_at,
+            "report_id": "source_quality_live_report",
+            "required_command": "python scripts/run_source_quality_final_benchmark.py",
+        },
         "product_configuration_report": {
             "status": "PASS",
             "generated_at": generated_at,
@@ -290,6 +307,32 @@ def _frontend_build_passed() -> bool:
 
 def _write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=True) + "\n", encoding="utf-8")
+
+
+def _should_preserve_existing(path: Path) -> bool:
+    if not path.exists():
+        return False
+    preservable = {
+        "secret_scan_report.json",
+        "dependency_vulnerability_report.json",
+        "sast_report.json",
+        "sbom.json",
+        "sbom_report.json",
+        "container_scan_report.json",
+        "openssf_scorecard_report.json",
+        "llm_security_suite_report.json",
+        "prompt_injection_test_report.json",
+        "rag_poisoning_test_report.json",
+        "tool_abuse_test_report.json",
+    }
+    if path.name not in preservable:
+        return False
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return False
+    status = payload.get("status")
+    return status in {"PASS", "FAIL", "BLOCKED_BY_ENVIRONMENT"} and bool(payload.get("tool") or payload.get("command"))
 
 
 def _write_text(path: Path, text: str) -> None:
@@ -461,7 +504,9 @@ def _ensure_decision_ledger_benchmark_type(path: Path) -> None:
     if not rows:
         return
     if "benchmark_type" not in fieldnames:
-        insert_at = fieldnames.index("benchmark_result_ref") if "benchmark_result_ref" in fieldnames else len(fieldnames)
+        insert_at = (
+            fieldnames.index("benchmark_result_ref") if "benchmark_result_ref" in fieldnames else len(fieldnames)
+        )
         fieldnames.insert(insert_at, "benchmark_type")
     for row in rows:
         if row.get("benchmark_type") not in BENCHMARK_TYPES:

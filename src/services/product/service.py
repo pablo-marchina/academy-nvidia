@@ -104,6 +104,11 @@ class ProductService:
         startup = self.repository.get_startup(startup_id)
         if startup is None:
             raise LookupError(f"Startup not found: {startup_id}")
+        if os.getenv("APP_MODE", "").casefold() == "product":
+            if self._env_bool("RAG_REQUIRED_FOR_PRODUCT", False) and not use_rag:
+                raise ValueError("APP_MODE=product requires use_rag=true.")
+            if use_rag and rag_backend != "qdrant":
+                raise ValueError("APP_MODE=product requires rag_backend='qdrant'.")
 
         input_snapshot = self._startup_input_snapshot(startup)
         config_snapshot = {
@@ -491,6 +496,7 @@ class ProductService:
             )
             for item in startup.evidence
         ]
+        evidence_texts = [f"{item.claim} {item.quote_or_evidence}" for item in startup.evidence]
         confidence_score = (
             sum(
                 {
@@ -511,10 +517,29 @@ class ProductService:
             sector=startup.sector,
             description=startup.description,
             product_summary=startup.product_summary,
+            ai_signals=self._signals_matching(
+                evidence_texts,
+                ("ai", "llm", "model", "inference", "guardrails", "optimization", "telemetry"),
+            ),
+            customers=self._signals_matching(evidence_texts, ("customer", "enterprise", "production traffic")),
+            funding_signals=self._signals_matching(evidence_texts, ("funding", "raised", "series a", "series b")),
+            tech_stack_signals=self._signals_matching(
+                evidence_texts,
+                ("cuda", "tensorrt", "triton", "kubernetes", "docker", "kafka", "spark", "pytorch"),
+            ),
             sources=evidence,
             confidence_score=confidence_score,
         )
         return profile, evidence
+
+    @staticmethod
+    def _signals_matching(texts: list[str], keywords: tuple[str, ...]) -> list[str]:
+        matches: list[str] = []
+        for text in texts:
+            lower = text.lower()
+            if any(keyword in lower for keyword in keywords):
+                matches.append(text)
+        return matches
 
     def _persist_pipeline_result(
         self,
@@ -586,6 +611,13 @@ class ProductService:
             for mapping in result.gap_diagnosis.nvidia_technology_candidates:
                 gap_type = mapping.addresses_gap.value
                 recommendation = recommendations.get(gap_type)
+                details = recommendation.model_dump(mode="json") if recommendation is not None else {}
+                if result.rag_output is not None:
+                    details["rag_support_refs"] = self._rag_support_refs(
+                        result.rag_output,
+                        gap_type=gap_type,
+                        technology_name=mapping.technology_name,
+                    )
                 self.repository.save_mapping(
                     analysis_run_id=analysis_run_id,
                     gap_record_id=gap_records.get(gap_type),
@@ -594,7 +626,7 @@ class ProductService:
                     justification=mapping.justification,
                     recommendation_action=(recommendation.action.value if recommendation is not None else None),
                     priority=(recommendation.priority.value if recommendation is not None else None),
-                    details=(recommendation.model_dump(mode="json") if recommendation is not None else {}),
+                    details=details,
                 )
 
         brief = build_action_brief(result)
@@ -625,6 +657,50 @@ class ProductService:
             recommended_action=definition.recommended_action,
             metadata=metadata,
         )
+
+    @staticmethod
+    def _rag_support_refs(
+        rag_output: Any,
+        *,
+        gap_type: str,
+        technology_name: str,
+    ) -> list[dict[str, Any]]:
+        packing = getattr(rag_output, "packing_result", None)
+        packed = getattr(packing, "packed", []) if packing is not None else []
+        refs: list[dict[str, Any]] = []
+        tech_lower = technology_name.lower()
+        for ctx in packed:
+            matched_gap = getattr(ctx, "matched_gap", None)
+            matched_technology = getattr(ctx, "matched_technology", None)
+            product = getattr(ctx, "product", "")
+            if matched_gap not in (None, gap_type):
+                continue
+            if (
+                matched_technology
+                and matched_technology.lower() not in tech_lower
+                and tech_lower not in matched_technology.lower()
+            ):
+                continue
+            if (
+                not matched_technology
+                and product
+                and product.lower() not in tech_lower
+                and tech_lower not in product.lower()
+            ):
+                continue
+            refs.append(
+                {
+                    "chunk_id": getattr(ctx, "chunk_id", ""),
+                    "source_id": getattr(ctx, "source_id", ""),
+                    "title": getattr(ctx, "title", ""),
+                    "source_url": getattr(ctx, "url", None),
+                    "claim": f"NVIDIA corpus supports {technology_name} for {gap_type}",
+                    "confidence": "medium",
+                    "matched_gap": matched_gap,
+                    "matched_technology": matched_technology or product,
+                }
+            )
+        return refs
 
     @staticmethod
     def _startup_input_snapshot(startup: Startup) -> dict[str, Any]:

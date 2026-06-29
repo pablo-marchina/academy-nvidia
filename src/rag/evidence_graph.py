@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -320,3 +320,19 @@ def _metrics(
 def _node_id(prefix: str, value: str) -> str:
     safe_value = "_".join(value.casefold().replace("/", " ").split())
     return f"{prefix}:{safe_value}"
+
+
+class EvidenceGraph:
+    def run(self, contexts: list[RetrievedContext], **kwargs: Any) -> list[RetrievedContext]:
+        gap_type = kwargs.get("gap_type", "")
+        technology = kwargs.get("technology", "")
+        alternatives = kwargs.get("alternatives")
+        config = kwargs.get("config")
+        build_evidence_graph(
+            contexts=contexts,
+            gap_type=gap_type,
+            technology=technology,
+            alternatives=alternatives,
+            config=config,
+        )
+        return contexts

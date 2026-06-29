@@ -74,9 +74,33 @@ def main() -> int:
 
     evidence_dir_arg = str(args.evidence_dir)
     commands: list[tuple[list[str], bool]] = [
+        ([sys.executable, "scripts/check_referenced_scripts_exist.py"], True),
+        ([sys.executable, "scripts/check_source_repo_clean.py"], True),
         ([sys.executable, "scripts/generate_final_evidence_pack.py", "--evidence-dir", evidence_dir_arg], True),
         ([sys.executable, "scripts/generate_finalization_evidence.py", "--evidence-dir", evidence_dir_arg], True),
+        (
+            [
+                sys.executable,
+                "scripts/check_product_configuration.py",
+                "--actual-env-only",
+                "--evidence-dir",
+                evidence_dir_arg,
+            ],
+            True,
+        ),
+        ([sys.executable, "scripts/check_no_mock_runtime.py"], True),
+        ([sys.executable, "scripts/check_no_method_only_runtime_modules.py"], True),
         ([sys.executable, "scripts/run_llm_security_suite.py", "--evidence-dir", evidence_dir_arg], True),
+        ([sys.executable, "scripts/run_secret_scan.py", "--evidence-dir", evidence_dir_arg], True),
+        ([sys.executable, "scripts/run_dependency_scan.py", "--evidence-dir", evidence_dir_arg], True),
+        ([sys.executable, "scripts/run_sast_scan.py", "--evidence-dir", evidence_dir_arg], True),
+        ([sys.executable, "scripts/generate_sbom.py", "--evidence-dir", evidence_dir_arg], True),
+        ([sys.executable, "scripts/run_container_scan.py", "--evidence-dir", evidence_dir_arg], True),
+        ([sys.executable, "scripts/run_openssf_scorecard.py", "--evidence-dir", evidence_dir_arg], True),
+        ([sys.executable, "scripts/check_free_external_tools.py"], True),
+        ([sys.executable, "scripts/check_api_key_readiness.py"], True),
+        ([sys.executable, "scripts/build_candidate_decision_matrix.py", "--evidence-dir", evidence_dir_arg], True),
+        ([sys.executable, "scripts/check_candidate_promotion_closure.py", "--evidence-dir", evidence_dir_arg], True),
         (
             [
                 sys.executable,
@@ -313,6 +337,7 @@ def main() -> int:
             "--product-like-acceptance",
             "--auto-start-services",
             "--ingest-corpus",
+            "--reset-qdrant",
             "--evidence-dir",
             evidence_dir_arg,
         ]
@@ -327,15 +352,14 @@ def main() -> int:
         if "scripts/local_proof_doctor.py" in result["label"]:
             result = _enrich_doctor_status(result, args.evidence_dir)
             doctor_status = result["status"]
-        if "scripts/real_service_proof.py" in result["label"] and result["returncode"] == 0:
+        if "scripts/real_service_proof.py" in result["label"]:
             result = _enrich_real_service_status(result, args.evidence_dir)
         results.append(result)
 
     if real_service_command is not None:
         if doctor_status in {"PASS", "SKIPPED"}:
             result = _run(real_service_command, required=False, timeout_seconds=420)
-            if result["returncode"] == 0:
-                result = _enrich_real_service_status(result, args.evidence_dir)
+            result = _enrich_real_service_status(result, args.evidence_dir)
             results.append(result)
         else:
             results.append(_skipped_real_service_result(doctor_status, args.evidence_dir))
@@ -376,6 +400,23 @@ def _write_readiness_reports(evidence_dir: Path, summary: dict[str, Any]) -> Non
     write_json(evidence_dir / "final_proof_summary.json", summary)
     write_json(evidence_dir / "full_proof_run.json", summary)
     write_json(evidence_dir / "product_readiness_report.json", summary)
+    go = summary["mode"] == "full" and summary["final_status"] == "PASS"
+    go_no_go = {
+        "report_id": "final_product_go_no_go_report",
+        "status": "GO" if go else "NO_GO",
+        "final_status": summary["final_status"],
+        "generated_at": summary["generated_at"],
+        "go_requires_full_proof": True,
+        "total_gates": summary["total_gates"],
+        "passed": summary["passed"],
+        "failed": summary["failed"],
+        "warnings": summary["warnings"],
+        "blocked_by_environment": summary["blocked_by_environment"],
+        "blocking_gates": [
+            result for result in summary["results"] if result["status"] in {"FAIL", "BLOCKED_BY_ENVIRONMENT"}
+        ],
+    }
+    write_json(evidence_dir / "final_product_go_no_go_report.json", go_no_go)
     _write_gate_projection(evidence_dir / "no_demo_report.json", summary, "scripts/check_no_demo_dependency.py")
     _write_gate_projection(evidence_dir / "repository_clean_report.json", summary, "scripts/check_repository_clean.py")
     _write_full_proof_junit(evidence_dir / "full_proof_junit.xml", summary)
@@ -393,6 +434,34 @@ def _write_readiness_reports(evidence_dir: Path, summary: dict[str, Any]) -> Non
         lines.append(f"| `{result['label']}` | {result['status']} | {result['returncode']} |")
     lines.append("")
     (evidence_dir / "product_readiness_report.md").write_text("\n".join(lines), encoding="utf-8")
+    _write_go_no_go_markdown(evidence_dir / "final_product_go_no_go_report.md", go_no_go)
+    _write_runtime_bom_final(evidence_dir)
+
+
+def _write_go_no_go_markdown(path: Path, report: dict[str, Any]) -> None:
+    lines = [
+        "# Final Product Go/No-Go Report",
+        "",
+        f"Status: `{report['status']}`",
+        f"Final proof status: `{report['final_status']}`",
+        f"Generated at: `{report['generated_at']}`",
+        "",
+        "| Gate | Status | Return code |",
+        "|---|---:|---:|",
+    ]
+    for result in report["blocking_gates"]:
+        lines.append(f"| `{result['label']}` | {result['status']} | {result['returncode']} |")
+    if not report["blocking_gates"]:
+        lines.append("| All gates | PASS | 0 |")
+    lines.append("")
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_runtime_bom_final(evidence_dir: Path) -> None:
+    source = evidence_dir / "runtime_bom.json"
+    target = evidence_dir / "runtime_bom_final.json"
+    if source.exists():
+        target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
 
 
 def _write_full_proof_junit(path: Path, summary: dict[str, Any]) -> None:
@@ -421,13 +490,7 @@ def _write_full_proof_junit(path: Path, summary: dict[str, Any]) -> None:
 
 
 def _xml_escape(value: object) -> str:
-    return (
-        str(value)
-        .replace("&", "&amp;")
-        .replace('"', "&quot;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return str(value).replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _attach_doctor_reference(summary: dict[str, Any], evidence_dir: Path) -> None:

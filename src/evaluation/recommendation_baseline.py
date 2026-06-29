@@ -1555,8 +1555,7 @@ def make_recommendation_baseline_records(
     if result.best_candidate_index is not None and result.candidate_results:
         bc = result.candidate_results[result.best_candidate_index]
         evidence_source_lines.append(
-            f"Best candidate: idx={result.best_candidate_index}, "
-            f"spearman={bc.spearman}, mae={bc.mae}, rmse={bc.rmse}"
+            f"Best candidate: idx={result.best_candidate_index}, spearman={bc.spearman}, mae={bc.mae}, rmse={bc.rmse}"
         )
     if result.best_ranking_metrics:
         rm = result.best_ranking_metrics

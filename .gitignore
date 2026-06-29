@@ -49,7 +49,11 @@ test_exports/
 
 # Environment file variants (e.g. .env.local, .env.prod)
 .env.*
+!.env.example
 !.env.production.example
+!.env.product.example
+!.env.test.example
+!.env.release.example
 
 # Generated product exports
 data/product/exports/
@@ -63,3 +67,24 @@ data/ingestion_reports/
 # Generated NVIDIA source sync workdirs
 data/nvidia_corpus/staging/
 data/nvidia_corpus/archive/
+
+# Obsidian vault
+.obsidian/
+obsidian-vault/
+
+# AI assistant config
+.ai/
+
+# Generated reports
+reports/
+
+# Release artifacts
+release/*.zip
+
+# Egg info
+nvidia_startup_ai_radar.egg-info/
+
+# Benchmark artifacts
+final_case_evidence/*benchmark*
+final_case_evidence/*catalog_analysis*
+scripts/test_full_catalog*.py

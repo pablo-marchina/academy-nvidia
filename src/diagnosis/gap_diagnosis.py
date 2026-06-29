@@ -74,6 +74,10 @@ _GAP_KEYWORDS: dict[TechnicalGap, list[str]] = {
         "etl",
         "batch processing",
         "data ingestion",
+        "streaming",
+        "kafka",
+        "spark",
+        "feature store",
     ],
     TechnicalGap.HEAVY_TABULAR_PROCESSING: [
         "tabular",
@@ -191,7 +195,7 @@ def _filter_evidence(
 ) -> list[ValidatedEvidence]:
     result: list[ValidatedEvidence] = []
     for ev in evidence_list:
-        lower = ev.claim.lower()
+        lower = f"{ev.claim} {ev.quote_or_evidence}".lower()
         if any(kw.lower() in lower for kw in keywords):
             result.append(ev)
     return result
@@ -508,7 +512,7 @@ def _detect_model_evaluation(
     _, conf = _evidence_confidence_penalty(evidence)
     kw_count = _count_keyword_matches(text, _GAP_KEYWORDS[gap])
 
-    has_eval = kw_count > 0
+    has_eval = kw_count > 0 or bool(evidence)
     is_ai_native = classification is not None and classification.classification in (
         AINativeLevel.AI_ENABLED,
         AINativeLevel.AI_NATIVE,
@@ -849,7 +853,7 @@ def diagnose_gaps(
         all_evidence.extend(result.evidence_used)
 
         if result.detected and result.evidence_tag == EvidenceTag.INFERRED:
-            missing.append(f"Gap '{gap.value}' detected by inference only — " "collect direct evidence to confirm.")
+            missing.append(f"Gap '{gap.value}' detected by inference only — collect direct evidence to confirm.")
 
     conf_factors = [_CONFIDENCE_TO_FACTOR.get(g.confidence, 0.4) for g in detected_gaps if g.detected]
     if conf_factors:
@@ -875,8 +879,7 @@ def diagnose_gaps(
     for g in detected_gaps:
         status = "✅" if g.detected else "⬜"
         lines.append(
-            f"  {status} {g.gap.value}: detected={g.detected}, "
-            f"conf={g.confidence.value}, tag={g.evidence_tag.value}"
+            f"  {status} {g.gap.value}: detected={g.detected}, conf={g.confidence.value}, tag={g.evidence_tag.value}"
         )
         lines.append(f"    reasoning: {g.reasoning}")
     if missing:

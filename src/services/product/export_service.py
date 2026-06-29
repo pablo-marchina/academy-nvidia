@@ -151,7 +151,8 @@ class ExportService:
         return brief.brief_markdown
 
     def _write_export(self, analysis_run_id: str, export_type: str, content: Any) -> str:
-        base = Path(self.product_data_dir) / "exports" / analysis_run_id
+        product_data_dir = Path(self.product_data_dir).resolve()
+        base = product_data_dir / "exports" / analysis_run_id
         base.mkdir(parents=True, exist_ok=True)
         extension = "json" if export_type == "json" else "md"
         file_path = base / f"action_brief.{extension}"
@@ -162,4 +163,4 @@ class ExportService:
             )
         else:
             file_path.write_text(str(content), encoding="utf-8")
-        return str(file_path.relative_to(Path(self.product_data_dir).resolve()))
+        return str(file_path.relative_to(product_data_dir))

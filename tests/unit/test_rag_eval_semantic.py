@@ -1,4 +1,4 @@
-"""Tests for multi-mode RAG evaluation — lexical, semantic, and hybrid comparison."""
+﻿"""Tests for multi-mode RAG evaluation â€” lexical, semantic, and hybrid comparison."""
 
 from pathlib import Path
 
@@ -91,7 +91,7 @@ def test_mode_eval_lexical_has_quality_gates() -> None:
 
 
 def test_mode_eval_semantic_empty_store_returns_no_regression() -> None:
-    """Semantic with empty store should not crash — returns empty results."""
+    """Semantic with empty store should not crash â€” returns empty results."""
     store = InMemoryVectorStore()
     emb = MockEmbeddingProvider()
     result = run_mode_eval(RetrievalMode.SEMANTIC, vector_store=store, embedding_model=emb)
@@ -220,7 +220,7 @@ def test_format_comparison_summary_with_explicit_vector_store(
 
 
 # ------------------------------------------------------------------
-# Backward compatibility — existing eval still works
+# Backward compatibility â€” existing eval still works
 # ------------------------------------------------------------------
 
 

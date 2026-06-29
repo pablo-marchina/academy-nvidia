@@ -39,6 +39,9 @@ def _product_env(database_url: str, qdrant_url: str, qdrant_collection: str) -> 
             "QDRANT_COLLECTION": qdrant_collection,
             "QDRANT_VECTOR_SIZE": env.get("QDRANT_VECTOR_SIZE", "384"),
             "QDRANT_MIN_POINTS": env.get("QDRANT_MIN_POINTS", "10"),
+            "RAG_RETRIEVAL_MODE": env.get("RAG_RETRIEVAL_MODE", "hybrid_with_rerank"),
+            "RERANKER_PROVIDER": env.get("RERANKER_PROVIDER", "local_cross_encoder"),
+            "RERANKER_MODEL": env.get("RERANKER_MODEL", "BAAI/bge-reranker-v2-m3"),
             "AGENT_ORCHESTRATION_ENABLED": "true",
         }
     )
@@ -54,12 +57,12 @@ def run_acceptance(
 ) -> dict[str, Any]:
     started_at = datetime.now(UTC).isoformat()
     previous_env = os.environ.copy()
+    product_env = _product_env(database_url, qdrant_url, qdrant_collection)
     steps: list[dict[str, Any]] = []
     errors: list[str] = []
     status = "PASS"
     try:
-        os.environ.clear()
-        os.environ.update(_product_env(database_url, qdrant_url, qdrant_collection))
+        os.environ.update(product_env)
         configure_product_database(database_url, create_schema=False)
         with TestClient(app) as client:
             expected = _load_json("expected.json")
@@ -139,8 +142,7 @@ def run_acceptance(
         errors.append(str(exc))
     finally:
         reset_product_database_runtime()
-        os.environ.clear()
-        os.environ.update(previous_env)
+        _restore_environment(previous_env)
 
     payload = {
         "report_id": "acceptance_report",
@@ -178,6 +180,13 @@ def _request(
 
 def _load_json(name: str) -> dict[str, Any]:
     return cast(dict[str, Any], json.loads((FIXTURE_DIR / name).read_text(encoding="utf-8")))
+
+
+def _restore_environment(previous_env: dict[str, str]) -> None:
+    for key in tuple(os.environ):
+        if key not in previous_env:
+            del os.environ[key]
+    os.environ.update(previous_env)
 
 
 def _sanitize_url(value: str) -> str:

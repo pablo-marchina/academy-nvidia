@@ -121,7 +121,7 @@ def _check_ingestion_calibrations() -> tuple[dict[str, Any], list[str]]:
                 found = True
                 validation = validate_decision_for_production(rec)
                 if not validation.passed:
-                    blockers.append(f"Ingestion decision '{decision_id}' blocked: " f"{'; '.join(validation.reasons)}")
+                    blockers.append(f"Ingestion decision '{decision_id}' blocked: {'; '.join(validation.reasons)}")
                 elif rec.calibration_status in (
                     CalibrationStatus.UNCALIBRATED,
                     CalibrationStatus.BLOCKED,
@@ -293,7 +293,7 @@ def run_ingestion_pipeline(
 
     report.ingestion_status = "completed"
     if report.payload_schema_invalid_count > 0:
-        blockers.append(f"{report.payload_schema_invalid_count} point(s) have missing " f"payload fields after upsert")
+        blockers.append(f"{report.payload_schema_invalid_count} point(s) have missing payload fields after upsert")
 
     report.blockers = blockers
     report.finished_at = datetime.now(UTC).isoformat()
@@ -452,9 +452,7 @@ def check_corpus_readiness(
                 # Check corpus_version
                 if not result.corpus_version_valid:
                     blockers.append(
-                        f"Corpus version mismatch: "
-                        f"found='{result.corpus_version_found}', "
-                        f"expected='{CORPUS_VERSION}'"
+                        f"Corpus version mismatch: found='{result.corpus_version_found}', expected='{CORPUS_VERSION}'"
                     )
         except Exception as exc:
             blockers.append(f"Cannot inspect vector store contents: {exc}")

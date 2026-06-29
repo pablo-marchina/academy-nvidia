@@ -24,6 +24,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Check tracked repository cleanliness.")
     parser.add_argument("--repo", type=Path, default=PROJECT_ROOT)
     parser.add_argument("--report-path", type=Path, default=DEFAULT_REPORT_PATH)
+    parser.add_argument("--strict", action="store_true", help="Also fail when git status has uncommitted changes.")
     args = parser.parse_args()
 
     result = subprocess.run(["git", "ls-files"], cwd=args.repo, capture_output=True, text=True)
@@ -47,13 +48,44 @@ def main() -> int:
         if any(part in path.replace("\\", "/") for part in FORBIDDEN_TRACKED_PARTS)
         or path.endswith((".pyc", ".pyo", ".sqlite", ".sqlite3", ".db"))
     ]
-    if violations:
+    status_entries: list[str] = []
+    if args.strict:
+        status_result = subprocess.run(["git", "status", "--porcelain"], cwd=args.repo, capture_output=True, text=True)
+        if status_result.returncode != 0:
+            print(status_result.stderr)
+            _write_report(
+                args.report_path,
+                {
+                    "report_id": "repository_clean_report",
+                    "status": "FAIL",
+                    "generated_at": datetime.now(UTC).isoformat(),
+                    "reason": "git_status_failed",
+                    "stderr": status_result.stderr,
+                },
+            )
+            return 2
+        status_entries = [line for line in status_result.stdout.splitlines() if line.strip()]
+
+    if violations or status_entries:
         _write_report(args.report_path, _build_report(tracked, violations))
+        if status_entries:
+            report = _build_report(tracked, violations)
+            report["status"] = "FAIL"
+            report["strict"] = True
+            report["git_status_entries"] = status_entries
+            report["git_status_count"] = len(status_entries)
+            _write_report(args.report_path, report)
         print("FAIL: forbidden tracked artifacts")
         for violation in violations:
             print(f"  {violation}")
+        for entry in status_entries:
+            print(f"  git-status: {entry}")
         return 1
-    _write_report(args.report_path, _build_report(tracked, violations))
+    report = _build_report(tracked, violations)
+    report["strict"] = args.strict
+    report["git_status_entries"] = status_entries
+    report["git_status_count"] = len(status_entries)
+    _write_report(args.report_path, report)
     print(f"PASS: repository cleanliness checked {len(tracked)} tracked files")
     return 0
 

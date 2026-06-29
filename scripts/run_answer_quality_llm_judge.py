@@ -40,7 +40,7 @@ from src.extraction.schemas import (
     StartupProfile,
 )  # noqa: E402
 from src.pipeline.run_pipeline import run_full_pipeline  # noqa: E402
-from src.rag.embeddings import MockEmbeddingProvider  # noqa: E402
+from src.rag.embeddings import SentenceTransformerProvider  # noqa: E402
 from src.rag.retrieval import build_default_index  # noqa: E402
 from src.rag.schemas import PackingConfig, RerankingConfig  # noqa: E402
 from src.rag.vector_store import InMemoryVectorStore  # noqa: E402
@@ -198,7 +198,7 @@ def _build_brief(case: AnswerQualityEvalCase, golden_dir: Path) -> StartupAction
             profile=profile,
             evidence_list=evidence,
             chunk_index=build_default_index(),
-            embedding_model=MockEmbeddingProvider(),
+            embedding_model=SentenceTransformerProvider("all-MiniLM-L6-v2"),
             vector_store=InMemoryVectorStore(),
             reranking_config=RerankingConfig(),
             packing_config=PackingConfig(),

@@ -911,7 +911,7 @@ def _format_report(
     lines.append("-" * 80)
     lines.append("SOURCE QUALITY SCORE — Candidate Comparison")
     lines.append("-" * 80)
-    sq_header = f"{'Candidate':>25} | {'mean':>6} | {'spearman':>8} | {'mae':>6} | " f"{'rmse':>6} | {'cal_err':>8}"
+    sq_header = f"{'Candidate':>25} | {'mean':>6} | {'spearman':>8} | {'mae':>6} | {'rmse':>6} | {'cal_err':>8}"
     lines.append(sq_header)
     lines.append("-" * len(sq_header))
     for i, r in enumerate(sq_results):
@@ -923,7 +923,7 @@ def _format_report(
         cal_s = f"{sq_metric.calibration_error:.4f}" if sq_metric and sq_metric.calibration_error is not None else "N/A"
         marker = " <-- BEST" if best_sq_idx is not None and i == best_sq_idx else ""
         lines.append(
-            f"{r.label:>25}{marker} | {d.mean:>6.4f} | {spearman_s:>8} | {mae_s:>6} | " f"{rmse_s:>6} | {cal_s:>8}"
+            f"{r.label:>25}{marker} | {d.mean:>6.4f} | {spearman_s:>8} | {mae_s:>6} | {rmse_s:>6} | {cal_s:>8}"
         )
 
     lines.append("")
@@ -932,9 +932,7 @@ def _format_report(
         lines.append(f"  {'':>10} {'high':>8} {'medium':>8} {'low':>8}")
         for true_label in ["high", "medium", "low"]:
             row = sq_metrics.confusion_matrix.get(true_label, {})
-            lines.append(
-                f"  {true_label:>10} {row.get('high', 0):>8} " f"{row.get('medium', 0):>8} {row.get('low', 0):>8}"
-            )
+            lines.append(f"  {true_label:>10} {row.get('high', 0):>8} {row.get('medium', 0):>8} {row.get('low', 0):>8}")
         lines.append("")
 
     lines.append("-" * 80)
@@ -980,10 +978,10 @@ def _format_report(
     lines.append("")
 
     if best_sq_idx is not None and sq_metrics and sq_metrics.spearman is not None:
-        lines.append(f"Best SQ weights (index {best_sq_idx}): " f"spearman={sq_metrics.spearman}, mae={sq_metrics.mae}")
+        lines.append(f"Best SQ weights (index {best_sq_idx}): spearman={sq_metrics.spearman}, mae={sq_metrics.mae}")
     if best_ec_idx is not None and ec_metrics and ec_metrics.f1 is not None:
         lines.append(
-            f"Best EC weights (index {best_ec_idx}): " f"f1={ec_metrics.f1}, fp_rate={ec_metrics.false_positive_rate}"
+            f"Best EC weights (index {best_ec_idx}): f1={ec_metrics.f1}, fp_rate={ec_metrics.false_positive_rate}"
         )
 
     lines.append("")

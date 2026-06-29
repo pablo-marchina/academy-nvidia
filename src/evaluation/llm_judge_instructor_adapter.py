@@ -156,9 +156,9 @@ class InstructorTrialAdapter(BaseLLMJudgeProvider):
     def _parse_with_instructor(self, raw_text: str) -> StructuredOutputResult:
         import instructor  # lazy import; type: ignore
 
-        patched = instructor.patch(LLMJudgeScore)
+        instructor.patch(LLMJudgeScore)
         try:
-            instance = patched.model_validate_json(raw_text, strict=True)
+            instance = LLMJudgeScore.model_validate_json(raw_text, strict=True)
             return StructuredOutputResult(
                 status="valid",
                 parsed_object=instance.model_dump(),

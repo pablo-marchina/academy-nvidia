@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel
 
 from src.rag.retrieval import ChunkIndex
@@ -130,3 +132,20 @@ def _dedupe_strings(values: list[str]) -> list[str]:
             seen.add(normalized)
             result.append(value)
     return result
+
+
+class QueryRewriting:
+    def run(self, contexts: list[RetrievedContext], **kwargs: Any) -> list[RetrievedContext]:
+        query = kwargs.get("query")
+        index = kwargs.get("chunk_index") or kwargs.get("index")
+        if not isinstance(query, RetrievalQuery) or not isinstance(index, ChunkIndex):
+            return contexts
+        config = kwargs.get("config")
+        if config is not None and not isinstance(config, QueryRewriteConfig):
+            config = QueryRewriteConfig(**config) if isinstance(config, dict) else None
+        return retrieve_multi_query(
+            index=index,
+            query=query,
+            top_k=kwargs.get("top_k", 3),
+            config=config,
+        )

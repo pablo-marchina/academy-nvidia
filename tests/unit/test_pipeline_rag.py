@@ -1,6 +1,6 @@
-"""Tests for pipeline integration of RAG reranking + context packing.
+﻿"""Tests for pipeline integration of RAG reranking + context packing.
 
-Epic 14.1 — verifies that run_full_pipeline() orchestrates hybrid retrieval,
+Epic 14.1 â€” verifies that run_full_pipeline() orchestrates hybrid retrieval,
 deterministic reranking, context packing, and propagates results to the
 Startup Action Brief.
 """
@@ -87,7 +87,7 @@ def _build_populated_store() -> InMemoryVectorStore:
 
 
 def test_pipeline_with_rag_context() -> None:
-    """Pipeline with corpus + packing → rag_output is populated with packed contexts."""
+    """Pipeline with corpus + packing â†’ rag_output is populated with packed contexts."""
     profile = _make_profile(
         sector="HealthTech",
         ai_signals=[
@@ -125,7 +125,7 @@ def test_pipeline_with_rag_context() -> None:
 
 
 def test_pipeline_without_rag_context() -> None:
-    """Pipeline without any RAG parameters → rag_output may be None or missing."""
+    """Pipeline without any RAG parameters â†’ rag_output may be None or missing."""
     profile = _make_profile()
     evidence = [_make_evidence("A company", ConfidenceLevel.LOW)]
     result = run_full_pipeline("No RAG", profile=profile, evidence_list=evidence)
@@ -137,7 +137,7 @@ def test_pipeline_without_rag_context() -> None:
 
 
 def test_pipeline_rag_empty_index() -> None:
-    """Empty ChunkIndex → missing_context=True."""
+    """Empty ChunkIndex â†’ missing_context=True."""
     from src.rag.retrieval import ChunkIndex
 
     empty_idx = ChunkIndex([])
@@ -154,7 +154,7 @@ def test_pipeline_rag_empty_index() -> None:
 
 
 def test_pipeline_rag_packed_contexts_in_brief() -> None:
-    """build_action_brief() auto-extracts packing_result → brief has supporting section."""
+    """build_action_brief() auto-extracts packing_result â†’ brief has supporting section."""
     profile = _make_profile(
         sector="HealthTech",
         ai_signals=["machine learning", "deep learning"],

@@ -1,4 +1,4 @@
-"""Tests for src.rag.hybrid_retrieval — hybrid_retrieve() with RRF fusion."""
+﻿"""Tests for src.rag.hybrid_retrieval â€” hybrid_retrieve() with RRF fusion."""
 
 from src.rag.embeddings import MockEmbeddingProvider
 from src.rag.hybrid_retrieval import _rrf_fuse, hybrid_retrieve

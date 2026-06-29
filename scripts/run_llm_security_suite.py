@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -26,21 +25,33 @@ def main() -> int:
     parser.add_argument("--evidence-dir", type=Path, default=DEFAULT_EVIDENCE_DIR)
     args = parser.parse_args()
 
-    pytest_executable = shutil.which("pytest")
-    command = [pytest_executable or sys.executable, "tests/security", "-q"]
-    if pytest_executable is None:
-        command = [sys.executable, "-m", "pytest", "tests/security", "-q"]
+    command = [sys.executable, "-m", "pytest", "tests/security", "-q"]
     result = subprocess.run(command, cwd=PROJECT_ROOT, capture_output=True, text=True)
-    status = "PASS" if result.returncode == 0 else "FAIL"
+    missing_pytest = result.returncode != 0 and "No module named pytest" in (result.stderr + result.stdout)
+    status = "PASS" if result.returncode == 0 else ("BLOCKED_BY_ENVIRONMENT" if missing_pytest else "FAIL")
     generated_at = datetime.now(UTC).isoformat()
     base_report = {
         "status": status,
+        "report_id": "llm_security_suite_report",
         "generated_at": generated_at,
         "command": " ".join(command),
         "returncode": result.returncode,
         "stdout_tail": result.stdout[-2000:],
         "stderr_tail": result.stderr[-2000:],
+        "remediation": "Install dev dependencies with `pip install -e .[dev,security]`." if missing_pytest else "",
+        "cases": [
+            "direct_prompt_injection",
+            "indirect_prompt_injection",
+            "rag_poisoning",
+            "tool_abuse",
+            "data_exfiltration",
+            "system_prompt_leakage",
+            "malicious_source_content",
+            "over_permissioned_agent",
+            "output_validation",
+        ],
     }
+    write_json(args.evidence_dir / "llm_security_suite_report.json", base_report)
     write_json(
         args.evidence_dir / "prompt_injection_test_report.json",
         {

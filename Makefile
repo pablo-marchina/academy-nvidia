@@ -1,4 +1,6 @@
-.PHONY: test test-unit test-integration test-acceptance test-e2e test-slow test-optional lint format-check typecheck validate validate-fast validate-full validate-backend validate-frontend validate-docs validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant ingest-real-sources run-evals run sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e ui-e2e-product product-ui-acceptance db-upgrade db-downgrade db-migrate db-current db-history acceptance acceptance-backend prepare-release product-readiness-report ui-lint ui-lint-fix validate-no-demo setup benchmark benchmark-free-external evidence-pack package-final-release package-release check-repository-clean check-final-release-zip audit-release-package live-collect local-services-up local-proof-doctor doctor full-proof-pass-attempt prove-final-product candidate-governance check-candidate-governance graphrag-direct-benchmark source-quality-direct-benchmark test-security-llm scan-secrets scan-dependencies scan-release check-product-configuration check-no-mock-runtime
+.PHONY: test test-unit test-integration test-acceptance test-e2e test-slow test-optional lint format-check typecheck validate validate-fast validate-full validate-backend validate-frontend validate-docs validate-output validate-brief-output validate-dashboard-output rag-eval answer-quality-junit answer-quality-llm-judge ci ingest ingest-qdrant ingest-real-sources run-evals run sync-corpus-dry-run sync-corpus corpus-maintenance-dry-run corpus-maintenance-evals corpus-maintenance-ingest regression-dashboard api api-dev api-test ui-install ui-dev ui-build ui-e2e ui-e2e-product product-ui-acceptance db-upgrade db-downgrade db-migrate db-current db-history acceptance acceptance-backend prepare-release product-readiness-report ui-lint ui-lint-fix validate-no-demo setup benchmark benchmark-free-external evidence-pack package-final-release package-release check-repository-clean check-final-release-zip audit-release-package live-collect local-services-up local-proof-doctor product-doctor doctor full-proof-pass-attempt prove-cold-start prove-final-product candidate-governance check-candidate-governance graphrag-direct-benchmark source-quality-direct-benchmark test-security test-security-llm scan-secrets scan-dependencies scan-sast scan-openssf scan-release generate-sbom scan-container check-product-configuration check-no-mock-runtime source-quality-check candidate-benchmarks frontend-build check-final-release bootstrap-product
+
+PYTHON ?= python
 
 test:
 	python -m pytest -m "not (integration or acceptance or e2e or slow or optional or external_service)" --tb=short
@@ -129,6 +131,8 @@ ui-dev:
 ui-build:
 	cd frontend && npm run build
 
+frontend-build: ui-build
+
 ui-lint:
 	cd frontend && npx tsc --noEmit
 
@@ -154,6 +158,13 @@ prepare-release: validate-full acceptance
 product-readiness-report:
 	python scripts/product_acceptance_report.py --api-url http://localhost:8000
 
+bootstrap-product:
+	python -m pip install -e ".[full,security,agent-orchestration]"
+	cd frontend && npm ci
+	docker compose up -d postgres qdrant
+	alembic upgrade head
+	python scripts/check_product_configuration.py --actual-env-only
+
 setup:
 	python scripts/generate_final_evidence_pack.py
 	python scripts/generate_finalization_evidence.py
@@ -178,25 +189,39 @@ check-candidate-governance:
 	python scripts/check_candidate_governance_final_closure.py
 
 graphrag-direct-benchmark:
-	python scripts/run_graphrag_direct_benchmark.py
+	python scripts/run_graphrag_evidence_graph_product_spike.py
 
 source-quality-direct-benchmark:
-	python scripts/run_source_quality_direct_benchmark.py
+	python scripts/run_source_quality_product_spike.py
 
 test-security-llm:
 	python scripts/run_llm_security_suite.py
 
+test-security: test-security-llm scan-sast
+
 scan-secrets:
-	python scripts/check_security_release.py
+	python scripts/run_secret_scan.py
 
 scan-dependencies:
-	python scripts/check_security_release.py
+	python scripts/run_dependency_scan.py
+
+scan-sast:
+	python scripts/run_sast_scan.py
+
+scan-openssf:
+	python scripts/run_openssf_scorecard.py
+
+generate-sbom:
+	python scripts/generate_sbom.py
+
+scan-container:
+	python scripts/run_container_scan.py
 
 scan-release:
 	python scripts/check_final_release_zip.py
 
 check-product-configuration:
-	python scripts/check_product_configuration.py
+	python scripts/check_product_configuration.py --actual-env-only
 
 check-no-mock-runtime:
 	python scripts/check_no_mock_runtime.py
@@ -223,10 +248,42 @@ local-services-up:
 local-proof-doctor:
 	python scripts/local_proof_doctor.py
 
-doctor: local-proof-doctor
+product-doctor:
+	python scripts/product_doctor.py
+
+doctor: product-doctor
 
 full-proof-pass-attempt:
 	python scripts/full_proof_pass_attempt.py
 
+prove-cold-start:
+	python scripts/local_proof_doctor.py
+	python scripts/real_service_proof.py --product-like-acceptance --auto-start-services --ingest-corpus
+
 prove-final-product:
-	python scripts/prove_final_product.py $(PROVE_ARGS)
+	$(PYTHON) scripts/prove_final_product.py $(PROVE_ARGS)
+
+build-final-release:
+	python scripts/package_final_release.py
+	python scripts/build_final_release.py
+
+verify-final-release:
+	python scripts/check_final_release_zip.py
+	python scripts/check_release_cleanliness.py
+
+check-evidence-freshness:
+	python scripts/check_evidence_freshness.py
+
+check-no-local-artifacts:
+	python scripts/check_no_local_artifacts.py
+
+source-quality-check:
+	python scripts/run_source_quality_product_spike.py
+
+candidate-benchmarks:
+	python scripts/build_candidate_decision_matrix.py
+	python scripts/run_ranked_value_benchmarks.py
+	python scripts/run_direct_alternative_gap_benchmarks.py
+	python scripts/check_candidate_promotion_closure.py
+
+check-final-release: check-final-release-zip

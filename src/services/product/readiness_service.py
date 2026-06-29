@@ -162,7 +162,7 @@ class ProductReadinessService:
                         "setup_instructions": cap.setup_instructions,
                     }
                 )
-                messages.append(f"Required capability '{cap.name}' is not configured: " f"{effective_reason}")
+                messages.append(f"Required capability '{cap.name}' is not configured: {effective_reason}")
             elif effective_status == CapabilityStatus.not_configured and not is_effectively_required:
                 optional_missing.append(
                     {
@@ -178,14 +178,14 @@ class ProductReadinessService:
                 entry = {**_base, "reason": effective_reason}
                 if is_effectively_required:
                     blocking.append(dict(entry, setup_instructions=cap.setup_instructions))
-                    messages.append(f"Required capability '{cap.name}' is unavailable: " f"{effective_reason}")
+                    messages.append(f"Required capability '{cap.name}' is unavailable: {effective_reason}")
                 else:
                     unavailable.append(entry)
             elif effective_status == CapabilityStatus.degraded:
                 entry = {**_base, "reason": effective_reason}
                 if is_effectively_required:
                     blocking.append(dict(entry, setup_instructions=cap.setup_instructions))
-                    messages.append(f"Required capability '{cap.name}' is degraded: " f"{effective_reason}")
+                    messages.append(f"Required capability '{cap.name}' is degraded: {effective_reason}")
                 else:
                     degraded.append(entry)
 

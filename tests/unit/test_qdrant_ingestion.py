@@ -1,4 +1,4 @@
-"""Unit tests for the Qdrant ingestion pipeline.
+﻿"""Unit tests for the Qdrant ingestion pipeline.
 
 All tests use MockEmbeddingProvider and InMemoryVectorStore.
 No Qdrant, no sentence-transformers, no LLM, no internet.
@@ -24,7 +24,7 @@ from src.rag.vector_store import InMemoryVectorStore, VectorEntry
 
 @pytest.fixture
 def emb() -> MockEmbeddingProvider:
-    return MockEmbeddingProvider(vector_size=4)
+    return MockEmbeddingProvider()
 
 
 @pytest.fixture

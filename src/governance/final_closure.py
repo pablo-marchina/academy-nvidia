@@ -155,9 +155,7 @@ def build_promotion_rejection_report(rows: list[dict[str, str]], *, generated_at
         by_decision[row["promotion_decision"]] = by_decision.get(row["promotion_decision"], 0) + 1
         by_priority[row["priority"]] = by_priority.get(row["priority"], 0) + 1
     blockers = [
-        row
-        for row in rows
-        if row["priority"] == "P0" or row["promotion_decision"] in {"blocked", "benchmark_required"}
+        row for row in rows if row["priority"] == "P0" or row["promotion_decision"] in {"blocked", "benchmark_required"}
     ]
     return {
         "report_id": "promotion_rejection_report",
@@ -228,7 +226,9 @@ def _candidate_to_matrix_row(
     needs_api_credential = _requires_api_key(entry)
     setup_required = bool(entry.required_configuration and entry.required_configuration != "none")
     implemented = _implemented_for_candidate(entry)
-    actively_used = entry.status == CandidateStatus.PROMOTED_TO_RUNTIME or entry.expected_runtime_use == "active_product_runtime"
+    actively_used = (
+        entry.status == CandidateStatus.PROMOTED_TO_RUNTIME or entry.expected_runtime_use == "active_product_runtime"
+    )
     benchmark_type = delta.get("benchmark_type") or entry.benchmark_type.value
     result_delta = str(delta.get("quality_delta", "TBD_BY_DIRECT_BENCHMARK"))
     promotion_decision = _promotion_decision(entry, benchmark_type, result_delta, actively_used)

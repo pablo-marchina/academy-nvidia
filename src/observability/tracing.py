@@ -17,7 +17,7 @@ class StructuredTracer:
     def event(self, event_type: str, *, stage: str, payload: dict[str, Any] | None = None) -> None:
         self.trace.add(event_type, stage=stage, payload=payload)
 
-    def timed_stage(self, stage: str) -> "_TimedStage":
+    def timed_stage(self, stage: str) -> _TimedStage:
         return _TimedStage(self, stage)
 
     def write_json(self, path: Path) -> None:
@@ -36,7 +36,7 @@ class _TimedStage:
         self.stage = stage
         self.started = 0.0
 
-    def __enter__(self) -> "_TimedStage":
+    def __enter__(self) -> _TimedStage:
         self.started = perf_counter()
         self.tracer.event("stage_started", stage=self.stage)
         return self

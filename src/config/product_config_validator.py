@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Mapping
-
 
 REQUIRED_PRODUCT_ENV = (
     "APP_MODE",
@@ -68,16 +67,20 @@ def validate_product_configuration(env: Mapping[str, str] | None = None) -> Prod
     checks.append(
         ProductConfigurationCheck(
             check_id="rag.qdrant_required",
-            status="PASS" if app_mode != "product" or values.get("RAG_VECTOR_BACKEND", "").lower() == "qdrant" else "FAIL",
+            status=(
+                "PASS" if app_mode != "product" or values.get("RAG_VECTOR_BACKEND", "").lower() == "qdrant" else "FAIL"
+            ),
             reason="APP_MODE=product requires RAG_VECTOR_BACKEND=qdrant.",
         )
     )
     checks.append(
         ProductConfigurationCheck(
             check_id="rag.required_for_recommendations",
-            status="PASS"
-            if app_mode != "product" or values.get("RAG_REQUIRED_FOR_PRODUCT", "").lower() == "true"
-            else "FAIL",
+            status=(
+                "PASS"
+                if app_mode != "product" or values.get("RAG_REQUIRED_FOR_PRODUCT", "").lower() == "true"
+                else "FAIL"
+            ),
             reason="APP_MODE=product requires RAG_REQUIRED_FOR_PRODUCT=true.",
         )
     )
@@ -91,10 +94,36 @@ def validate_product_configuration(env: Mapping[str, str] | None = None) -> Prod
     checks.append(
         ProductConfigurationCheck(
             check_id="runtime.agent_orchestration_required",
-            status="PASS"
-            if app_mode != "product" or values.get("AGENT_ORCHESTRATION_ENABLED", "").lower() == "true"
-            else "FAIL",
+            status=(
+                "PASS"
+                if app_mode != "product" or values.get("AGENT_ORCHESTRATION_ENABLED", "").lower() == "true"
+                else "FAIL"
+            ),
             reason="APP_MODE=product requires AGENT_ORCHESTRATION_ENABLED=true.",
+        )
+    )
+    checks.append(
+        ProductConfigurationCheck(
+            check_id="rag.hybrid_retrieval_required",
+            status=(
+                "PASS"
+                if app_mode != "product"
+                or values.get("RAG_RETRIEVAL_MODE", "").lower() in {"hybrid", "hybrid_with_rerank"}
+                else "FAIL"
+            ),
+            reason="APP_MODE=product requires hybrid RAG retrieval.",
+        )
+    )
+    reranker_provider = values.get("RERANKER_PROVIDER", "").casefold()
+    checks.append(
+        ProductConfigurationCheck(
+            check_id="rag.reranker_required",
+            status=(
+                "PASS"
+                if app_mode != "product" or reranker_provider not in {"", "noop", "none", "null", "mock"}
+                else "FAIL"
+            ),
+            reason="APP_MODE=product requires a non-mock reranker provider.",
         )
     )
     status = "PASS" if all(check.status == "PASS" for check in checks) else "FAIL"

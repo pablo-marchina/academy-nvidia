@@ -205,10 +205,7 @@ class HealthCheckExecutor:
         if not provider:
             return HealthCheckResult(
                 status=CapabilityStatus.degraded,
-                detail=(
-                    "LLM judge enabled but ANSWER_QUALITY_LLM_JUDGE_PROVIDER "
-                    "env var is not set"
-                ),
+                detail=("LLM judge enabled but ANSWER_QUALITY_LLM_JUDGE_PROVIDER env var is not set"),
             )
         if provider == "null":
             return HealthCheckResult(
@@ -220,10 +217,7 @@ class HealthCheckExecutor:
             )
         return HealthCheckResult(
             status=CapabilityStatus.degraded,
-            detail=(
-                f"ANSWER_QUALITY_LLM_JUDGE_PROVIDER={provider} has no active "
-                "runtime provider implementation"
-            ),
+            detail=(f"ANSWER_QUALITY_LLM_JUDGE_PROVIDER={provider} has no active runtime provider implementation"),
         )
 
 

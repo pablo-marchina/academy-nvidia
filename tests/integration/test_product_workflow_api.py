@@ -497,9 +497,6 @@ class TestPersistedActionBrief:
     ) -> None:
         ar_id = self._setup_brief(startup_id)
         with (
-            patch("src.agents.graph._generate_brief", side_effect=AssertionError("recalculated")),
-            patch("src.agents.graph._collect_sources", side_effect=AssertionError("scraping")),
-            patch("src.agents.graph._rank_recommendations", side_effect=AssertionError("ranking")),
             patch(
                 "src.rag.rag_service_factory.build_qdrant_rag_service",
                 side_effect=AssertionError("qdrant"),

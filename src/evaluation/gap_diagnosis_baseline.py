@@ -1196,7 +1196,7 @@ def _format_report(result: GapDiagnosisCalibrationResult) -> str:
     if result.severity_candidates:
         lines.append("--- Severity weight candidates ---")
         for c in result.severity_candidates:
-            lines.append(f"  Candidate {c.candidate_index}: " f"spearman={c.spearman}, mae={c.mae}, rmse={c.rmse}")
+            lines.append(f"  Candidate {c.candidate_index}: spearman={c.spearman}, mae={c.mae}, rmse={c.rmse}")
         if result.best_severity_candidate_index is not None:
             bc = result.severity_candidates[result.best_severity_candidate_index]
             lines.append(f"  Best severity: candidate {result.best_severity_candidate_index} — weights={bc.weights}")
@@ -1211,7 +1211,7 @@ def _format_report(result: GapDiagnosisCalibrationResult) -> str:
     if result.confidence_candidates:
         lines.append("--- Confidence weight candidates ---")
         for c in result.confidence_candidates:
-            lines.append(f"  Candidate {c.candidate_index}: " f"spearman={c.spearman}, mae={c.mae}, rmse={c.rmse}")
+            lines.append(f"  Candidate {c.candidate_index}: spearman={c.spearman}, mae={c.mae}, rmse={c.rmse}")
         if result.best_confidence_candidate_index is not None:
             bc = result.confidence_candidates[result.best_confidence_candidate_index]
             lines.append(

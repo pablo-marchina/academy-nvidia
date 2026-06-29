@@ -12,7 +12,10 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from scripts.load_product_env import load_product_env
 from src.database.models import Base
+
+load_product_env()
 
 config = context.config
 
@@ -21,8 +24,12 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
+configured_database_url = config.get_main_option("sqlalchemy.url")
+product_database_url = os.getenv("PRODUCT_DB_URL")
 database_url = (
-    os.getenv("PRODUCT_DB_URL") or config.get_main_option("sqlalchemy.url") or "sqlite:///data/product/product.db"
+    product_database_url
+    if os.getenv("APP_MODE") == "product" and product_database_url
+    else configured_database_url or product_database_url or "sqlite:///data/product/product.db"
 )
 
 
@@ -44,6 +51,7 @@ def run_migrations_online() -> None:
     connect_args: dict = {}
     if is_sqlite:
         from pathlib import Path
+
         from sqlalchemy.engine import make_url
 
         url_obj = make_url(database_url)

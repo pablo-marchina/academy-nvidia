@@ -129,10 +129,25 @@ def _filter_evidence(
 ) -> list[ValidatedEvidence]:
     result: list[ValidatedEvidence] = []
     for ev in evidence_list:
-        lower = ev.claim.lower()
-        if any(kw.lower() in lower for kw in keywords):
+        lower = f"{ev.claim} {ev.quote_or_evidence}".lower()
+        if any(_evidence_matches_keyword(lower, kw) for kw in keywords):
             result.append(ev)
     return result
+
+
+def _evidence_matches_keyword(text: str, keyword: str) -> bool:
+    normalized = keyword.lower()
+    if normalized in text:
+        return True
+    label_keywords = {
+        "ai signal": ["ai", "llm", "model", "inference", "guardrails", "optimization", "telemetry"],
+        "company desc": ["platform", "product", "deployment", "infrastructure", "workloads"],
+        "tech stack": ["cuda", "tensorrt", "triton", "kubernetes", "docker", "kafka", "spark", "pytorch"],
+        "customer": ["customer", "enterprise", "production traffic", "feedback loops"],
+        "funding": ["funding", "raised", "series a", "series b", "investment"],
+        "service pattern": ["platform", "managed", "workflow", "deployment", "enterprise"],
+    }
+    return any(token in text for token in label_keywords.get(normalized, []))
 
 
 def _evidence_confidence_penalty(

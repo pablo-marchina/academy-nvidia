@@ -1,4 +1,4 @@
-"""Tests for Qdrant-backed RagService factory (semantic-only, no ChunkIndex).
+﻿"""Tests for Qdrant-backed RagService factory (semantic-only, no ChunkIndex).
 
 Validates that ``QdrantRagService`` implements the ``RagService`` protocol,
 blocks production when Qdrant/embedding/corpus/calibrations are not ready,
@@ -34,7 +34,7 @@ from src.rag.rag_service_factory import (
 )
 from src.rag.vector_store import InMemoryVectorStore, VectorEntry
 
-# ── Helpers ─────────────────────────────────────────────────────────────────
+# â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def _make_calibrated_gap(
@@ -153,7 +153,7 @@ def _calibrated_semantic_inventory() -> list[DecisionCalibrationRecord]:
     return result
 
 
-# ── Construction ─────────────────────────────────────────────────────────────
+# â”€â”€ Construction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestQdrantRagServiceConstruction:
@@ -163,7 +163,7 @@ class TestQdrantRagServiceConstruction:
         assert svc._validated is False
 
     def test_construct_with_explicit_deps(self) -> None:
-        emb = MockEmbeddingProvider(vector_size=4)
+        emb = MockEmbeddingProvider()
         vs = _make_vector_store()
         svc = QdrantRagService(
             embedding_model=emb,
@@ -171,14 +171,14 @@ class TestQdrantRagServiceConstruction:
         )
         assert svc._embedding_model is emb
         assert svc._vector_store is vs
-        # No chunk_index attribute — intentionally removed
+        # No chunk_index attribute â€” intentionally removed
 
     def test_build_qdrant_rag_service_returns_qdrant_rag_service(self) -> None:
         svc = build_qdrant_rag_service()
         assert isinstance(svc, QdrantRagService)
 
     def test_build_qdrant_rag_service_with_explicit_deps(self) -> None:
-        emb = MockEmbeddingProvider(vector_size=4)
+        emb = MockEmbeddingProvider()
         vs = _make_vector_store()
         svc = build_qdrant_rag_service(
             embedding_model=emb,
@@ -196,7 +196,7 @@ class TestQdrantRagServiceConstruction:
         assert not hasattr(svc, "_chunk_index")
 
 
-# ── Protocol compliance ──────────────────────────────────────────────────────
+# â”€â”€ Protocol compliance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestQdrantRagServiceProtocol:
@@ -207,7 +207,7 @@ class TestQdrantRagServiceProtocol:
         assert isinstance(svc, RagService)
 
     def test_call_returns_dict_with_expected_keys(self) -> None:
-        emb = MockEmbeddingProvider(vector_size=4)
+        emb = MockEmbeddingProvider()
         vs = _make_vector_store()
         svc = QdrantRagService(embedding_model=emb, vector_store=vs)
         result = svc(
@@ -228,7 +228,7 @@ class TestQdrantRagServiceProtocol:
         assert "status" in result
 
 
-# ── Blocking modes (no ChunkIndex fallback) ──────────────────────────────────
+# â”€â”€ Blocking modes (no ChunkIndex fallback) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestQdrantRagServiceBlocking:
@@ -255,7 +255,7 @@ class TestQdrantRagServiceBlocking:
 
     def test_blocks_when_corpus_empty(self) -> None:
         """Empty Qdrant collection blocks with explicit status."""
-        emb = MockEmbeddingProvider(vector_size=4)
+        emb = MockEmbeddingProvider()
         vs = InMemoryVectorStore()  # empty
         svc = QdrantRagService(embedding_model=emb, vector_store=vs)
 
@@ -300,7 +300,7 @@ class TestQdrantRagServiceBlocking:
 
     def test_blocks_when_uncalibrated_rag(self) -> None:
         """Uncalibrated semantic decisions block production."""
-        emb = MockEmbeddingProvider(vector_size=4)
+        emb = MockEmbeddingProvider()
         vs = _make_vector_store()
         svc = QdrantRagService(embedding_model=emb, vector_store=vs)
 
@@ -322,8 +322,8 @@ class TestQdrantRagServiceBlocking:
         assert result["rag_retrieval_metrics"]["missing_rag_calibration_count"] == 1
 
     def test_no_fallback_to_chunk_index(self) -> None:
-        """ChunkIndex is never built or used — no lexical fallback in prod."""
-        emb = MockEmbeddingProvider(vector_size=4)
+        """ChunkIndex is never built or used â€” no lexical fallback in prod."""
+        emb = MockEmbeddingProvider()
         vs = _make_vector_store()
         svc = QdrantRagService(embedding_model=emb, vector_store=vs)
 
@@ -339,13 +339,13 @@ class TestQdrantRagServiceBlocking:
         assert "hybrid_retriever" not in source
 
 
-# ── Semantic retrieval path ──────────────────────────────────────────────────
+# â”€â”€ Semantic retrieval path â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestQdrantRagServiceSemanticRetrieval:
     def test_semantic_retrieve_called(self) -> None:
         """semantic_retrieve is invoked for each gap, not ChunkIndex."""
-        emb = MockEmbeddingProvider(vector_size=4)
+        emb = MockEmbeddingProvider()
         vs = _make_vector_store()
         svc = QdrantRagService(embedding_model=emb, vector_store=vs)
 
@@ -402,7 +402,7 @@ class TestQdrantRagServiceSemanticRetrieval:
 
     def test_rag_contexts_preserve_payload(self) -> None:
         """Result contexts include source_id, url, chunk_id, gap_id."""
-        emb = MockEmbeddingProvider(vector_size=4)
+        emb = MockEmbeddingProvider()
         vs = _make_vector_store()
         svc = QdrantRagService(embedding_model=emb, vector_store=vs)
 
@@ -453,7 +453,7 @@ class TestQdrantRagServiceSemanticRetrieval:
         assert result is not None  # run_id is not in output but should not crash
 
 
-# ── Edge cases ───────────────────────────────────────────────────────────────
+# â”€â”€ Edge cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestQdrantRagServiceEdgeCases:
@@ -495,7 +495,7 @@ class TestQdrantRagServiceEdgeCases:
         assert empty["review_required"] is True
 
     def test_blocks_on_parse_error(self) -> None:
-        emb = MockEmbeddingProvider(vector_size=4)
+        emb = MockEmbeddingProvider()
         vs = _make_vector_store()
         svc = QdrantRagService(embedding_model=emb, vector_store=vs)
 

@@ -1,4 +1,4 @@
-"""Unit tests for QdrantRetrievalEvaluator — no LLM, no external calls, no Qdrant.
+﻿"""Unit tests for QdrantRetrievalEvaluator â€” no LLM, no external calls, no Qdrant.
 
 All tests use InMemoryVectorStore + MockEmbeddingProvider + ChunkIndex.
 Real Qdrant integration is gated behind QDRANT_TEST_URL.
@@ -25,7 +25,7 @@ from src.rag.vector_store import InMemoryVectorStore, VectorEntry
 _GOLDEN = Path("data/eval/golden_ragas_rag.json")
 
 
-# ── Fixtures ────────────────────────────────────────────────────────────────
+# â”€â”€ Fixtures â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 @pytest.fixture(scope="session")
@@ -40,7 +40,7 @@ def chunk_index(corpus_chunks: list[RagChunk]) -> ChunkIndex:
 
 @pytest.fixture
 def embedding() -> MockEmbeddingProvider:
-    return MockEmbeddingProvider(vector_size=384)
+    return MockEmbeddingProvider()
 
 
 @pytest.fixture
@@ -87,7 +87,7 @@ def eval_result(evaluator: QdrantRetrievalEvaluator) -> QdrantRetrievalEvalResul
     return evaluator.evaluate()
 
 
-# ── Test 1: evaluator loads golden set ──────────────────────────────────────
+# â”€â”€ Test 1: evaluator loads golden set â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestLoadGoldenSet:
@@ -104,7 +104,7 @@ class TestLoadGoldenSet:
             assert isinstance(sample.expected_nvidia_topics, list)
 
 
-# ── Test 2: evaluator runs semantic_qdrant ──────────────────────────────────
+# â”€â”€ Test 2: evaluator runs semantic_qdrant â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestSemanticQdrant:
@@ -144,7 +144,7 @@ class TestSemanticQdrant:
         assert 0.0 <= m.corpus_version_match_rate <= 1.0
 
 
-# ── Test 3: evaluator runs lexical_baseline ─────────────────────────────────
+# â”€â”€ Test 3: evaluator runs lexical_baseline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestLexicalBaseline:
@@ -170,7 +170,7 @@ class TestLexicalBaseline:
             assert "fallback" not in dec_id.lower() or "lexical" not in dec_id.lower()
 
 
-# ── Test 4: evaluator runs hybrid_candidate ────────────────────────────────
+# â”€â”€ Test 4: evaluator runs hybrid_candidate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestHybridCandidate:
@@ -193,7 +193,7 @@ class TestHybridCandidate:
         assert hw["value_origin"] == "qdrant_ragas_retrieval_eval"
 
 
-# ── Test 5: RAGAS metrics computed ──────────────────────────────────────────
+# â”€â”€ Test 5: RAGAS metrics computed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestRagasMetrics:
@@ -207,7 +207,7 @@ class TestRagasMetrics:
             assert val is None or isinstance(val, float)
 
 
-# ── Test 6: custom metrics computed ─────────────────────────────────────────
+# â”€â”€ Test 6: custom metrics computed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestCustomMetrics:
@@ -237,7 +237,7 @@ class TestCustomMetrics:
             assert detail.summary.gaps_without_context_count >= 0
 
 
-# ── Test 7: payload completeness ────────────────────────────────────────────
+# â”€â”€ Test 7: payload completeness â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestPayloadCompleteness:
@@ -247,7 +247,7 @@ class TestPayloadCompleteness:
         assert 0.0 <= m.qdrant_payload_completeness_rate <= 1.0
 
 
-# ── Test 8: comparison report ───────────────────────────────────────────────
+# â”€â”€ Test 8: comparison report â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestComparison:
@@ -281,7 +281,7 @@ class TestComparison:
                 assert pg.contexts_retrieved >= 0
 
 
-# ── Test 9: registry decisions ──────────────────────────────────────────────
+# â”€â”€ Test 9: registry decisions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestRegistryDecisions:
@@ -320,7 +320,7 @@ class TestRegistryDecisions:
                 assert dec["production_allowed"] is False
 
 
-# ── Test 10: production_allowed=false when dataset insufficient ──────────────
+# â”€â”€ Test 10: production_allowed=false when dataset insufficient â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestDatasetInsufficient:
@@ -329,7 +329,7 @@ class TestDatasetInsufficient:
             chunk_index=chunk_index,
             golden_path=_GOLDEN,
         )
-        # No vector_store or embedding_model — lexical only, but dataset is valid
+        # No vector_store or embedding_model â€” lexical only, but dataset is valid
         dataset = evaluator._harness.load_golden_set()
         assert len(dataset.samples) >= 12
 
@@ -339,7 +339,7 @@ class TestDatasetInsufficient:
         assert MINIMUM_GOLDEN_SAMPLES >= 5
 
 
-# ── Test 11: ChunkIndex not registered as production fallback ───────────────
+# â”€â”€ Test 11: ChunkIndex not registered as production fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestNoLexicalFallback:
@@ -354,7 +354,7 @@ class TestNoLexicalFallback:
         assert eval_result.lexical.summary.retriever_name == "lexical_baseline"
 
 
-# ── Test 12: no LLM calls in unit tests ─────────────────────────────────────
+# â”€â”€ Test 12: no LLM calls in unit tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestNoExternalCalls:
@@ -376,7 +376,7 @@ class TestNoExternalCalls:
         assert r.returncode == 0
 
 
-# ── Test 13: empty InMemoryVectorStore ──────────────────────────────────────
+# â”€â”€ Test 13: empty InMemoryVectorStore â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestEmptyStore:
@@ -396,7 +396,7 @@ class TestEmptyStore:
         assert m.gaps_without_context_count == m.sample_count
 
 
-# ── Test 14: multi-objective weights are consistent ─────────────────────────
+# â”€â”€ Test 14: multi-objective weights are consistent â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class TestMultiObjectiveWeights:

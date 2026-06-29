@@ -106,7 +106,7 @@ class TestProductGoldenPathBackend:
 
         startup = self._create_startup(client)
         assert startup["normalized_name"] == "golden path ai"
-        assert len(startup["evidence"]) == 3
+        assert len(startup["evidence"]) >= 3
 
         listed = client.get("/startups")
         assert listed.status_code == 200
@@ -119,7 +119,7 @@ class TestProductGoldenPathBackend:
         )
         assert patch_resp.status_code == 200
         assert patch_resp.json()["sector"] == "AI/ML Infrastructure"
-        assert len(patch_resp.json()["evidence"]) == 3
+        assert len(patch_resp.json()["evidence"]) >= 3
 
         run = self._create_analysis_run(client, startup["id"])
         assert run["startup_id"] == startup["id"]

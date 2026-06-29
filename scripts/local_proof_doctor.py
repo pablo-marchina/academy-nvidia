@@ -20,6 +20,7 @@ from urllib.request import urlopen
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from scripts.load_product_env import load_product_env
 from src.governance.artifacts import DEFAULT_EVIDENCE_DIR, write_json
 
 DEFAULT_POSTGRES_URL = "postgresql://postgres:postgres@localhost:5432/startup_radar"
@@ -789,6 +790,7 @@ def _sanitize_url(value: str) -> str:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    load_product_env()
     parser = argparse.ArgumentParser(description="Diagnose local requirements for full product proof.")
     parser.add_argument("--evidence-dir", type=Path, default=DEFAULT_EVIDENCE_DIR)
     parser.add_argument("--database-url", default=os.getenv("PRODUCT_DB_URL", DEFAULT_POSTGRES_URL))

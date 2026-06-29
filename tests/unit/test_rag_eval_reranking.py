@@ -1,4 +1,4 @@
-"""Tests for RAG Evaluation with reranking and context packing modes."""
+﻿"""Tests for RAG Evaluation with reranking and context packing modes."""
 
 from pathlib import Path
 

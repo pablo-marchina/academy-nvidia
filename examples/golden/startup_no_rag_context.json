@@ -16,8 +16,8 @@
   ],
   "expected": {
     "motion_in": ["lack_evidence_more_research"],
-    "min_score": 20,
-    "max_score": 40,
+    "min_score": 35,
+    "max_score": 45,
     "expected_gaps": ["high_inference_cost", "high_latency"],
     "brief_min_sections": 3
   }

@@ -224,7 +224,6 @@ class DiscoveryRepository:
             statement = statement.where(StartupDiscoveryCandidate.sector == sector)
 
         if confidence_min is not None:
-
             if confidence_min >= 0.7:
                 statement = statement.where(StartupDiscoveryCandidate.confidence == "high")
             elif confidence_min >= 0.4:

@@ -7,13 +7,13 @@ sources:
     - external_api_dependency
     - high_inference_cost
     - high_latency
-    version: '1.1'
+    version: '1.2'
     document_type: nvidia_corpus
-    content_hash: 934758cf3e136e39bef9553b89bdd01b
-    previous_content_hash: 6cb050ab67d9343a0acadc3f8f2b49ff
-    collected_at: '2026-06-19T16:58:27.627458+00:00'
-    last_checked_at: '2026-06-19T16:58:27.627458+00:00'
-    valid_from: '2026-06-19T16:58:27.627458+00:00'
+    content_hash: 794154bae25ff7959d38618211ca8fbb
+    previous_content_hash: 934758cf3e136e39bef9553b89bdd01b
+    collected_at: '2026-06-28T07:13:52.099956+00:00'
+    last_checked_at: '2026-06-28T07:13:52.099956+00:00'
+    valid_from: '2026-06-28T07:13:52.099956+00:00'
     valid_until: null
     freshness_policy: weekly
     stale_after_days: 7
@@ -44,6 +44,19 @@ sources:
       valid_until: null
       freshness_policy: weekly
       stale_after_days: 7
+      is_active: false
+      deprecated_at: '2026-06-28T07:13:52.099956+00:00'
+      superseded_by: '1.2'
+      deprecation_reason: superseded_by_new_content_hash
+    - version: '1.2'
+      content_hash: 794154bae25ff7959d38618211ca8fbb
+      previous_content_hash: 934758cf3e136e39bef9553b89bdd01b
+      collected_at: '2026-06-28T07:13:52.099956+00:00'
+      last_checked_at: '2026-06-28T07:13:52.099956+00:00'
+      valid_from: '2026-06-28T07:13:52.099956+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
       is_active: true
       deprecated_at: null
       superseded_by: null
@@ -55,13 +68,13 @@ sources:
     gap_types:
     - high_inference_cost
     - high_latency
-    version: '1.1'
+    version: '1.2'
     document_type: nvidia_corpus
-    content_hash: 0b4d8b96e2293299647b32d274747bfc
-    previous_content_hash: 65b92f8fa896e6f56d5a52ca55c485d8
-    collected_at: '2026-06-19T16:58:30.040376+00:00'
-    last_checked_at: '2026-06-19T16:58:30.040376+00:00'
-    valid_from: '2026-06-19T16:58:30.040376+00:00'
+    content_hash: a810888075c3665bc2cb6aeb02c0d3f7
+    previous_content_hash: 0b4d8b96e2293299647b32d274747bfc
+    collected_at: '2026-06-28T07:13:53.549196+00:00'
+    last_checked_at: '2026-06-28T07:13:53.549196+00:00'
+    valid_from: '2026-06-28T07:13:53.549196+00:00'
     valid_until: null
     freshness_policy: weekly
     stale_after_days: 7
@@ -92,6 +105,19 @@ sources:
       valid_until: null
       freshness_policy: weekly
       stale_after_days: 7
+      is_active: false
+      deprecated_at: '2026-06-28T07:13:53.549196+00:00'
+      superseded_by: '1.2'
+      deprecation_reason: superseded_by_new_content_hash
+    - version: '1.2'
+      content_hash: a810888075c3665bc2cb6aeb02c0d3f7
+      previous_content_hash: 0b4d8b96e2293299647b32d274747bfc
+      collected_at: '2026-06-28T07:13:53.549196+00:00'
+      last_checked_at: '2026-06-28T07:13:53.549196+00:00'
+      valid_from: '2026-06-28T07:13:53.549196+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
       is_active: true
       deprecated_at: null
       superseded_by: null
@@ -103,13 +129,13 @@ sources:
     gap_types:
     - high_inference_cost
     - high_latency
-    version: '1.1'
+    version: '1.2'
     document_type: nvidia_corpus
-    content_hash: 179efdb66c06c42034d635efbc6f0392
-    previous_content_hash: a42425f50118898cf2a7d3e5d1b75767
-    collected_at: '2026-06-19T16:57:44.699490+00:00'
-    last_checked_at: '2026-06-19T16:57:44.699490+00:00'
-    valid_from: '2026-06-19T16:57:44.699490+00:00'
+    content_hash: 8fa19f84a4b4ea6cac910eae0045e090
+    previous_content_hash: 179efdb66c06c42034d635efbc6f0392
+    collected_at: '2026-06-28T07:13:54.977538+00:00'
+    last_checked_at: '2026-06-28T07:13:54.977538+00:00'
+    valid_from: '2026-06-28T07:13:54.977538+00:00'
     valid_until: null
     freshness_policy: weekly
     stale_after_days: 7
@@ -137,6 +163,19 @@ sources:
       collected_at: '2026-06-19T16:57:44.699490+00:00'
       last_checked_at: '2026-06-19T16:57:44.699490+00:00'
       valid_from: '2026-06-19T16:57:44.699490+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: false
+      deprecated_at: '2026-06-28T07:13:54.977538+00:00'
+      superseded_by: '1.2'
+      deprecation_reason: superseded_by_new_content_hash
+    - version: '1.2'
+      content_hash: 8fa19f84a4b4ea6cac910eae0045e090
+      previous_content_hash: 179efdb66c06c42034d635efbc6f0392
+      collected_at: '2026-06-28T07:13:54.977538+00:00'
+      last_checked_at: '2026-06-28T07:13:54.977538+00:00'
+      valid_from: '2026-06-28T07:13:54.977538+00:00'
       valid_until: null
       freshness_policy: weekly
       stale_after_days: 7

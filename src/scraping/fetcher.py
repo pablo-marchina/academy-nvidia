@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 import requests
 
-_USER_AGENT = "Mozilla/5.0 (compatible; NVIDIAStartupAIRadar/0.1; " "+https://github.com/nvidia/startup-ai-radar)"
+_USER_AGENT = "Mozilla/5.0 (compatible; NVIDIAStartupAIRadar/0.1; +https://github.com/nvidia/startup-ai-radar)"
 _DEFAULT_TIMEOUT = 15
 
 

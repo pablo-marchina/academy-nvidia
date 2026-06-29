@@ -24,7 +24,6 @@ class SuggestedTechnicalExperiment(BaseModel):
 
 
 class RecommendedNextAction(StrEnum):
-
     APPROACH_NOW = "approach_now"
     VALIDATE_MANUALLY = "validate_manually"
     MONITOR = "monitor"

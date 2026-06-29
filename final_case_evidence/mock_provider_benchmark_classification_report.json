@@ -1,7 +1,0 @@
-{
-  "failures": [],
-  "generated_at": "2026-06-23T02:21:55.123303+00:00",
-  "policy": "Mock providers cannot prove OUTPUT_VALUE.",
-  "report_id": "mock_provider_benchmark_classification_report",
-  "status": "PASS"
-}

@@ -122,7 +122,9 @@ class ActivationPlaybookService:
         mapping_records: list[NvidiaMappingRecord] = list(run.mappings)
         readiness_checks: list[ProductReadinessCheck] = list(run.readiness_checks)
 
-        detected_gaps = [g for g in gap_records if g.detected]
+        detected_gaps = [
+            g for g in gap_records if g.detected and g.confidence != "low" and g.evidence_tag in {"fact", "inferred"}
+        ]
         detected_gap_types = {g.gap_type for g in detected_gaps}
 
         degraded_codes = {rc.code for rc in readiness_checks if rc.status in ("degraded", "error")}

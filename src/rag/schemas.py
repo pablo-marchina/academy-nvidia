@@ -89,6 +89,8 @@ class RetrievedContext(BaseModel):
     url: str | None = None
     relevance_score: float = 0.0
     version: str = "1.0"
+    collected_at: str | None = None
+    last_checked_at: str | None = None
     valid_from: str | None = None
     valid_until: str | None = None
     freshness_policy: str | None = None
@@ -109,6 +111,33 @@ class PlaybookRetrievalResult(BaseModel):
 # ------------------------------------------------------------------
 # Epic 14 — Reranking + Context Packing schemas
 # ------------------------------------------------------------------
+
+
+class TechniquesConfig(BaseModel):
+    """Runtime config for catalog techniques. Each attribute is a module
+    name; default True (enabled). Set to False to skip a technique."""
+
+
+class ClaimVerificationConfig(BaseModel):
+    enabled: bool = True
+
+
+class RAGFusionConfig(BaseModel):
+    use_nvidia_llm: bool = True
+    max_variants: int = 4
+    fusion_top_k: int = 20
+
+
+class SelfRAGConfig(BaseModel):
+    enabled: bool = True
+    relevance_threshold: float = 0.5
+    max_retries: int = 3
+
+
+class CorrectiveRAGConfig(BaseModel):
+    enabled: bool = True
+    quality_threshold: float = 0.6
+    max_correction_rounds: int = 2
 
 
 class RerankingConfig(BaseModel):

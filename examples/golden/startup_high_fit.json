@@ -17,7 +17,7 @@
   ],
   "expected": {
     "motion_in": ["lack_evidence_more_research"],
-    "min_score": 10,
+    "min_score": 15,
     "max_score": 25,
     "expected_gaps": ["healthcare_compliance_need", "high_latency", "computer_vision_need"],
     "brief_min_sections": 5,

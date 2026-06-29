@@ -167,9 +167,7 @@ def _lookup_calibration_group(
                 found = True
                 validation = validate_decision_for_production(rec)
                 if not validation.passed:
-                    blockers.append(
-                        f"Decision '{decision_id}' blocked for production: " f"{'; '.join(validation.reasons)}"
-                    )
+                    blockers.append(f"Decision '{decision_id}' blocked for production: {'; '.join(validation.reasons)}")
                 elif rec.calibration_status.value in ("uncalibrated", "blocked"):
                     blockers.append(f"Decision '{decision_id}' is {rec.calibration_status.value}")
                 else:
@@ -587,15 +585,14 @@ def build_nvidia_technology_mappings(
                 status = NvidiaMappingStatus.NEEDS_REVIEW
                 prod_allowed = False
                 mapping_blockers.append(
-                    f"Mapping score ({round(final_score, 4)}) " f"below production threshold ({production_threshold})."
+                    f"Mapping score ({round(final_score, 4)}) below production threshold ({production_threshold})."
                 )
             else:
                 status = NvidiaMappingStatus.PASSED
 
             # ── Build explanation ───────────────────────────────────────
             explanation_parts: list[str] = [
-                f"Mapping '{gap_type_str} → {tech}': "
-                f"score={round(final_score, 4)}, confidence={round(final_conf, 4)}",
+                f"Mapping '{gap_type_str} → {tech}': score={round(final_score, 4)}, confidence={round(final_conf, 4)}",
                 f"RAG contexts supporting: {rag_count}, Evidence items: {ev_count}",
             ]
             if status == NvidiaMappingStatus.PASSED:

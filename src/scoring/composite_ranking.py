@@ -205,10 +205,10 @@ def compute_composite_score(
     clf_score = _score_from_classification(classification_result) if classification_result else "N/A"
     lines: list[str] = [
         f"Composite score: {composite}/100 (confidence: {overall_conf.value})",
-        f'  defensibility ({OPPORTUNITY_SCORE_WEIGHTS["defensibility"]}): {def_score}',
-        f'  inception_fit ({OPPORTUNITY_SCORE_WEIGHTS["inception_fit"]}): {inc_score}',
-        f'  production_readiness ({OPPORTUNITY_SCORE_WEIGHTS["production_readiness"]}): {pr_score}',
-        f'  classification ({OPPORTUNITY_SCORE_WEIGHTS["classification"]}): {clf_score}',
+        f"  defensibility ({OPPORTUNITY_SCORE_WEIGHTS['defensibility']}): {def_score}",
+        f"  inception_fit ({OPPORTUNITY_SCORE_WEIGHTS['inception_fit']}): {inc_score}",
+        f"  production_readiness ({OPPORTUNITY_SCORE_WEIGHTS['production_readiness']}): {pr_score}",
+        f"  classification ({OPPORTUNITY_SCORE_WEIGHTS['classification']}): {clf_score}",
         f"  confidence_penalty: {confidence_penalty:.2f}",
     ]
     if missing:

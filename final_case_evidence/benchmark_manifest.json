@@ -1,7 +1,0 @@
-{
-  "candidate_count": 408,
-  "candidate_status_summary": "final_case_evidence/candidate_status_summary.json",
-  "notes": "Initial manifest configures the universal benchmark lab; individual candidates still require results.",
-  "roadmap": "C:\\Users\\Inteli\\Documents\\Projetos\\academy-nvidia\\final_final_benchmark_first_roadmap_all_changes.md",
-  "status": "BENCHMARK_CONFIGURED"
-}

@@ -382,5 +382,5 @@ def validate_all_weight_sets() -> dict[str, float]:
         total = sum(weights.values())
         results[name] = round(total, 6)
         if abs(total - 1.0) > 1e-6:
-            raise ValueError(f"Weight set '{name}' sums to {total}, expected 1.0. " f"Values: {weights}")
+            raise ValueError(f"Weight set '{name}' sums to {total}, expected 1.0. Values: {weights}")
     return results

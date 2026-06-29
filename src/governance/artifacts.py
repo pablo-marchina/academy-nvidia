@@ -395,13 +395,13 @@ def build_local_security_scan() -> dict[str, object]:
 
 def finalization_static_reports() -> dict[str, dict[str, object]]:
     generated_at = datetime.now(UTC).isoformat()
-    release_pending = {
+    release_pending: dict[str, object] = {
         "status": "PENDING_PACKAGE_FINAL_RELEASE",
         "generated_at": generated_at,
         "required_command": "make package-final-release",
         "gate": "make check-final-release-zip",
     }
-    tool_blocked = {
+    tool_blocked: dict[str, object] = {
         "status": "BLOCKED_BY_ENVIRONMENT",
         "generated_at": generated_at,
         "reason": "Dedicated release scanner binary is not bundled with the repository.",
@@ -685,9 +685,7 @@ def default_calibration_registry_entries() -> list[CalibrationRegistryEntry]:
         value = record.current_value if record.current_value is not None else "not_set"
         serialized_value = json.dumps(value, sort_keys=True) if isinstance(value, dict) else value
         metric_name = record.metric_name or record.decision_id
-        calibrated_at = (
-            record.last_calibrated_at.date().isoformat() if record.last_calibrated_at else "not_calibrated"
-        )
+        calibrated_at = record.last_calibrated_at.date().isoformat() if record.last_calibrated_at else "not_calibrated"
         entries.append(
             CalibrationRegistryEntry(
                 calibration_id=record.decision_id,
@@ -839,28 +837,20 @@ def build_initial_evidence_pack(
         "final_release_manifest": evidence_dir / "final_release_manifest.json",
         "final_release_clean_report": evidence_dir / "final_release_clean_report.json",
         "final_release_file_allowlist_report": evidence_dir / "final_release_file_allowlist_report.json",
-        "final_release_forbidden_artifacts_report": (
-            evidence_dir / "final_release_forbidden_artifacts_report.json"
-        ),
+        "final_release_forbidden_artifacts_report": (evidence_dir / "final_release_forbidden_artifacts_report.json"),
         "final_release_zip_clean_report": evidence_dir / "final_release_zip_clean_report.json",
         "no_env_in_release_report": evidence_dir / "no_env_in_release_report.json",
         "no_git_dir_in_release_report": evidence_dir / "no_git_dir_in_release_report.json",
         "no_node_modules_report": evidence_dir / "no_node_modules_report.json",
-        "frontend_build_reproducibility_report": (
-            evidence_dir / "frontend_build_reproducibility_report.json"
-        ),
+        "frontend_build_reproducibility_report": (evidence_dir / "frontend_build_reproducibility_report.json"),
         "no_active_demo_docs_report": evidence_dir / "no_active_demo_docs_report.json",
         "demo_archive_manifest": evidence_dir / "demo_archive_manifest.json",
         "benchmark_type_coverage_report": evidence_dir / "benchmark_type_coverage_report.json",
-        "proxy_benchmark_promotion_block_report": (
-            evidence_dir / "proxy_benchmark_promotion_block_report.json"
-        ),
+        "proxy_benchmark_promotion_block_report": (evidence_dir / "proxy_benchmark_promotion_block_report.json"),
         "mock_provider_benchmark_classification_report": (
             evidence_dir / "mock_provider_benchmark_classification_report.json"
         ),
-        "roadmap_non_runtime_items_justification": (
-            evidence_dir / "roadmap_non_runtime_items_justification.csv"
-        ),
+        "roadmap_non_runtime_items_justification": (evidence_dir / "roadmap_non_runtime_items_justification.csv"),
         "robots_terms_report": evidence_dir / "robots_terms_report.json",
         "access_control_rag_report": evidence_dir / "access_control_rag_report.json",
         "data_minimization_report": evidence_dir / "data_minimization_report.json",
@@ -1113,7 +1103,7 @@ def build_initial_evidence_pack(
         },
     )
     outputs["next_action_enrichment_product_spike_report_md"].write_text(
-        "# Next-Action Enrichment Product Spike Report\n\n" "Pending next-action enrichment product spike run.\n",
+        "# Next-Action Enrichment Product Spike Report\n\nPending next-action enrichment product spike run.\n",
         encoding="utf-8",
     )
     write_json(
@@ -1126,7 +1116,7 @@ def build_initial_evidence_pack(
         },
     )
     outputs["graphrag_evidence_graph_product_spike_report_md"].write_text(
-        "# GraphRAG Evidence Graph Product Spike Report\n\n" "Pending GraphRAG evidence graph product spike run.\n",
+        "# GraphRAG Evidence Graph Product Spike Report\n\nPending GraphRAG evidence graph product spike run.\n",
         encoding="utf-8",
     )
     write_json(
@@ -1139,7 +1129,7 @@ def build_initial_evidence_pack(
         },
     )
     outputs["counter_evidence_product_spike_report_md"].write_text(
-        "# Counter-Evidence Product Spike Report\n\n" "Pending counter-evidence product spike run.\n",
+        "# Counter-Evidence Product Spike Report\n\nPending counter-evidence product spike run.\n",
         encoding="utf-8",
     )
     write_json(
@@ -1152,7 +1142,7 @@ def build_initial_evidence_pack(
         },
     )
     outputs["source_quality_product_spike_report_md"].write_text(
-        "# Source Quality Product Spike Report\n\n" "Pending source quality product spike run.\n",
+        "# Source Quality Product Spike Report\n\nPending source quality product spike run.\n",
         encoding="utf-8",
     )
     write_json(
@@ -1165,7 +1155,7 @@ def build_initial_evidence_pack(
         },
     )
     outputs["evidence_sufficiency_product_spike_report_md"].write_text(
-        "# Evidence Sufficiency Product Spike Report\n\n" "Pending evidence sufficiency product spike run.\n",
+        "# Evidence Sufficiency Product Spike Report\n\nPending evidence sufficiency product spike run.\n",
         encoding="utf-8",
     )
     write_json(

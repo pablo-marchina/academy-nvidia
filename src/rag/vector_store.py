@@ -254,7 +254,7 @@ def _assert_not_production() -> None:
     backend = os.environ.get("RAG_VECTOR_BACKEND", "in_memory").lower()
     if app_mode == "product" and backend == "in_memory":
         raise RuntimeError(
-            "InMemoryVectorStore is FORBIDDEN in production. " "Set RAG_VECTOR_BACKEND=qdrant in your .env file."
+            "InMemoryVectorStore is FORBIDDEN in production. Set RAG_VECTOR_BACKEND=qdrant in your .env file."
         )
 
 

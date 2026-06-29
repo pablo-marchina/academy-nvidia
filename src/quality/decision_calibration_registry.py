@@ -513,8 +513,7 @@ def _quantitative_weight_sets() -> list[DecisionCalibrationRecord]:
         cal = _WEIGHT_SET_CALIBRATION.get(cal_key, {})
         for key, value in weight_dict.items():
             cal_note = (
-                f"Weight for '{key}' in composite {name.lower()}. "
-                f"Sum check: must sum to 1.0 with siblings (validated)."
+                f"Weight for '{key}' in composite {name.lower()}. Sum check: must sum to 1.0 with siblings (validated)."
             )
             if cal:
                 cal_note += (
@@ -649,12 +648,11 @@ def _quantitative_scores_and_limits() -> list[DecisionCalibrationRecord]:
             calibration_method=CalibrationMethod.ABLATION_STUDY,
             production_allowed=True,
             evidence_source=(
-                "Ablation: shifting thresholds +/-0.1 causes ~18-19% reclassification. "
-                "0.7/0.4 is in the stable zone."
+                "Ablation: shifting thresholds +/-0.1 causes ~18-19% reclassification. 0.7/0.4 is in the stable zone."
             ),
             owner="team-scoring",
             last_calibrated_at=_CALIBRATION_TS,
-            notes="Minimum value for 'medium' confidence classification. " "Benchmarked at 0.4 via ablation.",
+            notes="Minimum value for 'medium' confidence classification. Benchmarked at 0.4 via ablation.",
         )
     )
 
@@ -735,7 +733,7 @@ def _quantitative_scores_and_limits() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-discovery",
-            notes="Maximum search depth for discovery traversal. " "Requires search recursion analysis to calibrate.",
+            notes="Maximum search depth for discovery traversal. Requires search recursion analysis to calibrate.",
         )
     )
 
@@ -1491,8 +1489,7 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-scoring",
-            notes="Score boost applied when recommendation has relevant_claims. "
-            "Hardcoded at activation_service.py:57.",
+            notes="Score boost applied when recommendation has relevant_claims. Hardcoded at activation_service.py:57.",
         ),
         DecisionCalibrationRecord(
             decision_id="activation.evidence_coverage_penalty_threshold",
@@ -1615,7 +1612,7 @@ def _activation_scoring_params() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-discovery",
-            notes="Confidence float >= 0.5 qualifies as 'medium' support level. " "Hardcoded at claim_ledger.py:30.",
+            notes="Confidence float >= 0.5 qualifies as 'medium' support level. Hardcoded at claim_ledger.py:30.",
         ),
         DecisionCalibrationRecord(
             decision_id="confidence_float_map.activation_and_ledger_low",
@@ -1890,7 +1887,7 @@ def _evaluator_formula_weights() -> list[DecisionCalibrationRecord]:
             calibration_method=CalibrationMethod.SENSITIVITY_ANALYSIS,
             production_allowed=False,
             owner="team-quality",
-            notes="Weight for quality run being completed/degraded. " "Hardcoded at review_readiness.py:37.",
+            notes="Weight for quality run being completed/degraded. Hardcoded at review_readiness.py:37.",
         ),
         DecisionCalibrationRecord(
             decision_id="weight.review_readiness.unsupported_penalty",
@@ -2077,7 +2074,7 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-evaluation",
-            notes="Default timeout for LLM judge provider calls. " "Hardcoded default at llm_judge_schemas.py:30.",
+            notes="Default timeout for LLM judge provider calls. Hardcoded default at llm_judge_schemas.py:30.",
         ),
         DecisionCalibrationRecord(
             decision_id="limit.rag_eval.irrelevant_max_per_case",
@@ -2089,7 +2086,7 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-evaluation",
-            notes="A case is flagged if irrelevant_context_count > 1. " "Hardcoded threshold at rag_eval.py:533.",
+            notes="A case is flagged if irrelevant_context_count > 1. Hardcoded threshold at rag_eval.py:533.",
         ),
         DecisionCalibrationRecord(
             decision_id="limit.rag_eval.irrelevant_max_exceeding_cases",
@@ -2101,7 +2098,7 @@ def _evaluation_gate_thresholds() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-evaluation",
-            notes="Gate passes if len(irrelevant_over) <= 1. " "Hardcoded at rag_eval.py:538.",
+            notes="Gate passes if len(irrelevant_over) <= 1. Hardcoded at rag_eval.py:538.",
         ),
         DecisionCalibrationRecord(
             decision_id="limit.rag_eval.default_top_k",
@@ -2158,8 +2155,7 @@ def _orchestration_workflow_defaults() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-pipeline",
-            notes="Error types that should NOT be retried during workflow execution. "
-            "Hardcoded tuple at runner.py:88.",
+            notes="Error types that should NOT be retried during workflow execution. Hardcoded tuple at runner.py:88.",
         ),
         DecisionCalibrationRecord(
             decision_id="workflow.list_workflows_default_limit",
@@ -2201,7 +2197,7 @@ def _discovery_extraction_limits() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-discovery",
-            notes="Multiplier cap for boost per match in signal extraction. " "Hardcoded at signals.py:43.",
+            notes="Multiplier cap for boost per match in signal extraction. Hardcoded at signals.py:43.",
         ),
         DecisionCalibrationRecord(
             decision_id="extraction.confidence_formula_base",
@@ -2239,7 +2235,7 @@ def _discovery_extraction_limits() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-discovery",
-            notes="Number of content fields used in confidence calculation. " "Hardcoded at extractor.py:196.",
+            notes="Number of content fields used in confidence calculation. Hardcoded at extractor.py:196.",
         ),
         DecisionCalibrationRecord(
             decision_id="discovery.excerpt_padding",
@@ -2251,7 +2247,7 @@ def _discovery_extraction_limits() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-discovery",
-            notes="Character padding around match in excerpt extraction. " "Hardcoded at signals.py:44.",
+            notes="Character padding around match in excerpt extraction. Hardcoded at signals.py:44.",
         ),
         # ── Extraction sufficiency decisions ──────────────────────────
         DecisionCalibrationRecord(
@@ -3478,7 +3474,7 @@ def _ingestion_corpus_decisions() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-rag",
-            notes="Minimum number of total chunks required for corpus readiness. " "Currently uncalibrated.",
+            notes="Minimum number of total chunks required for corpus readiness. Currently uncalibrated.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.corpus_staleness_policy",
@@ -3502,8 +3498,7 @@ def _ingestion_corpus_decisions() -> list[DecisionCalibrationRecord]:
             calibration_status=CalibrationStatus.UNCALIBRATED,
             production_allowed=False,
             owner="team-rag",
-            notes="Expected embedding dimension (384 for all-MiniLM-L6-v2). "
-            "Must match Qdrant collection vector_size.",
+            notes="Expected embedding dimension (384 for all-MiniLM-L6-v2). Must match Qdrant collection vector_size.",
         ),
     ]
 

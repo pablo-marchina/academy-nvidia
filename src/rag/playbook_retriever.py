@@ -73,7 +73,7 @@ class PlaybookRetriever:
                             contexts=contexts,
                             total_found=len(contexts),
                             missing_context=len(contexts) == 0,
-                            reasoning=(f"Retrieved context for gap '{gap_val}' " f"with technology '{tech}'"),
+                            reasoning=(f"Retrieved context for gap '{gap_val}' with technology '{tech}'"),
                         )
                     )
 
