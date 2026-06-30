@@ -4,13 +4,16 @@ to detect production AI gaps."""
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any
 
 from src.classification.ai_native_classifier import ClassificationResult
 from src.diagnosis.schemas import EvidenceTag, GapDiagnosisResult, GapWithEvidence
 from src.extraction.schemas import AINativeLevel, ConfidenceLevel, StartupProfile, TechnicalGap
-from src.scoring.defensibility_score import DefensibilityScoreResult
-from src.scoring.inception_fit_score import InceptionFitScoreResult
-from src.scoring.production_readiness import ProductionReadinessResult
+
+# Runtime-compatible aliases — replaced scoring determinístico with Any
+DefensibilityScoreResult = Any
+InceptionFitScoreResult = Any
+ProductionReadinessResult = Any
 from src.validation.evidence_validator import ValidatedEvidence
 
 # ---------------------------------------------------------------------------

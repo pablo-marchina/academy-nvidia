@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import os
 from collections.abc import Iterator
 from typing import Any
 
@@ -258,8 +259,11 @@ class TestSummarizeProductionBlockers:
 
     def test_source_requires_api_key_in_blockers(self) -> None:
         blockers = summarize_production_blockers()
-        assert "source_requires_api_key" in blockers
-        assert blockers["source_requires_api_key"] >= 1
+        if os.environ.get("GITHUB_TOKEN", "").strip():
+            assert "source_requires_api_key" not in blockers
+        else:
+            assert "source_requires_api_key" in blockers
+            assert blockers["source_requires_api_key"] >= 1
 
 
 # ── Capability-aware blocking ─────────────────────────────────────────────

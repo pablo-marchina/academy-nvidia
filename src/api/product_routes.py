@@ -41,6 +41,8 @@ from src.api.product_schemas import (
     GenerateActivationRecommendationsResponse,
     ManualSeedRequest,
     ManualSeedResponse,
+    SourceScraperRequest,
+    SourceScraperResponse,
     OpportunityListItem,
     OpportunityListResponse,
     OpportunityScoreCreateResponse,
@@ -1743,6 +1745,19 @@ def list_discovery_sources(
     svc = StartupDiscoveryService(session)
     sources = svc.list_sources()
     return [DiscoverySourceRead(**s) for s in sources]
+
+
+@router.post("/discovery/run-source-scraper", response_model=SourceScraperResponse, status_code=201)
+def discover_via_source_scraper(
+    body: SourceScraperRequest,
+    session: DbSession,
+) -> SourceScraperResponse:
+    svc = StartupDiscoveryService(session)
+    try:
+        result = svc.run_source_scraper_discovery(body.source_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return SourceScraperResponse(**result)
 
 
 @router.post("/discovery/manual-seed", response_model=ManualSeedResponse, status_code=201)

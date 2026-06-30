@@ -18,8 +18,8 @@ bm25:
   stemming: false
 
 dense:
-  model: all-MiniLM-L6-v2
-  dimension: 384
+  model: BAAI/bge-m3
+  dimension: 1024
   top_k: 20
   similarity: cosine
   decision: EMBEDDING_DECISION_DOCUMENTED (docs/architecture/embedding_model_decision.md)

@@ -4,6 +4,11 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from pydantic import BaseModel, Field
 
+try:
+    import tldextract
+except ImportError:
+    tldextract = None
+
 
 class DeduplicatedSource(BaseModel):
     canonical_url: str
@@ -13,9 +18,15 @@ class DeduplicatedSource(BaseModel):
 
 def canonicalize_source_url(url: str) -> str:
     parsed = urlparse(url.strip())
-    host = parsed.netloc.casefold()
-    if host.startswith("www."):
-        host = host[4:]
+    raw_host = parsed.netloc.casefold()
+    if tldextract is not None:
+        ext = tldextract.extract(raw_host)
+        # Reconstruct: domain.suffix (drop subdomain for canonical)
+        host = f"{ext.domain}.{ext.suffix}"
+    else:
+        host = raw_host
+        if host.startswith("www."):
+            host = host[4:]
     query = urlencode(
         [
             (key, value)

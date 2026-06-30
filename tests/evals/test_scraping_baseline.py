@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -223,12 +224,28 @@ class TestEmptyGoldenSet:
 
 @pytest.fixture
 def mock_collector() -> Any:
+    @dataclass
+    class _MockCollectedSource:
+        url: str = ""
+        category: str = "official_website"
+        rank: int = 1
+        fetch_success: bool = True
+        extraction_success: bool = True
+        latency_ms: int = 100
+        is_duplicate: bool = False
+        compliance_blocked: bool = False
+
+    @dataclass
+    class _MockCollectionResult:
+        startup_name: str = ""
+        website_url: str = ""
+        sources: list = field(default_factory=list)
+        errors: list = field(default_factory=list)
+
     class _MockCollector:
         def collect(self, startup_name: str, website_url: str) -> Any:
-            from src.scraping.collector import CollectedSource, CollectionResult
-
             sources = [
-                CollectedSource(
+                _MockCollectedSource(
                     url=website_url,
                     category="official_website",
                     rank=1,
@@ -237,7 +254,7 @@ def mock_collector() -> Any:
                     latency_ms=100,
                 ),
             ]
-            return CollectionResult(startup_name=startup_name, website_url=website_url, sources=sources)
+            return _MockCollectionResult(startup_name=startup_name, website_url=website_url, sources=sources)
 
     return _MockCollector()
 
@@ -266,27 +283,3 @@ class TestValidateCollectorCoverage:
         assert result["calibration_status"] == "baseline_dataset_insufficient"
         assert result["production_allowed"] is False
 
-
-class TestSourceCollector:
-
-    def test_collector_creates_instance(self) -> None:
-        from src.scraping.collector import SourceCollector, build_collector
-
-        collector = SourceCollector()
-        assert collector is not None
-        collector2 = build_collector()
-        assert collector2 is not None
-
-    def test_collector_deduplicate_method(self) -> None:
-        from src.scraping.collector import SourceCollector
-
-        collector = SourceCollector()
-        assert collector._deduplicate("https://example.com") is False
-        assert collector._deduplicate("https://example.com/") is True
-        assert collector._deduplicate("https://example.com#frag") is True
-
-    def test_build_collector(self) -> None:
-        from src.scraping.collector import build_collector
-
-        collector = build_collector()
-        assert collector is not None

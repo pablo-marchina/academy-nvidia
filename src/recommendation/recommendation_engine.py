@@ -28,10 +28,11 @@ from src.recommendation.schemas import (
     RecommendedNextAction,
     SuggestedTechnicalExperiment,
 )
-from src.scoring.composite_ranking import CompositeResult
-from src.scoring.defensibility_score import DefensibilityScoreResult
-from src.scoring.inception_fit_score import InceptionFitScoreResult
-from src.scoring.production_readiness import ProductionReadinessResult
+# Runtime-compatible aliases — replaced scoring determinístico with Any
+CompositeResult = Any
+DefensibilityScoreResult = Any
+InceptionFitScoreResult = Any
+ProductionReadinessResult = Any
 from src.validation.evidence_validator import ValidatedEvidence
 
 _COMPLEXITY_MAP: dict[str, ImplementationComplexity] = {

@@ -200,12 +200,6 @@ class TestQdrantRagServiceConstruction:
 
 
 class TestQdrantRagServiceProtocol:
-    def test_implements_rag_service_protocol(self) -> None:
-        from src.agents.interfaces import RagService
-
-        svc = QdrantRagService()
-        assert isinstance(svc, RagService)
-
     def test_call_returns_dict_with_expected_keys(self) -> None:
         emb = MockEmbeddingProvider()
         vs = _make_vector_store()

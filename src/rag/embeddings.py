@@ -1,16 +1,27 @@
 """Embedding provider abstraction for Product RAG.
 
 Supports local (sentence-transformers) for production.
-MockEmbeddingProvider kept here for test backward compatibility.
+MockEmbeddingProvider is in tests/helpers/mock_embeddings.
 """
 
 from __future__ import annotations
 
-import hashlib
-import math
 import warnings
 from abc import ABC, abstractmethod
 from typing import Any
+
+# Backward-compatible import for tests that still import MockEmbeddingProvider
+# from this module. New code should import from tests.helpers.mock_embeddings.
+try:
+    from tests.helpers.mock_embeddings import MockEmbeddingProvider  # noqa: F401
+
+    warnings.warn(
+        "Import MockEmbeddingProvider from tests.helpers.mock_embeddings, not src.rag.embeddings",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+except ImportError:
+    pass
 
 
 class EmbeddingProvider(ABC):
@@ -29,40 +40,14 @@ class EmbeddingProvider(ABC):
         """Embed multiple texts in a single batch call."""
 
 
-class MockEmbeddingProvider(EmbeddingProvider):
-    """Deterministic pseudo-embedding provider for tests only.
-
-    Generates reproducible embeddings using MD5 hash as seed.
-    Similar texts (by hash prefix) get related but non-identical vectors.
-    No external dependencies, no model downloads.
-
-    Deprecated: import from tests.helpers.mock_embeddings for new code.
-    """
-
-    def __init__(self, vector_size: int = 4) -> None:
-        warnings.warn(
-            "MockEmbeddingProvider is for tests only.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self.vector_size = vector_size
-
-    def embed(self, text: str) -> list[float]:
-        seed = _text_to_seed(text)
-        return _pseudo_embedding(seed, self.vector_size)
-
-    def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        return [self.embed(t) for t in texts]
-
-
 class SentenceTransformerProvider(EmbeddingProvider):
     """Local embedding provider using sentence-transformers.
 
     Requires the ``sentence-transformers`` package.
-    Default model is ``all-MiniLM-L6-v2`` (384 dimensions, ~80 MB).
+    Default model is ``BAAI/bge-m3`` (1024 dimensions, multilingual).
     """
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
+    def __init__(self, model_name: str = "BAAI/bge-m3") -> None:
         try:
             import sentence_transformers as st
         except ImportError as err:
@@ -80,17 +65,11 @@ class SentenceTransformerProvider(EmbeddingProvider):
 
     def embed(self, text: str) -> list[float]:
         result = self.model.encode(text)
-        return result.tolist()  # type: ignore[no-any-return]
+        return result.tolist()
 
     def embed_batch(self, texts: list[str]) -> list[list[float]]:
         result = self.model.encode(texts)
-        return result.tolist()  # type: ignore[no-any-return]
-
-
-def _text_to_seed(text: str) -> int:
-    """Convert arbitrary text to a deterministic integer seed."""
-    h = hashlib.md5(text.encode("utf-8")).hexdigest()
-    return int(h[:8], 16)
+        return result.tolist()
 
 
 def _embedding_dimension(model: Any) -> int:
@@ -108,18 +87,3 @@ def _embedding_dimension(model: Any) -> int:
             return int(dimension)
 
     return 384
-
-
-def _pseudo_embedding(seed: int, size: int) -> list[float]:
-    """Generate a deterministic pseudo-embedding from a seed.
-
-    Uses sin/cos of the seed at different frequencies to produce
-    a vector that preserves some notion of similarity: texts with
-    close seeds (similar content) get closer vectors.
-    """
-    result: list[float] = []
-    for i in range(size):
-        val = math.sin(seed + i * 0.1) * math.cos(seed * 0.01 + i)
-        result.append(round(val, 6))
-    norm = math.sqrt(sum(x * x for x in result)) or 1.0
-    return [round(x / norm, 6) for x in result]

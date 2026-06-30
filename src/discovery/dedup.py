@@ -3,6 +3,11 @@ from __future__ import annotations
 import re
 from urllib.parse import urlparse
 
+try:
+    import tldextract
+except ImportError:
+    tldextract = None
+
 
 def normalize_name(name: str) -> str:
     return " ".join(name.casefold().split())
@@ -14,6 +19,14 @@ def extract_domain(website: str) -> str:
     if "://" not in website:
         website = "https://" + website
     try:
+        if tldextract is not None:
+            ext = tldextract.extract(website)
+            parts = [ext.domain, ext.suffix]
+            if ext.subdomain:
+                sub = ext.subdomain.lower()
+                if sub != "www":
+                    parts.insert(0, sub)
+            return ".".join(parts).lower()
         parsed = urlparse(website)
         domain = parsed.netloc.lower()
         domain = re.sub(r"^www\.", "", domain)

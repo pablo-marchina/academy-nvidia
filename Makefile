@@ -93,6 +93,9 @@ ingest-real-sources: sync-corpus ingest-qdrant
 
 run-evals: rag-eval
 
+ci-evals:
+	python -m src.evaluation.eval_runner --ci
+
 run: api
 
 sync-corpus-dry-run:
@@ -287,3 +290,10 @@ candidate-benchmarks:
 	python scripts/check_candidate_promotion_closure.py
 
 check-final-release: check-final-release-zip
+
+.PHONY: setup-scraping
+setup-scraping:
+	pip install -e ".[scraping]"
+	pip install playwright
+	python -m playwright install chromium
+	python -m playwright install-deps

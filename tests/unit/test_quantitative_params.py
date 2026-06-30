@@ -98,12 +98,19 @@ class TestDocumentation:
         doc = mod.__doc__
         assert doc is not None and len(doc) > 50, "params.py missing module-level docstring"
 
-    def test_each_weight_set_has_rationale_in_docstring(self) -> None:
-        """Check that each weight set has a # rationale: comment nearby."""
-        import src.quantitative.params as mod
+    def test_each_weight_set_is_documented_in_yaml(self) -> None:
+        """Values now come from YAML config, check the scoring.yaml has all weight sets."""
+        from src.config.loader import ConfigLoaderService
 
-        source = inspect.getsource(mod)
-        for name in _WEIGHT_SETS:
-            pos = source.find(name)
-            before = source[max(0, pos - 400) : pos]
-            assert "# rationale:" in before, f"{name} does not have a '# rationale:' comment within 400 chars before it"
+        cfg = ConfigLoaderService()
+        s = cfg.scoring()
+        yaml_names = {
+            "PRIORITY_SCORE_WEIGHTS": s.priority_score.model_dump(),
+            "OPPORTUNITY_SCORE_WEIGHTS": s.opportunity_score.model_dump(),
+            "PRODUCTION_READINESS_WEIGHTS": s.production_readiness.model_dump(),
+            "DEFENSIBILITY_WEIGHTS": s.defensibility.model_dump(),
+            "INCEPTION_FIT_WEIGHTS": s.inception_fit.model_dump(),
+        }
+        for name, expected in yaml_names.items():
+            actual = _WEIGHT_SETS[name]
+            assert actual == expected, f"{name} mismatch: YAML={expected}, params={actual}"

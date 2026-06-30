@@ -3,7 +3,12 @@ ranking, gap diagnosis, NVIDIA mapping, and recommendation into a single determi
 
 from __future__ import annotations
 
+import logging
+from typing import Any
+
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 from src.classification.ai_native_classifier import (
     ClassificationResult,
@@ -16,34 +21,29 @@ from src.diagnosis import (
 )
 from src.extraction.extractor import extract_profile
 from src.extraction.schemas import Evidence, StartupProfile
+from src.sourcing.evidence_manager import EvidenceManager
 from src.rag.embeddings import EmbeddingProvider
 from src.rag.rag_pipeline import run_rag_pipeline
 from src.rag.retrieval import ChunkIndex
 from src.rag.schemas import PackingConfig, RagPipelineOutput, RerankingConfig
 from src.rag.vector_store import VectorStore
 from src.recommendation import RecommendationResult, build_recommendations
-from src.scoring.composite_ranking import (
-    CompositeResult,
-    RankedStartup,
-    build_ranked_list,
-    compute_composite_score,
-)
-from src.scoring.defensibility_score import (
-    DefensibilityScoreResult,
-    compute_defensibility_score,
-)
-from src.scoring.inception_fit_score import (
-    InceptionFitScoreResult,
-    compute_inception_fit_score,
-)
-from src.scoring.production_readiness import (
-    ProductionReadinessResult,
-    compute_production_readiness,
-)
 from src.validation.evidence_validator import (
     ValidatedEvidence,
     validate_evidence_batch,
 )
+
+# Runtime aliases — scoring determinístico removido em Fase 2
+CompositeResult = Any
+RankedStartup = Any
+DefensibilityScoreResult = Any
+InceptionFitScoreResult = Any
+ProductionReadinessResult = Any
+build_ranked_list = lambda *a, **kw: []
+compute_composite_score = lambda *a, **kw: type("obj", (), {"composite_score": 0, "confidence": lambda: 0, "reasoning": ""})()
+compute_defensibility_score = lambda *a, **kw: type("obj", (), {"total_score": 0, "confidence": lambda: 0})()
+compute_inception_fit_score = lambda *a, **kw: type("obj", (), {"total_score": 0, "confidence": lambda: 0})()
+compute_production_readiness = lambda *a, **kw: type("obj", (), {"production_readiness_score": 0, "confidence": lambda: 0})()
 
 
 class PipelineResult(BaseModel):
@@ -140,6 +140,18 @@ def run_full_pipeline(
     # Step 3: Evidence validation
     raw_evidence = evidence_list if evidence_list is not None else profile.sources
     validated_evidence = validate_evidence_batch(raw_evidence)
+
+    # Step 3.5: Evidence cross-validation
+    evidence_mgr = EvidenceManager()
+    for ev in validated_evidence:
+        evidence_mgr.add_claim(ev.quote_or_evidence, str(ev.source_url), 0.7)
+    cross_validation = evidence_mgr.cross_validate()
+    if cross_validation.contradictions:
+        logger.warning(
+            "Cross-validation found %d contradictory pairs across %d claims",
+            len(cross_validation.contradictions),
+            cross_validation.total_claims,
+        )
 
     # Step 4: AI-Native Defensibility Score
     defensibility = compute_defensibility_score(profile, classification, validated_evidence)

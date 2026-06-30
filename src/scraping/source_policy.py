@@ -25,16 +25,9 @@ def classify_source(url: str) -> SourceType:
         return SourceType.JOB_POST
     if "blog" in host or "blog" in path:
         return SourceType.BLOG
-    if any(hint in path for hint in _KNOWN_OFFICIAL_HINTS) or host:
+    if any(hint in path for hint in _KNOWN_OFFICIAL_HINTS):
         return SourceType.OFFICIAL_SITE
-    return SourceType.DIRECTORY
+    return SourceType.OFFICIAL_SITE  # default fallback for known startup domains
 
 
-def is_allowed_source(url: str) -> bool:
-    """Return whether the URL is eligible for polite public-web collection."""
 
-    parsed = urlparse(url)
-    if parsed.scheme not in {"http", "https"}:
-        return False
-    blocked_terms = ("login", "signin", "paywall")
-    return not any(term in parsed.path.lower() for term in blocked_terms)

@@ -3,7 +3,7 @@ from src.sourcing.source_coverage import SourceCoverageReport, compute_source_co
 from src.sourcing.source_discovery import StartupSourceCandidate, discover_seed_sources
 from src.sourcing.source_health import SourceAttempt, SourceHealthReport, summarize_source_health
 from src.sourcing.source_policy import SourcePolicy, policy_for_category
-from src.sourcing.source_registry import SourceCategory, SourceRecord, default_source_registry
+from src.sourcing.source_registry import SourceCategory, SourceRecord, default_source_registry, _scraping_to_sourcing
 from src.sourcing.source_scoring import SourceScore, score_source
 
 __all__ = [
@@ -23,4 +23,5 @@ __all__ = [
     "score_source",
     "summarize_compliance",
     "summarize_source_health",
+    "_scraping_to_sourcing",
 ]

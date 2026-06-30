@@ -1,25 +1,14 @@
-"""Scraping package with lazy public exports."""
+"""Scraping package.
 
-from __future__ import annotations
-
-from importlib import import_module
-from typing import Any
-
-__all__ = [
-    "CollectionMetrics",
-    "CollectionRequest",
-    "CollectionResult",
-    "ComplianceResult",
-    "HttpSourceCollector",
-    "SourceFetchResult",
-    "build_http_collector",
-    "list_governed_sources",
-]
-
-
-def __getattr__(name: str) -> Any:
-    if name not in __all__:
-        raise AttributeError(f"module 'src.scraping' has no attribute {name!r}")
-    value = getattr(import_module("src.scraping.http_collector"), name)
-    globals()[name] = value
-    return value
+All public symbols are available via their submodule directly:
+  from src.scraping.fetcher import fetch_page
+  from src.scraping.http_collector import HttpSourceCollector
+  from src.scraping.parser import extract_clean_text
+  from src.scraping.cache import scrape_cache
+  from src.scraping.strategies import register, resolve
+  from src.scraping.youtube_collector import fetch_transcript, extract_video_id
+  from src.scraping.rss_collector import collect_feed
+  from src.scraping.pdf_collector import extract_pdf
+  from src.scraping.fuzzy_dedup import FuzzyIndex, exact_dedup
+  etc.
+"""

@@ -804,6 +804,19 @@ class UrlListResponse(BaseModel):
     errors: list[str] = Field(default_factory=list)
 
 
+class SourceScraperRequest(BaseModel):
+    source_id: str = Field(..., min_length=1, max_length=100)
+
+
+class SourceScraperResponse(BaseModel):
+    discovery_run_id: str
+    source_id: str
+    status: str
+    total_entries: int
+    candidates_created: int
+    duplicates_found: int
+
+
 class PromoteCandidateResponse(BaseModel):
     candidate_id: str
     startup_id: str

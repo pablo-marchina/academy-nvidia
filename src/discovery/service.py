@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from typing import Any
 
@@ -13,6 +14,8 @@ from src.discovery.source_registry import DiscoverySource, load_sources
 from src.extraction.schemas import ConfidenceLevel
 from src.repositories.discovery import DiscoveryRepository
 from src.scraping.scrapers.base_scraper import scraper_registry
+
+logger = logging.getLogger(__name__)
 
 
 class StartupDiscoveryService:
@@ -353,11 +356,57 @@ class StartupDiscoveryService:
         self.repo.promote_candidate(candidate_id, startup_id=startup.id)
         self.session.commit()
 
+        self._crawl_startup_website(candidate)
+
         return {
             "candidate_id": candidate.id,
             "startup_id": startup.id,
             "status": "promoted",
         }
+
+    def _crawl_startup_website(self, candidate: StartupDiscoveryCandidate) -> None:
+        """Crawl the promoted startup's website for deeper data collection."""
+        website = candidate.website or ""
+        if not website:
+            return
+        try:
+            from src.scraping.startup_crawler import StartupCrawler
+            crawler = StartupCrawler(max_pages=5, crawl_depth=1)
+            results = crawler.crawl(website)
+            logger.info("StartupCrawler: crawled %s, %d page(s) collected", website, len(results))
+        except Exception as exc:
+            logger.warning("StartupCrawler failed for %s: %s", website, exc)
+
+        self._collect_github_profile(candidate)
+        self._collect_crunchbase_profile(candidate)
+
+    def _collect_github_profile(self, candidate: StartupDiscoveryCandidate) -> None:
+        """Attempt GitHub profile enrichment from candidate name."""
+        name = candidate.discovered_name or ""
+        if not name:
+            return
+        try:
+            from src.scraping.github_collector import GitHubCollector
+            collector = GitHubCollector()
+            org = collector.collect_organization(name)
+            if org:
+                logger.info("GitHubCollector: found org '%s' for '%s'", org.org_name, name)
+        except Exception as exc:
+            logger.debug("GitHubCollector skipped for %s: %s", name, exc)
+
+    def _collect_crunchbase_profile(self, candidate: StartupDiscoveryCandidate) -> None:
+        """Attempt Crunchbase profile enrichment from candidate name."""
+        name = candidate.discovered_name or ""
+        if not name:
+            return
+        try:
+            from src.scraping.crunchbase_collector import CrunchbaseCollector
+            collector = CrunchbaseCollector()
+            profile = collector.collect_company(name)
+            if profile:
+                logger.info("CrunchbaseCollector: found profile for '%s'", name)
+        except Exception as exc:
+            logger.debug("CrunchbaseCollector skipped for %s: %s", name, exc)
 
     # ------------------------------------------------------------------ #
     # Dedup

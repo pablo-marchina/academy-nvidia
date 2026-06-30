@@ -5,8 +5,16 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
-from src.observability.metrics import RunMetrics, StageLatencyMetric
+from src.observability.metrics import RunMetrics, StageLatencyMetric, observe_node
 from src.observability.run_events import RunTrace
+
+OTEL_AVAILABLE: bool
+try:
+    from opentelemetry import trace as otel_trace
+
+    OTEL_AVAILABLE = True
+except ImportError:
+    OTEL_AVAILABLE = False
 
 
 class StructuredTracer:
@@ -35,14 +43,27 @@ class _TimedStage:
         self.tracer = tracer
         self.stage = stage
         self.started = 0.0
+        self._otel_span: Any = None
 
     def __enter__(self) -> _TimedStage:
         self.started = perf_counter()
         self.tracer.event("stage_started", stage=self.stage)
+        if OTEL_AVAILABLE:
+            tracer = otel_trace.get_tracer("nvidia_startup_ai_radar")
+            self._otel_span = tracer.start_as_current_span(f"stage.{self.stage}")
+            self._otel_span.__enter__()
         return self
 
     def __exit__(self, exc_type: object, exc: object, traceback: object) -> None:
-        latency_ms = (perf_counter() - self.started) * 1000
+        latency_s = perf_counter() - self.started
+        latency_ms = latency_s * 1000
         self.tracer.metrics.latency_by_stage.append(StageLatencyMetric(stage=self.stage, latency_ms=latency_ms))
         event_type = "stage_failed" if exc is not None else "stage_completed"
         self.tracer.event(event_type, stage=self.stage, payload={"latency_ms": round(latency_ms, 4)})
+        status = "failed" if exc is not None else "completed"
+        observe_node(self.stage, status, latency_s)
+        if self._otel_span is not None:
+            if exc is not None:
+                self._otel_span.__exit__(type(exc), exc, traceback)
+            else:
+                self._otel_span.__exit__(None, None, None)

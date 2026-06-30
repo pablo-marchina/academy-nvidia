@@ -24,7 +24,7 @@ def _mock_product_readiness(monkeypatch: pytest.MonkeyPatch) -> None:
         return ProductReadinessReport(ready=True)
 
     monkeypatch.setattr(ProductReadinessService, "get_product_readiness", ready_report)
-    monkeypatch.setattr("src.orchestration.runner._try_build_agent_graph", lambda **_: None)
+    monkeypatch.setattr("src.orchestration.runner.build_workflow_graph", lambda **_: None)
 
 
 @pytest.fixture

@@ -6,10 +6,19 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 
 from src.api.product_routes import router as product_router
 from src.api.workflow_routes import router as workflow_router
 from src.database.session import initialize_product_database
+
+PROMETHEUS_AVAILABLE: bool
+try:
+    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+
+    PROMETHEUS_AVAILABLE = True
+except ImportError:
+    PROMETHEUS_AVAILABLE = False
 
 
 @asynccontextmanager
@@ -51,3 +60,10 @@ app.add_middleware(
 
 app.include_router(product_router)
 app.include_router(workflow_router)
+
+
+@app.get("/metrics", response_class=PlainTextResponse)
+async def metrics() -> PlainTextResponse:
+    if not PROMETHEUS_AVAILABLE:
+        return PlainTextResponse("# prometheus_client not installed\n", status_code=200)
+    return PlainTextResponse(generate_latest().decode("utf-8"), media_type=CONTENT_TYPE_LATEST)

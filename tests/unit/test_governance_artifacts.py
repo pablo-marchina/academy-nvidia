@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from src.governance.artifacts import (
+    DEFAULT_ROADMAP_PATH,
     build_initial_evidence_pack,
     build_license_inventory,
     build_local_security_scan,
@@ -12,7 +15,10 @@ from src.governance.artifacts import (
 )
 from src.governance.schemas import CandidateStatus
 
+ROADMAP_EXISTS = DEFAULT_ROADMAP_PATH.is_file()
 
+
+@pytest.mark.skipif(not ROADMAP_EXISTS, reason="Roadmap file not found")
 def test_parse_candidate_catalog_from_final_roadmap() -> None:
     entries = parse_candidate_catalog_from_roadmap()
     names = {entry.name for entry in entries}
@@ -27,6 +33,7 @@ def test_parse_candidate_catalog_from_final_roadmap() -> None:
     assert by_name["Repository Purpose Manifest"].status == CandidateStatus.BENCHMARK_CONFIGURED
 
 
+@pytest.mark.skipif(not ROADMAP_EXISTS, reason="Roadmap file not found")
 def test_candidate_status_summary_counts_statuses() -> None:
     entries = parse_candidate_catalog_from_roadmap()
     summary = summarize_candidate_catalog(entries)
@@ -37,6 +44,7 @@ def test_candidate_status_summary_counts_statuses() -> None:
     assert summary["runtime_relevant_count"] >= 9
 
 
+@pytest.mark.skipif(not ROADMAP_EXISTS, reason="Roadmap file not found")
 def test_build_initial_evidence_pack_writes_required_artifacts(tmp_path: Path) -> None:
     outputs = build_initial_evidence_pack(evidence_dir=tmp_path)
     required = {

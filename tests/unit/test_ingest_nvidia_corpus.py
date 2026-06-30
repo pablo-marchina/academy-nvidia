@@ -57,7 +57,8 @@ class TestChunkHash:
 
 
 class TestCliArgs:
-    def test_defaults(self) -> None:
+    def test_defaults(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("QDRANT_COLLECTION", raising=False)
         from scripts.ingest_nvidia_corpus import parse_args
 
         args = parse_args([])

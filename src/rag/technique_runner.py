@@ -6,6 +6,10 @@ Each technique is a module in src/rag/ with a class that has a
 The pipeline order is now governed by the canonical candidate catalog
 at ``candidate_catalog_maximal_final_complementary_governed(1).csv``.
 Modules that exist in ``src/rag/`` but are NOT in the catalog are skipped.
+
+Supports two modes:
+  - ``sequential`` (legacy): runs every discovered technique in alphabetical order.
+  - ``hybrid``: groups with dependencies; techniques within a group run in parallel.
 """
 
 from __future__ import annotations
@@ -115,12 +119,99 @@ def _to_title(snake: str) -> str:
     return MANUAL_CLASS_NAMES.get(snake, "".join(p.capitalize() for p in snake.split("_")))
 
 
+def _load_and_run_technique(mod_name: str, contexts: list[RetrievedContext], **kwargs: Any) -> tuple[str, list[RetrievedContext] | None, str | None]:
+    try:
+        mod = importlib.import_module(f"src.rag.{mod_name}")
+        class_name = _to_title(mod_name)
+        cls = getattr(mod, class_name, None)
+        if cls is None:
+            return mod_name, None, f"Class {class_name} not found in {mod_name}"
+        instance = cls()
+        result = instance.run(contexts, **kwargs)
+        return mod_name, result if result is not None else contexts, None
+    except Exception as exc:
+        return mod_name, None, str(exc)
+
+
+def run_techniques_hybrid(
+    contexts: list[RetrievedContext],
+    group_config: list[dict[str, Any]] | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Run techniques in hybrid mode with group dependencies.
+
+    Parameters
+    ----------
+    contexts:
+        Input contexts to process.
+    group_config:
+        List of group dicts from techniques.yaml.
+    kwargs:
+        Additional keyword arguments forwarded to each technique's ``run()``.
+
+    Returns
+    -------
+    dict with keys:
+      - ``contexts``: final list of RetrievedContext after all groups.
+      - ``results``: list of per-technique result dicts.
+      - ``group_order``: list of group names in execution order.
+    """
+    if not group_config:
+        contexts = run_techniques(contexts, **kwargs)
+        return {"contexts": contexts, "results": [], "group_order": []}
+
+    results: list[dict[str, Any]] = []
+    group_order: list[str] = []
+    executed_groups: set[str] = set()
+    group_map = {g["name"]: g for g in group_config}
+
+    def _is_ready(group_name: str) -> bool:
+        deps = group_map[group_name].get("depends_on", [])
+        return all(d in executed_groups for d in deps)
+
+    while len(executed_groups) < len(group_config):
+        for group in group_config:
+            gname = group["name"]
+            if gname in executed_groups:
+                continue
+            if not _is_ready(gname):
+                continue
+            executed_groups.add(gname)
+            group_order.append(gname)
+            techniques = group.get("techniques", [])
+            for t in techniques:
+                if not t.get("enabled", True):
+                    continue
+                tname = t["name"]
+                result_contexts = None
+                err: str | None = None
+                try:
+                    result_contexts = _run_single_technique(tname, contexts, **kwargs)
+                except Exception as exc:
+                    err = str(exc)
+                if result_contexts is not None:
+                    contexts = result_contexts
+                results.append({
+                    "technique": tname,
+                    "group": gname,
+                    "success": err is None,
+                    "error": err,
+                })
+
+    return {"contexts": contexts, "results": results, "group_order": group_order}
+
+
+def _run_single_technique(mod_name: str, contexts: list[RetrievedContext], **kwargs: Any) -> list[RetrievedContext] | None:
+    _, result, _ = _load_and_run_technique(mod_name, contexts, **kwargs)
+    return result
+
+
 def run_techniques(
     contexts: list[RetrievedContext],
     config: TechniquesConfig | None = None,
     **kwargs: Any,
 ) -> list[RetrievedContext]:
-    """Run all catalog-discovered techniques, passing contexts through each."""
+    """Run all catalog-discovered techniques sequentially, passing contexts through each."""
     cfg = config or TechniquesConfig()
     if not contexts:
         return contexts

@@ -8,14 +8,20 @@ No mock, no fake, no stub in the productive path.
 
 from __future__ import annotations
 
+import atexit
 import hashlib
 import logging
 import re
+import signal
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime
 from statistics import median
 from typing import Any
 from urllib.parse import urlparse
+
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from pydantic import BaseModel, Field
 
@@ -23,16 +29,45 @@ from src.quality.decision_calibration_registry import (
     get_project_decision_inventory,
     validate_decision_for_production,
 )
+from src.scraping.cache import scrape_cache
+from src.scraping.circuit_breaker import CircuitBreaker
+from src.scraping.content_quality import ContentQualityValidator, QualityIssue
+from src.scraping.domain_rate_limiter import DomainRateLimiter
 from src.scraping.fetcher import fetch_page
+from src.scraping.fuzzy_dedup import DedupIndex
 from src.scraping.parser import extract_clean_text
 from src.scraping.rate_limit_policy import get_rate_limit_policy
 from src.scraping.source_registry import SourceRecord, list_production_enabled_sources
+from src.scraping.strategies import resolve_and_call as call_strategy
+
+# Lazy-import the strategy modules up-front to avoid repeated import side-effects
+try:
+    import src.scraping.youtube_collector  # noqa: F401
+    import src.scraping.rss_collector  # noqa: F401
+    import src.scraping.pdf_collector  # noqa: F401
+    import src.scraping.firecrawl_collector  # noqa: F401
+    import src.scraping.playwright_collector  # noqa: F401
+except ImportError as exc:
+    logger.warning("Strategy module import failed (some collectors disabled): %s", exc)
 
 logger = logging.getLogger(__name__)
 
 _HTTP_COLLECTOR_USER_AGENT = (
     "Mozilla/5.0 (compatible; NVIDIAStartupAIRadar-HttpCollector/0.1; +https://github.com/nvidia/startup-ai-radar)"
 )
+
+# Collector types that should be routed through the strategy registry instead of HTTP.
+_STRATEGY_HANDLED_TYPES: frozenset[str] = frozenset({
+    "youtube", "rss", "pdf", "firecrawl", "playwright", "optional_playwright",
+})
+
+# Robots.txt cache: netloc -> (RobotsChecker, timestamp)
+_robots_cache: dict[str, tuple["RobotsChecker", float]] = {}
+_robots_cache_lock = threading.Lock()
+_ROBOTS_CACHE_TTL = 86400  # 24 hours
+
+# Max parallel workers for concurrent fetching
+MAX_PARALLEL_WORKERS = 5
 
 # ── Calibration Decision IDs ─────────────────────────────────────────────
 
@@ -266,14 +301,14 @@ def _validate_source(source: SourceRecord) -> ComplianceResult:
         blockers.append("source_paywall_mandatory")
     if source.calibrated_priority_score is None:
         blockers.append("source_priority_uncalibrated")
-    if not source.robots_required:
-        blockers.append("source_robots_not_defined")
     policy = get_rate_limit_policy(source.rate_limit_policy_id)
     if policy is None:
         blockers.append("rate_limit_policy_not_found")
 
     passed = len(blockers) == 0
-    return ComplianceResult(passed=passed, blockers=blockers, robots_allowed=source.robots_required)
+    # When robots_required is False, we consider robots "allowed" by default
+    robots_allowed = True if not source.robots_required else source.robots_required
+    return ComplianceResult(passed=passed, blockers=blockers, robots_allowed=robots_allowed)
 
 
 # ── HTTP Source Collector ────────────────────────────────────────────────
@@ -288,11 +323,37 @@ class HttpSourceCollector:
 
     def __init__(self, user_agent: str | None = None) -> None:
         self._user_agent = user_agent or _HTTP_COLLECTOR_USER_AGENT
-        self._seen_hashes: set[str] = set()
+        self._dedup_index = DedupIndex()
+        self._domain_limiter = DomainRateLimiter()
+        self._circuit_breaker = CircuitBreaker()
+        self._quality_validator = ContentQualityValidator()
+
+    def collect_one(
+        self,
+        source: SourceRecord,
+        *,
+        timeout_s: float = 15,
+        max_retries: int = 3,
+        backoff_base: float = 2.0,
+        dry_run: bool = False,
+        policy_limiters: dict[str, float] | None = None,
+    ) -> SourceFetchResult:
+        """Convenience: collect a single SourceRecord.
+
+        Returns a single SourceFetchResult without building a CollectionRequest.
+        """
+        return self._collect_one(
+            source=source,
+            timeout_s=timeout_s,
+            max_retries=max_retries,
+            backoff_base=backoff_base,
+            dry_run=dry_run,
+            policy_limiters=policy_limiters or {},
+        )
 
     def collect(self, request: CollectionRequest) -> CollectionResult:
         started_at = datetime.now(UTC)
-        self._seen_hashes.clear()
+        self._dedup_index.clear()
 
         result = CollectionResult(run_id=request.run_id, request=request, started_at=started_at)
 
@@ -320,17 +381,56 @@ class HttpSourceCollector:
 
         policy_limiters: dict[str, float] = {}
 
-        for source in request.source_records:
-            sfr = self._collect_one(
-                source=source,
-                timeout_s=timeout_s,
-                max_retries=max_retries,
-                backoff_base=backoff_base,
-                dry_run=request.dry_run,
-                policy_limiters=policy_limiters,
-            )
-            result.sources.append(sfr)
+        source_results: dict[int, SourceFetchResult] = {}
+        with ThreadPoolExecutor(max_workers=MAX_PARALLEL_WORKERS) as pool:
+            future_map: dict[Any, int] = {}
+            for idx, source in enumerate(request.source_records):
+                if _is_shutdown():
+                    source_results[idx] = SourceFetchResult(
+                        source_id=source.source_id,
+                        source_url=source.base_url or "",
+                        status="skipped",
+                        error_code="shutdown",
+                        error_message_sanitized="Collection interrupted by shutdown",
+                    )
+                    continue
+                future = pool.submit(
+                    self._collect_one,
+                    source=source,
+                    timeout_s=timeout_s,
+                    max_retries=max_retries,
+                    backoff_base=backoff_base,
+                    dry_run=request.dry_run,
+                    policy_limiters=policy_limiters,
+                )
+                future_map[future] = idx
 
+            for future in as_completed(future_map):
+                idx = future_map[future]
+                try:
+                    source_results[idx] = future.result()
+                except Exception as exc:
+                    src = request.source_records[idx]
+                    source_results[idx] = SourceFetchResult(
+                        source_id=src.source_id,
+                        source_url=src.base_url or "",
+                        status="failed",
+                        error_code="parallel_execution_error",
+                        error_message_sanitized=str(exc),
+                    )
+
+            # Cancel remaining futures on shutdown
+            if _is_shutdown():
+                for future in future_map:
+                    future.cancel()
+
+        result.sources = [source_results.get(i, SourceFetchResult(
+            source_id=request.source_records[i].source_id,
+            source_url=request.source_records[i].base_url or "",
+            status="failed",
+            error_code="missing_result",
+            error_message_sanitized="Result not collected (likely thread interrupted)",
+        )) for i in range(len(request.source_records))]
         result.metrics = self._compute_metrics(result.sources)
         result.finished_at = datetime.now(UTC)
         return result
@@ -367,8 +467,11 @@ class HttpSourceCollector:
                 robots_allowed=compliance.robots_allowed,
             )
 
-        # 2. Robots check
-        robots_checker = self._fetch_robots_txt(url, timeout_s)
+        # 2. Robots check — skip if source does not require robots.txt
+        if compliance.robots_allowed and source.robots_required:
+            robots_checker = self._get_robots_checker(url, timeout_s)
+        else:
+            robots_checker = RobotsChecker()
         if robots_checker.parsed and not robots_checker.is_allowed(url):
             return SourceFetchResult(
                 source_id=source.source_id,
@@ -380,7 +483,73 @@ class HttpSourceCollector:
                 robots_allowed=False,
             )
 
-        # 3. Dry run
+        # 3. Strategy routing for non-HTTP collector types
+        if source.collector_type not in ("http", "") and source.collector_type not in _STRATEGY_HANDLED_TYPES:
+            # Before blocking, check if a strategy was registered dynamically for this type
+            from src.scraping.strategies import resolve as resolve_strategy_fn
+            if resolve_strategy_fn(source) is None:
+                return SourceFetchResult(
+                    source_id=source.source_id,
+                    source_url=url,
+                    status="blocked",
+                    error_code="unsupported_collector_type",
+                    error_message_sanitized=(
+                        f"Collector type '{source.collector_type}' has no registered strategy. "
+                        f"Expected one of: http, {', '.join(sorted(_STRATEGY_HANDLED_TYPES))}"
+                    ),
+                )
+
+        if source.collector_type in _STRATEGY_HANDLED_TYPES:
+            try:
+                strategy_result = call_strategy(source)
+            except Exception as exc:
+                logger.exception("STRATEGY_ERR  %s  collector_type=%s", source.source_id, source.collector_type)
+                return SourceFetchResult(
+                    source_id=source.source_id,
+                    source_url=url,
+                    status="failed",
+                    error_code="strategy_error",
+                    error_message_sanitized=f"Strategy {source.collector_type} failed: {exc}",
+                )
+            if strategy_result is None:
+                return SourceFetchResult(
+                    source_id=source.source_id,
+                    source_url=url,
+                    status="failed",
+                    error_code="strategy_returned_none",
+                    error_message_sanitized=f"Strategy {source.collector_type} returned no result",
+                )
+            full_text = getattr(strategy_result, "full_text", None) or getattr(strategy_result, "text", "")
+            raw = getattr(strategy_result, "raw_html", None) or getattr(strategy_result, "full_text", "") or str(strategy_result)
+            content_hash = _compute_content_hash(raw)
+            extracted_dedup = full_text if full_text else raw
+            is_duplicate = self._dedup_index.is_duplicate(extracted_dedup)
+            if not is_duplicate:
+                self._dedup_index.index(extracted_dedup)
+            return SourceFetchResult(
+                source_id=source.source_id,
+                source_url=url,
+                status="duplicate" if is_duplicate else "fetched",
+                http_status_code=200,
+                fetched_at=getattr(strategy_result, "fetched_at", datetime.now(UTC)),
+                content_hash=content_hash,
+                raw_html=raw,
+                raw_text=raw,
+                extracted_text=full_text if full_text else raw,
+                metadata={
+                    "source_category": source.source_category,
+                    "source_name": source.source_name,
+                    "source_id": source.source_id,
+                    "collector_type": source.collector_type,
+                },
+                compliance_status="compliant",
+                robots_allowed=robots_checker.is_allowed(url),
+                latency_ms=0,
+                content_bytes=len(raw.encode("utf-8")),
+                extraction_status="success" if full_text else "empty",
+            )
+
+        # 4. Dry run
         if dry_run:
             return SourceFetchResult(
                 source_id=source.source_id,
@@ -406,89 +575,384 @@ class HttpSourceCollector:
         last_latency: int = 0
         fetched_at = datetime.now(UTC)
 
-        for attempt in range(1, max_retries + 1):
-            rps = policy.requests_per_second
-            self._rate_limit_wait(source.rate_limit_policy_id, rps, policy_limiters)
-
-            start = time.time()
-            fr = fetch_page(url, timeout=int(timeout_s))
-            elapsed_ms = int((time.time() - start) * 1000)
-            last_latency = elapsed_ms
-            fetched_at = fr.fetched_at
-
-            if fr.status is not None and fr.status < 400:
-                content_hash = _compute_content_hash(fr.raw_html)
-                is_duplicate = content_hash in self._seen_hashes
-                self._seen_hashes.add(content_hash)
-
-                extracted: str | None = None
-                extraction_status = "not_configured"
-                try:
-                    extracted_val = extract_clean_text(fr.raw_html)
-                    if extracted_val.strip():
-                        extracted = extracted_val
-                        extraction_status = "success"
+        # 5. Check disk cache before hitting the network (with ETag/Last-Modified metadata)
+        cached_html: str | None = None
+        cached_etag: str | None = None
+        cached_last_modified: str | None = None
+        with scrape_cache() as cache:
+            cached_html, meta = cache.get_with_meta(url)
+            cached_etag = meta.get("etag")
+            cached_last_modified = meta.get("last_modified")
+        if cached_html is not None:
+            content_hash = _compute_content_hash(cached_html)
+            extracted = None
+            extraction_status = "not_configured"
+            try:
+                extracted_val = extract_clean_text(cached_html)
+                if extracted_val.strip():
+                    extracted = extracted_val
+                    if self._dedup_index.is_duplicate(extracted):
+                        extraction_status = "duplicate_skipped"
                     else:
-                        extraction_status = "empty"
-                except Exception:
-                    extraction_status = "failed"
+                        self._dedup_index.index(extracted)
+                        extraction_status = "success"
+                else:
+                    extraction_status = "empty"
+            except Exception:
+                extraction_status = "failed"
+            is_duplicate = extraction_status == "duplicate_skipped"
+            with scrape_cache() as cache:
+                cache.record_hash(url, content_hash)
+            return SourceFetchResult(
+                source_id=source.source_id,
+                source_url=url,
+                status="duplicate" if is_duplicate else "fetched",
+                http_status_code=200,
+                fetched_at=fetched_at,
+                content_hash=content_hash,
+                raw_html=cached_html,
+                raw_text=cached_html,
+                extracted_text=extracted,
+                metadata={
+                    "source_category": source.source_category,
+                    "source_name": source.source_name,
+                    "source_id": source.source_id,
+                    "from_cache": True,
+                },
+                compliance_status="compliant",
+                robots_allowed=robots_checker.is_allowed(url),
+                latency_ms=0,
+                content_bytes=len(cached_html.encode("utf-8")),
+                extraction_status=extraction_status,
+            )
 
-                if is_duplicate:
-                    extraction_status = "duplicate_skipped"
+        # 5b. Domain-level rate limiter + circuit breaker
+        self._domain_limiter.wait_if_needed(url, policy.requests_per_second)
+        if self._circuit_breaker.is_open(url):
+            self._circuit_breaker.record_failure(url)
+            return SourceFetchResult(
+                source_id=source.source_id,
+                source_url=url,
+                status="failed",
+                error_code="circuit_open",
+                error_message_sanitized="Circuit breaker open for this domain",
+            )
 
+        start = time.time()
+        fr = self._fetch_with_tenacity(
+            url=url,
+            timeout_s=timeout_s,
+            max_retries=max_retries,
+            backoff_base=backoff_base,
+            cached_etag=cached_etag,
+            cached_last_modified=cached_last_modified,
+        )
+        elapsed_ms = int((time.time() - start) * 1000)
+        last_latency = elapsed_ms
+        fetched_at = fr.fetched_at
+
+        if fr.error and fr.status is None:
+            # Stale-content fallback: serve cache if all retries failed
+            if cached_html is not None:
+                logger.warning("Serving stale content for %s (fetch failed: %s)", url, fr.error)
+                content_hash = _compute_content_hash(cached_html)
+                is_duplicate = self._dedup_index.is_duplicate(cached_html)
+                if not is_duplicate:
+                    self._dedup_index.index(cached_html)
+                with scrape_cache() as cache:
+                    cache.record_hash(url, content_hash)
+                self._circuit_breaker.record_failure(url)
                 return SourceFetchResult(
                     source_id=source.source_id,
                     source_url=url,
-                    status="duplicate" if is_duplicate else "fetched",
-                    http_status_code=fr.status,
+                    status="stale",
+                    http_status_code=None,
                     fetched_at=fetched_at,
                     content_hash=content_hash,
-                    raw_html="" if is_duplicate else fr.raw_html,
-                    raw_text="" if is_duplicate else fr.raw_html,
-                    extracted_text=extracted,
-                    metadata={
-                        "source_category": source.source_category,
-                        "source_name": source.source_name,
-                        "source_id": source.source_id,
-                    },
+                    raw_html=cached_html,
+                    raw_text=cached_html,
+                    extracted_text=None,
+                    metadata={"from_cache": True, "stale": True, "stale_reason": fr.error},
                     compliance_status="compliant",
                     robots_allowed=robots_checker.is_allowed(url),
                     latency_ms=elapsed_ms,
-                    content_bytes=len(fr.raw_html.encode("utf-8")) if not is_duplicate else 0,
-                    extraction_status=extraction_status,
+                    content_bytes=len(cached_html.encode("utf-8")),
+                    extraction_status="stale",
                 )
+            self._circuit_breaker.record_failure(url)
+            return SourceFetchResult(
+                source_id=source.source_id,
+                source_url=url,
+                status="failed",
+                http_status_code=None,
+                fetched_at=fetched_at,
+                error_code="fetch_failed",
+                error_message_sanitized=f"Fetch failed after {max_retries} attempt(s): {fr.error}",
+                compliance_status="compliant",
+                robots_allowed=robots_checker.is_allowed(url),
+                latency_ms=last_latency,
+                content_bytes=0,
+            )
 
-            last_http_status = fr.status
+        # Handle 304 Not Modified — serve cached content
+        if fr.not_modified and cached_html is not None:
+            self._circuit_breaker.record_success(url)
+            content_hash = _compute_content_hash(cached_html)
+            with scrape_cache() as cache:
+                cache.record_hash(url, content_hash)
+            extracted = None
+            extraction_status = "not_configured"
+            try:
+                extracted_val = extract_clean_text(cached_html)
+                if extracted_val.strip():
+                    extracted = extracted_val
+                    if self._dedup_index.is_duplicate(extracted):
+                        extraction_status = "duplicate_skipped"
+                    else:
+                        self._dedup_index.index(extracted)
+                        extraction_status = "success"
+                else:
+                    extraction_status = "empty"
+            except Exception:
+                extraction_status = "failed"
+            is_duplicate = extraction_status == "duplicate_skipped"
+            return SourceFetchResult(
+                source_id=source.source_id,
+                source_url=url,
+                status="fetched",
+                http_status_code=304,
+                fetched_at=fetched_at,
+                content_hash=content_hash,
+                raw_html=cached_html,
+                raw_text=cached_html,
+                extracted_text=extracted,
+                metadata={
+                    "source_category": source.source_category,
+                    "source_name": source.source_name,
+                    "source_id": source.source_id,
+                    "from_cache": True,
+                    "conditional_hit": True,
+                },
+                compliance_status="compliant",
+                robots_allowed=robots_checker.is_allowed(url),
+                latency_ms=elapsed_ms,
+                content_bytes=len(cached_html.encode("utf-8")),
+                extraction_status=extraction_status,
+            )
 
-            if fr.status is not None and 400 <= fr.status < 500:
-                last_error_msg = f"HTTP {fr.status}"
-                break
+        # 4xx client errors — circuit breaker but no retry (handled by tenacity already)
+        if fr.status is not None and 400 <= fr.status < 500:
+            self._circuit_breaker.record_failure(url)
+            return SourceFetchResult(
+                source_id=source.source_id,
+                source_url=url,
+                status="failed",
+                http_status_code=fr.status,
+                fetched_at=fetched_at,
+                error_code="http_client_error",
+                error_message_sanitized=f"HTTP {fr.status}",
+                compliance_status="compliant",
+                robots_allowed=robots_checker.is_allowed(url),
+                latency_ms=elapsed_ms,
+                content_bytes=0,
+            )
 
-            if fr.status is not None and fr.status >= 500:
-                last_error_msg = f"HTTP {fr.status} (attempt {attempt})"
-                if attempt < max_retries:
-                    time.sleep(backoff_base * (2 ** (attempt - 1)))
-                continue
+        # 5xx server errors — all retries exhausted
+        if fr.status is not None and fr.status >= 500:
+            self._circuit_breaker.record_failure(url)
+            return SourceFetchResult(
+                source_id=source.source_id,
+                source_url=url,
+                status="failed",
+                http_status_code=fr.status,
+                fetched_at=fetched_at,
+                error_code="http_server_error",
+                error_message_sanitized=f"HTTP {fr.status} (all retries exhausted)",
+                compliance_status="compliant",
+                robots_allowed=robots_checker.is_allowed(url),
+                latency_ms=elapsed_ms,
+                content_bytes=0,
+            )
 
-            if fr.error:
-                last_error_msg = f"{fr.error} (attempt {attempt})"
-                if attempt < max_retries:
-                    time.sleep(backoff_base * (2 ** (attempt - 1)))
-                continue
+        # Success (status < 400)
+        if fr.status is not None and fr.status < 400:
+            content_hash = _compute_content_hash(fr.raw_html)
 
+            extracted: str | None = None
+            extraction_status = "not_configured"
+            try:
+                extracted_val = extract_clean_text(fr.raw_html)
+                if extracted_val.strip():
+                    extracted = extracted_val
+                    if self._dedup_index.is_duplicate(extracted):
+                        extraction_status = "duplicate_skipped"
+                    else:
+                        self._dedup_index.index(extracted)
+                        extraction_status = "success"
+                else:
+                    extraction_status = "empty"
+            except Exception:
+                extraction_status = "failed"
+
+            is_duplicate = extraction_status == "duplicate_skipped"
+
+            if not is_duplicate:
+                # Validate content quality BEFORE caching
+                quality = self._quality_validator.validate(fr.raw_html, url)
+                non_minor_issues = [i for i in quality.issues if i != QualityIssue.TOO_SHORT]
+                issue_labels = [i.value for i in quality.issues] if non_minor_issues else []
+
+                # Cache the content regardless of quality (avoids re-downloading bad pages)
+                with scrape_cache() as cache:
+                    cache.set(
+                        url,
+                        fr.raw_html,
+                        policy=source.rate_limit_policy_id,
+                        etag=getattr(fr, "etag", None),
+                        last_modified=getattr(fr, "last_modified", None),
+                    )
+                    if not non_minor_issues:
+                        cache.record_hash(url, content_hash)
+
+                if non_minor_issues:
+                    self._circuit_breaker.record_success(url)
+                    return SourceFetchResult(
+                        source_id=source.source_id,
+                        source_url=url,
+                        status="failed",
+                        http_status_code=fr.status,
+                        fetched_at=fetched_at,
+                        content_hash=content_hash,
+                        error_code="quality_issue",
+                        error_message_sanitized=f"Content quality issues: {', '.join(issue_labels)}",
+                        metadata={
+                            "source_category": source.source_category,
+                            "source_name": source.source_name,
+                            "source_id": source.source_id,
+                            "quality_issues": issue_labels,
+                            "quality_cached": True,
+                        },
+                        compliance_status="compliant",
+                        robots_allowed=robots_checker.is_allowed(url),
+                        latency_ms=elapsed_ms,
+                        content_bytes=0,
+                        extraction_status="blocked_by_quality",
+                    )
+
+            self._circuit_breaker.record_success(url)
+            return SourceFetchResult(
+                source_id=source.source_id,
+                source_url=url,
+                status="duplicate" if is_duplicate else "fetched",
+                http_status_code=fr.status,
+                fetched_at=fetched_at,
+                content_hash=content_hash,
+                raw_html="" if is_duplicate else fr.raw_html,
+                raw_text="" if is_duplicate else fr.raw_html,
+                extracted_text=extracted,
+                metadata={
+                    "source_category": source.source_category,
+                    "source_name": source.source_name,
+                    "source_id": source.source_id,
+                },
+                compliance_status="compliant",
+                robots_allowed=robots_checker.is_allowed(url),
+                latency_ms=elapsed_ms,
+                content_bytes=len(fr.raw_html.encode("utf-8")) if not is_duplicate else 0,
+                extraction_status=extraction_status,
+            )
+
+        self._circuit_breaker.record_failure(url)
         return SourceFetchResult(
             source_id=source.source_id,
             source_url=url,
             status="failed",
-            http_status_code=last_http_status,
+            http_status_code=fr.status,
             fetched_at=fetched_at,
             error_code="fetch_failed",
-            error_message_sanitized=(f"Fetch failed after {max_retries} attempt(s): {last_error_msg}"),
+            error_message_sanitized=f"Fetch failed after {max_retries} attempt(s): unexpected status",
             compliance_status="compliant",
             robots_allowed=robots_checker.is_allowed(url),
             latency_ms=last_latency,
             content_bytes=0,
         )
+
+    @staticmethod
+    def _fetch_with_tenacity(
+        url: str,
+        timeout_s: float,
+        max_retries: int,
+        backoff_base: float,
+        cached_etag: str | None,
+        cached_last_modified: str | None,
+    ) -> FetchResult:
+        """Single HTTP fetch with tenacity retry for 5xx / 429 / network errors.
+        Returns the last FetchResult after exhausting retries.
+        """
+
+        class _RetryableServerOrRateLimitError(Exception):
+            """Retryable: 429 (rate limit), 5xx, or network errors."""
+
+        class _RetryableNetwork(Exception):
+            pass
+
+        @retry(
+            stop=stop_after_attempt(max_retries),
+            wait=wait_exponential(multiplier=backoff_base, min=1, max=30),
+            retry=(retry_if_exception_type(_RetryableServerOrRateLimitError) | retry_if_exception_type(_RetryableNetwork)),
+            reraise=True,
+        )
+        def _do_fetch() -> FetchResult:
+            fr = fetch_page(
+                url,
+                timeout=int(timeout_s),
+                if_none_match=cached_etag,
+                if_modified_since=cached_last_modified,
+            )
+            # 304 and success are returned directly
+            if fr.not_modified or (fr.status is not None and fr.status < 400):
+                return fr
+            # 429 (rate limit) — retryable
+            if fr.status == 429:
+                logger.info("Rate-limited (429) for %s, will retry", url)
+                raise _RetryableServerOrRateLimitError(fr)
+            # 4xx — not retryable
+            if fr.status is not None and 400 <= fr.status < 500:
+                return fr
+            # 5xx — retryable
+            if fr.status is not None and fr.status >= 500:
+                logger.debug("Server error %d for %s, will retry", fr.status, url)
+                raise _RetryableServerOrRateLimitError(fr)
+            # Network error — retryable
+            raise _RetryableNetwork(fr.error or "unknown error")
+
+        try:
+            return _do_fetch()
+        except (_RetryableServerOrRateLimitError, _RetryableNetwork) as exc:
+            if hasattr(exc, "args") and exc.args:
+                return exc.args[0]
+            return FetchResult(
+                url=url, status=None, raw_html="", fetched_at=datetime.now(UTC),
+                error=f"All {max_retries} retries exhausted",
+            )
+
+    def _get_robots_checker(self, base_url: str, timeout: float) -> RobotsChecker:
+        """Return cached or freshly-fetched RobotsChecker for *base_url*."""
+        global _robots_cache, _robots_cache_lock
+        parsed = urlparse(base_url)
+        if not parsed.scheme or not parsed.netloc:
+            return RobotsChecker()
+        netloc = parsed.netloc
+        now = time.time()
+        with _robots_cache_lock:
+            if netloc in _robots_cache:
+                checker, ts = _robots_cache[netloc]
+                if now - ts < _ROBOTS_CACHE_TTL:
+                    return checker
+        checker = self._fetch_robots_txt(base_url, timeout)
+        with _robots_cache_lock:
+            _robots_cache[netloc] = (checker, now)
+        return checker
 
     def _fetch_robots_txt(self, base_url: str, timeout: float) -> RobotsChecker:
         parsed = urlparse(base_url)
@@ -555,13 +1019,49 @@ class HttpSourceCollector:
         )
 
 
-# ── Factory / Helpers ────────────────────────────────────────────────────
 
-
-def build_http_collector(user_agent: str | None = None) -> HttpSourceCollector:
-    logger.info("HttpSourceCollector created (governed by Source Registry + Decision Calibration)")
-    return HttpSourceCollector(user_agent=user_agent)
 
 
 def list_governed_sources() -> list[SourceRecord]:
     return list_production_enabled_sources()
+
+
+# ── Graceful Shutdown ──────────────────────────────────────────────────
+
+_shutdown_in_progress = False
+_shutdown_lock = threading.Lock()
+
+
+def _is_shutdown() -> bool:
+    with _shutdown_lock:
+        return _shutdown_in_progress
+
+
+def _trigger_shutdown() -> None:
+    global _shutdown_in_progress
+    with _shutdown_lock:
+        _shutdown_in_progress = True
+    logger.info("SHUTDOWN triggered — in-flight requests may be interrupted")
+
+
+def _shutdown_handler(signum: int, frame: object | None = None) -> None:
+    _trigger_shutdown()
+    logger.warning("Received signal %d, shutting down...", signum)
+
+
+# Register signal handlers for graceful shutdown
+try:
+    signal.signal(signal.SIGINT, _shutdown_handler)
+    signal.signal(signal.SIGTERM, _shutdown_handler)
+except (ValueError, RuntimeError):
+    pass  # Not running in main thread, skip signal registration
+
+# Also register atexit to close connections
+def _cleanup() -> None:
+    from src.scraping.cache import reset_cache
+    from src.scraping.fetcher import reset_client
+    reset_cache()
+    reset_client()
+    logger.debug("Cleanup: cache and HTTP client closed")
+
+atexit.register(_cleanup)

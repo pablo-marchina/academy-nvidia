@@ -13,7 +13,9 @@ from src.extraction.schemas import (
     SourceType,
     StartupProfile,
 )
+from src.scraping.founder_discovery import FounderDiscovery
 from src.scraping.source_policy import classify_source
+from src.scraping.tech_stack_detector import TechStackDetector
 
 _SECTOR_KEYWORDS: dict[str, list[str]] = {
     "HealthTech": [
@@ -337,7 +339,31 @@ def extract_profile(
     product_summary = _extract_product_summary(clean_text)
     ai_signals = _extract_signals(clean_text, _AI_KEYWORDS, "AI signal")
     tech_stack_signals = _extract_signals(clean_text, _TECH_KEYWORDS, "Tech stack")
+
+    # Supplement keyword-based detection with TechStackDetector
+    try:
+        detector = TechStackDetector()
+        ts_signals = detector.detect(clean_text)
+        for ts in ts_signals:
+            label = f"Tech stack ({ts.signal_type})"
+            if label not in tech_stack_signals:
+                tech_stack_signals.append(label)
+    except Exception:
+        pass
+
     founders = _extract_by_pattern(clean_text, _FOUNDER_PATTERNS)
+
+    # Supplement founder extraction with FounderDiscovery
+    try:
+        fd = FounderDiscovery()
+        found_candidates = fd.extract(clean_text)
+        for fc in found_candidates:
+            name_candidate = fc.get("name", "")
+            if name_candidate and name_candidate not in founders:
+                founders.append(name_candidate)
+    except Exception:
+        pass
+
     customers = _extract_by_pattern(clean_text, _CUSTOMER_PATTERNS)
     funding_signals = _extract_by_pattern(clean_text, _FUNDING_PATTERNS)
     confidence = _compute_confidence(

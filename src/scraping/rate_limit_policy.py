@@ -30,7 +30,7 @@ def _build_policy_registry() -> dict[str, RateLimitPolicy]:
     )
     policies["github_api"] = RateLimitPolicy(
         policy_id="github_api",
-        requests_per_second=10.0,
+        requests_per_second=1.3,
         concurrent_requests=1,
         max_retries=3,
         backoff_strategy="exponential",
@@ -104,14 +104,31 @@ def get_available_capabilities() -> set[str]:
 
 
 def check_capability_ready(required_capability: str) -> bool:
+    """Check if a required capability (e.g. ``github_token``) is available.
+
+    .. deprecated::
+        Use ``required_capability.lower() in get_available_capabilities()`` directly.
+        Kept for backward compatibility.
+    """
     return required_capability.lower() in get_available_capabilities()
 
 
 def list_policies_requiring_api_key() -> list[RateLimitPolicy]:
+    """List all policies that require an API key.
+
+    .. deprecated::
+        Use ``load_rate_limit_policies()`` and filter client-side.
+        Kept for backward compatibility.
+    """
     return [p for p in load_rate_limit_policies().values() if p.requires_api_key]
 
 
 def summarize_rate_limit_policies() -> dict[str, Any]:
+    """Produce a summary of all rate limit policies.
+
+    .. deprecated::
+        Kept for backward compatibility. Used in test assertions.
+    """
     policies = load_rate_limit_policies()
     return {
         "total_policies": len(policies),

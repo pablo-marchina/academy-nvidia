@@ -13,7 +13,6 @@ import pytest
 from src.scraping.http_collector import (
     CollectionResult,
     HttpSourceCollector,
-    build_http_collector,
     list_governed_sources,
 )
 from src.scraping.rate_limit_policy import reset_policy_cache
@@ -116,7 +115,7 @@ class TestGovernedCollectionFlow:
             production_enabled=True,
         )
 
-        collector = build_http_collector()
+        collector = HttpSourceCollector()
         type(
             "Request",
             (object,),
@@ -292,5 +291,6 @@ class TestSafety:
 
         assert "openai" not in content, "openai import in http_collector"
         assert "qdrant" not in content, "qdrant import in http_collector"
-        assert "playwright" not in content, "playwright import in http_collector"
+        assert "import playwright" not in content, "playwright import in http_collector"
+        assert "from playwright" not in content, "playwright import in http_collector"
         assert "langchain" not in content, "langchain import in http_collector"

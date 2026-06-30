@@ -45,7 +45,7 @@ parameters:
     value: "{high_min: 0.7, medium_min: 0.4}"
     unit: float
     objective: Classify confidence scores into high/medium/low buckets
-    hypothesis: >=0.7 is high, >=0.4 is medium, <0.4 is low
+    hypothesis: ">=0.7 is high, >=0.4 is medium, <0.4 is low"
     source: Common convention in scoring systems
     dataset: N/A
     metric_optimized: classification_accuracy

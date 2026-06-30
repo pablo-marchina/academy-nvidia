@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+
+<html lang="en-us">
+<!-- SPDX-FileCopyrightText: Copyright (c) 2024-2025, NVIDIA CORPORATION & AFFILIATES.
+ * All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0 -->
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  
+  <meta name="Description" content="A collection of all the documentation for RAPIDS. Whether you're new to RAPIDS, looking to contribute, or are a part of the RAPIDS team, the docs here will help guide you.
+">
+  <meta property="og:description" content="A collection of all the documentation for RAPIDS. Whether you're new to RAPIDS, looking to contribute, or are a part of the RAPIDS team, the docs here will help guide you.
+">
+  <meta name="twitter:description" content="A collection of all the documentation for RAPIDS. Whether you're new to RAPIDS, looking to contribute, or are a part of the RAPIDS team, the docs here will help guide you.
+" />
+  
+  <meta property="og:title" content="Home - RAPIDS Docs">
+  <meta property="og:image" content="https://rapids.ai/assets/images/og_image.png">
+  <meta property="og:image:secure_url" content="https://rapids.ai/assets/images/og_image.png" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="400" />
+  <meta property="og:image:height" content="300" />
+  <meta property="og:url" content="/">
+  <meta property="og:site_name" content="RAPIDS Docs">
+
+  <meta name="twitter:site" content="https://twitter.com/rapidsai" />
+  <meta name="twitter:creator" content="@rapidsai" />
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:image" content="https://rapids.ai/assets/images/og_image.png" />
+  <meta name="twitter:image:alt" content="RAPIDS Docs">
+  <meta property="fb:app_id" content="1679326302390196" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Home - RAPIDS Docs</title>
+  <link rel="stylesheet" href="/assets/css/just-the-docs.css">
+  <link rel="stylesheet" href="/assets/css/custom.css">
+
+  <!-- OneTrust Cookies Consent Notice start for rapids.ai -->
+  <script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js" data-document-language="true" type="text/javascript" charset="UTF-8" data-domain-script="018e2d71-40f3-7e89-90b8-e10ec6012ab0-test" ></script>
+  <script type="text/javascript">
+      function OptanonWrapper() {
+          var event = new Event('bannerLoaded');
+          window.dispatchEvent(event);
+      }
+  </script>
+
+  <!-- OneTrust Cookies Consent Notice end for rapids.ai -->
+  <script type="text/javascript" src="https://images.nvidia.com/aem-dam/Solutions/ot-js/ot-custom.js"></script>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script>
+
+    function hasAnalyticsConsent() {
+      return typeof OnetrustActiveGroups === 'string' &&
+            OnetrustActiveGroups.split(',').includes('C0002');
+    }
+
+    function loadGA4() {
+      if (window._ga4Loaded) return;
+      window._ga4Loaded = true;
+      var gtagScript = document.createElement('script');
+      gtagScript.async = true;
+      gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-DLJNCEWKZD';
+      document.head.appendChild(gtagScript);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push(arguments); }
+      window.gtag = window.gtag || gtag;
+      gtag('js', new Date());
+      gtag('config', 'G-DLJNCEWKZD');
+    }
+
+    function initAnalyticsIfConsented() {
+      if (hasAnalyticsConsent()) {
+        loadGA4();
+      }
+    }
+
+    if (document.readyState === 'complete') {
+      initAnalyticsIfConsented();
+    } else {
+      window.addEventListener('load', initAnalyticsIfConsented);
+    }
+
+    if (window.OneTrust && typeof window.OneTrust.OnConsentChanged === 'function') {
+      window.OneTrust.OnConsentChanged(function () {
+        initAnalyticsIfConsented();
+      });
+    }
+  </script>
+
+  <script src="https://assets.adobedtm.com/5d4962a43b79/814eb6e9b4e1/launch-4bc07f1e0b0b.min.js"></script>
+
+  
+  <script src="/assets/js/vendor/lunr.min.js"></script>
+  
+  <script src="/assets/js/just-the-docs.js"></script>
+
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+
+  <script src="https://kit.fontawesome.com/1690513e32.js"></script>
+
+
+</head>
+
+<body>
+  <div class="page-wrap">
+    <div class="side-bar">
+      <a href="/" class="site-title fs-6 lh-tight">RAPIDS Docs</a>
+      <span class="fs-3"><button class="js-main-nav-trigger navigation-list-toggle btn btn-outline" type="button" data-text-toggle="Hide">Menu</button></span>
+      <div class="navigation main-nav js-main-nav">
+        <!-- SPDX-FileCopyrightText: Copyright (c) 2024-2025, NVIDIA CORPORATION & AFFILIATES.
+ * All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0 -->
+<nav role="navigation" aria-label="Main navigation">
+  <ul class="navigation-list">
+    
+    
+    
+      
+      
+    
+      
+        
+          <li class="navigation-list-item">
+            
+            <a href="/SECURITY/" class="navigation-list-link">Security</a>
+            
+          </li>
+        
+      
+      
+    
+      
+        
+          <li class="navigation-list-item active">
+            
+            <a href="/assets/images/telemetry/mermaid-workflow/" class="navigation-list-link"></a>
+            
+          </li>
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+          <li class="navigation-list-item active">
+            
+            <a href="/" class="navigation-list-link active">Home</a>
+            
+          </li>
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+          <li class="navigation-list-item">
+            
+            <a href="/install/" class="navigation-list-link">Installation Guide</a>
+            
+          </li>
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+          <li class="navigation-list-item">
+            
+            <a href="/platform-support/" class="navigation-list-link">Platform Support</a>
+            
+          </li>
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+          <li class="navigation-list-item">
+            
+            <a href="/user-guide/" class="navigation-list-link">User Guides</a>
+            
+          </li>
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+          <li class="navigation-list-item">
+            
+            <a href="/api/" class="navigation-list-link">API Docs</a>
+            
+          </li>
+        
+      
+      
+    
+      
+        
+          <li class="navigation-list-item">
+            
+            <a href="/visualization/" class="navigation-list-link">Visualization Guide</a>
+            
+          </li>
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+          <li class="navigation-list-item">
+            
+            <a href="/contributing/" class="navigation-list-link">Contributing</a>
+            
+              
+              <ul class="navigation-list-child-list ">
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                    <li class="navigation-list-item ">
+                      
+                      <a href="/contributing/issues/" class="navigation-list-link">Issues</a>
+                      
+                    </li>
+                  
+                
+                  
+                
+                  
+                    <li class="navigation-list-item ">
+                      
+                      <a href="/contributing/code/" class="navigation-list-link">Code Contributions</a>
+                      
+                    </li>
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                    <li class="navigation-list-item ">
+                      
+                      <a href="/contributing/prs/" class="navigation-list-link">Pull Requests</a>
+                      
+                    </li>
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+              </ul>
+            
+          </li>
+        
+      
+      
+    
+      
+        
+          <li class="navigation-list-item">
+            
+            <a href="/maintainers/" class="navigation-list-link">Maintainer Docs</a>
+            
+              
+              <ul class="navigation-list-child-list ">
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                    <li class="navigation-list-item ">
+                      
+                      <a href="/maintainers/datasets/" class="navigation-list-link">Datasets</a>
+                      
+                    </li>
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                    <li class="navigation-list-item ">
+                      
+                      <a href="/maintainers/forward-merger/" class="navigation-list-link">Forward Mergers</a>
+                      
+                    </li>
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                    <li class="navigation-list-item ">
+                      
+                      <a href="/resources/" class="navigation-list-link">Resources</a>
+                      
+                        
+                        <ul class="navigation-list-child-list">
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/resources/conduct/" class="navigation-list-link">Code of Conduct</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/resources/changelog/" class="navigation-list-link">Changelog Format</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/resources/auto-merger/" class="navigation-list-link">Auto-Merger</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/resources/github-actions/" class="navigation-list-link">GitHub Actions</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/resources/reproducing-ci/" class="navigation-list-link">Reproducing CI Locally</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/resources/telemetry/" class="navigation-list-link">Telemetry</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/resources/label-checker/" class="navigation-list-link">Label Checker</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/resources/merge-barriers/" class="navigation-list-link">Merge Barriers</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/resources/recently-updated/" class="navigation-list-link">Recently Updated Check</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/resources/versions/" class="navigation-list-link">Versions and Tags</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/resources/burn-down-guide/" class="navigation-list-link">Burn Down Guide</a>
+                                </li>
+                              
+                            
+                          
+                        </ul>
+                      
+                    </li>
+                  
+                
+                  
+                
+                  
+                
+                  
+                    <li class="navigation-list-item ">
+                      
+                      <a href="/releases/" class="navigation-list-link">Release Docs</a>
+                      
+                        
+                        <ul class="navigation-list-child-list">
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/releases/hotfix/" class="navigation-list-link">Hotfix Process</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/releases/process/" class="navigation-list-link">Release Process</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                                <li class="navigation-list-item ">
+                                  <a href="/releases/schedule/" class="navigation-list-link">Release Schedule</a>
+                                </li>
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                        </ul>
+                      
+                    </li>
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+              </ul>
+            
+          </li>
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+      
+      
+    
+      
+        
+          <li class="navigation-list-item">
+            
+            <a href="/notices/" class="navigation-list-link">RAPIDS Notices</a>
+            
+              
+              <ul class="navigation-list-child-list ">
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                    <li class="navigation-list-item ">
+                      
+                      <a href="/notices/rdn/" class="navigation-list-link">RAPIDS Developer Notices</a>
+                      
+                        
+                        <ul class="navigation-list-child-list">
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                        </ul>
+                      
+                    </li>
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                    <li class="navigation-list-item ">
+                      
+                      <a href="/notices/rgn/" class="navigation-list-link">RAPIDS General Notices</a>
+                      
+                        
+                        <ul class="navigation-list-child-list">
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                        </ul>
+                      
+                    </li>
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                    <li class="navigation-list-item ">
+                      
+                      <a href="/notices/rsn/" class="navigation-list-link">RAPIDS Support Notices</a>
+                      
+                        
+                        <ul class="navigation-list-child-list">
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                            
+                              
+                            
+                          
+                        </ul>
+                      
+                    </li>
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+              </ul>
+            
+          </li>
+        
+      
+      
+    
+      
+        
+      
+      
+    <li class="navigation-list-item">
+        <a href="/deployment/stable/" class="navigation-list-link">
+          Deployment Guides
+        </a>
+      </li></ul>
+</nav>
+
+      </div>
+      <footer role="contentinfo" class="site-footer">
+        <p class="text-small text-grey-dk-000 mb-0">This site uses <a href="https://github.com/pmarsceill/just-the-docs">Just the Docs</a>, a documentation theme for Jekyll.</p>
+      </footer>
+    </div>
+    <div class="main-content-wrap js-main-content" tabindex="0">
+      <div class="page-header">
+        <div class="main-content">
+          
+          <div class="search js-search">
+            <div class="search-input-wrap">
+              <input type="text" class="js-search-input search-input" tabindex="0" placeholder="Search RAPIDS Docs" aria-label="Search RAPIDS Docs" autocomplete="off">
+              <svg width="14" height="14" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" class="search-icon"><title>Search</title><g fill-rule="nonzero"><path d="M17.332 20.735c-5.537 0-10-4.6-10-10.247 0-5.646 4.463-10.247 10-10.247 5.536 0 10 4.601 10 10.247s-4.464 10.247-10 10.247zm0-4c3.3 0 6-2.783 6-6.247 0-3.463-2.7-6.247-6-6.247s-6 2.784-6 6.247c0 3.464 2.7 6.247 6 6.247z"/><path d="M11.672 13.791L.192 25.271 3.02 28.1 14.5 16.62z"/></g></svg>
+            </div>
+            <div class="js-search-results search-results-wrap"></div>
+          </div>
+          
+          
+            <ul class="list-style-none text-small mt-md-1 mb-md-1 pb-4 pb-md-0 js-aux-nav aux-nav">
+              
+                <li class="d-inline-block my-0"><a href="https://github.com/rapidsai/docs">View Docs on GitHub</a></li>
+              
+            </ul>
+          
+        </div>
+      </div>
+      <div class="main-content">
+        
+        <div id="main-content" class="page-content" role="main">
+          <h1 class="fs-8" id="rapids-documentation-and-resources">RAPIDS Documentation and Resources</h1>
+
+<p class="fs-6 fw-300">This site serves to unify the documentation for RAPIDS. Whether you’re new to RAPIDS, looking to contribute, or are a part of the RAPIDS team, the docs here will help guide you. Visit <a href="http://rapids.ai" target="_blank">RAPIDS.ai</a> for more information on the overall project.</p>
+
+<h2 id="sections">Sections</h2>
+
+<p><a href="/install/" class="btn fs-4 mb-4 mb-md-4 mr-2"><i class="fa-solid fa-download"></i> Installation Guide</a>
+<a href="/platform-support/" class="btn fs-4 mb-4 mb-md-4 mr-2"><i class="fa-solid fa-list-check"></i> Platform Support</a>
+<br />
+<a href="/user-guide/" class="btn fs-4 mb-4 mb-md-4 mr-2"><i class="fa-solid fa-file-circle-info"></i> User Guides</a>
+<br />
+<a href="/api/" class="btn fs-4 mb-4 mb-md-04 mr-2"><i class="fa-solid fa-file-circle-info"></i> API Documentation</a>
+<a href="/visualization/" class="btn fs-4 mb-4 mb-md-4 mr-2"><i class="fa-solid fa-file-circle-info"></i> Visualization Guide</a>
+<br />
+<a href="/deployment/stable/" class="btn fs-4 mb-4 mb-md-4 mr-2"><i class="fa-solid fa-file-circle-info"></i> Deployment Guides</a>
+<a href="/maintainers/" class="btn fs-4 mb-4 mb-md-4 mr-2"><i class="fa-solid fa-file-circle-info"></i> Maintainer Documentation</a>
+<br />
+<a href="/notices/" class="btn fs-4 mb-4 mb-md-4 mr-2"><i class="fas fa-bullhorn"></i> RAPIDS Notices</a>
+<a href="https://github.com/rapidsai" class="btn fs-4 mb-4 mb-md-4 mr-2"><i class="fab fa-github"></i> RAPIDS GitHub</a></p>
+
+<hr />
+
+<h2 id="stay-connected">Stay Connected</h2>
+
+<div class="footer-help-section">
+    
+        
+        <div class="footer-help-box">
+            <a href=" https://twitter.com/rapidsai" target="_blank" class="btn"><i class="fab fa-twitter"></i> Twitter</a>
+        </div>
+    
+        
+        <div class="footer-help-box">
+            <a href=" https://rapids.ai/slack-invite" target="_blank" class="btn"><i class="fab fa-slack"></i> Slack</a>
+        </div>
+    
+        
+        <div class="footer-help-box">
+            <a href=" https://stackoverflow.com/tags/rapids" target="_blank" class="btn"><i class="fab fa-stack-overflow"></i> Stack Overflow</a>
+        </div>
+    
+</div>
+
+<h2 id="docs-issues-or-feedback">Docs Issues or Feedback</h2>
+
+<p><a href="https://github.com/rapidsai/docs/issues/new">File an issue</a> for any unexpected problems encountered, incorrect information, or general feedback for this documentation site.</p>
+
+
+          
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript">_satellite.pageBottom();</script>
+</body>
+</html>

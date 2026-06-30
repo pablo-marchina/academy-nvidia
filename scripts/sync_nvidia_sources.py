@@ -20,14 +20,14 @@ import json
 import shutil
 import sys
 import time
-import urllib.error
 import urllib.parse
 import urllib.robotparser
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-from urllib.request import urlopen
+
+import httpx
 
 import yaml
 
@@ -146,6 +146,19 @@ def compute_content_hash(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _http_client() -> httpx.Client:
+    """Return a shared httpx client for the sync script."""
+    if not hasattr(_http_client, "_client"):
+        _http_client._client = httpx.Client(  # type: ignore[attr-defined]
+            http2=True,
+            timeout=httpx.Timeout(_DEFAULT_TIMEOUT, connect=15.0),
+            headers={"User-Agent": _DEFAULT_USER_AGENT},
+            follow_redirects=True,
+            limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
+        )
+    return _http_client._client  # type: ignore[attr-defined]
+
+
 def fetch_url(
     url: str,
     max_bytes: int = _MAX_DOCUMENT_BYTES,
@@ -160,35 +173,41 @@ def fetch_url(
     if parsed.scheme not in ("https",):
         return None, "URL scheme must be https"
 
-    req = urllib.request.Request(url, headers={"User-Agent": user_agent})
+    client = _http_client()
     try:
-        with urlopen(req, timeout=timeout) as resp:
-            # Check content-length
-            content_length = resp.headers.get("Content-Length")
-            if content_length and int(content_length) > max_bytes:
-                return None, f"Content-Length {content_length} exceeds max {max_bytes}"
+        resp = client.get(url, timeout=timeout)
+        resp.raise_for_status()
 
-            raw = resp.read(max_bytes + 1)
-            if len(raw) > max_bytes:
-                return None, f"Response body exceeds max {max_bytes} bytes"
+        # Check content-length
+        content_length = resp.headers.get("Content-Length")
+        if content_length and int(content_length) > max_bytes:
+            return None, f"Content-Length {content_length} exceeds max {max_bytes}"
 
-            # Try UTF-8, fallback to charset
-            charset = resp.headers.get_content_charset() or "utf-8"
-            try:
-                text = raw.decode(charset)
-            except (UnicodeDecodeError, LookupError):
-                text = raw.decode("utf-8", errors="replace")
+        raw = resp.content
+        if len(raw) > max_bytes:
+            return None, f"Response body exceeds max {max_bytes} bytes"
 
-            if len(text.strip()) < 100:
-                return None, f"Response too short ({len(text.strip())} chars)"
+        # Try UTF-8, fallback to charset
+        charset = resp.encoding or "utf-8"
+        try:
+            text = raw.decode(charset)
+        except (UnicodeDecodeError, LookupError):
+            text = raw.decode("utf-8", errors="replace")
 
-            return text, None
-    except urllib.error.HTTPError as exc:
-        return None, f"HTTP {exc.code}: {exc.reason}"
-    except urllib.error.URLError as exc:
-        return None, f"URL error: {exc.reason}"
-    except OSError as exc:
-        return None, f"Network error: {exc}"
+        if len(text.strip()) < 100:
+            return None, f"Response too short ({len(text.strip())} chars)"
+
+        return text, None
+    except httpx.HTTPStatusError as exc:
+        return None, f"HTTP {exc.response.status_code}: {exc.response.reason_phrase}"
+    except httpx.TimeoutException:
+        return None, f"Timeout after {timeout}s"
+    except httpx.ConnectError as exc:
+        return None, f"Connection error: {exc}"
+    except httpx.RemoteProtocolError as exc:
+        return None, f"Protocol error: {exc}"
+    except httpx.HTTPError as exc:
+        return None, f"HTTP error: {exc}"
 
 
 def check_robots_txt(url: str, user_agent: str = _DEFAULT_USER_AGENT) -> bool:

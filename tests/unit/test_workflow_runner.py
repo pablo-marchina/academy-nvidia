@@ -8,7 +8,7 @@ import pytest
 import src.orchestration.node_impl  # noqa: F401 - populate WORKFLOW_NODES
 from src.database.session import configure_product_database, reset_product_database_runtime
 from src.orchestration.nodes import WORKFLOW_NODES
-from src.orchestration.runner import WorkflowRunner, _has_langgraph, _is_retryable, create_runner
+from src.orchestration.runner import WorkflowRunner, _has_langgraph
 from src.orchestration.state import ProductWorkflowState, WorkflowStatus
 from src.repositories.workflow import WorkflowRepository
 
@@ -24,26 +24,34 @@ def session(tmp_path: Path):
 
 @pytest.fixture
 def runner(session) -> WorkflowRunner:
-    return create_runner(session)
+    return WorkflowRunner(session)
 
 
 def test_workflow_nodes_are_registered() -> None:
-    assert len(WORKFLOW_NODES) >= 11
-    node_names = {n.name for n in WORKFLOW_NODES}
     expected = {
         "load_startup_or_candidate",
-        "collect_or_load_evidence",
+        "plan_search",
+        "collect_sources",
+        "extract_profile",
         "validate_evidence",
+        "score_startup",
         "diagnose_gaps",
         "retrieve_nvidia_context",
         "map_nvidia_technologies",
+        "rank_recommendations",
+        "generate_brief",
+        "run_quality_gates",
         "generate_claims",
         "match_activation_playbooks",
         "generate_activation_dossier",
         "run_product_quality",
         "summarize_readiness",
+        "needs_review",
+        "apply_feedback_weights",
     }
-    assert node_names == expected
+    node_names = {n.name for n in WORKFLOW_NODES}
+    assert node_names == expected, f"Missing: {expected - node_names}, Extra: {node_names - expected}"
+    assert len(WORKFLOW_NODES) == 19
 
 
 def test_workflow_nodes_have_required_fields() -> None:
@@ -53,12 +61,11 @@ def test_workflow_nodes_have_required_fields() -> None:
         assert node.critical is not None
 
 
-def test_runner_runs_full_workflow_with_missing_startup(runner: WorkflowRunner, session) -> None:
+def test_runner_handles_missing_langgraph(runner: WorkflowRunner, session) -> None:
     from unittest.mock import patch
 
     with (
         patch("src.orchestration.graph.ProductReadinessService") as mock_service,
-        patch("src.orchestration.runner._try_build_agent_graph", return_value=None),
         patch("src.orchestration.runner.build_workflow_graph", return_value=None),
     ):
         mock_service.return_value.get_product_readiness.return_value.ready = True
@@ -71,9 +78,9 @@ def test_runner_runs_full_workflow_with_missing_startup(runner: WorkflowRunner, 
         )
         result_state = runner.run_workflow(state)
     assert result_state.workflow_id == run.id
-    assert len(result_state.completed_nodes) >= 11
-    assert "load_startup_or_candidate" in result_state.completed_nodes
-    assert result_state.error_message is None
+    assert len(result_state.completed_nodes) == 0
+    assert result_state.error_message is not None
+    assert "LangGraph is not available" in result_state.error_message
 
 
 def test_runner_has_langgraph_detection() -> None:
@@ -81,23 +88,12 @@ def test_runner_has_langgraph_detection() -> None:
     assert isinstance(result, bool)
 
 
-def test_retryable_error_detection() -> None:
-    assert _is_retryable("RuntimeError: timeout")
-    assert _is_retryable("Exception: generic error")
-    assert not _is_retryable("ValueError: bad input")
-    assert not _is_retryable("TypeError: wrong type")
-    assert not _is_retryable("LookupError: not found")
-    assert not _is_retryable("AssertionError: assert")
-    assert _is_retryable("")
-    assert not _is_retryable("ValueError")
-
 
 def test_runner_preflight_block_fails_workflow(runner: WorkflowRunner, session) -> None:
     from unittest.mock import patch
 
     with (
         patch("src.orchestration.graph.ProductReadinessService") as mock_service,
-        patch("src.orchestration.runner._try_build_agent_graph", return_value=None),
     ):
         report = MagicMock()
         report.ready = False
@@ -182,7 +178,7 @@ def test_ensure_analysis_run_creates_with_startup_id(runner: WorkflowRunner, ses
     run = session.get(AnalysisRun, analysis_run_id)
     assert run is not None
     assert run.startup_id == "s-ensure"
-    assert run.pipeline_version == "agent_graph"
+    assert run.pipeline_version == "orchestration_graph+v1"
 
 
 def test_ensure_analysis_run_reuses_existing(runner: WorkflowRunner, session) -> None:
@@ -217,31 +213,31 @@ def test_ensure_analysis_run_returns_none_without_startup(runner: WorkflowRunner
 # ── run_workflow + analysis_run_id ──────────────────────────────────────────────
 
 
-def test_run_workflow_with_agent_graph_sets_analysis_run_id(runner: WorkflowRunner, session) -> None:
+def test_run_workflow_with_graph_sets_analysis_run_id(runner: WorkflowRunner, session) -> None:
     from unittest.mock import MagicMock, patch
 
     from src.database.models import AnalysisRun
 
     repo = WorkflowRepository(session)
-    run = repo.create_workflow_run(startup_id="s-agent")
+    run = repo.create_workflow_run(startup_id="s-graph")
     session.commit()
 
     state = ProductWorkflowState(
         workflow_id=run.id,
-        startup_id="s-agent",
+        startup_id="s-graph",
     )
 
     mock_graph = MagicMock()
     mock_graph.invoke.return_value = {
-        "completed_nodes": ["_generate_brief", "_finish"],
+        "completed_nodes": ["plan_search", "finish"],
     }
 
-    with patch("src.orchestration.runner._try_build_agent_graph", return_value=mock_graph):
+    with patch("src.orchestration.runner.build_workflow_graph", return_value=mock_graph):
         result_state = runner.run_workflow(state)
 
-    analysis_run = session.query(AnalysisRun).filter_by(startup_id="s-agent").first()
+    analysis_run = session.query(AnalysisRun).filter_by(startup_id="s-graph").first()
     assert analysis_run is not None
-    assert analysis_run.pipeline_version == "agent_graph"
+    assert analysis_run.pipeline_version == "orchestration_graph+v1"
     assert result_state.analysis_run_id == analysis_run.id
 
 
@@ -265,7 +261,7 @@ def test_run_workflow_without_startup_id_does_not_create_analysis_run(runner: Wo
 
     count_before = session.query(AnalysisRun).count()
 
-    with patch("src.orchestration.runner._try_build_agent_graph", return_value=mock_graph):
+    with patch("src.orchestration.runner.build_workflow_graph", return_value=mock_graph):
         runner.run_workflow(state)
 
     count_after = session.query(AnalysisRun).count()
@@ -279,7 +275,7 @@ class TestRunnerInterruptResume:
     """Full E2E: run_workflow → interrupt at needs_review → cache checkpointer → resume_workflow → complete."""
 
     @staticmethod
-    def _patched_build_agent_graph(*, checkpointer=None, analysis_repository=None):
+    def _patched_build_graph(*, checkpointer=None):
         from unittest.mock import MagicMock
 
         graph = MagicMock(spec=["invoke"])
@@ -287,6 +283,8 @@ class TestRunnerInterruptResume:
         def invoke(input_data, config):
             return {
                 "completed_nodes": [
+                    "plan_search",
+                    "collect_sources",
                     "load_startup_or_candidate",
                     "collect_or_load_evidence",
                     "validate_evidence",
@@ -306,7 +304,7 @@ class TestRunnerInterruptResume:
         return graph
 
     @staticmethod
-    def _patched_interrupt_graph(*, checkpointer=None, analysis_repository=None):
+    def _patched_interrupt_graph(*, checkpointer=None):
         from unittest.mock import MagicMock
 
         graph = MagicMock(spec=["invoke"])
@@ -367,7 +365,7 @@ class TestRunnerInterruptResume:
                 "src.services.product.readiness_service.ProductReadinessService.get_product_readiness",
                 return_value=ready_report,
             ),
-            patch("src.orchestration.runner._try_build_agent_graph", self._patched_interrupt_graph),
+            patch("src.orchestration.runner.build_workflow_graph", self._patched_interrupt_graph),
         ):
             result_state = runner.run_workflow(state)
 
@@ -406,7 +404,7 @@ class TestRunnerInterruptResume:
                 "src.services.product.readiness_service.ProductReadinessService.get_product_readiness",
                 return_value=ready_report,
             ),
-            patch("src.orchestration.runner._try_build_agent_graph", self._patched_interrupt_graph),
+            patch("src.orchestration.runner.build_workflow_graph", self._patched_interrupt_graph),
         ):
             result_state = runner.run_workflow(state)
 
@@ -420,7 +418,7 @@ class TestRunnerInterruptResume:
         state_data["current_node"] = wf_run.current_node
         resume_state = ProductWorkflowState(**state_data)
 
-        with (patch("src.orchestration.runner._try_build_agent_graph", self._patched_build_agent_graph),):
+        with (patch("src.orchestration.runner.build_workflow_graph", self._patched_build_graph),):
             result2 = runner.resume_workflow(resume_state, decision="approve")
 
         assert result2.status in (

@@ -12,7 +12,15 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_candidate_catalog_gate_passes_for_generated_pack(tmp_path: Path) -> None:
-    build_initial_evidence_pack(evidence_dir=tmp_path)
+    roadmap = tmp_path / "roadmap.md"
+    roadmap.write_text(
+        "## 8. Candidate Catalog\n\n"
+        "```\n"
+        "AI code review\n"
+        "```\n",
+        encoding="utf-8",
+    )
+    build_initial_evidence_pack(evidence_dir=tmp_path, roadmap_path=roadmap)
     result = subprocess.run(
         [sys.executable, "scripts/check_candidate_catalog.py", "--catalog", str(tmp_path / "candidate_catalog.csv")],
         cwd=ROOT,
