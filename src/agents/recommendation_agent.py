@@ -1,8 +1,22 @@
-"""Diagnose gaps and rank recommendations for a startup profile."""
+"""Legacy/offline recommendation helpers.
+
+The product runtime uses the LangGraph nodes ``map_nvidia_technologies`` and
+``rank_recommendations``.  These helpers are retained for offline compatibility
+and are blocked when ``APP_MODE=product`` to preserve a single runtime path.
+"""
 
 from __future__ import annotations
 
 from typing import Any
+import os
+
+
+def _ensure_not_product_runtime() -> None:
+    if os.getenv("APP_MODE", "").casefold() == "product":
+        raise RuntimeError(
+            "src.agents.recommendation_agent is legacy/offline only. "
+            "Use the LangGraph recommendation nodes in the single product workflow."
+        )
 
 
 def diagnose_gaps(
@@ -14,6 +28,8 @@ def diagnose_gaps(
     inception_fit_raw: dict[str, Any] | None,
     production_readiness_raw: dict[str, Any] | None,
 ) -> tuple[list[str], dict[str, Any], list[str]]:
+    _ensure_not_product_runtime()
+
     from src.classification.ai_native_classifier import ClassificationResult
     from src.diagnosis.gap_diagnosis import diagnose_gaps as _run_diagnosis
     from src.extraction.schemas import StartupProfile
@@ -102,6 +118,8 @@ def rank_recommendations(
     gap_diagnosis_raw: dict[str, Any] | None,
     rag_contexts: list[str],
 ) -> tuple[list[str], list[str]]:
+    _ensure_not_product_runtime()
+
     from src.classification.ai_native_classifier import ClassificationResult
     from src.diagnosis.schemas import GapDiagnosisResult
     from src.extraction.schemas import StartupProfile

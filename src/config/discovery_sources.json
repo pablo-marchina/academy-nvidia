@@ -78,7 +78,7 @@
     "source_id": "inovativa_startups",
     "name": "Inovativa Startups",
     "source_type": "accelerator",
-    "base_url": "https://inovativa.com.br/startups/",
+    "base_url": "https://inovativa.online/startups/",
     "country_scope": "Brazil",
     "sector_scope": "",
     "allowed": true,
@@ -87,7 +87,7 @@
     "collection_method": "static_html",
     "robots_or_terms_note": "Public page. Check robots.txt before automated access.",
     "enabled_by_default": true,
-    "notes": "Inovativa accelerator cohort listings."
+    "notes": "Inovativa accelerator cohort listings. URL normalized during runtime-source audit."
   },
   {
     "source_id": "latitud_ecosystem",
@@ -183,7 +183,7 @@
     "source_id": "liga_ventures_ecosystem",
     "name": "Liga Ventures — Corporate Innovation",
     "source_type": "public_directory",
-    "base_url": "https://ligaventures.com/startups/",
+    "base_url": "https://liga.ventures/startups/",
     "country_scope": "Brazil",
     "sector_scope": "",
     "allowed": true,
@@ -192,13 +192,13 @@
     "collection_method": "static_html",
     "robots_or_terms_note": "Public portfolio page. Check robots.txt before automated access.",
     "enabled_by_default": true,
-    "notes": "Liga Ventures — corporate innovation and open startup platform."
+    "notes": "Liga Ventures — corporate innovation and open startup platform. URL normalized during runtime-source audit."
   },
   {
     "source_id": "wow_aceleradora_ecosystem",
     "name": "WOW Aceleradora — Portfolio",
     "source_type": "accelerator",
-    "base_url": "https://wow.aceleradora/startups/",
+    "base_url": "https://www.wow.ac/startups/",
     "country_scope": "Brazil",
     "sector_scope": "",
     "allowed": true,
@@ -207,13 +207,13 @@
     "collection_method": "static_html",
     "robots_or_terms_note": "Public portfolio page. Check robots.txt before automated access.",
     "enabled_by_default": true,
-    "notes": "WOW Aceleradora startup portfolio."
+    "notes": "WOW Aceleradora startup portfolio. URL normalized during runtime-source audit."
   },
   {
     "source_id": "open_startups_ecosystem",
     "name": "100 Open Startups — Ranking",
     "source_type": "public_directory",
-    "base_url": "https://100openstartups.com/startups/",
+    "base_url": "https://www.openstartups.net/startups/",
     "country_scope": "Brazil",
     "sector_scope": "",
     "allowed": true,
@@ -222,6 +222,6 @@
     "collection_method": "static_html",
     "robots_or_terms_note": "Public ranking page. Check robots.txt before automated access.",
     "enabled_by_default": true,
-    "notes": "Annual ranking of open innovation startups in Brazil."
+    "notes": "Annual ranking of open innovation startups in Brazil. URL normalized during runtime-source audit."
   }
 ]

@@ -143,7 +143,7 @@ def compute_chunk_hash(content: str) -> str:
 
 def build_embedding_provider(
     *,
-    model_name: str = "all-MiniLM-L6-v2",
+    model_name: str = "BAAI/bge-m3",
     require_real: bool = False,
 ) -> SentenceTransformerProvider:
     """Build a SentenceTransformer embedding provider."""
@@ -155,10 +155,10 @@ def build_embedding_provider(
         if require_real:
             raise
         print(
-            "  WARNING: sentence-transformers not installed. " "Falling back to all-MiniLM-L6-v2.",
+            "  WARNING: sentence-transformers not installed. " "Falling back to BAAI/bge-m3.",
             file=sys.stderr,
         )
-        return SentenceTransformerProvider("all-MiniLM-L6-v2")
+        return SentenceTransformerProvider("BAAI/bge-m3")
 
 
 # ---------------------------------------------------------------------------
@@ -433,7 +433,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--embedding-model",
         default=None,
-        help="SentenceTransformer model (default: env RAG_EMBEDDING_MODEL or all-MiniLM-L6-v2)",
+        help="SentenceTransformer model (default: env RAG_EMBEDDING_MODEL or BAAI/bge-m3)",
     )
     parser.add_argument(
         "--require-real-embeddings",
@@ -458,8 +458,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     args.collection_name = args.collection_name or os.getenv("QDRANT_COLLECTION", "nvidia_corpus")
     args.qdrant_url = args.qdrant_url or os.getenv("QDRANT_URL", "http://localhost:6333")
     args.qdrant_api_key = args.qdrant_api_key if args.qdrant_api_key is not None else os.getenv("QDRANT_API_KEY", "")
-    args.vector_size = args.vector_size or int(os.getenv("QDRANT_VECTOR_SIZE", "384"))
-    args.embedding_model = args.embedding_model or os.getenv("RAG_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+    args.vector_size = args.vector_size or int(os.getenv("QDRANT_VECTOR_SIZE", "1024"))
+    args.embedding_model = args.embedding_model or os.getenv("RAG_EMBEDDING_MODEL", "BAAI/bge-m3")
     return args
 
 

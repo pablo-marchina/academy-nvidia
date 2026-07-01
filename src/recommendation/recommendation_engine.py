@@ -471,7 +471,12 @@ class NvidiaRecommendationRecord(BaseModel):
     calibration_decision_ids: list[str] = Field(default_factory=list)
     production_allowed: bool = False
     blockers: list[str] = Field(default_factory=list)
+    recommendation_action: str = "not_recommended"
     next_best_action: str = ""
+    evidence_support_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    rag_support_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    expected_utility: float = Field(default=0.0, ge=0.0, le=1.0)
+    why_not: list[str] = Field(default_factory=list)
 
 
 class NvidiaRecommendationMetrics(BaseModel):
@@ -796,6 +801,9 @@ def rank_recommendations_from_mappings(
         raw_gap_id: Any = mapping.get("gap_id", mapping.get("mapping_id", f"map-{run_id}-{i}"))
         gap_id = str(raw_gap_id)
 
+        evidence_support_score = min(1.0, len(ev_ids) / 5.0)
+        rag_support_score = min(1.0, len(rag_ids) / 5.0)
+        combined_support_score = min(1.0, evidence_support_score + rag_support_score)
         ev_support = len(ev_ids) > 0
         rag_support = len(rag_ids) > 0
 
@@ -809,8 +817,8 @@ def rank_recommendations_from_mappings(
                 "mapping_confidence": mapping_confidence_val,
                 "gap_severity_score": float(mapping.get("features", {}).get("gap_severity_score", 0.5)),
                 "gap_confidence_score": float(mapping.get("features", {}).get("gap_confidence_score", 0.5)),
-                "evidence_support": min(1.0, len(ev_ids) / 5.0),
-                "rag_support": min(1.0, len(rag_ids) / 5.0),
+                "evidence_support": evidence_support_score,
+                "rag_support": rag_support_score,
                 "business_impact": biz_impact,
                 "implementation_complexity_inverse": 1.0 - complexity,
             }
@@ -840,13 +848,25 @@ def rank_recommendations_from_mappings(
                 f"Mapping confidence ({round(mapping_confidence_val, 4)}) below confidence threshold ({confidence_threshold})."
             )
 
+        if combined_support_score < min_evidence_support:
+            rec_production_allowed = False
+            rec_blockers.append(
+                f"Evidence/RAG support ({round(combined_support_score, 4)}) below minimum ({min_evidence_support})."
+            )
+        if not ev_support:
+            rec_production_allowed = False
+            rec_blockers.append("Missing startup evidence support for this recommendation.")
+        if not rag_support:
+            rec_production_allowed = False
+            rec_blockers.append("Missing NVIDIA RAG context support for this recommendation.")
+
         # confidence = mapping_confidence * (1 - uncertainty_penalty * uncertainty)
         confidence_val = max(
             0.0,
             mapping_confidence_val * (1.0 - uncertainty_penalty * uncertainty),
         )
 
-        _determine_recommendation_action(
+        recommendation_action = _determine_recommendation_action(
             production_allowed=rec_production_allowed,
             mapping_score=mapping_score,
             mapping_confidence=mapping_confidence_val,
@@ -871,6 +891,9 @@ def rank_recommendations_from_mappings(
         else:
             reason_parts.append("Production blocked.")
 
+        expected_utility = max(0.0, min(1.0, priority_score * confidence_val * (1.0 - uncertainty)))
+        why_not = list(dict.fromkeys(rec_blockers))
+
         recommendations.append(
             NvidiaRecommendationRecord(
                 recommendation_id=f"rec-{run_id}-{i}",
@@ -890,7 +913,12 @@ def rank_recommendations_from_mappings(
                 calibration_decision_ids=REQUIRED_RECOMMENDATION_DECISIONS + mapping_cal_ids,
                 production_allowed=rec_production_allowed,
                 blockers=rec_blockers,
+                recommendation_action=recommendation_action,
                 next_best_action=next_action,
+                evidence_support_score=round(evidence_support_score, 4),
+                rag_support_score=round(rag_support_score, 4),
+                expected_utility=round(expected_utility, 4),
+                why_not=why_not,
             )
         )
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 from contextvars import ContextVar
 from time import perf_counter
 from typing import Any
+import os
 
 from sqlalchemy.orm import Session
 
@@ -37,6 +38,26 @@ class NodeExecutionError(Exception):
         self.node_name = node_name
         self.error_message = error_message
         super().__init__(f"[{node_name}] {error_message}")
+
+
+def _is_langgraph_interrupt(exc: BaseException) -> bool:
+    """Return True for LangGraph control-flow interrupts.
+
+    LangGraph uses an interrupt exception internally to pause execution for
+    human-in-the-loop flows. Retry wrappers must never swallow or convert it
+    into a node failure.
+    """
+    name = exc.__class__.__name__.casefold()
+    module = exc.__class__.__module__.casefold()
+    return "interrupt" in name or "graphinterrupt" in name or "langgraph" in module and "interrupt" in name
+
+
+def _node_max_retries() -> int:
+    raw = os.environ.get("WORKFLOW_NODE_MAX_RETRIES", "2")
+    try:
+        return max(0, min(5, int(raw)))
+    except ValueError:
+        return 2
 
 
 def _preflight_configuration_check(state: ProductWorkflowState) -> dict[str, Any]:
@@ -100,8 +121,37 @@ def _make_langgraph_node(node_def: Any) -> Any:
             wf_repo.update_node_run_status(node_run.id, status="running")
 
         state.metadata_json["_session"] = _session
+        product_mode = os.environ.get("APP_MODE", "").casefold() == "product"
+        max_retries = _node_max_retries()
+        attempt = 0
         try:
-            result = node_fn(state)
+            while True:
+                try:
+                    result = node_fn(state)
+                except Exception as exc:
+                    if _is_langgraph_interrupt(exc):
+                        raise
+                    if attempt < max_retries:
+                        if wf_repo and node_run_id:
+                            wf_repo.increment_node_retry(node_run_id)
+                        attempt += 1
+                        continue
+                    raise NodeExecutionError(
+                        node_name,
+                        f"Unhandled exception after {attempt + 1} attempt(s): {type(exc).__name__}: {exc}",
+                    ) from exc
+
+                retryable_status = product_mode and node_def.critical and result.status in {
+                    NodeStatus.FAILED,
+                    NodeStatus.DEGRADED,
+                    NodeStatus.SKIPPED,
+                }
+                if retryable_status and attempt < max_retries:
+                    if wf_repo and node_run_id:
+                        wf_repo.increment_node_retry(node_run_id)
+                    attempt += 1
+                    continue
+                break
         finally:
             state.metadata_json.pop("_session", None)
 
@@ -120,11 +170,23 @@ def _make_langgraph_node(node_def: Any) -> Any:
                 error_message=result.error_message,
             )
 
-        if result.status == NodeStatus.FAILED:
+        fail_closed = product_mode and node_def.critical and result.status in {
+            NodeStatus.FAILED,
+            NodeStatus.DEGRADED,
+            NodeStatus.SKIPPED,
+        }
+        if result.status == NodeStatus.FAILED or fail_closed:
             observe_node(node_name, "failed", _elapsed_s)
             if wf_repo and node_run_id:
-                wf_repo.update_node_run_status(node_run_id, status="failed", error_message=result.error_message)
-            raise NodeExecutionError(node_name, result.error_message or "Unknown error")
+                wf_repo.update_node_run_status(
+                    node_run_id,
+                    status="failed",
+                    error_message=result.error_message or result.degraded_reason or f"Critical product node {node_name} did not complete",
+                )
+            raise NodeExecutionError(
+                node_name,
+                result.error_message or result.degraded_reason or f"Critical product node {node_name} did not complete",
+            )
 
         observe_node(node_name, result.status, _elapsed_s)
 
@@ -146,18 +208,18 @@ def build_workflow_graph(*, checkpointer: Any = None) -> Any | None:
     All domain nodes registered via ``@_register`` in ``node_impl.py``
     are wired in order into the pipeline:
       preflight → load_startup_or_candidate → plan_search → collect_sources
-      → extract_profile → validate_evidence → score_startup → diagnose_gaps
+      → extract_profile → validate_evidence → score_startup_probabilistic → diagnose_gaps
       → retrieve_nvidia_context → map_nvidia_technologies → rank_recommendations
       → generate_brief → run_quality_gates → generate_claims
       → match_activation_playbooks → generate_activation_dossier
       → run_product_quality → summarize_readiness → needs_review
-      → apply_feedback_weights → (finish | score_startup)
+      → apply_feedback_weights → write_decision_ledger → (finish | plan_missing_information)
 
-    After ``needs_review``, ``apply_feedback_weights`` adjusts scoring
-    weights based on human review feedback. If the review decision was
-    ``"request_more_evidence"`` and iterations remain, the pipeline loops
-    back to ``score_startup`` for adaptive re-scoring before proceeding
-    through ``rank_recommendations`` and downstream nodes again.
+    After ``needs_review``, ``apply_feedback_weights`` adjusts runtime weights
+    based on human review feedback. If the review decision was
+    ``"request_more_evidence"`` and iterations remain, the graph routes to
+    ``plan_missing_information`` and then back through collection, extraction,
+    validation, scoring, gap diagnosis and recommendations with changed inputs.
 
     Parameters
     ----------
@@ -183,14 +245,13 @@ def build_workflow_graph(*, checkpointer: Any = None) -> Any | None:
         "collect_sources",
         "extract_profile",
         "validate_evidence",
-        "score_startup",
+        "score_startup_probabilistic",
         "diagnose_gaps",
         "retrieve_nvidia_context",
         "enhance_contexts_with_techniques",
-        "score_with_evidence_weighting",
-        "rank_with_expected_utility",
         "map_nvidia_technologies",
         "rank_recommendations",
+        "rank_with_expected_utility",
         "generate_brief",
         "run_quality_gates",
         "generate_claims",
@@ -205,7 +266,7 @@ def build_workflow_graph(*, checkpointer: Any = None) -> Any | None:
 
     def _route_after_feedback(state: ProductWorkflowState) -> str:
         if state.review_decision == "request_more_evidence" and state.iteration_count < state.max_iterations:
-            return "score_startup"
+            return "plan_missing_information"
         return "finish"
 
     graph.add_edge(START, "preflight_configuration_check")
@@ -213,6 +274,7 @@ def build_workflow_graph(*, checkpointer: Any = None) -> Any | None:
     for i in range(len(PIPELINE_ORDER) - 1):
         graph.add_edge(PIPELINE_ORDER[i], PIPELINE_ORDER[i + 1])
     graph.add_conditional_edges(PIPELINE_ORDER[-1], _route_after_feedback)
+    graph.add_edge("plan_missing_information", "collect_sources")
     graph.add_edge("finish", END)
 
     if checkpointer is not None:

@@ -13,11 +13,14 @@ import { WorkflowView } from "./components/WorkflowView";
 import { ExportDeliveryView } from "./components/ExportDeliveryView";
 import { QualityView } from "./components/QualityView";
 import { HumanReviewView } from "./components/HumanReviewView";
+import { PipelineFinalResultView } from "./components/PipelineFinalResultView";
+import { RadarDashboardView } from "./components/RadarDashboardView";
 
 type ActiveView =
   | "setup"
   | "capabilities"
   | "discovery"
+  | "radarDashboard"
   | "startups"
   | "startupDetail"
   | "analysisRun"
@@ -26,7 +29,8 @@ type ActiveView =
   | "workflow"
   | "exportDelivery"
   | "quality"
-  | "humanReview";
+  | "humanReview"
+  | "finalResult";
 
 export default function App() {
   const [activeView, setActiveView] = useState<ActiveView>("setup");
@@ -40,7 +44,7 @@ export default function App() {
       const r = await getProductReadiness();
       setReady(r.ready);
       if (r.ready) {
-        setActiveView((current) => (current === "setup" ? "startups" : current));
+        setActiveView((current) => (current === "setup" ? "radarDashboard" : current));
       }
     } catch {
       setReady(false);
@@ -52,7 +56,7 @@ export default function App() {
   }, [checkReadiness]);
 
   function navigateTo(view: string) {
-    if (view === "setup" || view === "capabilities" || view === "discovery" || view === "startups" || view === "opportunities" || view === "workflow" || view === "exportDelivery" || view === "quality" || view === "humanReview") {
+    if (view === "setup" || view === "capabilities" || view === "discovery" || view === "radarDashboard" || view === "startups" || view === "opportunities" || view === "workflow" || view === "exportDelivery" || view === "quality" || view === "humanReview" || view === "finalResult") {
       setActiveView(view as ActiveView);
     }
   }
@@ -65,6 +69,17 @@ export default function App() {
   function handleRunCreated(runId: string) {
     setSelectedRunId(runId);
     setActiveView("analysisRun");
+  }
+
+  function handlePipelineCreated(workflowId: string, analysisRunId: string | null) {
+    setSelectedWorkflowRunId(workflowId);
+    if (analysisRunId) setSelectedRunId(analysisRunId);
+    setActiveView("finalResult");
+  }
+
+  function handleViewFinalResult(workflowId: string) {
+    setSelectedWorkflowRunId(workflowId);
+    setActiveView("finalResult");
   }
 
   function handleViewDossier(runId: string) {
@@ -134,6 +149,13 @@ export default function App() {
           </button>
           <button
             type="button"
+            className={`nav-btn ${activeView === "radarDashboard" ? "active" : ""}`}
+            onClick={() => navigateTo("radarDashboard")}
+          >
+            Radar Dashboard
+          </button>
+          <button
+            type="button"
             className={`nav-btn ${activeView === "startups" || activeView === "startupDetail" ? "active" : ""}`}
             onClick={() => navigateTo("startups")}
           >
@@ -152,6 +174,13 @@ export default function App() {
             onClick={() => navigateTo("workflow")}
           >
             Workflow
+          </button>
+          <button
+            type="button"
+            className={`nav-btn ${activeView === "finalResult" ? "active" : ""}`}
+            onClick={() => navigateTo("finalResult")}
+          >
+            Final Result
           </button>
           <button
             type="button"
@@ -186,6 +215,13 @@ export default function App() {
           />
         )}
 
+        {activeView === "radarDashboard" && (
+          <RadarDashboardView
+            onSelectStartup={handleSelectStartup}
+            onSelectRun={handleRunCreated}
+          />
+        )}
+
         {activeView === "startups" && (
           <StartupListView onSelectStartup={handleSelectStartup} />
         )}
@@ -195,6 +231,7 @@ export default function App() {
             startupId={selectedStartupId}
             onBack={handleBackFromStartup}
             onRunCreated={handleRunCreated}
+            onPipelineCreated={handlePipelineCreated}
           />
         )}
 
@@ -224,6 +261,15 @@ export default function App() {
           <WorkflowView
             onSelectWorkflowRun={handleSelectWorkflowRun}
             selectedWorkflowRunId={selectedWorkflowRunId}
+            onSelectStartup={handleSelectStartup}
+            onViewFinalResult={handleViewFinalResult}
+          />
+        )}
+
+        {activeView === "finalResult" && (
+          <PipelineFinalResultView
+            workflowId={selectedWorkflowRunId}
+            onBackToWorkflow={() => setActiveView("workflow")}
             onSelectStartup={handleSelectStartup}
           />
         )}

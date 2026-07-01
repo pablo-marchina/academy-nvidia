@@ -87,6 +87,10 @@ class BenchmarkCandidateEntry(BaseModel):
     removal_criteria: str = "TBD_BY_REPOSITORY_CLEANLINESS"
     substitute_candidate: str | None = None
     substitute_reason: str | None = None
+    free_self_hosted_verification: str = ""
+    source_or_reference: str = ""
+    external_dependency: str = ""
+    cost_policy: str = ""
 
     @field_validator("candidate_id", "name", "category")
     @classmethod

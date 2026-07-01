@@ -40,7 +40,7 @@ def build_product_doctor_report(
             database_url=os.getenv("PRODUCT_DB_URL", "postgresql://postgres:postgres@localhost:5432/startup_radar"),
             qdrant_url=os.getenv("QDRANT_URL", "http://localhost:6333"),
             qdrant_collection=os.getenv("QDRANT_COLLECTION", "nvidia_corpus"),
-            embedding_model=os.getenv("RAG_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"),
+            embedding_model=os.getenv("RAG_EMBEDDING_MODEL", "sentence-transformers/BAAI/bge-m3"),
             timeout_seconds=timeout_seconds,
             require_docker_compose=require_docker_compose,
             external_services_ok=external_services_ok,

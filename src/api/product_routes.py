@@ -526,21 +526,13 @@ def create_analysis_run(
     _gate: ProductReady,
     session: DbSession,
 ) -> AnalysisRunRead:
-    service = ProductService(session)
-    try:
-        run = service.create_analysis_run_for_startup(
-            startup_id,
-            use_rag=request.use_rag,
-            rag_backend=request.rag_backend,
-            pipeline_version=request.pipeline_version,
-            corpus_version=request.corpus_version,
-        )
-    except LookupError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-    result = _analysis_run_read(run)
-    _inject_claim_summary(result, session)
-    _inject_dossier_summary(result, session)
-    return result
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail=(
+            "Legacy analysis creation is disabled. Use POST /workflows/product-runs "
+            "so the single LangGraph pipeline with mandatory RAG is always used."
+        ),
+    )
 
 
 @router.get("/analysis-runs/{analysis_run_id}", response_model=AnalysisRunDetailResponse)
@@ -942,6 +934,32 @@ def list_ranked_opportunities(
     )
 
 
+def _read_export_content_for_api(record: Any) -> str | dict[str, Any] | None:
+    """Read generated export content for UI delivery.
+
+    The persisted storage path is relative to PRODUCT_DATA_DIR. Returning the
+    content through the API lets the frontend complete the final delivery flow
+    without shelling out to curl or reading server files directly.
+    """
+    import json
+    import os
+    from pathlib import Path
+
+    if not record.storage_path or record.status != "completed":
+        return None
+    base = Path(os.getenv("PRODUCT_DATA_DIR", "data/product")).resolve()
+    path = (base / record.storage_path).resolve()
+    if not str(path).startswith(str(base)) or not path.exists():
+        return None
+    raw = path.read_text(encoding="utf-8")
+    if record.export_type == "json":
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            return raw
+    return raw
+
+
 @router.post(
     "/analysis-runs/{analysis_run_id}/exports",
     response_model=ExportRead,
@@ -969,6 +987,7 @@ def create_export(
         storage_path=record.storage_path,
         content_hash=record.content_hash,
         error_message=record.error_message,
+        content=_read_export_content_for_api(record),
         created_at=record.created_at,
         updated_at=record.updated_at,
     )
@@ -989,6 +1008,7 @@ def get_export(export_id: str, session: DbSession) -> ExportRead:
         storage_path=record.storage_path,
         content_hash=record.content_hash,
         error_message=record.error_message,
+        content=_read_export_content_for_api(record),
         created_at=record.created_at,
         updated_at=record.updated_at,
     )
@@ -1954,3 +1974,85 @@ def dedup_discovery_candidate(
         duplicate_of_candidate_id=result.get("duplicate_of_candidate_id"),
         duplicate_of_startup_id=result.get("duplicate_of_startup_id"),
     )
+
+
+@router.get("/product/quality-report")
+def get_product_quality_report(session: DbSession) -> dict[str, Any]:
+    """Aggregate latest product quality evidence for the Product UI.
+
+    This keeps the UI bound to a real backend endpoint instead of a dead/mock
+    route. It summarizes the latest persisted quality runs and readiness state.
+    """
+    readiness = ProductReadinessService().get_product_readiness()
+    metrics: dict[str, Any] = {}
+    try:
+        runs = session.query(ProductQualityRun).order_by(ProductQualityRun.created_at.desc()).limit(20).all()
+        for idx, run in enumerate(runs):
+            status_value = str(run.overall_status or run.status or "unknown")
+            metrics[f"quality_run_{idx}"] = {
+                "passed": status_value.upper() in {"PASS", "PASSED", "COMPLETED"},
+                "status": status_value,
+                "analysis_run_id": run.analysis_run_id,
+                "created_at": run.created_at.isoformat() if run.created_at else None,
+            }
+    except Exception as exc:
+        metrics["quality_report_error"] = {"passed": False, "status": "error", "detail": str(exc)}
+    metrics["product_readiness"] = {
+        "passed": bool(readiness.ready),
+        "status": "pass" if readiness.ready else "fail",
+        "capabilities": getattr(readiness, "capabilities", {}),
+    }
+    status_value = "pass" if all(bool(m.get("passed")) for m in metrics.values() if isinstance(m, dict)) else "fail"
+    from src.quality.constants import THRESHOLDS
+
+    return {
+        "status": status_value,
+        "summary": "Aggregated product quality and readiness report",
+        "metrics": metrics,
+        "thresholds": {
+            metric: {
+                "threshold": spec.get("threshold"),
+                "operator": spec.get("operator"),
+                "severity": spec.get("severity"),
+            }
+            for metric, spec in THRESHOLDS.items()
+        },
+        "last_updated": datetime.now(UTC).isoformat(),
+    }
+
+
+@router.get("/radar/dashboard")
+def get_radar_dashboard(
+    session: DbSession,
+    limit: int = Query(default=100, ge=1, le=500),
+) -> dict[str, Any]:
+    """Unified company dashboard backed by runtime artifacts only."""
+    from src.services.product.radar_dashboard_service import RadarDashboardService
+
+    return RadarDashboardService(session).dashboard(limit=limit)
+
+
+@router.post("/radar/dashboard/populate")
+def populate_radar_dashboard(
+    session: DbSession,
+    limit: int = Query(default=50, ge=1, le=200),
+    source_limit: int = Query(default=6, ge=0, le=20),
+    run_pipeline: bool = Query(default=True),
+    force_rerun: bool = Query(default=False),
+) -> dict[str, Any]:
+    """Run the single central discovery-to-recommendation pipeline for the dashboard.
+
+    No static companies or mock recommendations are injected. If a source cannot
+    run because configuration, robots/terms, network, API key, or dependency
+    readiness is missing, the response reports the blocker instead of silently
+    fabricating data.
+    """
+    from src.services.product.radar_dashboard_service import PopulateOptions, RadarDashboardService
+
+    options = PopulateOptions(
+        limit=limit,
+        source_limit=source_limit,
+        run_pipeline=run_pipeline,
+        force_rerun=force_rerun,
+    )
+    return RadarDashboardService(session).populate(options)

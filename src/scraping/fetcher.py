@@ -13,10 +13,14 @@ from typing import Any
 from urllib.parse import urlparse
 
 import httpx
-from fake_useragent import UserAgent
 
 try:
-    _ua = UserAgent(browsers=["chrome", "firefox", "edge"])
+    from fake_useragent import UserAgent
+except ImportError:
+    UserAgent = None  # type: ignore[assignment,misc]
+
+try:
+    _ua = UserAgent(browsers=["chrome", "firefox", "edge"]) if UserAgent is not None else None
 except Exception:
     _ua = None
 

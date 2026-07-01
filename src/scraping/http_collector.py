@@ -21,7 +21,39 @@ from statistics import median
 from typing import Any
 from urllib.parse import urlparse
 
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+try:
+    from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+except ImportError:  # pragma: no cover - lightweight fallback for clean source tests
+    class _RetryPredicate:
+        def __or__(self, other):
+            return self
+
+    def retry(*args, **kwargs):
+        def decorator(fn):
+            def wrapper(*w_args, **w_kwargs):
+                attempts = 1
+                stop_obj = kwargs.get("stop")
+                attempts = getattr(stop_obj, "attempts", attempts)
+                last_exc = None
+                for _ in range(max(1, int(attempts))):
+                    try:
+                        return fn(*w_args, **w_kwargs)
+                    except Exception as exc:
+                        last_exc = exc
+                if last_exc is not None:
+                    raise last_exc
+            return wrapper
+        return decorator
+
+    def retry_if_exception_type(*args, **kwargs):
+        return _RetryPredicate()
+
+    class stop_after_attempt:
+        def __init__(self, attempts):
+            self.attempts = attempts
+
+    def wait_exponential(*args, **kwargs):
+        return None
 
 from pydantic import BaseModel, Field
 
@@ -40,6 +72,8 @@ from src.scraping.rate_limit_policy import get_rate_limit_policy
 from src.scraping.source_registry import SourceRecord, list_production_enabled_sources
 from src.scraping.strategies import resolve_and_call as call_strategy
 
+logger = logging.getLogger(__name__)
+
 # Lazy-import the strategy modules up-front to avoid repeated import side-effects
 try:
     import src.scraping.youtube_collector  # noqa: F401
@@ -49,8 +83,6 @@ try:
     import src.scraping.playwright_collector  # noqa: F401
 except ImportError as exc:
     logger.warning("Strategy module import failed (some collectors disabled): %s", exc)
-
-logger = logging.getLogger(__name__)
 
 _HTTP_COLLECTOR_USER_AGENT = (
     "Mozilla/5.0 (compatible; NVIDIAStartupAIRadar-HttpCollector/0.1; +https://github.com/nvidia/startup-ai-radar)"
@@ -519,8 +551,19 @@ class HttpSourceCollector:
                     error_code="strategy_returned_none",
                     error_message_sanitized=f"Strategy {source.collector_type} returned no result",
                 )
-            full_text = getattr(strategy_result, "full_text", None) or getattr(strategy_result, "text", "")
-            raw = getattr(strategy_result, "raw_html", None) or getattr(strategy_result, "full_text", "") or str(strategy_result)
+            full_text = (
+                getattr(strategy_result, "full_text", None)
+                or getattr(strategy_result, "text", None)
+                or getattr(strategy_result, "markdown", None)
+                or ""
+            )
+            raw = (
+                getattr(strategy_result, "raw_html", None)
+                or getattr(strategy_result, "html", None)
+                or getattr(strategy_result, "markdown", None)
+                or getattr(strategy_result, "full_text", "")
+                or str(strategy_result)
+            )
             content_hash = _compute_content_hash(raw)
             extracted_dedup = full_text if full_text else raw
             is_duplicate = self._dedup_index.is_duplicate(extracted_dedup)

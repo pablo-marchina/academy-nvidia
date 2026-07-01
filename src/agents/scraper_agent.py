@@ -59,6 +59,7 @@ def collect_sources(
             fetched_at = datetime.now(UTC).isoformat()
             item: dict[str, Any] = {
                 "url": url,
+                "source_url": url,
                 "text": "",
                 "source_type": (entry.get("source_type", "unknown") if isinstance(entry, dict) else "unknown"),
                 "reason": (entry.get("reason", "") if isinstance(entry, dict) else ""),
@@ -88,6 +89,7 @@ def collect_governed_sources(
     website_url: str,
     run_id: str | None = None,
     dry_run: bool = False,
+    search_plan: list[dict[str, Any]] | None = None,
 ) -> tuple[list[dict[str, Any]], list[str]]:
     """Collect evidence using HttpSourceCollector governed by Source Registry.
 
@@ -120,21 +122,82 @@ def collect_governed_sources(
 
     effective_run_id = run_id or f"governed-{startup_name}-{datetime.now(UTC).isoformat()}"
 
-    records = list_governed_sources()
-    if not records:
+    from src.scraping.source_registry import SourceRecord
+
+    def _category_for_plan(source_type: str) -> str:
+        return {
+            "official_site": "official_website",
+            "news": "funding_news",
+            "blog": "media",
+            "job_post": "jobs",
+            "founder_profile": "media",
+            "directory": "ecosystem_directory",
+        }.get(source_type, "media")
+
+    governed_records = list_governed_sources()
+    if not governed_records and not search_plan:
         return [], ["No production-enabled sources available"]
 
     populated: list[Any] = []
-    for src in records:
+    seen_urls: set[str] = set()
+    for idx, item in enumerate(search_plan or []):
+        url = str(item.get("url", "")).strip()
+        if not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        source_type = str(item.get("source_type", "media"))
+        populated.append(SourceRecord(
+            source_id=f"planned_source_{idx}",
+            source_name=str(item.get("reason", f"Planned source {idx}")),
+            source_category=_category_for_plan(source_type),
+            base_url=url,
+            robots_required=True,
+            rate_limit_policy_id="default_polite",
+            collector_type="http",
+            parser_type="html",
+            calibrated_priority_score=float(item.get("marginal_utility", item.get("expected_information_gain", 0.5)) or 0.5),
+            priority_calibration_decision_id="source_priority.planned_runtime_expected_information_gain",
+            expected_evidence_types=[source_type],
+            expected_claim_types=["startup_profile", "ai_native_signal", "technical_stack"],
+            source_quality_prior=float(item.get("expected_information_gain", 0.5) or 0.5),
+            production_enabled=True,
+            production_blockers=[],
+            authority_weight=float(item.get("expected_information_gain", 0.5) or 0.5),
+        ))
+
+    # Always add the official website explicitly when a dynamic plan exists; it is the highest-authority per-startup source.
+    if website_url and website_url not in seen_urls and (search_plan or governed_records):
+        populated.insert(0, SourceRecord(
+            source_id="startup_official_website_runtime",
+            source_name=f"{startup_name} official website",
+            source_category="official_website",
+            base_url=website_url,
+            robots_required=True,
+            rate_limit_policy_id="default_polite",
+            collector_type="http",
+            parser_type="html",
+            calibrated_priority_score=0.95,
+            priority_calibration_decision_id="source_priority.official_website_authority",
+            expected_evidence_types=["official_site"],
+            expected_claim_types=["company_description", "product", "ai_signal", "technical_stack"],
+            source_quality_prior=0.95,
+            production_enabled=True,
+            production_blockers=[],
+            authority_weight=0.95,
+        ))
+
+    # Add non-blocked configured governed sources after the adaptive plan.
+    for src in governed_records:
         url = (src.base_url or "").strip()
         if not url and src.source_category == "official_website":
             url = website_url
-        if not url:
+        if not url or url in seen_urls or src.production_blockers:
             continue
+        seen_urls.add(url)
         populated.append(src.model_copy(update={"base_url": url}))
 
     if not populated:
-        return [], ["No collectable sources after URL resolution"]
+        return [], ["No collectable sources after adaptive plan and URL resolution"]
 
     collector = HttpSourceCollector()
     request = CollectionRequest(
@@ -152,8 +215,10 @@ def collect_governed_sources(
         if sfr.status == "fetched" and sfr.raw_html:
             item: dict[str, Any] = {
                 "url": sfr.source_url,
+                "source_url": sfr.source_url,
                 "text": sfr.extracted_text or "",
                 "source_type": sfr.metadata.get("source_category", "unknown"),
+                "source_category": sfr.metadata.get("source_category", "unknown"),
                 "source_id": sfr.source_id,
                 "reason": sfr.metadata.get("source_name", ""),
                 "fetched_at": sfr.fetched_at.isoformat(),
@@ -178,8 +243,10 @@ def collect_governed_sources(
             evidence_items.append(
                 {
                     "url": sfr.source_url,
+                    "source_url": sfr.source_url,
                     "text": sfr.extracted_text or "",
                     "source_type": sfr.metadata.get("source_category", "unknown"),
+                    "source_category": sfr.metadata.get("source_category", "unknown"),
                     "source_id": sfr.source_id,
                     "reason": sfr.metadata.get("source_name", ""),
                     "fetched_at": sfr.fetched_at.isoformat(),

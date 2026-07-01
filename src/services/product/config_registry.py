@@ -180,11 +180,11 @@ _reg(
 )
 _reg(
     key="RERANKER_PROVIDER",
-    description="Reranker provider (none, local_cross_encoder)",
+    description="Reranker provider (triton, local_cross_encoder, cohere; none/mock forbidden in product mode)",
     required=False,
     required_for=["rag_reranking"],
     default="none",
-    example="local_cross_encoder",
+    example="triton",
 )
 _reg(
     key="RERANKER_MODEL",

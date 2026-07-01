@@ -329,11 +329,17 @@ class DiscoveryRepository:
         normalized_name: str,
         website: str,
     ) -> Startup | None:
+        from sqlalchemy import or_
         from src.repositories.product import normalize_startup_name
 
         norm = normalize_startup_name(normalized_name)
-        statement = select(Startup).where((Startup.normalized_name == norm) | (Startup.website == website))
-        statement = statement.limit(1)
+        predicates = [Startup.normalized_name == norm] if norm else []
+        clean_website = str(website or "").strip()
+        if clean_website:
+            predicates.append(Startup.website == clean_website)
+        if not predicates:
+            return None
+        statement = select(Startup).where(or_(*predicates)).limit(1)
         return self.session.scalar(statement)
 
     def create_startup_from_candidate(
@@ -345,7 +351,7 @@ class DiscoveryRepository:
         startup = Startup(
             name=candidate.discovered_name.strip(),
             normalized_name=normalize_startup_name(candidate.discovered_name),
-            website=candidate.website or "https://example.com",
+            website=candidate.website or candidate.source_url or "",
             country=candidate.country or "Brazil",
             sector=candidate.sector or "AI",
             description=candidate.description or "",
@@ -361,7 +367,7 @@ class DiscoveryRepository:
                 startup_id=startup.id,
                 claim=str(ev.get("signal", "Discovered via startup discovery")),
                 source_url=str(ev.get("source_url", candidate.source_url)),
-                source_type="web",
+                source_type=str(ev.get("source_type", candidate.metadata_json.get("source_type", "directory"))),
                 quote_or_evidence=str(ev.get("excerpt", candidate.raw_text_excerpt[:200])),
                 confidence=candidate.confidence,
                 evidence_kind="unverified",

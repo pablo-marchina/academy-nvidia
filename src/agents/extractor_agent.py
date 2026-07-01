@@ -56,7 +56,7 @@ def _build_evidence_item(
     source_type: SourceType,
 ) -> dict[str, Any]:
     text: str = source_candidate.get("text", "")
-    source_url: str = source_candidate.get("source_url", "")
+    source_url: str = source_candidate.get("source_url") or source_candidate.get("url", "")
     source_id: str = source_candidate.get("source_id", "")
     collected_at_raw: str = source_candidate.get("collected_at", "")
 
@@ -256,7 +256,7 @@ def extract_profiles_from_candidates(
 
     for candidate in raw_evidence_candidates:
         text: str = candidate.get("text", "") or ""
-        source_url: str = candidate.get("source_url", "") or ""
+        source_url: str = candidate.get("source_url") or candidate.get("url", "") or ""
 
         if not text.strip():
             empty_count += 1
@@ -270,7 +270,7 @@ def extract_profiles_from_candidates(
             continue
         seen_hashes.add(txt_hash)
 
-        raw_st = candidate.get("source_category", "")
+        raw_st = candidate.get("source_type") or candidate.get("source_category", "")
         source_type: SourceType = SourceType.DIRECTORY
         if isinstance(raw_st, str) and raw_st:
             if raw_st in _SOURCE_TYPE_ALIASES:

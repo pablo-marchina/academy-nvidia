@@ -2,7 +2,7 @@
 
 Validates that ``QdrantRagService`` implements the ``RagService`` protocol,
 blocks production when Qdrant/embedding/corpus/calibrations are not ready,
-and uses only ``semantic_retrieve`` (no ``ChunkIndex`` fallback).
+and uses only ``hybrid_retrieve`` (no ``ChunkIndex`` fallback).
 """
 
 from __future__ import annotations
@@ -131,7 +131,7 @@ def _make_vector_store(entries: list[VectorEntry] | None = None) -> InMemoryVect
     return vs
 
 
-# Decision inventory override: mark all semantic decisions as calibrated
+# Decision inventory override: mark all hybrid decisions as calibrated
 
 
 def _calibrated_semantic_inventory() -> list[DecisionCalibrationRecord]:
@@ -191,9 +191,9 @@ class TestQdrantRagServiceConstruction:
         svc = build_rag_service()
         assert isinstance(svc, QdrantRagService)
 
-    def test_no_chunk_index_in_service(self) -> None:
+    def test_chunk_index_in_service(self) -> None:
         svc = QdrantRagService()
-        assert not hasattr(svc, "_chunk_index")
+        assert hasattr(svc, "_chunk_index")
 
 
 # â”€â”€ Protocol compliance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -293,7 +293,7 @@ class TestQdrantRagServiceBlocking:
         assert "embedding" in str(result["blockers"]).lower()
 
     def test_blocks_when_uncalibrated_rag(self) -> None:
-        """Uncalibrated semantic decisions block production."""
+        """Uncalibrated hybrid decisions block production."""
         emb = MockEmbeddingProvider()
         vs = _make_vector_store()
         svc = QdrantRagService(embedding_model=emb, vector_store=vs)
@@ -315,30 +315,30 @@ class TestQdrantRagServiceBlocking:
         assert result["rag_retrieval_status"] == "blocked_uncalibrated_rag"
         assert result["rag_retrieval_metrics"]["missing_rag_calibration_count"] == 1
 
-    def test_no_fallback_to_chunk_index(self) -> None:
-        """ChunkIndex is never built or used â€” no lexical fallback in prod."""
+    def test_chunk_index_is_part_of_hybrid_path(self) -> None:
+        """ChunkIndex is built and used as the lexical side of hybrid product RAG."""
         emb = MockEmbeddingProvider()
         vs = _make_vector_store()
         svc = QdrantRagService(embedding_model=emb, vector_store=vs)
 
-        assert not hasattr(svc, "_chunk_index")
-        assert "chunk_index" not in dir(svc)
+        assert hasattr(svc, "_chunk_index")
+        assert "_chunk_index" in dir(svc)
 
-    def test_no_hybrid_retrieve(self) -> None:
-        """hybrid_retrieve is not imported or called."""
+    def test_hybrid_retrieve_is_imported_and_called(self) -> None:
+        """hybrid_retrieve is imported by the official product RAG path."""
         import src.rag.rag_service_factory as fact
 
         source = open(fact.__file__ or "", encoding="utf-8").read()
-        assert "from src.rag.hybrid_retrieval" not in source
-        assert "hybrid_retriever" not in source
+        assert "from src.rag.hybrid_retrieval" in source
+        assert "hybrid_retrieve(" in source
 
 
 # â”€â”€ Semantic retrieval path â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
-class TestQdrantRagServiceSemanticRetrieval:
-    def test_semantic_retrieve_called(self) -> None:
-        """semantic_retrieve is invoked for each gap, not ChunkIndex."""
+class TestQdrantRagServiceHybridRetrieval:
+    def test_hybrid_retrieve_called(self) -> None:
+        """hybrid_retrieve is invoked for each gap, not ChunkIndex."""
         emb = MockEmbeddingProvider()
         vs = _make_vector_store()
         svc = QdrantRagService(embedding_model=emb, vector_store=vs)
@@ -358,7 +358,7 @@ class TestQdrantRagServiceSemanticRetrieval:
                 ),
             ),
             patch(
-                "src.rag.rag_service_factory.semantic_retrieve",
+                "src.rag.rag_service_factory.hybrid_retrieve",
                 return_value=[
                     MagicMock(
                         chunk_id="chunk_001",
@@ -537,6 +537,6 @@ class TestRequiredSemanticDecisions:
         assert "rag.citation_precision_threshold" in REQUIRED_SEMANTIC_DECISIONS
         assert "rag.unsupported_claim_rate_threshold" in REQUIRED_SEMANTIC_DECISIONS
 
-    def test_no_hybrid_or_reranker_required(self) -> None:
-        assert "rag.hybrid_retrieval_weights" not in REQUIRED_SEMANTIC_DECISIONS
-        assert "rag.reranker_required" not in REQUIRED_SEMANTIC_DECISIONS
+    def test_hybrid_and_reranker_required(self) -> None:
+        assert "rag.hybrid_retrieval_weights" in REQUIRED_SEMANTIC_DECISIONS
+        assert "rag.reranker_required" in REQUIRED_SEMANTIC_DECISIONS

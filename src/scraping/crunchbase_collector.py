@@ -10,6 +10,11 @@ import httpx
 logger = logging.getLogger(__name__)
 
 
+def _product_mode_disabled() -> bool:
+    import os
+    return os.getenv("APP_MODE", "").casefold() == "product"
+
+
 @dataclass
 class CrunchbaseProfile:
     name: str
@@ -41,6 +46,8 @@ class CrunchbaseCollector:
         return self._collect_by_slug(slug)
 
     def _search_slug(self, company_name: str) -> str | None:
+        if _product_mode_disabled():
+            raise RuntimeError("Crunchbase direct collector is disabled in APP_MODE=product; use governed source registry.")
         search_url = f"{self.BASE_URL}/search/organization.companies"
         try:
             resp = httpx.get(

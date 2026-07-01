@@ -25,9 +25,11 @@ dense:
   decision: EMBEDDING_DECISION_DOCUMENTED (docs/architecture/embedding_model_decision.md)
 
 hybrid:
+  mode: bm25_graphrag_qdrant_triton_rerank
   rrf_k: 60
-  dense_weight: 0.5
-  sparse_weight: 0.5
+  dense_weight: 0.4
+  bm25_weight: 0.35
+  graphrag_weight: 0.25
   top_k: 20
   rrf_k_calibrated: true
   rrf_k_allowed_range: [40, 80]
@@ -54,3 +56,19 @@ context_packing:
   max_per_gap: 3
   dedup: true
   citation_preserving: true
+
+
+graphrag:
+  enabled: true
+  required_for_product: true
+  max_graph_neighbors: 6
+  min_lineage_paths: 1
+  active_runtime_module: src.rag.graphrag_runtime
+
+triton_reranker:
+  enabled: true
+  required_for_product: true
+  provider: nvidia_triton_inference_server
+  endpoint_env: TRITON_RERANKER_URL
+  timeout_seconds_env: TRITON_RERANKER_TIMEOUT_SECONDS
+  active_runtime_module: src.rag.triton_reranker

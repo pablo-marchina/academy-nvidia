@@ -179,7 +179,7 @@ def _create_workflow_run_record(session, analysis_run_id: str, startup_id: str) 
                 "collect_sources",
                 "extract_profile",
                 "validate_evidence",
-                "score_startup",
+                "score_startup_probabilistic",
                 "diagnose_gaps",
                 "retrieve_nvidia_context",
                 "rank_recommendations",

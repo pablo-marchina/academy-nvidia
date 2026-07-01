@@ -28,7 +28,16 @@ class SourceScraper(ABC):
             return []
         time.sleep(1.0 / max(source.rate_limit_hint, 1))
         result = fetch_page(source.base_url)
-        if result.error or not result.raw_html:
+        if result.error:
+            raise RuntimeError(f"fetch_failed: {result.error}")
+        if not result.raw_html:
             return []
+
+        # HTML-aware scrapers need the original markup to retain anchors/URLs.
+        # Regex-only scrapers can still fall back to clean text when no HTML
+        # candidates are extracted.
+        entries = self.extract_entries(result.raw_html, source)
+        if entries:
+            return entries
         text = extract_clean_text(result.raw_html)
         return self.extract_entries(text, source)

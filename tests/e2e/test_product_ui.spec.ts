@@ -70,5 +70,5 @@ test("Product UI can run analysis on a startup", async ({ page }) => {
 
   const startupRow = page.getByRole("row", { name: new RegExp(startupName) });
   await startupRow.getByRole("button", { name: "View" }).click();
-  await expect(page.getByRole("button", { name: /Run Analysis/i }).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: /Run Main Pipeline/i }).first()).toBeVisible({ timeout: 15_000 });
 });

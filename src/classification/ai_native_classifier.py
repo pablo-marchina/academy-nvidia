@@ -14,6 +14,11 @@ class ClassificationResult(BaseModel):
     reasoning: str
     evidence_used: list[Evidence] = Field(default_factory=list)
     missing_evidence: list[str] = Field(default_factory=list)
+    probabilities: dict[str, float] = Field(default_factory=dict)
+    uncertainty: float = 1.0
+    model_version: str = "heuristic-prior-v1"
+    model_available: bool = False
+    classification_features: list[str] = Field(default_factory=list)
 
 
 _CORE_PATTERNS: list[str] = [
@@ -246,6 +251,13 @@ def classify_ai_native(profile: StartupProfile) -> ClassificationResult:
         for s in profile.sources
         if any(kw in s.claim.lower() for kw in ("ai signal", "tech stack", "company description", "funding"))
     ]
+    from src.classification.ai_native_model import predict_ai_native
+
+    prediction = predict_ai_native(
+        profile,
+        heuristic_classification=classification,
+        heuristic_confidence=confidence,
+    )
 
     return ClassificationResult(
         startup_name=profile.startup_name,
@@ -254,4 +266,9 @@ def classify_ai_native(profile: StartupProfile) -> ClassificationResult:
         reasoning=reasoning,
         evidence_used=evidence_used,
         missing_evidence=missing,
+        probabilities=prediction.probabilities,
+        uncertainty=prediction.uncertainty,
+        model_version=prediction.model_version,
+        model_available=prediction.model_available,
+        classification_features=prediction.features_used,
     )

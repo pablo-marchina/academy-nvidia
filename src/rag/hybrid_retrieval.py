@@ -1,4 +1,4 @@
-"""Hybrid retrieval — fuse lexical (ChunkIndex) with semantic (vector store) via RRF."""
+"""Hybrid retrieval — BM25 + dense Qdrant + GraphRAG expansion via RRF."""
 
 from __future__ import annotations
 
@@ -8,6 +8,8 @@ from src.rag.embeddings import EmbeddingProvider
 from src.rag.retrieval import ChunkIndex
 from src.rag.schemas import RetrievalQuery, RetrievedContext
 from src.rag.semantic_retrieval import semantic_retrieve
+from src.rag.sparse_retrieval import SparseRetriever
+from src.rag.graphrag_runtime import graphrag_expand
 from src.rag.vector_store import VectorStore
 
 _RRF_K = 60
@@ -55,7 +57,8 @@ def hybrid_retrieve(
     """
     retrieve_top_k = max(top_k * 2, 5)
 
-    lexical_results = chunk_index.retrieve(query, top_k=retrieve_top_k)
+    bm25_retriever = SparseRetriever(chunk_index)
+    lexical_results = bm25_retriever.retrieve(query, top_k=retrieve_top_k)
 
     semantic_results: list[RetrievedContext] = []
     if vector_store.size > 0:
@@ -71,11 +74,15 @@ def hybrid_retrieve(
             include_expired=include_expired,
         )
 
-    if not semantic_results:
-        filtered = _apply_filters(lexical_results, product, gap_type, source_id)
-        return filtered[:top_k]
+    seed_results = semantic_results or lexical_results
+    graph_results, _graph_metrics = graphrag_expand(
+        seed_contexts=seed_results[:top_k],
+        corpus_contexts=chunk_index.retrieve(query, top_k=max(retrieve_top_k * 3, 15)),
+        query=query,
+        top_k=retrieve_top_k,
+    )
 
-    fused = _rrf_fuse(lexical_results, semantic_results, top_k)
+    fused = _rrf_fuse_many([lexical_results, semantic_results, graph_results], top_k)
     filtered = _apply_filters(fused, product, gap_type, source_id)
     return filtered[:top_k]
 
@@ -85,40 +92,30 @@ def _rrf_fuse(
     semantic: list[RetrievedContext],
     top_k: int,
 ) -> list[RetrievedContext]:
-    """Fuse two ranked lists using Reciprocal Rank Fusion.
+    """Backward-compatible two-list RRF fusion."""
+    return _rrf_fuse_many([lexical, semantic], top_k)
 
-    Parameters
-    ----------
-    lexical:
-        Ranked list from lexical retrieval.
-    semantic:
-        Ranked list from semantic retrieval.
-    top_k:
-        Maximum number of results in the fused list.
 
-    Returns
-    -------
-    list[RetrievedContext]
-        Fused list sorted by descending RRF score.
-    """
+def _rrf_fuse_many(
+    ranked_lists: list[list[RetrievedContext]],
+    top_k: int,
+) -> list[RetrievedContext]:
+    """Fuse BM25, dense Qdrant, and GraphRAG ranked lists using RRF."""
     rrf_scores: dict[str, float] = {}
     contexts: dict[str, RetrievedContext] = {}
 
-    for rank, ctx in enumerate(lexical):
-        rrf_scores[ctx.chunk_id] = rrf_scores.get(ctx.chunk_id, 0.0) + 1.0 / (_RRF_K + rank)
-        if ctx.chunk_id not in contexts:
-            contexts[ctx.chunk_id] = ctx
-
-    for rank, ctx in enumerate(semantic):
-        rrf_scores[ctx.chunk_id] = rrf_scores.get(ctx.chunk_id, 0.0) + 1.0 / (_RRF_K + rank)
-        if ctx.chunk_id not in contexts:
-            contexts[ctx.chunk_id] = ctx
+    for ranked in ranked_lists:
+        for rank, ctx in enumerate(ranked):
+            rrf_scores[ctx.chunk_id] = rrf_scores.get(ctx.chunk_id, 0.0) + 1.0 / (_RRF_K + rank + 1)
+            if ctx.chunk_id not in contexts:
+                contexts[ctx.chunk_id] = ctx
 
     sorted_ids = sorted(rrf_scores, key=lambda cid: rrf_scores[cid], reverse=True)
     fused = [contexts[cid] for cid in sorted_ids[:top_k]]
 
+    max_score = max(rrf_scores.values()) if rrf_scores else 1.0
     for ctx in fused:
-        ctx.relevance_score = round(min(max(rrf_scores.get(ctx.chunk_id, 0.0) / (_RRF_K + 1), 0.0), 1.0), 2)
+        ctx.relevance_score = round(min(max(rrf_scores.get(ctx.chunk_id, 0.0) / max_score, 0.0), 1.0), 4)
 
     return fused
 

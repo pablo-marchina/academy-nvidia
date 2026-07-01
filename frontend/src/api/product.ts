@@ -41,6 +41,8 @@ import type {
   QualityReportRead,
   WorkflowReviewPayload,
   WorkflowReviewDecisionRead,
+  RadarDashboardRead,
+  RadarPopulateResponse,
 } from "./types";
 
 export function getProductReadiness(): Promise<ProductReadinessRead> {
@@ -87,17 +89,15 @@ export function updateStartup(
   });
 }
 
-export function createAnalysisRun(
+export async function runMainProductPipelineForStartup(
   startupId: string,
-  useRag = false,
-): Promise<AnalysisRunRead> {
-  return requestJson<AnalysisRunRead>(
-    `/startups/${startupId}/analysis-runs`,
-    {
-      method: "POST",
-      body: JSON.stringify({ use_rag: useRag }),
-    },
-  );
+): Promise<ProductWorkflowRunRead> {
+  return createWorkflowRun({
+    startup_id: startupId,
+    discovery_candidate_id: null,
+    analysis_run_id: null,
+    use_rag: true,
+  });
 }
 
 export function getAnalysisRun(id: string): Promise<AnalysisRunRead> {
@@ -446,4 +446,27 @@ export function submitWorkflowReview(
 // Quality Report API
 export function getQualityReport(): Promise<QualityReportRead> {
   return requestJson<QualityReportRead>("/product/quality-report");
+}
+
+
+// Unified Radar Dashboard API
+export function getRadarDashboard(limit = 100): Promise<RadarDashboardRead> {
+  return requestJson<RadarDashboardRead>(`/radar/dashboard?limit=${limit}`);
+}
+
+export function populateRadarDashboard(
+  limit = 100,
+  sourceLimit = 8,
+  runPipeline = true,
+  forceRerun = false,
+): Promise<RadarPopulateResponse> {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    source_limit: String(sourceLimit),
+    run_pipeline: String(runPipeline),
+    force_rerun: String(forceRerun),
+  });
+  return requestJson<RadarPopulateResponse>(`/radar/dashboard/populate?${params.toString()}`, {
+    method: "POST",
+  });
 }

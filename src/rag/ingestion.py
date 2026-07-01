@@ -116,6 +116,19 @@ def chunk_document(doc: RagDocument, sources: dict[str, RagSource]) -> list[RagC
                 )
             )
 
+    if not chunks:
+        content = doc.raw_text.strip()
+        if content:
+            chunks.append(
+                _make_chunk(
+                    doc=doc,
+                    source_info=source_info,
+                    index=0,
+                    heading=doc.title,
+                    content=content,
+                )
+            )
+
     return chunks
 
 
@@ -161,8 +174,16 @@ def load_and_chunk_corpus() -> list[RagChunk]:
     all_chunks: list[RagChunk] = []
     if not _CORPUS_DIR.exists():
         return all_chunks
+    active_source_ids = {sid for sid, src in sources.items() if getattr(src, "is_active", True)}
     for md_path in sorted(_CORPUS_DIR.glob("*.md")):
         if md_path.name == "README.md":
+            continue
+        source_id = md_path.stem
+        # Production corpus is allowlist-driven. Test fixtures, stale files or
+        # ad-hoc markdown files cannot enter retrieval unless they are active in
+        # sources.yaml. This prevents accidental recommendation grounding on
+        # fixture content.
+        if source_id not in active_source_ids:
             continue
         doc = load_markdown_document(md_path)
         if doc is None:

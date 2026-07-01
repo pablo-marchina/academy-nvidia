@@ -7,12 +7,14 @@ interface WorkflowViewProps {
   onSelectWorkflowRun: (workflowId: string) => void;
   selectedWorkflowRunId: string | null;
   onSelectStartup: (startupId: string) => void;
+  onViewFinalResult: (workflowId: string) => void;
 }
 
 export function WorkflowView({
   onSelectWorkflowRun,
   selectedWorkflowRunId,
   onSelectStartup,
+  onViewFinalResult,
 }: WorkflowViewProps) {
   const [runs, setRuns] = useState<ProductWorkflowRunRead[]>([]);
   const [selectedRun, setSelectedRun] = useState<ProductWorkflowRunRead | null>(null);
@@ -20,6 +22,8 @@ export function WorkflowView({
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [startupIdInput, setStartupIdInput] = useState("");
+  const [creating, setCreating] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -51,6 +55,28 @@ export function WorkflowView({
     onSelectWorkflowRun(runId);
   }
 
+  async function handleCreateWorkflow() {
+    const startupId = startupIdInput.trim();
+    if (!startupId) {
+      setError("Provide a startup_id to start the single product pipeline.");
+      return;
+    }
+    setCreating(true);
+    setError(null);
+    try {
+      const created = await createWorkflowRun({ startup_id: startupId, use_rag: true });
+      setRuns((prev) => [created, ...prev]);
+      onSelectWorkflowRun(created.id);
+      setSelectedRun(created);
+      onViewFinalResult(created.id);
+      setStartupIdInput("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <div className="workflow-page">
       <div className="panel">
@@ -61,6 +87,21 @@ export function WorkflowView({
           </div>
         </div>
         <div className="panel-body">
+          <div className="form-grid compact-form-grid">
+            <label>
+              <span>Startup ID</span>
+              <input
+                value={startupIdInput}
+                onChange={(e) => setStartupIdInput(e.target.value)}
+                placeholder="startup_id"
+              />
+            </label>
+            <div className="form-actions-inline">
+              <button type="button" className="primary-button" onClick={handleCreateWorkflow} disabled={creating}>
+                {creating ? "Starting..." : "Start Main Pipeline"}
+              </button>
+            </div>
+          </div>
           {loading ? (
             <p className="loading-text">Loading workflow runs...</p>
           ) : error ? (
@@ -77,6 +118,7 @@ export function WorkflowView({
                   <th>Graph Version</th>
                   <th>Startup</th>
                   <th>Started</th>
+                  <th></th>
                   <th></th>
                 </tr>
               </thead>
@@ -106,6 +148,15 @@ export function WorkflowView({
                         onClick={() => handleSelectRun(r.id)}
                       >
                         Details
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="link-button"
+                        onClick={() => onViewFinalResult(r.id)}
+                      >
+                        Final Result
                       </button>
                     </td>
                   </tr>
@@ -161,6 +212,7 @@ export function WorkflowView({
                   {selectedRun.startup_id && (
                     <tr><td className="label-cell">Startup</td><td><button type="button" className="link-button" onClick={() => onSelectStartup(selectedRun.startup_id!)}>View Startup</button></td></tr>
                   )}
+                  <tr><td className="label-cell">Final Product Result</td><td><button type="button" className="secondary-button" onClick={() => onViewFinalResult(selectedRun.id)}>Open Complete Result</button></td></tr>
                 </tbody>
               </table>
             </div>

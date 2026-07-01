@@ -1,10 +1,14 @@
-"""Pipeline orchestrator — coordinates extraction, classification, validation, scoring,
-ranking, gap diagnosis, NVIDIA mapping, and recommendation into a single deterministic flow."""
+"""Legacy offline pipeline shim.
+
+Product runtime MUST use ``POST /workflows/product-runs`` and the LangGraph
+orchestration path.  This module is retained only for historical/offline tests
+and raises in ``APP_MODE=product`` so it cannot become a second runtime path.
+"""
 
 from __future__ import annotations
 
 import logging
-from typing import Any
+import os
 
 from pydantic import BaseModel, Field
 
@@ -20,7 +24,7 @@ from src.diagnosis import (
     diagnose_gaps,
 )
 from src.extraction.extractor import extract_profile
-from src.extraction.schemas import Evidence, StartupProfile
+from src.extraction.schemas import ConfidenceLevel, Evidence, StartupProfile
 from src.sourcing.evidence_manager import EvidenceManager
 from src.rag.embeddings import EmbeddingProvider
 from src.rag.rag_pipeline import run_rag_pipeline
@@ -33,17 +37,191 @@ from src.validation.evidence_validator import (
     validate_evidence_batch,
 )
 
-# Runtime aliases — scoring determinístico removido em Fase 2
-CompositeResult = Any
-RankedStartup = Any
-DefensibilityScoreResult = Any
-InceptionFitScoreResult = Any
-ProductionReadinessResult = Any
-build_ranked_list = lambda *a, **kw: []
-compute_composite_score = lambda *a, **kw: type("obj", (), {"composite_score": 0, "confidence": lambda: 0, "reasoning": ""})()
-compute_defensibility_score = lambda *a, **kw: type("obj", (), {"total_score": 0, "confidence": lambda: 0})()
-compute_inception_fit_score = lambda *a, **kw: type("obj", (), {"total_score": 0, "confidence": lambda: 0})()
-compute_production_readiness = lambda *a, **kw: type("obj", (), {"production_readiness_score": 0, "confidence": lambda: 0})()
+class DefensibilityScoreResult(BaseModel):
+    total_score: float
+    confidence: ConfidenceLevel
+    evidence_used: list[ValidatedEvidence] = Field(default_factory=list)
+    missing_evidence: list[str] = Field(default_factory=list)
+
+
+class InceptionFitScoreResult(BaseModel):
+    total_score: float
+    confidence: ConfidenceLevel
+    evidence_used: list[ValidatedEvidence] = Field(default_factory=list)
+    missing_evidence: list[str] = Field(default_factory=list)
+
+
+class ScoreComponent(BaseModel):
+    adjusted_score: float
+    evidence_count: int = 0
+
+
+class ProductionReadinessResult(BaseModel):
+    production_readiness_score: float
+    confidence: ConfidenceLevel
+    score_breakdown: dict[str, ScoreComponent] = Field(default_factory=dict)
+    evidence_used: list[ValidatedEvidence] = Field(default_factory=list)
+    missing_evidence: list[str] = Field(default_factory=list)
+
+
+class CompositeResult(BaseModel):
+    startup_id: str
+    composite_score: float
+    confidence: ConfidenceLevel
+    reasoning: str
+    missing_components: list[str] = Field(default_factory=list)
+
+
+class RankedStartup(BaseModel):
+    startup_id: str
+    startup_name: str
+    sector: str
+    composite_score: float
+    confidence: ConfidenceLevel
+    motion: str
+
+
+def compute_defensibility_score(
+    profile: StartupProfile,
+    classification: ClassificationResult,
+    evidence: list[ValidatedEvidence],
+) -> DefensibilityScoreResult:
+    evidence_score = min(40.0, len(evidence) * 8.0)
+    ai_signal_score = min(30.0, len(profile.ai_signals) * 5.0)
+    confidence_score = float(profile.confidence_score or 0.0) * 30.0
+    total = round(min(100.0, evidence_score + ai_signal_score + confidence_score), 2)
+    return DefensibilityScoreResult(
+        total_score=total,
+        confidence=_confidence_from_score(total, classification.confidence),
+        evidence_used=list(evidence),
+        missing_evidence=[] if evidence else ["validated_public_evidence"],
+    )
+
+
+def compute_inception_fit_score(
+    profile: StartupProfile,
+    classification: ClassificationResult,
+    defensibility_score: float,
+    evidence: list[ValidatedEvidence],
+) -> InceptionFitScoreResult:
+    tech_score = min(35.0, len(profile.tech_stack_signals) * 7.0)
+    ai_score = min(35.0, len(profile.ai_signals) * 5.0)
+    total = round(min(100.0, tech_score + ai_score + defensibility_score * 0.3), 2)
+    return InceptionFitScoreResult(
+        total_score=total,
+        confidence=_confidence_from_score(total, classification.confidence),
+        evidence_used=list(evidence),
+        missing_evidence=[] if profile.tech_stack_signals else ["technical_stack_evidence"],
+    )
+
+
+def compute_production_readiness(
+    profile: StartupProfile,
+    classification: ClassificationResult,
+    evidence: list[ValidatedEvidence],
+) -> ProductionReadinessResult:
+    production_terms = ("api", "deploy", "production", "security", "monitor", "cloud", "latency", "scale")
+    text = f"{profile.description} {profile.product_summary} {' '.join(profile.tech_stack_signals)}".lower()
+    production_score = min(50.0, sum(1 for term in production_terms if term in text) * 8.0)
+    evidence_score = min(30.0, len(evidence) * 6.0)
+    confidence_score = float(profile.confidence_score or 0.0) * 20.0
+    total = round(min(100.0, production_score + evidence_score + confidence_score), 2)
+    return ProductionReadinessResult(
+        production_readiness_score=total,
+        confidence=_confidence_from_score(total, classification.confidence),
+        score_breakdown={
+            "scale_and_inference": ScoreComponent(
+                adjusted_score=round(production_score + evidence_score * 0.5, 2),
+                evidence_count=len(evidence),
+            ),
+            "operations": ScoreComponent(
+                adjusted_score=round(confidence_score + evidence_score * 0.5, 2),
+                evidence_count=len(evidence),
+            ),
+        },
+        evidence_used=list(evidence),
+        missing_evidence=[] if production_score > 0 else ["production_readiness_evidence"],
+    )
+
+
+def compute_composite_score(
+    *,
+    startup_id: str,
+    defensibility: DefensibilityScoreResult,
+    inception_fit: InceptionFitScoreResult,
+    production_readiness: ProductionReadinessResult,
+    classification_result: ClassificationResult,
+) -> CompositeResult:
+    total = round(
+        defensibility.total_score * 0.35
+        + inception_fit.total_score * 0.35
+        + production_readiness.production_readiness_score * 0.30,
+        2,
+    )
+    return CompositeResult(
+        startup_id=startup_id,
+        composite_score=total,
+        confidence=_confidence_from_score(total, classification_result.confidence),
+        reasoning=(
+            f"defensibility={defensibility.total_score}; "
+            f"inception_fit={inception_fit.total_score}; "
+            f"production_readiness={production_readiness.production_readiness_score}"
+        ),
+        missing_components=[
+            component
+            for component, missing in {
+                "defensibility": defensibility.missing_evidence,
+                "inception_fit": inception_fit.missing_evidence,
+                "production_readiness": production_readiness.missing_evidence,
+            }.items()
+            if missing
+        ],
+    )
+
+
+def build_ranked_list(
+    scores: list[CompositeResult],
+    names: dict[str, tuple[str, str]],
+    classifications: dict[str, ClassificationResult],
+) -> list[RankedStartup]:
+    ranked: list[RankedStartup] = []
+    for score in scores:
+        startup_name, sector = names.get(score.startup_id, (score.startup_id, ""))
+        classification = classifications.get(score.startup_id)
+        motion = _motion_from_score(score.composite_score, score.confidence)
+        if classification and classification.classification.value == "non_ai":
+            motion = "not_recommended"
+        ranked.append(
+            RankedStartup(
+                startup_id=score.startup_id,
+                startup_name=startup_name,
+                sector=sector,
+                composite_score=score.composite_score,
+                confidence=score.confidence,
+                motion=motion,
+            )
+        )
+    return sorted(ranked, key=lambda item: item.composite_score, reverse=True)
+
+
+def _confidence_from_score(score: float, fallback: ConfidenceLevel) -> ConfidenceLevel:
+    if score >= 70:
+        return ConfidenceLevel.HIGH
+    if score >= 40:
+        return ConfidenceLevel.MEDIUM
+    return fallback if fallback == ConfidenceLevel.LOW else ConfidenceLevel.LOW
+
+
+def _motion_from_score(score: float, confidence: ConfidenceLevel) -> str:
+    if confidence == ConfidenceLevel.LOW:
+        return "lack_evidence_more_research"
+    if score >= 75:
+        return "immediate_outreach"
+    if score >= 55:
+        return "high_priority_outreach"
+    if score >= 35:
+        return "monitor_and_nurture"
+    return "not_recommended"
 
 
 class PipelineResult(BaseModel):
@@ -66,6 +244,14 @@ class PipelineResult(BaseModel):
     rag_output: RagPipelineOutput | None = None
 
 
+def _ensure_not_product_runtime() -> None:
+    if os.getenv("APP_MODE", "").casefold() == "product":
+        raise RuntimeError(
+            "src.pipeline.run_pipeline is legacy/offline only. "
+            "Use WorkflowOrchestrationService / POST /workflows/product-runs."
+        )
+
+
 def run_full_pipeline(
     startup_name: str,
     raw_text: str | None = None,
@@ -78,7 +264,7 @@ def run_full_pipeline(
     reranking_config: RerankingConfig | None = None,
     packing_config: PackingConfig | None = None,
 ) -> PipelineResult:
-    """Execute the full Startup AI Radar pipeline.
+    """Execute the legacy offline Startup AI Radar pipeline.
 
     Pipeline order:
       1. Extraction (if raw_text is provided)
@@ -91,7 +277,7 @@ def run_full_pipeline(
       8. Gap Diagnosis
       9. NVIDIA Technology Mapping
      10. Product RAG (hybrid retrieval, reranking, context packing)
-     11. Deterministic Recommendation Engine (blocked if RAG context missing)
+     11. Legacy recommendation formatter (blocked in APP_MODE=product)
 
     Parameters
     ----------
@@ -124,6 +310,8 @@ def run_full_pipeline(
         All intermediate and final outputs including gaps, recommendations,
         and RAG output.
     """
+    _ensure_not_product_runtime()
+
     # Step 1: Extraction
     if profile is None:
         if raw_text is None:
@@ -213,7 +401,7 @@ def run_full_pipeline(
         packing_config=packing_config,
     )
 
-    # Step 11: Deterministic Recommendation Engine (requires RAG context)
+    # Step 11: Legacy recommendation formatter (requires RAG context)
     recommendation = build_recommendations(
         startup_name=startup_name,
         profile=profile,

@@ -176,10 +176,9 @@ def load_source_registry(
             src.production_blockers = blockers
             if len(blockers) == 0:
                 src.production_enabled = True
-            elif src.production_enabled:
-                # Respect explicit production_enabled=true from YAML,
-                # but record blockers for diagnostics.
-                pass
+            else:
+                # Product mode must not silently collect from sources with known blockers.
+                src.production_enabled = False
 
         _SOURCE_REGISTRY = records
     return _SOURCE_REGISTRY

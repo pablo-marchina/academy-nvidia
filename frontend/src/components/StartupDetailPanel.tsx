@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import type { StartupRead } from "../api/types";
-import { getStartup, updateStartup, createAnalysisRun } from "../api/product";
+import { getStartup, updateStartup, runMainProductPipelineForStartup } from "../api/product";
 
 interface StartupDetailPanelProps {
   startupId: string;
   onBack: () => void;
   onRunCreated: (runId: string) => void;
+  onPipelineCreated?: (workflowId: string, analysisRunId: string | null) => void;
 }
 
 export function StartupDetailPanel({
   startupId,
   onBack,
   onRunCreated,
+  onPipelineCreated,
 }: StartupDetailPanelProps) {
   const [startup, setStartup] = useState<StartupRead | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,8 +76,15 @@ export function StartupDetailPanel({
     setRunning(true);
     setRunError(null);
     try {
-      const run = await createAnalysisRun(startupId);
-      onRunCreated(run.id);
+      const workflow = await runMainProductPipelineForStartup(startupId);
+      if (!workflow.analysis_run_id) {
+        throw new Error("Main product pipeline did not return an analysis_run_id.");
+      }
+      if (onPipelineCreated) {
+        onPipelineCreated(workflow.id, workflow.analysis_run_id);
+      } else {
+        onRunCreated(workflow.analysis_run_id);
+      }
     } catch (err) {
       setRunError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -160,7 +169,7 @@ export function StartupDetailPanel({
             onClick={handleRunAnalysis}
             disabled={running}
           >
-            {running ? "Running Analysis..." : "Run Analysis"}
+            {running ? "Running Main Pipeline..." : "Run Main Pipeline"}
           </button>
         </div>
       </div>

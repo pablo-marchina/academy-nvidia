@@ -64,11 +64,8 @@ class ContextualCompression:
         for ctx in contexts:
             if len(ctx.content) <= self.config.min_content_length:
                 continue
-
-                compressed = self._compress(ctx.content)
-
-                ctx.content = compressed
-
+            compressed = self._compress(ctx.content)
+            ctx.content = compressed
         return contexts
 
     def _compress(self, content: str) -> str:

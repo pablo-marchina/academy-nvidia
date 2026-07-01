@@ -24,7 +24,28 @@ from datetime import timedelta
 from typing import Any
 from urllib.parse import urlparse
 
-import diskcache
+try:
+    import diskcache
+except ImportError:  # pragma: no cover - fallback for minimal clean environments
+    class _MemoryCache:
+        def __init__(self, *args, **kwargs):
+            self._data = {}
+        def get(self, key):
+            return self._data.get(key)
+        def set(self, key, value, expire=None):
+            self._data[key] = value
+        def delete(self, key):
+            self._data.pop(key, None)
+        def clear(self):
+            self._data.clear()
+        def volume(self):
+            return sum(len(str(v)) for v in self._data.values())
+        def close(self):
+            pass
+        def __len__(self):
+            return len(self._data)
+    class diskcache:  # type: ignore[no-redef]
+        Cache = _MemoryCache
 
 from src.scraping.rate_limit_policy import list_policies_requiring_api_key
 

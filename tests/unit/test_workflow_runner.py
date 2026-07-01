@@ -34,9 +34,11 @@ def test_workflow_nodes_are_registered() -> None:
         "collect_sources",
         "extract_profile",
         "validate_evidence",
-        "score_startup",
+        "score_startup_probabilistic",
         "diagnose_gaps",
         "retrieve_nvidia_context",
+        "enhance_contexts_with_techniques",
+        "rank_with_expected_utility",
         "map_nvidia_technologies",
         "rank_recommendations",
         "generate_brief",
@@ -48,10 +50,11 @@ def test_workflow_nodes_are_registered() -> None:
         "summarize_readiness",
         "needs_review",
         "apply_feedback_weights",
+        "write_decision_ledger",
     }
     node_names = {n.name for n in WORKFLOW_NODES}
     assert node_names == expected, f"Missing: {expected - node_names}, Extra: {node_names - expected}"
-    assert len(WORKFLOW_NODES) == 19
+    assert len(WORKFLOW_NODES) == 22
 
 
 def test_workflow_nodes_have_required_fields() -> None:
@@ -365,6 +368,7 @@ class TestRunnerInterruptResume:
                 "src.services.product.readiness_service.ProductReadinessService.get_product_readiness",
                 return_value=ready_report,
             ),
+            patch("src.orchestration.runner._build_checkpointer", return_value=object()),
             patch("src.orchestration.runner.build_workflow_graph", self._patched_interrupt_graph),
         ):
             result_state = runner.run_workflow(state)
@@ -404,6 +408,7 @@ class TestRunnerInterruptResume:
                 "src.services.product.readiness_service.ProductReadinessService.get_product_readiness",
                 return_value=ready_report,
             ),
+            patch("src.orchestration.runner._build_checkpointer", return_value=object()),
             patch("src.orchestration.runner.build_workflow_graph", self._patched_interrupt_graph),
         ):
             result_state = runner.run_workflow(state)
@@ -418,7 +423,15 @@ class TestRunnerInterruptResume:
         state_data["current_node"] = wf_run.current_node
         resume_state = ProductWorkflowState(**state_data)
 
-        with (patch("src.orchestration.runner.build_workflow_graph", self._patched_build_graph),):
+        class _Command:
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+
+        with (
+            patch("src.orchestration.runner._LANGGRAPH_COMMAND_AVAILABLE", True),
+            patch("src.orchestration.runner.Command", _Command),
+            patch("src.orchestration.runner.build_workflow_graph", self._patched_build_graph),
+        ):
             result2 = runner.resume_workflow(resume_state, decision="approve")
 
         assert result2.status in (
@@ -435,6 +448,7 @@ class TestRunnerInterruptResume:
         assert wf_run2.status == "completed", f"DB status should be completed, got {wf_run2.status}"
 
     def test_resume_without_cached_checkpointer_raises(self, runner: WorkflowRunner, session) -> None:
+        from unittest.mock import patch
 
         from src.orchestration.runner import _CHECKPOINTER_CACHE
 
@@ -451,5 +465,8 @@ class TestRunnerInterruptResume:
                 "_langgraph_thread_id": "nonexistent-thread",
             },
         )
-        with pytest.raises(RuntimeError, match="no cached checkpointer"):
+        with (
+            patch("src.orchestration.runner._build_checkpointer", return_value=None),
+            pytest.raises(RuntimeError, match="no cached or persistent checkpointer"),
+        ):
             runner.resume_workflow(state, decision="approve")

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -11,7 +10,7 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.review_free_external_candidates import DEFAULT_REGISTRY_PATH, ELIGIBLE_STATUSES
+from scripts.review_free_external_candidates import DEFAULT_REGISTRY_PATH, ELIGIBLE_STATUSES, _load_registry
 from src.governance.artifacts import DEFAULT_EVIDENCE_DIR, read_csv, write_json
 
 
@@ -40,11 +39,11 @@ def main() -> int:
 
 
 def build_verification_report(registry_path: Path, catalog_path: Path) -> dict[str, Any]:
-    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    rows = read_csv(catalog_path)
+    registry = _load_registry(registry_path, rows)
     registry_entries = registry.get("entries", [])
     if not isinstance(registry_entries, list):
         raise ValueError("Registry entries must be a list.")
-    rows = read_csv(catalog_path)
     external_rows = [row for row in rows if row.get("status") == "FUTURE_RESEARCH"]
     categories_by_name: dict[str, set[str]] = {}
     for row in external_rows:

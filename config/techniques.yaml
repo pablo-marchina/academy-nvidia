@@ -1,11 +1,11 @@
 # Hybrid technique groups for the RAG enhancement pipeline.
-# Groups run in dependency order; techniques within a group run in parallel.
+# Groups run in dependency order; techniques within a group run in deterministic dependency order.
 
 mode: hybrid
 
 groups:
   - name: retrieval
-    parallel: true
+    parallel: false
     depends_on: []
     techniques:
       - name: adaptive_rag
@@ -16,11 +16,15 @@ groups:
         enabled: true
       - name: fusion_retrieval
         enabled: true
+      - name: bm25
+        enabled: true
+      - name: graphrag_runtime
+        enabled: true
       - name: query_intent
         enabled: true
 
   - name: reranking
-    parallel: true
+    parallel: false
     depends_on: [retrieval]
     techniques:
       - name: colbert_reranking
@@ -35,9 +39,11 @@ groups:
         enabled: true
       - name: pointwise_reranking
         enabled: true
+      - name: triton_reranker
+        enabled: true
 
   - name: post_processing
-    parallel: true
+    parallel: false
     depends_on: [reranking]
     techniques:
       - name: self_rag

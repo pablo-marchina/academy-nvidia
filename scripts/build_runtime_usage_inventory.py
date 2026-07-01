@@ -18,14 +18,10 @@ def build_inventory(src_root: Path = PROJECT_ROOT / "src") -> list[dict[str, str
         module = _module_name(path)
         imported_by = sorted(imports.get(module, set()))
         if imported_by:
-            kind = "runtime_or_support"
+            kind = "runtime_active"
             decision = "keep"
-        elif "\\rag\\" in str(path) or "/rag/" in str(path) or "\\governance\\" in str(path):
-            kind = "generated_catalog_or_unwired"
-            decision = "review_or_move_to_docs"
         else:
-            kind = "unclassified"
-            decision = "review"
+            kind, decision = _classify_unimported(path)
         rows.append(
             {
                 "path": str(path.relative_to(PROJECT_ROOT)).replace("\\", "/"),
@@ -40,6 +36,41 @@ def build_inventory(src_root: Path = PROJECT_ROOT / "src") -> list[dict[str, str
             }
         )
     return rows
+
+
+def _classify_unimported(path: Path) -> tuple[str, str]:
+    rel = path.relative_to(PROJECT_ROOT)
+    rel_parts = rel.parts
+    rel_str = str(rel).replace("\\", "/")
+    filename = path.name
+
+    if filename == "__init__.py":
+        return "runtime_support", "keep_package_marker"
+    if rel_str in {"src/main.py", "src/interface/app.py"} or rel_parts[1:2] == ("api",):
+        return "runtime_active", "keep_entrypoint"
+    if rel_parts[1:2] in {
+        ("agents",),
+        ("services",),
+        ("orchestration",),
+        ("repositories",),
+        ("database",),
+        ("config",),
+        ("validation",),
+        ("security",),
+        ("observability",),
+    }:
+        return "runtime_support", "keep_support_module"
+    if rel_parts[1:2] in {("evaluation",), ("quality",), ("quantitative",)}:
+        return "governance_only", "keep_for_eval_or_calibration"
+    if rel_parts[1:2] in {("rag",), ("governance",)}:
+        return "governance_only", "keep_catalog_or_benchmark"
+    if rel_parts[1:2] in {("discovery",), ("scraping",), ("sourcing")}:
+        return "candidate_only", "keep_for_source_expansion_or_benchmark"
+    if rel_parts[1:2] in {("pipeline",), ("playbook",)}:
+        return "runtime_support", "keep_compatibility_or_domain_support"
+    if rel_parts[1:2] in {("briefing",), ("classification",), ("decisioning",), ("diagnosis",), ("extraction",), ("recommendation")}:
+        return "runtime_support", "keep_domain_support"
+    return "candidate_only", "review_before_release"
 
 
 def _collect_imports(src_root: Path) -> dict[str, set[str]]:

@@ -7,10 +7,14 @@ and setup checklist.
 
 from __future__ import annotations
 
+import importlib.util
+import json
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
+import yaml
 from sqlalchemy.engine import make_url
 
 from src.services.product.capability_registry import (
@@ -351,6 +355,47 @@ def _add_product_mode_blockers(
             setup="Install [agent-orchestration] and set AGENT_ORCHESTRATION_ENABLED=true.",
         )
 
+    if os.environ.get("LANGGRAPH_CHECKPOINTER", "").casefold() != "postgres":
+        _append_blocker(
+            blocking,
+            messages,
+            capability_id="agent_orchestration",
+            name="LangGraph Checkpointer",
+            reason="APP_MODE=product requires LANGGRAPH_CHECKPOINTER=postgres.",
+            setup="Set LANGGRAPH_CHECKPOINTER=postgres and configure PRODUCT_DB_URL as PostgreSQL.",
+        )
+    elif not _langgraph_postgres_checkpointer_available():
+        _append_blocker(
+            blocking,
+            messages,
+            capability_id="agent_orchestration",
+            name="LangGraph Checkpointer",
+            reason="langgraph-checkpoint-postgres and psycopg must be importable.",
+            setup="Install with `pip install -e .[agent-orchestration,postgres]`.",
+        )
+
+    decisioning_errors = _validate_decisioning_config(Path("config/decisioning.yaml"))
+    for error in decisioning_errors:
+        _append_blocker(
+            blocking,
+            messages,
+            capability_id="decisioning_config",
+            name="Quantitative Decisioning Config",
+            reason=error,
+            setup="Create config/decisioning.yaml with priors, thresholds, exploration, feedback, and runtime_gates.",
+        )
+
+    model_errors = _validate_ai_native_model(Path("models/ai_native_classifier/model.json"))
+    for error in model_errors:
+        _append_blocker(
+            blocking,
+            messages,
+            capability_id="ai_native_classifier",
+            name="AI-native Classifier",
+            reason=error,
+            setup="Run scripts/train_ai_native_classifier.py and commit models/ai_native_classifier/model.json.",
+        )
+
 
 def _append_blocker(
     blocking: list[dict[str, Any]],
@@ -371,6 +416,61 @@ def _append_blocker(
     if entry not in blocking:
         blocking.append(entry)
     messages.append(f"Required capability '{name}' is not production-ready: {reason}")
+
+
+def _langgraph_postgres_checkpointer_available() -> bool:
+    return (
+        importlib.util.find_spec("langgraph.checkpoint.postgres") is not None
+        and importlib.util.find_spec("psycopg") is not None
+    )
+
+
+def _validate_decisioning_config(path: Path) -> list[str]:
+    if not path.exists():
+        return ["config/decisioning.yaml is missing."]
+    try:
+        payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        return [f"config/decisioning.yaml is not readable YAML: {exc}"]
+    if not isinstance(payload, dict):
+        return ["config/decisioning.yaml must contain a mapping."]
+    errors: list[str] = []
+    for section in ("priors", "thresholds", "exploration", "feedback", "runtime_gates"):
+        if not isinstance(payload.get(section), dict) or not payload.get(section):
+            errors.append(f"config/decisioning.yaml missing required section: {section}.")
+    gates = payload.get("runtime_gates", {}) if isinstance(payload.get("runtime_gates"), dict) else {}
+    required_true_gates = (
+        "require_decision_ledger",
+        "require_probabilities",
+        "require_uncertainty",
+        "require_alternatives_considered",
+        "require_rag_for_nvidia_recommendations",
+    )
+    for gate in required_true_gates:
+        if gates.get(gate) is not True:
+            errors.append(f"config/decisioning.yaml runtime_gates.{gate} must be true in product.")
+    strategy = payload.get("exploration", {}).get("strategy") if isinstance(payload.get("exploration"), dict) else ""
+    if not strategy:
+        errors.append("config/decisioning.yaml exploration.strategy is required.")
+    return errors
+
+
+def _validate_ai_native_model(path: Path) -> list[str]:
+    if not path.exists():
+        return ["models/ai_native_classifier/model.json is missing."]
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return [f"models/ai_native_classifier/model.json is not readable JSON: {exc}"]
+    errors: list[str] = []
+    if not payload.get("model_version"):
+        errors.append("AI-native classifier model_version is missing.")
+    if int(payload.get("record_count", 0)) < 30:
+        errors.append("AI-native classifier requires at least 30 labeled training records for product readiness.")
+    class_counts = payload.get("class_counts", {})
+    if not isinstance(class_counts, dict) or len(class_counts) < 2:
+        errors.append("AI-native classifier must include class_counts for at least two classes.")
+    return errors
 
 
 def _compute_status(

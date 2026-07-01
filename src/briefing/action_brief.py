@@ -111,10 +111,19 @@ def build_action_brief(
     cs = result.composite_score
     confidence = cs.confidence if cs else ConfidenceLevel.LOW
 
-    verdict = _determine_verdict(confidence, motion, has_approach, total_gaps, evidence_count)
-
     evidence_items = _build_evidence_items(result)
     uncertainties = _build_uncertainties(result)
+    missing_evidence_items = list(result.missing_evidence)
+    if confidence == ConfidenceLevel.LOW and not missing_evidence_items:
+        missing_evidence_items = [
+            "validated_public_evidence",
+            "technical_stack_evidence",
+            "production_readiness_evidence",
+        ]
+    if motion == "monitor_and_nurture" and (missing_evidence_items or uncertainties or total_gaps > 0):
+        motion = "lack_evidence_more_research"
+
+    verdict = _determine_verdict(confidence, motion, has_approach, total_gaps, evidence_count)
 
     gap_lines: list[str] = []
     if result.gap_diagnosis:
@@ -281,11 +290,11 @@ def build_action_brief(
         if ctx_lines:
             sections.append(_build_section("Supporting NVIDIA Context", ctx_lines))
 
-    if result.missing_evidence:
+    if missing_evidence_items:
         sections.append(
             _build_section(
                 "Missing Evidence",
-                [f"- {m}" for m in result.missing_evidence],
+                [f"- {m}" for m in missing_evidence_items],
             )
         )
 
@@ -337,7 +346,7 @@ def build_action_brief(
         nvidia_technology_candidates=tech_cands,
         recommendations=rec_dicts,
         evidence_used=evidence_items,
-        missing_evidence=list(result.missing_evidence),
+        missing_evidence=missing_evidence_items,
         uncertainties=uncertainties,
         next_action_for_nvidia_team=next_action,
         reasoning=result.reasoning,

@@ -45,7 +45,7 @@ class ProductWorkflowState(BaseModel):
     dossier_id: str | None = None
     quality_run_id: str | None = None
     readiness_check_ids: list[str] = []
-    search_plan: list[dict[str, str]] = []
+    search_plan: list[dict[str, Any]] = []
     raw_evidence: list[dict[str, Any]] = []
     evidence_items: list[dict[str, Any]] = []
     startup_profile: dict[str, Any] = {}
@@ -64,6 +64,7 @@ class ProductWorkflowState(BaseModel):
     review_decision: str = ""
     feedback_counts: dict[str, dict[str, int]] = {}
     adjusted_weights: dict[str, float] = {}
+    feedback_adjustments: dict[str, Any] = {}
     iteration_count: int = 0
     max_iterations: int = 3
     technique_results: list[dict[str, Any]] = []

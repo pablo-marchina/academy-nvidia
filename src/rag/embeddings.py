@@ -9,6 +9,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from typing import Any
+import os
 
 # Backward-compatible import for tests that still import MockEmbeddingProvider
 # from this module. New code should import from tests.helpers.mock_embeddings.
@@ -47,7 +48,8 @@ class SentenceTransformerProvider(EmbeddingProvider):
     Default model is ``BAAI/bge-m3`` (1024 dimensions, multilingual).
     """
 
-    def __init__(self, model_name: str = "BAAI/bge-m3") -> None:
+    def __init__(self, model_name: str | None = None) -> None:
+        model_name = model_name or os.getenv("RAG_EMBEDDING_MODEL", "BAAI/bge-m3")
         try:
             import sentence_transformers as st
         except ImportError as err:

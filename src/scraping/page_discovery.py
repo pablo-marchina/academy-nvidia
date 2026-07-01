@@ -95,6 +95,9 @@ def _try_sitemap(base_url: str, http_client: Any | None = None) -> list[str]:
             if http_client is not None:
                 resp = http_client(sm_url)
             else:
+                import os
+                if os.getenv("APP_MODE", "").casefold() == "product":
+                    raise RuntimeError("Direct sitemap discovery is disabled in APP_MODE=product; inject governed http_client.")
                 import httpx
                 resp = httpx.get(sm_url, timeout=10, follow_redirects=True)
             status = resp.status_code if hasattr(resp, "status_code") else getattr(resp, "status", 0)

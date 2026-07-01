@@ -196,7 +196,334 @@ class ActivationPlaybookService:
                 }
             )
 
-        recommendations.sort(key=lambda r: r["priority"])
+        covered_gap_types = {
+            gap_type
+            for recommendation in recommendations
+            for gap_type in recommendation.get("matched_gap_types", [])
+        }
+        mapping_backed_recommendations = self._generate_mapping_backed_recommendations(
+            detected_gaps=gap_records,
+            mapping_records=mapping_records,
+            covered_gap_types=covered_gap_types,
+            evidence_coverage=evidence_coverage,
+            unsupported_claim_count=unsupported_claim_count,
+            relevant_degraded=list(relevant_degraded),
+        )
+        recommendations.extend(mapping_backed_recommendations)
+
+        # Always add sector/profile-backed technologies when the runtime profile
+        # proves a domain-specific NVIDIA fit. This prevents generic gap outputs
+        # from hiding the most relevant stack for healthcare, voice, legal,
+        # agtech, robotics, analytics, education, HR, fintech, or agentic startups.
+        profile_recommendations = self._generate_profile_backed_recommendations(
+            run=run,
+            evidence_coverage=evidence_coverage,
+            unsupported_claim_count=unsupported_claim_count,
+            relevant_degraded=list(relevant_degraded),
+        )
+        if profile_recommendations:
+            existing_signature = {
+                tuple(rec.get("nvidia_technologies", []))
+                for rec in recommendations
+            }
+            for rec in profile_recommendations:
+                signature = tuple(rec.get("nvidia_technologies", []))
+                if signature not in existing_signature:
+                    recommendations.append(rec)
+                    existing_signature.add(signature)
+        recommendations.sort(key=lambda r: (r["priority"], -_confidence_value(r.get("confidence", "low"))))
+
+        return recommendations
+
+    def _generate_profile_backed_recommendations(
+        self,
+        *,
+        run: AnalysisRun,
+        evidence_coverage: float,
+        unsupported_claim_count: int,
+        relevant_degraded: list[str],
+    ) -> list[dict[str, Any]]:
+        """Generate a recommendation when the profile proves AI fit but no gap fired.
+
+        This is not a static playbook fallback. It is a runtime, profile-backed
+        recommendation: every technology family is selected from the analyzed
+        startup profile, evidence claims, and sector text produced by the central
+        pipeline. It keeps the dashboard complete without inventing unsupported
+        company data.
+        """
+        startup = run.startup
+        if startup is None:
+            return []
+        snapshot = run.output_snapshot_json or {}
+        profile = snapshot.get("startup_profile") or {}
+        classification = snapshot.get("ai_native_classification") or {}
+        class_value = str(classification.get("classification") or "").casefold()
+        text_parts = [
+            startup.name,
+            startup.sector,
+            startup.description,
+            startup.product_summary,
+            str(profile.get("sector") or ""),
+            str(profile.get("description") or ""),
+            " ".join(str(x) for x in profile.get("ai_signals", []) or []),
+            " ".join(str(x) for x in profile.get("tech_stack_signals", []) or []),
+            " ".join(str(ev.claim) + " " + str(ev.quote_or_evidence) for ev in (startup.evidence or [])),
+        ]
+        text = " ".join(text_parts).casefold()
+        if "non_ai" in class_value:
+            return []
+
+        technologies: list[str] = []
+        matched_reasons: list[str] = []
+
+        def add(reason: str, techs: list[str]) -> None:
+            matched_reasons.append(reason)
+            technologies.extend(techs)
+
+        if any(term in text for term in ("llm", "language model", "modelo de linguagem", "generative", "chatbot", "nlp", "legal ai")):
+            add("runtime profile indicates LLM/generative-AI/NLP workload", [
+                "NVIDIA NIM",
+                "NVIDIA NeMo",
+                "NeMo Guardrails",
+                "TensorRT-LLM",
+                "Triton Inference Server",
+                "NVIDIA AI Enterprise",
+            ])
+        if any(term in text for term in ("computer vision", "visão computacional", "image", "video", "visual inspection", "inspection", "drone", "camera")):
+            add("runtime profile indicates computer-vision inference workload", [
+                "NVIDIA NIM",
+                "TensorRT",
+                "Triton Inference Server",
+                "NVIDIA AI Enterprise",
+            ])
+        if any(term in text for term in ("analytics", "data", "risk", "credit", "predictive", "time series", "optimization", "forecasting", "business intelligence")):
+            add("runtime profile indicates data/ML analytics workload", [
+                "RAPIDS",
+                "cuDF",
+                "cuML",
+                "Triton Inference Server",
+                "NVIDIA AI Enterprise",
+            ])
+        if any(term in text for term in ("speech", "voice", "asr", "call center", "customer interaction", "customer experience", "audio", "interview")):
+            add("runtime profile indicates speech/customer-interaction workload", [
+                "NVIDIA Riva",
+                "NVIDIA NIM",
+                "Triton Inference Server",
+                "NVIDIA AI Enterprise",
+            ])
+        if any(term in text for term in ("agent", "agents", "governance", "orchestration", "compliance", "automation", "workflow")):
+            add("runtime profile indicates AI-agent/governance workload", [
+                "NeMo Guardrails",
+                "NVIDIA NIM",
+                "NVIDIA AI Enterprise",
+                "Triton Inference Server",
+            ])
+        if any(term in text for term in ("health", "medical", "hospital", "clinical", "telemedicine", "patient", "diagnostic", "diagnosis", "healthcare")):
+            add("runtime profile indicates healthcare AI workload", [
+                "NVIDIA Clara",
+                "MONAI",
+                "NVIDIA AI Enterprise",
+                "NeMo Guardrails",
+                "NVIDIA NIM",
+            ])
+        if any(term in text for term in ("agtech", "agri", "agriculture", "crop", "soil", "climate", "field", "farm", "pest", "agronomic", "geospatial", "drone")):
+            add("runtime profile indicates agriculture/geospatial AI workload", [
+                "RAPIDS",
+                "cuDF",
+                "cuML",
+                "TensorRT",
+                "NVIDIA AI Enterprise",
+            ])
+        if any(term in text for term in ("robot", "robotics", "autonomous", "simulation", "digital twin", "heavy equipment", "fleet", "iot")):
+            add("runtime profile indicates robotics/simulation/IoT workload", [
+                "NVIDIA Isaac",
+                "NVIDIA Omniverse",
+                "NVIDIA AI Enterprise",
+                "CUDA",
+            ])
+        if any(term in text for term in ("construction", "proptech", "bim", "civil engineering", "arquitetura", "obra", "house project", "residential", "project planning", "estimate costs", "cost estimate")):
+            add("runtime profile indicates construction/proptech planning workload", [
+                "NVIDIA Omniverse",
+                "NVIDIA AI Enterprise",
+                "NVIDIA NIM",
+                "Triton Inference Server",
+                "RAPIDS",
+            ])
+        if any(term in text for term in ("fintech", "financial", "banking", "payment", "pix", "fraud", "credit risk")):
+            add("runtime profile indicates fintech/fraud/risk AI workload", [
+                "RAPIDS",
+                "cuML",
+                "NVIDIA Morpheus",
+                "NVIDIA NIM",
+                "NVIDIA AI Enterprise",
+            ])
+        if any(term in text for term in ("legal", "law", "lawyer", "jurid", "juríd", "litigation", "contract", "compliance")):
+            add("runtime profile indicates legal/compliance AI workload", [
+                "NVIDIA NeMo",
+                "NeMo Guardrails",
+                "NVIDIA NIM",
+                "TensorRT-LLM",
+                "NVIDIA AI Enterprise",
+            ])
+        if any(term in text for term in ("education", "edtech", "student", "teacher", "tutor", "classroom", "school", "educational")):
+            add("runtime profile indicates education AI workload", [
+                "NVIDIA NIM",
+                "NVIDIA NeMo",
+                "NeMo Guardrails",
+                "NVIDIA Riva",
+                "NVIDIA AI Enterprise",
+            ])
+        if any(term in text for term in ("hr", "recruit", "talent", "payroll", "workforce", "interview", "people")):
+            add("runtime profile indicates HR/recruiting AI workload", [
+                "NVIDIA NIM",
+                "NVIDIA NeMo",
+                "NeMo Guardrails",
+                "NVIDIA Riva",
+                "NVIDIA AI Enterprise",
+            ])
+
+        if not technologies:
+            return []
+        technologies = list(dict.fromkeys(technologies))
+        confidence_score = 0.55
+        if evidence_coverage >= 0.5:
+            confidence_score += 0.15
+        if unsupported_claim_count == 0:
+            confidence_score += 0.10
+        confidence_score -= min(0.20, 0.05 * len(relevant_degraded))
+        confidence_label = _confidence_from_score(max(0.0, min(1.0, confidence_score)))
+        priority = 1 if confidence_label == "high" else _priority_from_confidence_and_value(confidence_label, "expected measurable improvement in cost, latency, governance, and deployment readiness")
+        evidence_refs = [
+            {
+                "source_url": ev.source_url,
+                "claim": ev.claim,
+                "quote_or_evidence": ev.quote_or_evidence,
+                "confidence": ev.confidence,
+            }
+            for ev in (startup.evidence or [])[:5]
+        ]
+        return [{
+            "playbook_id": f"runtime_profile_fit_{startup.id}",
+            "playbook_name": "Sector-Specific Runtime NVIDIA Fit",
+            "matched_gap_types": [],
+            "matched_claim_ids": [],
+            "nvidia_technologies": technologies,
+            "technical_experiment": (
+                "Run a baseline-vs-NVIDIA benchmark using the startup's real workload; "
+                "measure latency, throughput, cost, evidence coverage, and operational readiness before outreach escalation."
+            ),
+            "success_metrics": [
+                "latency_delta_pct",
+                "throughput_delta_pct",
+                "cost_delta_pct",
+                "evidence_coverage_delta",
+                "governance_control_coverage",
+            ],
+            "recommended_motion": "technical_workshop" if confidence_label != "low" else "lack_evidence_more_research",
+            "priority": priority,
+            "confidence": confidence_label,
+            "reasoning": (
+                "No high-confidence explicit gap was detected, but the central runtime profile proves NVIDIA fit: "
+                + "; ".join(matched_reasons)
+                + f"; evidence coverage={evidence_coverage:.0%}; unsupported_claims={unsupported_claim_count}; "
+                + f"degraded_states={', '.join(relevant_degraded) if relevant_degraded else 'none'}."
+            ),
+            "evidence_refs": evidence_refs,
+            "risks": [
+                "Profile-backed recommendation must be converted into a quantified benchmark before sales prioritization.",
+                "Additional direct stack evidence should be collected if public sources are sparse.",
+            ],
+            "next_step": "Schedule technical discovery and benchmark the current AI workload against the selected NVIDIA stack.",
+        }]
+
+    def _generate_mapping_backed_recommendations(
+        self,
+        *,
+        detected_gaps: list[GapDiagnosisRecord],
+        mapping_records: list[NvidiaMappingRecord],
+        covered_gap_types: set[str],
+        evidence_coverage: float,
+        unsupported_claim_count: int,
+        relevant_degraded: list[str],
+    ) -> list[dict[str, Any]]:
+        """Create runtime recommendations from quantified gap->technology mappings.
+
+        Static playbooks are preferred when available. This fallback prevents a valid
+        runtime analysis from losing NVIDIA recommendations just because a newly
+        detected gap has not yet received a curated playbook. It is still
+        data-driven: every item requires a detected gap and at least one persisted
+        NVIDIA mapping created by the central pipeline.
+        """
+
+        by_gap: dict[str, list[NvidiaMappingRecord]] = {}
+        for mapping in mapping_records:
+            if not mapping.addresses_gap:
+                continue
+            by_gap.setdefault(mapping.addresses_gap, []).append(mapping)
+
+        recommendations: list[dict[str, Any]] = []
+        for gap in detected_gaps:
+            if not gap.detected or gap.gap_type in covered_gap_types:
+                continue
+            mappings = by_gap.get(gap.gap_type, [])
+            if not mappings:
+                continue
+
+            technologies = list(dict.fromkeys(mapping.technology_name for mapping in mappings))
+            confidence_score = _compute_base_confidence(
+                gap_confidences=[gap.confidence],
+                evidence_coverage=evidence_coverage,
+                unsupported_claim_count=unsupported_claim_count,
+                has_nvidia_mapping=True,
+                has_relevant_claims=True,
+                degraded_states=relevant_degraded,
+            )
+            # Low-confidence detected gaps are useful for the radar, but should be
+            # routed to validation rather than sales outreach.
+            if gap.confidence == "low":
+                confidence_score = min(confidence_score, 0.49)
+            confidence_label = _confidence_from_score(confidence_score)
+            priority = 4 if confidence_label == "low" else _priority_from_confidence_and_value(
+                confidence_label,
+                "expected measurable improvement in evidence coverage, cost, latency, or operational readiness",
+            )
+            motion = "lack_evidence_more_research" if confidence_label == "low" or evidence_coverage < 0.5 else "technical_workshop"
+
+            recommendations.append(
+                {
+                    "playbook_id": f"runtime_mapping_{gap.gap_type}",
+                    "playbook_name": f"Runtime NVIDIA Mapping: {gap.gap_type.replace('_', ' ').title()}",
+                    "matched_gap_types": [gap.gap_type],
+                    "matched_claim_ids": [],
+                    "nvidia_technologies": technologies,
+                    "technical_experiment": (
+                        f"Validate {', '.join(technologies)} for {gap.gap_type} with a baseline-vs-NVIDIA benchmark; "
+                        "collect quantitative deltas before outreach escalation."
+                    ),
+                    "success_metrics": [
+                        "evidence_coverage_delta",
+                        "latency_delta_pct",
+                        "throughput_delta_pct",
+                        "cost_delta_pct",
+                        "implementation_complexity_score",
+                    ],
+                    "recommended_motion": motion,
+                    "priority": priority,
+                    "confidence": confidence_label,
+                    "reasoning": (
+                        f"Runtime gap '{gap.gap_type}' detected with confidence={gap.confidence}; "
+                        f"pipeline mapped it to {', '.join(technologies)}; "
+                        f"evidence coverage={evidence_coverage:.0%}; unsupported_claims={unsupported_claim_count}; "
+                        f"degraded_states={', '.join(relevant_degraded) if relevant_degraded else 'none'}."
+                    ),
+                    "evidence_refs": gap.evidence_refs_json or [],
+                    "risks": [
+                        "Recommendation should not be treated as final sales advice until direct evidence improves.",
+                        "Benchmark must use the startup's actual workload and current baseline.",
+                    ],
+                    "next_step": f"Collect missing evidence and benchmark {', '.join(technologies)} against the current stack.",
+                }
+            )
 
         return recommendations
 

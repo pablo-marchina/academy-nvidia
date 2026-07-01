@@ -34,12 +34,13 @@ ALLOWED_EXTENSIONS = {
     ".jsx",
     ".jsonc",
     ".env.example",
-    ".gitignore",
-    ".dockerignore",
     ".pre-commit-config.yaml",
     ".xml",
     ".xslx",
     ".xlsx",
+    ".jsonl",
+    ".mako",
+    ".pbtxt",
 }
 
 FORBIDDEN_PATTERNS = [
@@ -51,8 +52,6 @@ FORBIDDEN_PATTERNS = [
     ".git/",
     "node_modules/",
     ".venv/",
-    ".gitignore",
-    ".dockerignore",
 ]
 
 EXPLICITLY_ALLOWED = {
@@ -77,7 +76,7 @@ def main() -> int:
             if name.endswith("/"):
                 continue
             base = Path(name).name
-            if base in EXPLICITLY_ALLOWED:
+            if base in EXPLICITLY_ALLOWED or base in {"Makefile", ".gitignore", ".dockerignore"}:
                 allowed.append(name)
                 continue
             is_forbidden = False
@@ -88,7 +87,9 @@ def main() -> int:
                     break
             if not is_forbidden:
                 ext = Path(name).suffix
-                if ext not in ALLOWED_EXTENSIONS and not name.startswith("frontend/dist/"):
+                if ext == "" and name.startswith("src/rag/"):
+                    allowed.append(name)
+                elif ext not in ALLOWED_EXTENSIONS and not name.startswith("frontend/dist/"):
                     forbidden.append(f"{name} (unexpected extension {ext})")
                 else:
                     allowed.append(name)

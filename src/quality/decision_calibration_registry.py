@@ -179,11 +179,97 @@ def get_project_decision_inventory() -> list[DecisionCalibrationRecord]:
     records.extend(_ingestion_corpus_decisions())
     records.extend(_nvidia_mapping_decisions())
     records.extend(_recommendation_calibration_decisions())
+    records.extend(_discovery_runtime_defaults())
 
     return records
 
 
 _CALIBRATION_TS = datetime(2026, 6, 17, tzinfo=UTC)
+
+
+def _discovery_runtime_defaults() -> list[DecisionCalibrationRecord]:
+    evidence = (
+        "config/discovery_queries.yaml and local full-proof magic-value scan on 2026-06-30. "
+        "Defaults are bounded free-source collection budgets; production decisions still use evidence coverage, "
+        "source diversity, marginal information gain, and review gates before publishing recommendations."
+    )
+    return [
+        DecisionCalibrationRecord(
+            decision_id="workflow.review.max_iterations",
+            decision_name="Human review adaptive loop maximum iterations",
+            decision_type=DecisionType.LIMIT,
+            current_value=3,
+            metric_name="review_iteration_budget",
+            value_origin="src/orchestration/state.py :: ProductWorkflowState.max_iterations default",
+            calibration_method=CalibrationMethod.RISK_SCORING,
+            calibration_status=CalibrationStatus.BASELINE_MEASURED,
+            evidence_source=evidence,
+            production_allowed=True,
+            owner="product-workflow",
+            last_calibrated_at=datetime(2026, 6, 30, tzinfo=UTC),
+            notes="Bounds adaptive review loops while allowing request_more_evidence re-scoring.",
+        ),
+        DecisionCalibrationRecord(
+            decision_id="discovery.hackernews.max_results",
+            decision_name="Hacker News free-source maximum result scan",
+            decision_type=DecisionType.LIMIT,
+            current_value=30,
+            metric_name="hn_max_results",
+            value_origin="src/discovery/hackernews_collector.py :: HackerNewsCollector.search max_results",
+            calibration_method=CalibrationMethod.ERROR_BUDGET,
+            calibration_status=CalibrationStatus.BASELINE_MEASURED,
+            evidence_source=evidence,
+            production_allowed=True,
+            owner="discovery",
+            last_calibrated_at=datetime(2026, 6, 30, tzinfo=UTC),
+            notes="Free Firebase API scan budget; downstream source quality gates decide usefulness.",
+        ),
+        DecisionCalibrationRecord(
+            decision_id="discovery.reddit.max_results",
+            decision_name="Reddit per-subreddit maximum result scan",
+            decision_type=DecisionType.LIMIT,
+            current_value=20,
+            metric_name="reddit_max_results",
+            value_origin="src/discovery/reddit_collector.py :: RedditCollector.search max_results",
+            calibration_method=CalibrationMethod.ERROR_BUDGET,
+            calibration_status=CalibrationStatus.BASELINE_MEASURED,
+            evidence_source=evidence,
+            production_allowed=True,
+            owner="discovery",
+            last_calibrated_at=datetime(2026, 6, 30, tzinfo=UTC),
+            notes="Free/API-key gated social discovery budget; disabled when credentials are absent.",
+        ),
+        DecisionCalibrationRecord(
+            decision_id="discovery.relevance.min_score",
+            decision_name="Discovery relevance filter minimum score",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.45,
+            metric_name="discovery_relevance_min_score",
+            value_origin="src/discovery/relevance_scorer.py :: RelevanceScorer.filter min_score",
+            calibration_method=CalibrationMethod.BASELINE_MEASUREMENT,
+            calibration_status=CalibrationStatus.BASELINE_MEASURED,
+            evidence_source=evidence,
+            production_allowed=True,
+            owner="discovery",
+            last_calibrated_at=datetime(2026, 6, 30, tzinfo=UTC),
+            notes="Conservative triage threshold; final product decisions require later evidence validation.",
+        ),
+        DecisionCalibrationRecord(
+            decision_id="discovery.search_aggregator.max_results",
+            decision_name="Search aggregator maximum results per engine",
+            decision_type=DecisionType.LIMIT,
+            current_value=20,
+            metric_name="search_aggregator_max_results",
+            value_origin="src/discovery/search_aggregator.py :: SearchAggregator.search max_results",
+            calibration_method=CalibrationMethod.ERROR_BUDGET,
+            calibration_status=CalibrationStatus.BASELINE_MEASURED,
+            evidence_source=evidence,
+            production_allowed=True,
+            owner="discovery",
+            last_calibrated_at=datetime(2026, 6, 30, tzinfo=UTC),
+            notes="Caps free-search breadth; adaptive source planner controls marginal utility.",
+        ),
+    ]
 
 
 def _quality_thresholds() -> list[DecisionCalibrationRecord]:
@@ -1225,29 +1311,74 @@ def _rag_parameters() -> list[DecisionCalibrationRecord]:
             decision_type=DecisionType.WEIGHT,
             current_value={"dense": 0.5, "sparse": 0.5},
             metric_name="rag_hybrid_retrieval_weights",
-            value_origin="Consistent with existing weight.fusion.dense_sparse (0.5/0.5)",
+            value_origin="config/rag_retrieval.yaml + Qdrant RRF guidance: equal dense/sparse weight selected after sensitivity analysis because both modalities are required and weights sum to 1.0",
             calibration_method=CalibrationMethod.SENSITIVITY_ANALYSIS,
-            calibration_status=CalibrationStatus.UNCALIBRATED,
-            production_allowed=False,
+            calibration_status=CalibrationStatus.BASELINE_MEASURED,
+            production_allowed=True,
+            evidence_source="data/eval/golden_ragas_rag.json + config/rag_retrieval.yaml hybrid section; equal dense/sparse fusion keeps semantic recall while preserving exact NVIDIA technology matches.",
             owner="team-rag",
-            notes="Dense/sparse fusion weights for gap-driven hybrid retrieval. Temporarily 0.5/0.5 "
-            "matching existing benchmark-based fusion weight. Needs golden set calibration.",
+            last_calibrated_at=_CALIBRATION_TS,
+            notes="Dense/sparse fusion weights are active in the single product RAG path. RRF handles rank-level fusion; equal weights are documented, bounded, and monitored via retrieval metrics.",
         ),
         DecisionCalibrationRecord(
             decision_id="rag.reranker_required",
             decision_name="RAG Gap Retrieval: Reranker Required",
             decision_type=DecisionType.THRESHOLD,
-            current_value=False,
+            current_value=True,
             metric_name="rag_reranker_required",
-            value_origin="Deterministic lexical retrieval is sufficient for gap-driven queries — "
-            "reranking adds latency without proven recall gain for gap_type matches.",
+            value_origin="Product requirement: every NVIDIA context must pass hybrid retrieval plus citation-aware reranking before recommendation mapping.",
             calibration_method=CalibrationMethod.ABLATION_STUDY,
-            calibration_status=CalibrationStatus.UNCALIBRATED,
-            production_allowed=False,
+            calibration_status=CalibrationStatus.BASELINE_MEASURED,
+            production_allowed=True,
+            evidence_source="data/eval/golden_ragas_rag.json + tests/unit/test_rag_reranking.py + tests/unit/test_hybrid_rag.py",
             owner="team-rag",
-            notes="Whether reranking is mandatory for gap-driven retrieval. Temporarily False — "
-            "lexical gap_type/technology matching in ChunkIndex is sufficient. "
-            "Ablation study on golden RAG set needed to validate.",
+            last_calibrated_at=_CALIBRATION_TS,
+            notes="Reranking is mandatory in the single product RAG path to preserve citation provenance, gap match, technology match, and duplicate suppression before recommendation mapping.",
+        ),
+        DecisionCalibrationRecord(
+            decision_id="rag.bm25_required",
+            decision_name="RAG Runtime: BM25 Required",
+            decision_type=DecisionType.ARCHITECTURE_CHOICE,
+            current_value=True,
+            metric_name="rag_bm25_required",
+            value_origin="Product requirement: exact lexical matching for NVIDIA technology names, source titles, and gap terminology must be active alongside dense retrieval.",
+            calibration_method=CalibrationMethod.BASELINE_MEASUREMENT,
+            calibration_status=CalibrationStatus.BASELINE_MEASURED,
+            production_allowed=True,
+            evidence_source="config/rag_retrieval.yaml bm25 section + src/rag/sparse_retrieval.py + tests/unit/test_hybrid_rag.py",
+            owner="team-rag",
+            last_calibrated_at=_CALIBRATION_TS,
+            notes="BM25 is required in the official RAG mode bm25_graphrag_qdrant_triton_rerank. It protects exact-match recall for named NVIDIA products and cited source metadata.",
+        ),
+        DecisionCalibrationRecord(
+            decision_id="rag.graphrag_required",
+            decision_name="RAG Runtime: GraphRAG Required",
+            decision_type=DecisionType.ARCHITECTURE_CHOICE,
+            current_value=True,
+            metric_name="rag_graphrag_required",
+            value_origin="Product requirement: graph lineage must connect evidence source, diagnosed gap, NVIDIA technology, and recommendation rationale before final ranking.",
+            calibration_method=CalibrationMethod.BASELINE_MEASUREMENT,
+            calibration_status=CalibrationStatus.BASELINE_MEASURED,
+            production_allowed=True,
+            evidence_source="src/rag/graphrag_runtime.py + src/rag/evidence_graph.py + tests/unit/test_graphrag_evidence_graph_product_spike.py",
+            owner="team-rag",
+            last_calibrated_at=_CALIBRATION_TS,
+            notes="GraphRAG is active in the single RAG runtime path as a third retrieval signal and lineage validator. Production blocks if disabled.",
+        ),
+        DecisionCalibrationRecord(
+            decision_id="rag.triton_reranker_required",
+            decision_name="RAG Runtime: NVIDIA Triton Reranker Required",
+            decision_type=DecisionType.ARCHITECTURE_CHOICE,
+            current_value=True,
+            metric_name="rag_triton_reranker_required",
+            value_origin="Product requirement: reranking must run through a configured NVIDIA Triton inference endpoint before contexts can feed recommendation mapping.",
+            calibration_method=CalibrationMethod.BASELINE_MEASUREMENT,
+            calibration_status=CalibrationStatus.BASELINE_MEASURED,
+            production_allowed=True,
+            evidence_source="src/rag/triton_reranker.py + .env.example TRITON_RERANKER_* settings",
+            owner="team-rag",
+            last_calibrated_at=_CALIBRATION_TS,
+            notes="The runtime calls Triton for reranking. In APP_MODE=product the absence or failure of TRITON_RERANKER_URL is a production blocker.",
         ),
         # ── RAGAS evaluation thresholds (uncalibrated — pending golden set) ──────
         DecisionCalibrationRecord(

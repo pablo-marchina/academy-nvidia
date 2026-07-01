@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, selectinload
 
 from src.database.models import (
     AnalysisRun,
@@ -43,12 +43,12 @@ class OpportunityService:
             select(AnalysisRun)
             .where(AnalysisRun.id.in_(latest_run_ids))
             .options(
-                joinedload(AnalysisRun.startup),
-                joinedload(AnalysisRun.scores),
-                joinedload(AnalysisRun.gaps),
-                joinedload(AnalysisRun.mappings),
-                joinedload(AnalysisRun.readiness_checks),
-                joinedload(AnalysisRun.reviews),
+                selectinload(AnalysisRun.startup),
+                selectinload(AnalysisRun.scores),
+                selectinload(AnalysisRun.gaps),
+                selectinload(AnalysisRun.mappings),
+                selectinload(AnalysisRun.readiness_checks),
+                selectinload(AnalysisRun.reviews),
             )
         )
 

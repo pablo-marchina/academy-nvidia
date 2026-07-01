@@ -51,8 +51,8 @@ def main() -> int:
 
 
 def build_review_report(registry_path: Path, catalog_path: Path) -> dict[str, Any]:
-    registry = _load_registry(registry_path)
     catalog_rows = read_csv(catalog_path) if catalog_path.exists() else []
+    registry = _load_registry(registry_path, catalog_rows)
     catalog_by_name = {row.get("name", ""): row for row in catalog_rows}
     items = [_review_entry(entry, catalog_by_name.get(str(entry.get("name", "")))) for entry in registry["entries"]]
     summary = {
@@ -130,7 +130,9 @@ def _review_entry(entry: dict[str, Any], catalog_row: dict[str, str] | None) -> 
     }
 
 
-def _load_registry(path: Path) -> dict[str, Any]:
+def _load_registry(path: Path, catalog_rows: list[dict[str, str]] | None = None) -> dict[str, Any]:
+    if not path.exists():
+        return _derive_registry_from_catalog(catalog_rows or [])
     payload = json.loads(path.read_text(encoding="utf-8"))
     entries = payload.get("entries")
     if not isinstance(entries, list):
@@ -141,6 +143,51 @@ def _load_registry(path: Path) -> dict[str, Any]:
         if not entry.get("name") or not entry.get("status") or not entry.get("benchmark_path"):
             raise ValueError(f"Registry entry {index} is missing name, status, or benchmark_path")
     return payload
+
+
+def _derive_registry_from_catalog(catalog_rows: list[dict[str, str]]) -> dict[str, Any]:
+    entries: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in catalog_rows:
+        name = row.get("name", "").strip()
+        if not name or name in seen:
+            continue
+        status = row.get("status", "")
+        required = " ".join(
+            row.get(key, "")
+            for key in (
+                "required_configuration",
+                "external_dependency",
+                "substitute_reason",
+                "cost_policy",
+            )
+        ).casefold()
+        if status == "FUTURE_RESEARCH" or any(
+            marker in required for marker in ("external", "paid", "license", "credential", "hardware", "api key")
+        ):
+            verification = row.get("free_self_hosted_verification", "").strip()
+            if "pass" in verification.casefold() or "free" in required or "self" in required:
+                registry_status = "FREE_LOCAL_SUBSTITUTE"
+            else:
+                registry_status = VERIFICATION_STATUS
+            entries.append(
+                {
+                    "name": name,
+                    "status": registry_status,
+                    "official_source_url": row.get("source_or_reference", "") or "candidate_catalog_maximal_final_complementary_governed(1).csv",
+                    "free_tier_evidence": verification or row.get("cost_policy", ""),
+                    "benchmark_path": row.get("benchmark", "") or "scripts/run_benchmark.py --suite complete-catalog",
+                    "env_vars": [],
+                    "terms_review_required": registry_status == VERIFICATION_STATUS,
+                    "local_test_behavior": "derived_from_governed_candidate_catalog",
+                }
+            )
+            seen.add(name)
+    return {
+        "policy_ref": "candidate_catalog_maximal_final_complementary_governed(1).csv",
+        "entries": entries,
+        "derived_from_catalog": True,
+    }
 
 
 def _md_cell(value: str) -> str:

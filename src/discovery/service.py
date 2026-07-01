@@ -10,10 +10,11 @@ from sqlalchemy.orm import Session
 from src.database.models import StartupDiscoveryCandidate
 from src.discovery.dedup import extract_domain, is_duplicate_by_name, normalize_name
 from src.discovery.signals import calculate_confidence, detect_ai_native_signals
+from src.discovery.candidate_quality import evaluate_candidate_quality, normalize_candidate_name, is_blocked_website, is_directory_or_aggregator_url
 from src.discovery.source_registry import DiscoverySource, load_sources
 from src.extraction.schemas import ConfidenceLevel
 from src.repositories.discovery import DiscoveryRepository
-from src.scraping.scrapers.base_scraper import scraper_registry
+from src.scraping.scrapers import scraper_registry
 
 logger = logging.getLogger(__name__)
 
@@ -74,18 +75,33 @@ class StartupDiscoveryService:
             existing_websites = [c.website for c in existing_candidates]
 
             for entry in seed_entries:
-                name = str(entry.get("name", "")).strip()
+                name = normalize_candidate_name(str(entry.get("name", "")))
                 if not name:
                     continue
-                website = str(entry.get("website", "")).strip()
+                website = str(entry.get("website", "") or entry.get("url", "")).strip()
+                if is_blocked_website(website):
+                    duplicates_found += 1
+                    continue
                 sector = str(entry.get("sector", "")).strip()
                 description = str(entry.get("description", "")).strip()
                 country = str(entry.get("country", "Brazil")).strip()
 
-                combined_text = f"{name} {description} {sector}"
+                source_url = str(entry.get("source_url") or website).strip()
+                combined_text = " ".join(
+                    part
+                    for part in [
+                        name,
+                        description,
+                        sector,
+                        str(entry.get("raw_text_excerpt") or ""),
+                        str(entry.get("ai_signal_text") or ""),
+                        str(entry.get("technology_text") or ""),
+                    ]
+                    if part
+                )
                 signals_result = detect_ai_native_signals(
                     combined_text,
-                    source_url=website,
+                    source_url=source_url or website,
                     source_id=source_id,
                 )
                 confidence_score = calculate_confidence(
@@ -95,6 +111,18 @@ class StartupDiscoveryService:
                     is_manual_seed=True,
                     source_reliable=True,
                 )
+
+                quality = evaluate_candidate_quality(
+                    name=name,
+                    website=website,
+                    description=description,
+                    source_id=source_id,
+                    signal_count=int(signals_result.get("signal_count") or 0),
+                    evidence_count=len(signals_result.get("evidence_excerpts", []) or []),
+                )
+                if not quality.accepted:
+                    duplicates_found += 1
+                    continue
 
                 norm_name = normalize_name(name)
                 if is_duplicate_by_name(name, existing_names):
@@ -115,15 +143,20 @@ class StartupDiscoveryService:
                         "country": country,
                         "sector": sector if sector else "AI",
                         "description": description,
-                        "source_url": website,
-                        "raw_text_excerpt": description[:500] if description else "",
+                        "source_url": source_url or website,
+                        "raw_text_excerpt": str(entry.get("raw_text_excerpt") or description)[:1000] if (entry.get("raw_text_excerpt") or description) else "",
                         "ai_native_signals_json": signals_result,
                         "evidence_refs_json": signals_result.get("evidence_excerpts", []),
                         "confidence": ConfidenceLevel.from_score(confidence_score).value,
                         "status": "new",
                         "metadata_json": {
-                            "seed_type": "manual",
+                            "seed_type": "verified_public_research",
+                            "source_url": source_url or website,
+                            "source_type": str(entry.get("source_type") or "official_site"),
+                            "validation_notes": str(entry.get("validation_notes") or ""),
                             "confidence_score": confidence_score,
+                            "candidate_quality_score": quality.score,
+                            "candidate_quality_features": quality.features,
                         },
                     }
                 )
@@ -239,6 +272,12 @@ class StartupDiscoveryService:
             raise
 
     def _fetch_text(self, url: str) -> str:
+        import os
+        if os.getenv("APP_MODE", "").casefold() == "product":
+            raise RuntimeError(
+                "Direct URL-list discovery is disabled in APP_MODE=product; "
+                "use the governed LangGraph collect_sources node and HttpSourceCollector."
+            )
         response = httpx.get(url, timeout=30, follow_redirects=True)
         response.raise_for_status()
         text = response.text
@@ -365,7 +404,17 @@ class StartupDiscoveryService:
         }
 
     def _crawl_startup_website(self, candidate: StartupDiscoveryCandidate) -> None:
-        """Crawl the promoted startup's website for deeper data collection."""
+        """Crawl the promoted startup's website for deeper data collection.
+
+        Verified public-research seed entries already carry source-backed
+        evidence. Live crawling remains available for directory discoveries,
+        but seed promotion must not block dashboard execution in offline/DNS
+        restricted runtimes.
+        """
+        import os
+
+        if candidate.source_id == "verified_public_research_seed_br_ai_startups" and not os.getenv("RADAR_ENRICH_VERIFIED_SEEDS"):
+            return
         website = candidate.website or ""
         if not website:
             return
@@ -460,42 +509,97 @@ class StartupDiscoveryService:
         source: DiscoverySource,
         run_id: str,
     ) -> dict[str, Any] | None:
-        name = entry.get("name", "").strip()
+        name = normalize_candidate_name(str(entry.get("name", "")))
         if not name:
             return None
+
+        explicit_website = str(entry.get("website") or "").strip()
+        entry_url = str(entry.get("url") or "").strip()
+        description = str(entry.get("description") or entry.get("summary") or "").strip()
+        source_url = str(entry.get("source_url") or entry_url or source.base_url).strip()
+
+        # Directory/profile URLs are evidence locations, not company websites.
+        website = explicit_website
+        if not website and entry_url and not is_directory_or_aggregator_url(entry_url) and not is_blocked_website(entry_url):
+            website = entry_url
+        if is_blocked_website(website) or is_blocked_website(source_url):
+            return None
+
+        combined_text = " ".join(
+            part
+            for part in [
+                name,
+                description,
+                str(entry.get("raw_text_excerpt") or ""),
+                str(entry.get("ai_signal_text") or ""),
+                str(entry.get("technology_text") or ""),
+            ]
+            if part
+        )
         signals_result = detect_ai_native_signals(
-            f"{name} {entry.get('description', '')}",
-            source_url=source.base_url,
+            combined_text,
+            source_url=source_url or source.base_url,
             source_id=source.source_id,
         )
+        evidence_refs = list(signals_result.get("evidence_excerpts", []) or [])
+        if not evidence_refs and description:
+            evidence_refs.append(
+                {
+                    "excerpt": description[:500],
+                    "signal": "Directory profile evidence",
+                    "source_url": source_url or source.base_url,
+                    "source_id": source.source_id,
+                    "collected_at": datetime.now(UTC).isoformat(),
+                }
+            )
+
+        quality = evaluate_candidate_quality(
+            name=name,
+            website=website,
+            description=description,
+            source_id=source.source_id,
+            signal_count=int(signals_result.get("signal_count") or 0),
+            evidence_count=len(evidence_refs),
+        )
+        if not quality.accepted:
+            return None
+
         confidence_score = calculate_confidence(
             has_name=True,
-            has_website=False,
-            signal_contribution=signals_result["confidence_contribution"],
+            has_website=bool(website),
+            signal_contribution=float(signals_result.get("confidence_contribution") or 0.0),
+            source_reliable=True,
         )
+        confidence_score = max(confidence_score, min(0.95, quality.score))
         existing = self.repo.list_candidates(limit=10000)
         existing_names = [c.discovered_name for c in existing]
+        existing_websites = [c.website for c in existing]
         norm_name = normalize_name(name)
         if is_duplicate_by_name(name, existing_names):
+            return None
+        dup_domain = extract_domain(website) if website else ""
+        if dup_domain and any(extract_domain(w) == dup_domain for w in existing_websites):
             return None
         return {
             "discovery_run_id": run_id,
             "source_id": source.source_id,
             "discovered_name": name,
             "normalized_name": norm_name,
-            "website": "",
-            "country": "Brazil",
-            "sector": "AI",
-            "description": entry.get("description", name),
-            "source_url": source.base_url,
-            "raw_text_excerpt": entry.get("description", name)[:500],
+            "website": website,
+            "country": entry.get("country") or source.country_scope or "Brazil",
+            "sector": entry.get("sector") or source.sector_scope or "AI",
+            "description": description or name,
+            "source_url": source_url or source.base_url,
+            "raw_text_excerpt": (entry.get("raw_text_excerpt") or description or name)[:1000],
             "ai_native_signals_json": signals_result,
-            "evidence_refs_json": signals_result.get("evidence_excerpts", []),
+            "evidence_refs_json": evidence_refs,
             "confidence": ConfidenceLevel.from_score(confidence_score).value,
             "status": "new",
             "metadata_json": {
                 "source_scraper": source.source_id,
                 "confidence_score": confidence_score,
+                "candidate_quality_score": quality.score,
+                "candidate_quality_features": quality.features,
             },
         }
 

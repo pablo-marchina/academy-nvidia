@@ -33,7 +33,7 @@ function ClaimList({ title, claims }: { title: string; claims: ClaimRead[] }) {
         <p className="muted compact-text">No claims in this group.</p>
       ) : (
         <div className="evidence-list">
-          {claims.slice(0, 8).map((claim) => (
+          {claims.map((claim) => (
             <article key={claim.id} className="evidence-item">
               <div className="evidence-item-head">
                 <strong>{claim.claim_type}</strong>
@@ -72,8 +72,8 @@ export function EvidenceFirstRunView({ bundle }: EvidenceFirstRunViewProps) {
   const ragAvailable = bundle.rag_support.available === true;
   const supportingRefs = asText(bundle.rag_support.supporting_refs_count);
   const degraded = bundle.degraded_checks.length;
-  const missingEvidence = bundle.missing_evidence.slice(0, 10);
-  const alternatives = bundle.alternatives_lost.slice(0, 8);
+  const missingEvidence = bundle.missing_evidence;
+  const alternatives = bundle.alternatives_lost;
 
   return (
     <div className="evidence-first-page">

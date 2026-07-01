@@ -46,6 +46,11 @@
       "status": "PASS"
     },
     {
+      "check_id": "env.langgraph_checkpointer",
+      "reason": "LANGGRAPH_CHECKPOINTER is set",
+      "status": "PASS"
+    },
+    {
       "check_id": "database.postgresql_required",
       "reason": "APP_MODE=product requires PRODUCT_DB_URL to be PostgreSQL.",
       "status": "PASS"
@@ -71,6 +76,11 @@
       "status": "PASS"
     },
     {
+      "check_id": "runtime.langgraph_postgres_checkpointer_required",
+      "reason": "APP_MODE=product requires LANGGRAPH_CHECKPOINTER=postgres.",
+      "status": "PASS"
+    },
+    {
       "check_id": "rag.hybrid_retrieval_required",
       "reason": "APP_MODE=product requires hybrid RAG retrieval.",
       "status": "PASS"
@@ -79,10 +89,15 @@
       "check_id": "rag.reranker_required",
       "reason": "APP_MODE=product requires a non-mock reranker provider.",
       "status": "PASS"
+    },
+    {
+      "check_id": "rag.triton_reranker_endpoint_required",
+      "reason": "APP_MODE=product with RERANKER_PROVIDER=triton requires TRITON_RERANKER_URL.",
+      "status": "PASS"
     }
   ],
   "failure_count": 0,
-  "generated_at": "2026-06-30T03:44:39.695580+00:00",
+  "generated_at": "2026-07-01T07:34:25.199434+00:00",
   "report_id": "product_configuration_report",
   "status": "PASS"
 }

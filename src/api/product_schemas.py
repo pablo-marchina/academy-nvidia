@@ -93,7 +93,7 @@ class StartupRead(BaseModel):
 
 
 class AnalysisRunCreate(BaseModel):
-    use_rag: bool = False
+    use_rag: bool = True
     rag_backend: str = "qdrant"
     pipeline_version: str = "current"
     corpus_version: str | None = None
@@ -262,6 +262,7 @@ class ExportRead(BaseModel):
     storage_path: str
     content_hash: str
     error_message: str | None = None
+    content: str | dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -837,7 +838,7 @@ class ProductWorkflowRunCreate(BaseModel):
     startup_id: str | None = None
     discovery_candidate_id: str | None = None
     analysis_run_id: str | None = None
-    use_rag: bool = False
+    use_rag: bool = True
 
 
 class ProductWorkflowNodeRunRead(BaseModel):

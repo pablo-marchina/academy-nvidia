@@ -1,4 +1,4 @@
-"""Claim ledger service — deterministic claim generation and evidence coverage."""
+"""Claim ledger service for evidence-linked claim generation and coverage."""
 
 from __future__ import annotations
 

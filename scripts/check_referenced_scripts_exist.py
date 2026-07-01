@@ -15,7 +15,7 @@ def validate_referenced_scripts(*, include_docs: bool = False) -> list[str]:
     for source in _scan_sources(include_docs=include_docs):
         text = source.read_text(encoding="utf-8", errors="replace")
         for match in SCRIPT_REF.finditer(text):
-            rel = match.group(0).replace("/", "\\")
+            rel = match.group(0).replace("\\", "/")
             if not (PROJECT_ROOT / rel).exists():
                 failures.append(f"{source.relative_to(PROJECT_ROOT)} references missing {rel}")
     for test in (PROJECT_ROOT / "tests").rglob("*.py"):
@@ -43,7 +43,7 @@ def _missing_script_imports(path: Path) -> list[str]:
                 if not target.exists() and alias.name != "__init__":
                     failures.append(f"{path.relative_to(PROJECT_ROOT)} imports missing scripts.{alias.name}")
         elif isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("scripts."):
-            target = PROJECT_ROOT / (node.module.replace(".", "\\") + ".py")
+            target = PROJECT_ROOT / (node.module.replace(".", "/") + ".py")
             if not target.exists():
                 failures.append(f"{path.relative_to(PROJECT_ROOT)} imports missing {node.module}")
     return failures

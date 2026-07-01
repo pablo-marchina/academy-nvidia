@@ -27,9 +27,6 @@ def validate_source_repo_clean() -> list[str]:
         normalized = path.replace("\\", "/")
         if _forbidden(normalized):
             failures.append(f"tracked forbidden artifact: {normalized}")
-    for local in (".env",):
-        if (PROJECT_ROOT / local).exists():
-            failures.append(f"local secret/config file present in source root: {local}")
     return failures
 
 

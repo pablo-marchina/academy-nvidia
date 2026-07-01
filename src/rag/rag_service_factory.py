@@ -1,13 +1,13 @@
-"""Qdrant-backed RagService factory for production RAG retrieval.
+"""Qdrant-backed hybrid RAG service factory for production retrieval.
 
-Creates a ``RagService``-compatible callable that uses ``QdrantStore``
-for semantic retrieval only — no lexical ``ChunkIndex`` fallback.
-Blocks production when Qdrant, corpus, or embedding model is not ready.
+The product service uses one official path: Qdrant dense retrieval + local
+lexical corpus retrieval + Reciprocal Rank Fusion + calibrated reranking.
+It fails closed when Qdrant, corpus, embeddings, or calibrated retrieval
+decisions are not ready.
 """
 
 from __future__ import annotations
 
-import warnings
 from datetime import UTC, datetime
 from typing import Any
 
@@ -21,26 +21,36 @@ from src.quality.decision_calibration_registry import (
 from src.rag.embeddings import EmbeddingProvider, SentenceTransformerProvider
 from src.rag.ingestion_pipeline import check_corpus_readiness
 from src.rag.qdrant_store import QdrantConfig, QdrantConnectionError, build_qdrant_store
+from src.rag.hybrid_retrieval import hybrid_retrieve
+from src.rag.retrieval import ChunkIndex, build_default_index
+from src.rag.reranking import rerank_contexts
+from src.rag.graphrag_runtime import graphrag_expand
+from src.rag.triton_reranker import TritonRerankerUnavailable, triton_rerank_contexts
 from src.rag.schemas import RetrievalQuery
-from src.rag.semantic_retrieval import semantic_retrieve
 from src.rag.vector_store import VectorStore
 
-# ── Calibration decisions required for semantic-only retrieval ─────────────
-#   This list does NOT include rag.hybrid_retrieval_weights or
-#   rag.reranker_required because the semantic-only path does not
-#   use hybrid fusion or reranking.
+# ── Calibration decisions required for the official hybrid+rerank path ─────
 
-REQUIRED_SEMANTIC_DECISIONS: list[str] = [
+REQUIRED_HYBRID_RAG_DECISIONS: list[str] = [
     "rag.semantic_top_k",
     "rag.min_contexts_per_gap",
     "rag.context_relevance_threshold",
     "rag.citation_precision_threshold",
     "rag.unsupported_claim_rate_threshold",
+    "rag.hybrid_retrieval_weights",
+    "rag.reranker_required",
+    "rag.bm25_required",
+    "rag.graphrag_required",
+    "rag.triton_reranker_required",
 ]
 
+# Backward-compatible alias for tests/imports; the official path now includes
+# hybrid retrieval and reranking rather than semantic-only retrieval.
+REQUIRED_SEMANTIC_DECISIONS = REQUIRED_HYBRID_RAG_DECISIONS
 
-def _validate_semantic_calibrations() -> tuple[dict[str, Any], list[str]]:
-    """Validate that all required semantic RAG decisions are calibrated.
+
+def _validate_hybrid_rag_calibrations() -> tuple[dict[str, Any], list[str]]:
+    """Validate that all required hybrid+rerank RAG decisions are calibrated.
 
     Returns
     -------
@@ -53,7 +63,7 @@ def _validate_semantic_calibrations() -> tuple[dict[str, Any], list[str]]:
     values: dict[str, Any] = {}
     blockers: list[str] = []
 
-    for decision_id in REQUIRED_SEMANTIC_DECISIONS:
+    for decision_id in REQUIRED_HYBRID_RAG_DECISIONS:
         found = False
         for rec in inventory:
             if rec.decision_id == decision_id:
@@ -76,6 +86,11 @@ def _validate_semantic_calibrations() -> tuple[dict[str, Any], list[str]]:
             blockers.append(f"RAG decision '{decision_id}' not found in registry")
 
     return values, blockers
+
+
+def _validate_semantic_calibrations() -> tuple[dict[str, Any], list[str]]:
+    """Backward-compatible alias for the official hybrid RAG calibration validator."""
+    return _validate_hybrid_rag_calibrations()
 
 
 # ── ChunkIndex-free helpers ────────────────────────────────────────────────
@@ -293,14 +308,16 @@ def _build_retrieval_query(gap_type: Any, nvidia_techs: list[str]) -> list[Retri
     return queries
 
 
-# ── QdrantRagService — semantic-only, no ChunkIndex ────────────────────────
+# ── QdrantRagService — hybrid dense+sparse retrieval with reranking ─────────
 
 
 class QdrantRagService:
-    """Production RagService backed solely by Qdrant + semantic retrieval.
+    """Production RagService backed by Qdrant + ChunkIndex hybrid retrieval.
 
-    No ``ChunkIndex``, no ``hybrid_retrieve``, no lexical fallback.
-    Blocks production when Qdrant, embedding model, or corpus is not ready.
+    The service uses Qdrant semantic search and a local lexical index over the
+    same governed NVIDIA corpus, fuses results with RRF, and applies calibrated
+    reranking before returning citation-ready contexts. It is intentionally
+    fail-closed in product mode.
 
     Parameters
     ----------
@@ -317,10 +334,12 @@ class QdrantRagService:
         qdrant_config: QdrantConfig | None = None,
         embedding_model: EmbeddingProvider | None = None,
         vector_store: VectorStore | None = None,
+        chunk_index: ChunkIndex | None = None,
     ) -> None:
         self._qdrant_config = qdrant_config
         self._embedding_model = embedding_model
         self._vector_store = vector_store
+        self._chunk_index = chunk_index
         self._validated: bool = False
         self._validation_error: str | None = None
 
@@ -347,6 +366,14 @@ class QdrantRagService:
             except Exception as exc:
                 errors.append(f"blocked_qdrant_unavailable: {exc}")
 
+        if self._chunk_index is None:
+            try:
+                self._chunk_index = build_default_index()
+                if len(self._chunk_index.chunks) == 0:
+                    errors.append("blocked_lexical_corpus_not_ready: ChunkIndex is empty")
+            except Exception as exc:
+                errors.append(f"blocked_lexical_corpus_not_ready: {exc}")
+
         if self._vector_store is not None:
             try:
                 if self._vector_store.size == 0:
@@ -363,20 +390,31 @@ class QdrantRagService:
             except Exception as exc:
                 errors.append(f"blocked_qdrant_unavailable: {exc}")
 
+        import os
+        if os.getenv("APP_MODE", "dev") == "product":
+            if os.getenv("BM25_ENABLED", "true").lower() not in {"1", "true", "yes"}:
+                errors.append("blocked_bm25_required: BM25_ENABLED must be true in product mode")
+            if os.getenv("GRAPHRAG_ENABLED", "true").lower() not in {"1", "true", "yes"}:
+                errors.append("blocked_graphrag_required: GRAPHRAG_ENABLED must be true in product mode")
+            if os.getenv("TRITON_RERANKER_ENABLED", "true").lower() not in {"1", "true", "yes"}:
+                errors.append("blocked_triton_reranker_required: TRITON_RERANKER_ENABLED must be true in product mode")
+            if not os.getenv("TRITON_RERANKER_URL", "").strip():
+                errors.append("blocked_triton_reranker_required: TRITON_RERANKER_URL must be configured in product mode")
+
         if errors:
             self._validation_error = "; ".join(errors)
         self._validated = True
 
     # ------------------------------------------------------------------
-    # Retrieval (semantic only — no ChunkIndex, no hybrid_retrieve)
+    # Retrieval (hybrid Qdrant + lexical ChunkIndex + reranking)
     # ------------------------------------------------------------------
 
-    def _semantic_retrieve_for_gap(
+    def _hybrid_retrieve_for_gap(
         self,
         gap: GapDiagnosisResultItem,
         embedding_model: EmbeddingProvider,
         vector_store: VectorStore,
-        semantic_top_k: int,
+        top_k: int,
         relevance_threshold: float,
     ) -> list[dict[str, Any]]:
         tech_gaps = GAP_TECH_MAP.get(gap.gap_type, [])
@@ -393,13 +431,26 @@ class QdrantRagService:
         now_iso = datetime.now(UTC).isoformat()
 
         for rq in retrieval_queries:
-            results = semantic_retrieve(
+            assert self._chunk_index is not None
+            hybrid_results = hybrid_retrieve(
                 rq,
+                self._chunk_index,
                 embedding_model,
                 vector_store,
-                top_k=semantic_top_k,
+                top_k=top_k,
                 gap_type=gap.gap_type.value,
             )
+            local_results = rerank_contexts(hybrid_results, rq)
+            assert self._chunk_index is not None
+            graph_results, graph_metrics = graphrag_expand(
+                seed_contexts=local_results,
+                corpus_contexts=self._chunk_index.retrieve(rq, top_k=max(top_k * 4, 12)),
+                query=rq,
+                top_k=max(top_k, 3),
+            )
+            graph_ids = {ctx.chunk_id for ctx in graph_results}
+            merged_results = local_results + [ctx for ctx in graph_results if ctx.chunk_id not in {r.chunk_id for r in local_results}]
+            results, triton_metrics = triton_rerank_contexts(merged_results, rq)
             for ctx in results:
                 if ctx.chunk_id in seen_chunks:
                     continue
@@ -410,15 +461,26 @@ class QdrantRagService:
                 contexts.append(
                     {
                         "context_id": ctx.chunk_id,
+                        "chunk_id": ctx.chunk_id,
                         "gap_id": gap.gap_id,
+                        "gap_types": [gap.gap_type.value],
                         "source_id": ctx.source_id,
                         "nvidia_technology": ctx.product,
+                        "product": ctx.product,
                         "title": ctx.title,
                         "snippet": ctx.content,
+                        "content": ctx.content,
                         "url": ctx.url or "",
                         "retrieval_score": ctx.relevance_score,
-                        "rerank_score": None,
+                        "rerank_score": ctx.relevance_score,
                         "relevance_score": ctx.relevance_score,
+                        "retrieval_mode": "bm25_graphrag_qdrant_triton_rerank",
+                        "bm25_active": True,
+                        "graphrag_active": True,
+                        "graphrag_neighbor": ctx.chunk_id in graph_ids,
+                        "graphrag_metrics": graph_metrics,
+                        "triton_reranker_active": bool(triton_metrics.get("called")),
+                        "triton_reranker_metadata": triton_metrics,
                         "citation_ready": citation_ready,
                         "retrieved_at": now_iso,
                         "calibration_decision_ids": list(gap.calibration_decision_ids),
@@ -538,7 +600,7 @@ class QdrantRagService:
                 gap_count=len(gap_items),
             )
 
-        semantic_top_k = int(cal_values.get("rag.semantic_top_k", 3))
+        hybrid_top_k = int(cal_values.get("rag.semantic_top_k", 8))
         min_contexts_per_gap = int(cal_values.get("rag.min_contexts_per_gap", 1))
         relevance_threshold = float(cal_values.get("rag.context_relevance_threshold", 0.3))
 
@@ -566,6 +628,7 @@ class QdrantRagService:
 
         assert self._embedding_model is not None
         assert self._vector_store is not None
+        assert self._chunk_index is not None
 
         if self._vector_store.size == 0:
             return QdrantRagService._empty_result(
@@ -582,11 +645,11 @@ class QdrantRagService:
         query_count = len(rag_queries_by_gap)
 
         for gap in calibrated_gaps:
-            gap_contexts = self._semantic_retrieve_for_gap(
+            gap_contexts = self._hybrid_retrieve_for_gap(
                 gap,
                 self._embedding_model,
                 self._vector_store,
-                semantic_top_k,
+                hybrid_top_k,
                 relevance_threshold,
             )
             contexts_by_gap[gap.gap_id] = gap_contexts
@@ -621,6 +684,12 @@ class QdrantRagService:
             "average_relevance_score": round(average_relevance_score, 4),
             "citation_ready_context_count": citation_ready_context_count,
             "missing_rag_calibration_count": missing_rag_calibration_count,
+            "reranked_context_count": len([c for c in all_contexts if c.get("rerank_score") is not None]),
+            "retrieval_mode": "bm25_graphrag_qdrant_triton_rerank",
+            "bm25_active": True,
+                "graphrag_active": True,
+                "triton_reranker_required": True,
+                "lexical_corpus_chunk_count": len(self._chunk_index.chunks),
             "rag_blocker_count": 0,
         }
 
@@ -654,6 +723,8 @@ class QdrantRagService:
                 "retrieved_context_count": retrieved_context_count,
                 "min_required_contexts": min_contexts_per_gap,
                 "retrieval_status": rag_retrieval_status,
+                "retrieval_mode": "bm25_graphrag_qdrant_triton_rerank",
+                "reranker_required": True,
                 "rag_required": True,
             },
             "status": top_status,
@@ -672,11 +743,14 @@ def build_qdrant_rag_service(
     qdrant_config: QdrantConfig | None = None,
     embedding_model: EmbeddingProvider | None = None,
     vector_store: VectorStore | None = None,
+    chunk_index: ChunkIndex | None = None,
 ) -> QdrantRagService:
-    """Build a production RagService backed by Qdrant + semantic retrieval.
+    """Build the official production RagService.
 
-    No lexical ``ChunkIndex`` fallback. Validates all dependencies on call.
-    Blocks production when Qdrant, corpus, or embedding model is not ready.
+    The service uses Qdrant semantic retrieval, lexical ChunkIndex retrieval,
+    RRF fusion, and calibrated reranking. It validates all dependencies on call
+    and blocks production when Qdrant, corpus, embeddings, or calibrations are
+    not ready.
 
     Parameters
     ----------
@@ -690,12 +764,13 @@ def build_qdrant_rag_service(
     Returns
     -------
     QdrantRagService
-        A ``RagService``-compatible callable that uses only semantic retrieval.
+        A ``RagService``-compatible callable that uses hybrid retrieval and reranking.
     """
     return QdrantRagService(
         qdrant_config=qdrant_config,
         embedding_model=embedding_model,
         vector_store=vector_store,
+        chunk_index=chunk_index,
     )
 
 
@@ -706,21 +781,15 @@ def build_rag_service(
     embedding_model: EmbeddingProvider | None = None,
     vector_store: VectorStore | None = None,
 ) -> QdrantRagService:
-    """Legacy builder — delegates to ``build_qdrant_rag_service``.
+    """Build the official single product RAG path.
 
-    The ``chunk_index`` parameter is accepted for backward compatibility
-    but is **ignored**. Production RAG now uses only Qdrant + semantic
-    retrieval. No lexical ``ChunkIndex`` fallback.
+    The optional ``chunk_index`` is actively used when provided, preserving
+    backward compatibility while enforcing the hybrid+rerank runtime path.
     """
-    if chunk_index is not None:
-        warnings.warn(
-            "chunk_index parameter is ignored in production RagService. "
-            "Use build_qdrant_rag_service() for explicit semantic-only retrieval.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+    typed_chunk_index = chunk_index if isinstance(chunk_index, ChunkIndex) else None
     return build_qdrant_rag_service(
         qdrant_config=qdrant_config,
         embedding_model=embedding_model,
         vector_store=vector_store,
+        chunk_index=typed_chunk_index,
     )

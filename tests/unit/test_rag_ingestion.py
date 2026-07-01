@@ -12,9 +12,9 @@ from src.rag.schemas import RagDocument
 
 class TestIngestion:
     def test_load_sources_yaml(self) -> None:
-        """sources.yaml loads all 10 expected sources."""
+        """sources.yaml loads the active production source allowlist."""
         sources = load_sources()
-        assert len(sources) == 10
+        assert len(sources) >= 20
         assert "nim" in sources
         assert "tensorrt_llm" in sources
         assert "triton" in sources
@@ -22,7 +22,7 @@ class TestIngestion:
         assert "external_api_dependency" in sources["nim"].gap_types
 
     def test_load_chunk_corpus_all_files(self) -> None:
-        """All 10 markdown files load and produce chunks with metadata."""
+        """All active allowlisted markdown files load and produce chunks with metadata."""
         chunks = load_and_chunk_corpus()
         assert len(chunks) >= 10  # at least one chunk per file
         for c in chunks:

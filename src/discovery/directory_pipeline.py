@@ -41,7 +41,8 @@ class DirectoryPipeline:
             logger.info("Directory %s: %d page(s) to scrape", source_id, len(page_urls))
 
             for page_url in page_urls:
-                fr = self._collector.collect_one(source)
+                page_source = source.model_copy(update={"base_url": page_url})
+                fr = self._collector.collect_one(page_source)
                 if fr.status not in ("fetched", "cached"):
                     continue
 

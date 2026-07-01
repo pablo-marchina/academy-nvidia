@@ -123,3 +123,22 @@ def test_external_free_verification_requires_all_future_research_names(tmp_path:
     assert report["summary"]["external_unique_count"] == 2
     assert report["summary"]["missing_registry_count"] == 1
     assert report["summary"]["ranking_eligible_count"] == 1
+
+
+def test_external_free_verification_derives_registry_from_governed_catalog(tmp_path: Path) -> None:
+    registry = tmp_path / "missing_registry.json"
+    catalog = tmp_path / "candidate_catalog.csv"
+    catalog.write_text(
+        "candidate_id,name,category,status,required_configuration,benchmark,free_self_hosted_verification,"
+        "source_or_reference,cost_policy\n"
+        "local,Local Substitute,8.1,FUTURE_RESEARCH,free self-hosted only,benchmark,PASS_BY_FREE_ONLY_FILTER,"
+        "https://example.com/source,FREE_ONLY_OR_SELF_HOSTED\n",
+        encoding="utf-8",
+    )
+
+    report = build_verification_report(registry, catalog)
+
+    assert report["status"] == "PASS"
+    assert report["summary"]["external_unique_count"] == 1
+    assert report["summary"]["ranking_eligible_count"] == 1
+    assert report["items"][0]["official_source_url"] == "https://example.com/source"

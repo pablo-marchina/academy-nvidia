@@ -36,6 +36,8 @@ def create_product_workflow_run(
     _gate: ProductReady,
     session: DbSession,
 ) -> ProductWorkflowRunRead:
+    if body.use_rag is False:
+        raise HTTPException(status_code=400, detail="Product pipeline requires RAG; use_rag=false is not allowed.")
     svc = WorkflowOrchestrationService(session)
     state = svc.create_and_run_workflow(
         startup_id=body.startup_id,

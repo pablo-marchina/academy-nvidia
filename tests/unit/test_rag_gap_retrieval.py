@@ -841,8 +841,8 @@ class TestSemanticCalibrationsRequired:
         assert "rag.citation_precision_threshold" in REQUIRED_SEMANTIC_DECISIONS
         assert "rag.unsupported_claim_rate_threshold" in REQUIRED_SEMANTIC_DECISIONS
         # hybrid decisions NOT required for semantic-only path
-        assert "rag.hybrid_retrieval_weights" not in REQUIRED_SEMANTIC_DECISIONS
-        assert "rag.reranker_required" not in REQUIRED_SEMANTIC_DECISIONS
+        assert "rag.hybrid_retrieval_weights" in REQUIRED_SEMANTIC_DECISIONS
+        assert "rag.reranker_required" in REQUIRED_SEMANTIC_DECISIONS
 
     def test_validate_semantic_calibrations_returns_blockers_when_missing(self) -> None:
         from src.rag.rag_service_factory import _validate_semantic_calibrations

@@ -7,6 +7,7 @@ while preserving the in-memory fallback for development and testing.
 from __future__ import annotations
 
 import hashlib
+import os
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -39,13 +40,17 @@ class QdrantConnectionError(Exception):
 
 @dataclass
 class QdrantConfig:
-    """Configuration for connecting to a Qdrant instance."""
+    """Configuration for connecting to a Qdrant instance.
 
-    url: str = "http://localhost:6333"
-    api_key: str | None = None
-    collection_name: str = "nvidia_corpus"
-    vector_size: int = 384
-    timeout: int = 10
+    Defaults are read from environment so ingestion, runtime, and product
+    readiness checks use one source of truth.
+    """
+
+    url: str = os.getenv("QDRANT_URL", "http://localhost:6333")
+    api_key: str | None = os.getenv("QDRANT_API_KEY") or None
+    collection_name: str = os.getenv("QDRANT_COLLECTION", "nvidia_corpus")
+    vector_size: int = int(os.getenv("QDRANT_VECTOR_SIZE", "1024"))
+    timeout: int = int(os.getenv("QDRANT_TIMEOUT_SECONDS", "10"))
 
 
 # ------------------------------------------------------------------
@@ -447,10 +452,10 @@ def build_qdrant_store(
     environment variables (via ``QdrantConfig`` defaults).
     """
     config = QdrantConfig(
-        url=url or "http://localhost:6333",
-        api_key=api_key,
-        collection_name=collection_name or "nvidia_corpus",
-        vector_size=vector_size or 384,
-        timeout=timeout or 10,
+        url=url or os.getenv("QDRANT_URL", "http://localhost:6333"),
+        api_key=api_key if api_key is not None else (os.getenv("QDRANT_API_KEY") or None),
+        collection_name=collection_name or os.getenv("QDRANT_COLLECTION", "nvidia_corpus"),
+        vector_size=vector_size or int(os.getenv("QDRANT_VECTOR_SIZE", "1024")),
+        timeout=timeout or int(os.getenv("QDRANT_TIMEOUT_SECONDS", "10")),
     )
     return QdrantStore(config=config)

@@ -21,9 +21,12 @@ class WorkflowOrchestrationService:
         startup_id: str | None = None,
         discovery_candidate_id: str | None = None,
         analysis_run_id: str | None = None,
-        use_rag: bool = False,
+        use_rag: bool = True,
         graph_version: str = "1.0",
     ) -> ProductWorkflowState:
+        import os
+        if not use_rag:
+            raise ValueError("RAG is mandatory for the single product workflow; use_rag=false is not allowed.")
         has_lg = _has_langgraph()
 
         workflow_run = self.repo.create_workflow_run(

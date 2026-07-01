@@ -14,6 +14,7 @@ REQUIRED_PRODUCT_ENV = (
     "QDRANT_COLLECTION",
     "QDRANT_VECTOR_SIZE",
     "AGENT_ORCHESTRATION_ENABLED",
+    "LANGGRAPH_CHECKPOINTER",
 )
 
 
@@ -104,11 +105,22 @@ def validate_product_configuration(env: Mapping[str, str] | None = None) -> Prod
     )
     checks.append(
         ProductConfigurationCheck(
+            check_id="runtime.langgraph_postgres_checkpointer_required",
+            status=(
+                "PASS"
+                if app_mode != "product" or values.get("LANGGRAPH_CHECKPOINTER", "").casefold() == "postgres"
+                else "FAIL"
+            ),
+            reason="APP_MODE=product requires LANGGRAPH_CHECKPOINTER=postgres.",
+        )
+    )
+    checks.append(
+        ProductConfigurationCheck(
             check_id="rag.hybrid_retrieval_required",
             status=(
                 "PASS"
                 if app_mode != "product"
-                or values.get("RAG_RETRIEVAL_MODE", "").lower() in {"hybrid", "hybrid_with_rerank"}
+                or values.get("RAG_RETRIEVAL_MODE", "").lower() in {"hybrid", "hybrid_with_rerank", "bm25_graphrag_qdrant_triton_rerank", "qdrant_hybrid_graphrag_rerank"}
                 else "FAIL"
             ),
             reason="APP_MODE=product requires hybrid RAG retrieval.",
@@ -124,6 +136,18 @@ def validate_product_configuration(env: Mapping[str, str] | None = None) -> Prod
                 else "FAIL"
             ),
             reason="APP_MODE=product requires a non-mock reranker provider.",
+        )
+    )
+    triton_selected = reranker_provider in {"triton", "nvidia_triton", "nvidia_triton_inference_server"}
+    checks.append(
+        ProductConfigurationCheck(
+            check_id="rag.triton_reranker_endpoint_required",
+            status=(
+                "PASS"
+                if app_mode != "product" or not triton_selected or values.get("TRITON_RERANKER_URL", "").strip()
+                else "FAIL"
+            ),
+            reason="APP_MODE=product with RERANKER_PROVIDER=triton requires TRITON_RERANKER_URL.",
         )
     )
     status = "PASS" if all(check.status == "PASS" for check in checks) else "FAIL"

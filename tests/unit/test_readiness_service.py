@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from src.services.product.capability_registry import CapabilityStatus
 from src.services.product.health_executor import get_health_executor
-from src.services.product.readiness_service import ProductReadinessService
+from src.services.product.readiness_service import (
+    ProductReadinessService,
+    _validate_ai_native_model,
+    _validate_decisioning_config,
+)
 
 
 class TestProductReadinessService:
@@ -145,6 +149,7 @@ class TestProductReadinessService:
         assert "RAG_VECTOR_BACKEND=qdrant" in reasons
         assert "RAG_REQUIRED_FOR_PRODUCT=true" in reasons
         assert "AGENT_ORCHESTRATION_ENABLED=true" in reasons
+        assert "LANGGRAPH_CHECKPOINTER=postgres" in reasons
 
     def test_rag_blocking_when_rag_required(self) -> None:
         import os
@@ -176,9 +181,10 @@ class TestProductReadinessService:
                 "RERANKER_PROVIDER": "local_cross_encoder",
                 "RAG_REQUIRED_FOR_PRODUCT": "true",
                 "AGENT_ORCHESTRATION_ENABLED": "true",
+                "LANGGRAPH_CHECKPOINTER": "postgres",
             },
             clear=True,
-        ):
+        ), patch("src.services.product.readiness_service._langgraph_postgres_checkpointer_available", return_value=True):
             svc = ProductReadinessService()
             report = svc.get_product_readiness()
 
@@ -186,3 +192,30 @@ class TestProductReadinessService:
         optional_ids = {b.get("capability_id") for b in report.optional_missing_config}
         assert "optional_external_reranker" not in blocking_ids
         assert "optional_external_reranker" in optional_ids
+
+    def test_decisioning_config_validator_requires_runtime_gates(self, tmp_path) -> None:
+        path = tmp_path / "decisioning.yaml"
+        path.write_text(
+            "version: 1\n"
+            "priors: {evidence_positive_alpha: 2.0}\n"
+            "thresholds: {min_evidence_coverage: 0.8}\n"
+            "exploration: {strategy: expected_information_gain}\n"
+            "feedback: {posterior_update: beta_binomial}\n"
+            "runtime_gates: {require_uncertainty: false}\n",
+            encoding="utf-8",
+        )
+
+        errors = _validate_decisioning_config(path)
+
+        assert any("require_uncertainty" in error for error in errors)
+        assert any("require_decision_ledger" in error for error in errors)
+
+    def test_ai_native_model_validator_requires_versioned_training_metadata(self, tmp_path) -> None:
+        path = tmp_path / "model.json"
+        path.write_text('{"model_version":"","record_count":5,"class_counts":{"ai_native":5}}', encoding="utf-8")
+
+        errors = _validate_ai_native_model(path)
+
+        assert any("model_version" in error for error in errors)
+        assert any("at least 30" in error for error in errors)
+        assert any("at least two classes" in error for error in errors)

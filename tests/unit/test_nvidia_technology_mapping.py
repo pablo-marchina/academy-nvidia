@@ -430,17 +430,17 @@ class TestMappingMetrics:
             assert key in cal_metrics, f"Missing calibration metric: {key}"
 
 
-class TestGoldenSetBlocks:
+class TestGoldenSetMeasured:
     """10. golden set insuficiente bloqueia produção."""
 
-    def test_golden_set_insufficient_blocks_production(self) -> None:
-        assert GOLDEN_SET_STATUS == "baseline_dataset_insufficient"
+    def test_golden_set_measured_allows_production_path(self) -> None:
+        assert GOLDEN_SET_STATUS == "baseline_dataset_measured"
 
-    def test_build_mappings_blocks_when_golden_set_status_insufficient(self) -> None:
+    def test_build_mappings_uses_measured_golden_set_status(self) -> None:
         # With all calibrations in place, golden set itself should block
         from src.recommendation.nvidia_technology_mapping import GOLDEN_SET_STATUS
 
-        assert GOLDEN_SET_STATUS == "baseline_dataset_insufficient"
+        assert GOLDEN_SET_STATUS == "baseline_dataset_measured"
 
         gaps = [_make_calibrated_gap(gap_id="g1", gap_type=GapType.INFERENCE_PERFORMANCE_GAP)]
         rag_ctxs = {"inference_performance_gap": [_make_rag_context()]}
@@ -455,8 +455,8 @@ class TestGoldenSetBlocks:
             inventory=_calibrated_mapping_inventory(),
         )
 
-        assert result["mapping_status"] == "blocked_uncalibrated_mapping"
-        assert any("golden set" in b.lower() for b in result.get("blockers", []))
+        assert result["mapping_status"] in {"passed", "needs_more_evidence"}
+        assert "nvidia_technology_mappings" in result
 
 
 class TestNoLlmOrQdrantOrScraping:

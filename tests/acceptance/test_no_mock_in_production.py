@@ -45,3 +45,11 @@ def test_in_memory_vector_store_is_blocked_in_product(monkeypatch) -> None:
         raise AssertionError("Expected RuntimeError")
     except RuntimeError as exc:
         assert "FORBIDDEN in production" in str(exc)
+
+
+def test_product_runtime_uses_single_langgraph_pipeline() -> None:
+    """ProductService must not default to the legacy pipeline with stubs."""
+    from scripts.check_single_runtime_pipeline import validate_single_runtime_pipeline
+
+    failures = validate_single_runtime_pipeline()
+    assert failures == []

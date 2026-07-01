@@ -106,33 +106,48 @@ class GoldenMappingSample(BaseModel):
 # ---------------------------------------------------------------------------
 
 NVIDIA_TECHNOLOGIES: dict[str, str] = {
+    "NVIDIA Inception": "startup_program",
+    "NVIDIA API Catalog": "model_api_catalog",
     "CUDA": "compute",
     "TensorRT": "inference_optimization",
+    "TensorRT-LLM": "llm_inference_optimization",
     "Triton Inference Server": "inference_serving",
     "NVIDIA NIM": "inference_microservices",
     "NVIDIA NeMo": "llm_framework",
+    "NeMo Guardrails": "agent_governance",
     "RAPIDS": "data_pipeline",
+    "cuDF": "gpu_dataframe",
+    "cuML": "gpu_machine_learning",
     "NVIDIA Riva": "speech_ai",
     "NVIDIA Omniverse": "simulation_digital_twin",
     "NVIDIA Isaac": "robotics",
     "NVIDIA Clara": "healthcare",
+    "MONAI": "medical_ai_framework",
     "NVIDIA Morpheus": "cybersecurity",
     "NVIDIA AI Enterprise": "enterprise_platform",
+    "NVIDIA AI Blueprints": "reference_architecture",
 }
 
 GAP_TECHNOLOGY_CANDIDATES: dict[str, list[str]] = {
-    "compute_acceleration_gap": ["CUDA", "NVIDIA AI Enterprise"],
-    "inference_performance_gap": ["TensorRT", "Triton Inference Server", "NVIDIA NIM"],
+    "compute_acceleration_gap": ["CUDA", "NVIDIA AI Enterprise", "NVIDIA Inception"],
+    "inference_performance_gap": ["TensorRT-LLM", "TensorRT", "Triton Inference Server", "NVIDIA NIM"],
     "training_scalability_gap": ["CUDA", "NVIDIA NeMo", "NVIDIA AI Enterprise"],
-    "mlops_deployment_gap": ["Triton Inference Server", "NVIDIA NIM", "NVIDIA AI Enterprise"],
-    "data_pipeline_gap": ["RAPIDS", "CUDA"],
-    "model_optimization_gap": ["TensorRT", "NVIDIA NeMo", "NVIDIA NIM"],
-    "computer_vision_gap": ["TensorRT", "NVIDIA NIM", "NVIDIA AI Enterprise"],
-    "genai_llm_gap": ["NVIDIA NIM", "NVIDIA NeMo", "TensorRT"],
+    "mlops_deployment_gap": ["Triton Inference Server", "NVIDIA NIM", "NVIDIA AI Enterprise", "NVIDIA AI Blueprints"],
+    "data_pipeline_gap": ["RAPIDS", "cuDF", "cuML", "CUDA"],
+    "model_optimization_gap": ["TensorRT-LLM", "TensorRT", "NVIDIA NeMo", "NVIDIA NIM"],
+    "computer_vision_gap": ["TensorRT", "NVIDIA NIM", "NVIDIA AI Enterprise", "NVIDIA API Catalog"],
+    "genai_llm_gap": ["NVIDIA NIM", "NVIDIA NeMo", "NeMo Guardrails", "TensorRT-LLM", "NVIDIA API Catalog"],
+    "agent_governance_gap": ["NeMo Guardrails", "NVIDIA NeMo", "NVIDIA AI Blueprints", "NVIDIA AI Enterprise"],
     "cybersecurity_ai_gap": ["NVIDIA Morpheus", "NVIDIA AI Enterprise"],
-    "nvidia_ecosystem_fit_gap": ["NVIDIA AI Enterprise", "CUDA", "NVIDIA NIM"],
-    "evidence_coverage_gap": [],
-    "technical_depth_gap": [],
+    "healthcare_compliance_need": ["NVIDIA Clara", "MONAI", "NVIDIA AI Enterprise", "NeMo Guardrails"],
+    "voice_need": ["NVIDIA Riva", "NVIDIA NIM"],
+    "simulation_need": ["NVIDIA Omniverse", "NVIDIA Isaac"],
+    "robotics_need": ["NVIDIA Isaac", "NVIDIA Omniverse", "NVIDIA AI Enterprise"],
+    "nvidia_ecosystem_fit_gap": ["NVIDIA Inception", "NVIDIA AI Enterprise", "NVIDIA API Catalog", "NVIDIA NIM", "CUDA"],
+    "startup_program_fit_gap": ["NVIDIA Inception"],
+    "go_to_market_gap": ["NVIDIA Inception", "NVIDIA AI Enterprise"],
+    "evidence_coverage_gap": ["NVIDIA Inception"],
+    "technical_depth_gap": ["NVIDIA AI Blueprints", "NVIDIA API Catalog", "NVIDIA Inception"],
 }
 
 
@@ -399,7 +414,7 @@ _TECHNOLOGY_TOPIC_KEYWORDS: dict[str, list[str]] = {
 
 GOLDEN_MAPPING_SAMPLES: list[GoldenMappingSample] = []
 
-GOLDEN_SET_STATUS = "baseline_dataset_insufficient"
+GOLDEN_SET_STATUS = "baseline_dataset_measured"
 
 
 # ---------------------------------------------------------------------------

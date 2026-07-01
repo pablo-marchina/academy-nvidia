@@ -35,6 +35,27 @@ services:
     networks:
       - startup-radar-net
 
+  triton-reranker:
+    image: nvcr.io/nvidia/tritonserver:24.06-py3
+    container_name: startup-radar-triton-reranker
+    command: ["tritonserver", "--model-repository=/models", "--model-control-mode=explicit", "--load-model=cross_encoder"]
+    environment:
+      CE_MODEL_NAME: cross-encoder/ms-marco-MiniLM-L-6-v2
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+    volumes:
+      - ./models:/models:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/v2/health/ready || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - startup-radar-net
+
 volumes:
   postgres_data:
   qdrant_data:

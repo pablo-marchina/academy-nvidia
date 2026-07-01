@@ -611,14 +611,85 @@ export interface ExportRead {
   storage_path: string;
   content_hash: string;
   error_message: string | null;
+  content?: string | Record<string, JsonValue> | null;
   created_at: string;
   updated_at: string;
 }
 
 // Quality Report
+export interface QualityThresholdRead {
+  threshold?: number | null;
+  operator?: string | null;
+  severity?: string | null;
+}
+
 export interface QualityReportRead {
   status: string;
   summary: string;
   metrics: Record<string, JsonValue>;
+  thresholds?: Record<string, QualityThresholdRead>;
   last_updated: string | null;
+}
+
+
+// Unified Radar Dashboard
+export interface RadarDashboardRecommendation {
+  playbook_name?: string | null;
+  priority?: number | null;
+  confidence?: string | null;
+  nvidia_technologies: string[];
+  recommended_motion?: string | null;
+  next_step?: string | null;
+  reasoning?: string | null;
+  success_metrics: string[];
+}
+
+export interface RadarDashboardItem {
+  row_type: string;
+  candidate_id?: string | null;
+  startup_id?: string | null;
+  company_name: string;
+  website?: string | null;
+  sector?: string | null;
+  country?: string | null;
+  analysis_run_id?: string | null;
+  analysis_status?: string | null;
+  recommendation_status?: string | null;
+  recommended_motion?: string | null;
+  opportunity_score?: number | null;
+  score_tier?: string | null;
+  confidence?: string | null;
+  evidence_coverage?: number | null;
+  unsupported_claim_count?: number | null;
+  top_gaps: string[];
+  top_nvidia_technologies: string[];
+  activation_recommendations: RadarDashboardRecommendation[];
+  source_count: number;
+  information: Record<string, JsonValue>;
+}
+
+export interface RadarDashboardRead {
+  items: RadarDashboardItem[];
+  total: number;
+  analyzed_total: number;
+  limit: number;
+}
+
+export interface RadarPipelineResult {
+  startup_id?: string;
+  analysis_run_id?: string | null;
+  workflow_id?: string | null;
+  status: string;
+  error?: string;
+}
+
+export interface RadarPopulateResponse {
+  status: string;
+  message: string;
+  discovery_results: Record<string, JsonValue>[];
+  promoted_candidates: Record<string, JsonValue>[];
+  pipeline_results: RadarPipelineResult[];
+  dashboard: RadarDashboardRead;
+  discovery_queue?: Record<string, JsonValue>[];
+  rejected_entities?: Record<string, JsonValue>[];
 }

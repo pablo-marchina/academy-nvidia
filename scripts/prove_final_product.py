@@ -27,12 +27,15 @@ def _pytest_command(*args: str) -> list[str]:
 def _run(command: list[str], *, required: bool, timeout_seconds: int = 180) -> dict[str, Any]:
     label = " ".join(command)
     try:
+        env = dict(__import__("os").environ)
+        env["PYTHONPATH"] = str(PROJECT_ROOT) + (__import__("os").pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
         result = subprocess.run(
             command,
             cwd=PROJECT_ROOT,
             capture_output=True,
             text=True,
             timeout=timeout_seconds,
+            env=env,
         )
     except subprocess.TimeoutExpired as exc:
         return {
@@ -60,6 +63,11 @@ def _run(command: list[str], *, required: bool, timeout_seconds: int = 180) -> d
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run final product proof gates.")
     parser.add_argument("--quick", action="store_true", help="Skip expensive full test/build commands.")
+    parser.add_argument(
+        "--local-proof-only",
+        action="store_true",
+        help="Run only local deterministic proof gates that do not require live services or scanners.",
+    )
     parser.add_argument("--full", action="store_true", help="Explicit full mode; default when --quick is not set.")
     parser.add_argument("--skip-live", action="store_true", help="Skip live collection.")
     parser.add_argument("--skip-doctor", action="store_true", help="Skip local proof doctor before real services.")
@@ -73,7 +81,40 @@ def main() -> int:
     args = parser.parse_args()
 
     evidence_dir_arg = str(args.evidence_dir)
-    commands: list[tuple[list[str], bool]] = [
+    local_proof_commands: list[tuple[list[str], bool]] = [
+        ([sys.executable, "scripts/check_single_runtime_pipeline.py"], True),
+        ([sys.executable, "scripts/check_no_mock_runtime.py"], True),
+        (
+            [
+                sys.executable,
+                "scripts/build_runtime_usage_inventory.py",
+                "--output",
+                str(args.evidence_dir / "runtime_usage_inventory.csv"),
+            ],
+            True,
+        ),
+        (
+            [
+                sys.executable,
+                "scripts/build_best_case_runtime_report.py",
+                "--inventory",
+                str(args.evidence_dir / "runtime_usage_inventory.csv"),
+                "--output",
+                str(args.evidence_dir / "best_case_runtime_report.json"),
+            ],
+            True,
+        ),
+        (
+            _pytest_command(
+                "tests/unit/test_best_case_runtime_report.py",
+                "tests/unit/test_runtime_usage_inventory.py",
+                "tests/unit/test_ai_native_model.py",
+                "--tb=short",
+            ),
+            True,
+        ),
+    ]
+    commands: list[tuple[list[str], bool]] = local_proof_commands if args.local_proof_only else [
         ([sys.executable, "scripts/check_referenced_scripts_exist.py"], True),
         ([sys.executable, "scripts/check_source_repo_clean.py"], True),
         ([sys.executable, "scripts/generate_final_evidence_pack.py", "--evidence-dir", evidence_dir_arg], True),
@@ -292,12 +333,12 @@ def main() -> int:
         ([sys.executable, "scripts/check_finalization_governance.py", "--evidence-dir", evidence_dir_arg], True),
         ([sys.executable, "scripts/check_no_demo_dependency.py"], True),
     ]
-    if not args.skip_live:
+    if not args.skip_live and not args.local_proof_only:
         commands.insert(
             1, ([sys.executable, "scripts/live_collect.py", "--live", "--evidence-dir", evidence_dir_arg], True)
         )
     real_service_command: list[str] | None = None
-    if not args.quick:
+    if not args.quick and not args.local_proof_only:
         commands.extend(
             [
                 (
@@ -370,7 +411,7 @@ def main() -> int:
     final_status = "FAIL" if failures else ("BLOCKED_BY_ENVIRONMENT" if blocked else "PASS")
     summary = {
         "generated_at": datetime.now(UTC).isoformat(),
-        "mode": "quick" if args.quick else "full",
+        "mode": "local_proof_only" if args.local_proof_only else ("quick" if args.quick else "full"),
         "final_status": final_status,
         "total_gates": len(results),
         "passed": sum(1 for result in results if result["status"] == "PASS"),

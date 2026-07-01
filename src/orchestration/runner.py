@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -13,6 +14,7 @@ try:
 
     _LANGGRAPH_COMMAND_AVAILABLE = True
 except ImportError:
+    Command = None  # type: ignore[assignment]
     _LANGGRAPH_COMMAND_AVAILABLE = False
 
 _HAS_LANGGRAPH: bool | None = None
@@ -70,6 +72,17 @@ def _build_checkpointer() -> Any | None:
         return None
 
 
+def _is_explicit_product_mode() -> bool:
+    return os.environ.get("APP_MODE", "").casefold() == "product"
+
+
+def _is_postgres_checkpointer(checkpointer: Any | None) -> bool:
+    if checkpointer is None:
+        return False
+    cls = checkpointer.__class__
+    return cls.__name__ == "PostgresSaver" or "postgres" in cls.__module__.casefold()
+
+
 def _cache_checkpointer(thread_id: str, checkpointer: Any) -> None:
     _CHECKPOINTER_CACHE[thread_id] = checkpointer
 
@@ -114,7 +127,37 @@ class WorkflowRunner:
         if analysis_run_id:
             state.analysis_run_id = analysis_run_id
 
-        graph = build_workflow_graph(checkpointer=None)
+        checkpointer = _build_checkpointer()
+        if _is_explicit_product_mode() and not _is_postgres_checkpointer(checkpointer):
+            state.error_message = "APP_MODE=product requires a persistent LangGraph Postgres checkpointer."
+            self.repo.fail_workflow(
+                state.workflow_id,
+                error_message=state.error_message,
+                state_json=self._dump_state(state),
+            )
+            return state
+
+        try:
+            from src.orchestration import graph as graph_module
+
+            readiness = graph_module.ProductReadinessService().get_product_readiness()
+            if getattr(readiness, "ready", True) is False:
+                messages = [str(m) for m in (getattr(readiness, "user_messages", []) or [])]
+                state.current_node = "preflight_configuration_check"
+                if "preflight_configuration_check" not in state.failed_nodes:
+                    state.failed_nodes.append("preflight_configuration_check")
+                state.error_message = "; ".join(messages) or "Product readiness preflight failed"
+                self.repo.fail_workflow(
+                    state.workflow_id,
+                    error_message=state.error_message,
+                    state_json=self._dump_state(state),
+                )
+                return state
+        except Exception:
+            # The graph preflight performs the authoritative check when LangGraph is available.
+            pass
+
+        graph = build_workflow_graph(checkpointer=checkpointer)
         if graph is None:
             state.error_message = (
                 "LangGraph is not available. "
@@ -127,12 +170,14 @@ class WorkflowRunner:
             )
             return state
 
-        return self._run_with_langgraph(state, graph)
+        return self._run_with_langgraph(state, graph, checkpointer=checkpointer)
 
     def _run_with_langgraph(
         self,
         state: ProductWorkflowState,
         graph: Any,
+        *,
+        checkpointer: Any | None = None,
     ) -> ProductWorkflowState:
         self.repo.update_workflow_status(
             state.workflow_id,
@@ -143,6 +188,8 @@ class WorkflowRunner:
 
         thread_id: str = state.analysis_run_id or state.workflow_id
         config: dict[str, Any] = {"configurable": {"thread_id": thread_id}}
+        if checkpointer is not None:
+            _cache_checkpointer(thread_id, checkpointer)
 
         input_data: dict[str, Any] = state.model_dump()
 
@@ -234,11 +281,18 @@ class WorkflowRunner:
 
         checkpointer = _get_cached_checkpointer(thread_id)
         if checkpointer is None:
+            checkpointer = _build_checkpointer()
+            if checkpointer is not None:
+                _cache_checkpointer(thread_id, checkpointer)
+        if checkpointer is None:
             msg = (
-                f"Cannot resume workflow {state.workflow_id} — "
-                f"no cached checkpointer for thread_id {thread_id}. "
+                f"Cannot resume workflow {state.workflow_id} - "
+                f"no cached or persistent checkpointer for thread_id {thread_id}. "
                 "Ensure the initial run completed with a checkpointer."
             )
+            raise RuntimeError(msg)
+        if _is_explicit_product_mode() and not _is_postgres_checkpointer(checkpointer):
+            msg = "APP_MODE=product requires a persistent LangGraph Postgres checkpointer for resume."
             raise RuntimeError(msg)
 
         graph = build_workflow_graph(checkpointer=checkpointer)

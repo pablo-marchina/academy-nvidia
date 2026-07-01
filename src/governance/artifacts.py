@@ -129,19 +129,16 @@ def slugify(value: str) -> str:
 
 
 def parse_candidate_catalog_from_roadmap(path: Path = DEFAULT_ROADMAP_PATH) -> list[BenchmarkCandidateEntry]:
+    maximal_entries = _candidate_catalog_from_maximal_catalog()
     if not path.exists():
-        fallback_catalog = DEFAULT_EVIDENCE_DIR / "candidate_catalog.csv"
-        if fallback_catalog.exists():
-            return [
-                classify_candidate(BenchmarkCandidateEntry.model_validate(_candidate_row_from_csv(row)))
-                for row in read_csv(fallback_catalog)
-            ]
-        return []
+        if maximal_entries:
+            return maximal_entries
+        return _candidate_catalog_from_evidence_csv()
     text = path.read_text(encoding="utf-8")
     start = text.find("## 8.")
     end = text.find("## 9.", start)
     if start == -1:
-        return []
+        return maximal_entries or _candidate_catalog_from_evidence_csv()
     section = text[start : end if end != -1 else len(text)]
 
     entries: list[BenchmarkCandidateEntry] = []
@@ -175,7 +172,80 @@ def parse_candidate_catalog_from_roadmap(path: Path = DEFAULT_ROADMAP_PATH) -> l
                 )
             )
         )
+    return entries or maximal_entries or _candidate_catalog_from_evidence_csv()
+
+
+def _candidate_catalog_from_evidence_csv() -> list[BenchmarkCandidateEntry]:
+    fallback_catalog = DEFAULT_EVIDENCE_DIR / "candidate_catalog.csv"
+    if not fallback_catalog.exists():
+        return []
+    return [
+        classify_candidate(BenchmarkCandidateEntry.model_validate(_candidate_row_from_csv(row)))
+        for row in read_csv(fallback_catalog)
+    ]
+
+
+def _candidate_catalog_from_maximal_catalog() -> list[BenchmarkCandidateEntry]:
+    from src.governance.catalog_loader import load_maximal_catalog
+
+    entries: list[BenchmarkCandidateEntry] = []
+    for item in load_maximal_catalog():
+        status_text = getattr(item.status, "value", str(item.status)).upper()
+        if status_text == "BENCHMARKED":
+            status = CandidateStatus.BENCHMARKED
+        elif status_text == "FUTURE_RESEARCH":
+            status = CandidateStatus.FUTURE_RESEARCH
+        else:
+            status = CandidateStatus.DOCUMENTED_CANDIDATE
+        entries.append(
+            BenchmarkCandidateEntry(
+                candidate_id=item.candidate_id,
+                name=item.name,
+                category=item.category,
+                status=status,
+                marco=item.marco,
+                hypothesis=item.hypothesis or f"Evaluate whether {item.name} improves final product output.",
+                baseline=item.baseline,
+                metrics=item.metrics or ["output_quality", "latency_ms", "cost", "risk_score"],
+                benchmark_type=_benchmark_type_from_text(item.benchmark_type),
+                benchmark=item.benchmark or "scripts/run_benchmark.py --suite complete-catalog",
+                required_configuration=item.required_configuration,
+                expected_runtime_use=getattr(item.expected_runtime_use, "value", str(item.expected_runtime_use)),
+                cost_to_measure=item.cost_to_measure,
+                latency_to_measure=item.latency_to_measure,
+                risks_to_measure=item.risks_to_measure,
+                gate=item.gate,
+                evidence_generated=item.evidence_generated,
+                promotion_criteria=item.promotion_criteria or "promote only with measured output-quality lift",
+                rejection_criteria=item.rejection_criteria or "reject when benchmark shows no measurable value",
+                removal_criteria=item.removal_criteria or "remove from runtime when unused or lower value than alternative",
+                substitute_candidate=item.substitute_candidate or None,
+                substitute_reason=item.substitute_reason or None,
+                free_self_hosted_verification=item.free_self_hosted_verification,
+                source_or_reference=item.source_or_reference,
+                external_dependency=item.external_dependency,
+                cost_policy=getattr(item.cost_policy, "value", str(item.cost_policy)),
+            )
+        )
     return entries
+
+
+def _benchmark_type_from_text(value: str) -> BenchmarkType:
+    cleaned = (value or "").upper()
+    for benchmark_type in BenchmarkType:
+        if benchmark_type.value == cleaned:
+            return benchmark_type
+    if "SECURITY" in cleaned or "GUARD" in cleaned:
+        return BenchmarkType.SECURITY
+    if "COST" in cleaned or "LATENCY" in cleaned:
+        return BenchmarkType.COST_LATENCY
+    if "COMPLIANCE" in cleaned or "LICENSE" in cleaned:
+        return BenchmarkType.COMPLIANCE
+    if "READINESS" in cleaned:
+        return BenchmarkType.LOCAL_READINESS
+    if "PROXY" in cleaned:
+        return BenchmarkType.PROXY
+    return BenchmarkType.OUTPUT_VALUE
 
 
 def _candidate_row_from_csv(row: dict[str, str]) -> dict[str, object]:

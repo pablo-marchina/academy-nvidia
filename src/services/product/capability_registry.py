@@ -205,7 +205,7 @@ _reg(
         "RAG_DENSE_WEIGHT",
         "RAG_SPARSE_WEIGHT",
     ],
-    setup_instructions=("Set RAG_RETRIEVAL_MODE to hybrid or hybrid_with_rerank. Install extras as needed."),
+    setup_instructions=("Set RAG_RETRIEVAL_MODE to bm25_graphrag_qdrant_triton_rerank, hybrid_with_rerank or hybrid. Install RAG extras and run corpus ingestion."),
     failure_mode="Falls back to dense_only if sparse or reranker unavailable.",
     documentation_ref="docs/69_hybrid_rag_reranking.md",
 )
@@ -228,7 +228,7 @@ _reg(
     enabled_by_default=False,
     required_env_vars=["RERANKER_PROVIDER"],
     setup_instructions=(
-        "Set RERANKER_PROVIDER=local_cross_encoder. Requires sentence-transformers with CrossEncoder support."
+        "Set RERANKER_PROVIDER=triton for the bundled Triton cross_encoder model, or local_cross_encoder outside product mode. Product mode requires TRITON_RERANKER_URL."
     ),
     failure_mode="Falls back to NoOpReranker (no reranking) if model unavailable.",
     documentation_ref="docs/69_hybrid_rag_reranking.md",
@@ -242,7 +242,7 @@ _reg(
     enabled_by_default=False,
     required_env_vars=["RAGAS_EVAL_ENABLED"],
     setup_instructions="Set RAGAS_EVAL_ENABLED=true and install the [eval] extra.",
-    failure_mode="Not configured; quality gates use deterministic RAG metrics only.",
+    failure_mode="Not configured; quality gates use offline RAG metrics only.",
 )
 _reg(
     capability_id="optional_external_reranker",
@@ -270,7 +270,7 @@ _reg(
 _reg(
     capability_id="claim_ledger",
     name="Claim Ledger",
-    description="Deterministic claim generation and evidence-to-claim linkage",
+    description="Evidence-linked claim generation and evidence-to-claim linkage",
     category=CapabilityCategory.claims,
     required=True,
     setup_instructions="Available once product_database is configured.",
@@ -308,7 +308,7 @@ _reg(
 _reg(
     capability_id="activation_recommendations",
     name="Activation Recommendations",
-    description="Deterministic playbook matching and recommendation generation",
+    description="Evidence-scored playbook matching and recommendation generation",
     category=CapabilityCategory.playbooks,
     required=True,
     setup_instructions="Available once playbooks are loaded and analysis run exists.",
@@ -349,7 +349,7 @@ _reg(
 _reg(
     capability_id="product_quality_layer",
     name="Product Quality Layer",
-    description="Deterministic quality evaluation for analysis runs",
+    description="Quantitative quality evaluation for analysis runs",
     category=CapabilityCategory.quality,
     required=True,
     setup_instructions="Available once product_database is configured.",
@@ -357,7 +357,7 @@ _reg(
 )
 _reg(
     capability_id="deterministic_quality_metrics",
-    name="Deterministic Quality Metrics",
+    name="Quantitative Quality Metrics",
     description="Evidence coverage, dossier completeness, playbook actionability, etc.",
     category=CapabilityCategory.quality,
     required=True,
@@ -372,7 +372,7 @@ _reg(
     enabled_by_default=False,
     required_extras=["eval"],
     setup_instructions="Install with `pip install -e .[eval]` and configure ENABLE_RAGAS_TRIAL.",
-    failure_mode="Not configured; quality gates use deterministic metrics only.",
+    failure_mode="Not configured; quality gates use offline metrics only.",
 )
 _reg(
     capability_id="optional_deepeval_trial",
@@ -383,7 +383,7 @@ _reg(
     enabled_by_default=False,
     required_extras=["eval"],
     setup_instructions="Install with `pip install -e .[eval]` and configure ENABLE_DEEPEVAL_TRIAL.",
-    failure_mode="Not configured; quality gates use deterministic metrics only.",
+    failure_mode="Not configured; quality gates use offline metrics only.",
 )
 
 # ---------------------------------------------------------------------------
@@ -415,7 +415,7 @@ _reg(
     enabled_by_default=False,
     required_extras=["llm-judge"],
     setup_instructions=("Install with `pip install -e .[llm-judge]` and configure ENABLE_INSTRUCTOR_TRIAL=true."),
-    failure_mode="Not installed; LLM Judge uses NullLLMJudgeProvider (deterministic offline).",
+    failure_mode="Not installed; LLM Judge uses NullLLMJudgeProvider (offline baseline).",
 )
 
 # ---------------------------------------------------------------------------
@@ -436,7 +436,7 @@ _reg(
         "Set ANSWER_QUALITY_LLM_JUDGE_ENABLED=true and choose "
         "ANSWER_QUALITY_LLM_JUDGE_PROVIDER. Only null is implemented today."
     ),
-    failure_mode="Disabled by default; deterministic NullLLMJudgeProvider used.",
+    failure_mode="Disabled by default; offline NullLLMJudgeProvider used.",
     health_check_key="llm_judge",
     documentation_ref="docs/48_optional_llm_judge.md",
 )

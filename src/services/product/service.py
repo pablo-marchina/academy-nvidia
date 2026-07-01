@@ -32,7 +32,6 @@ from src.extraction.schemas import (
     SourceType,
     StartupProfile,
 )
-from src.pipeline.run_pipeline import PipelineResult, run_full_pipeline
 from src.rag.retrieval import build_default_index
 from src.repositories.export import ExportRepository
 from src.repositories.product import ProductRepository
@@ -42,7 +41,37 @@ from src.services.product.degraded import DEGRADED_STATES
 from src.services.product.export_service import ExportService
 from src.services.product.opportunity_service import OpportunityService
 
-PipelineRunner = Callable[..., PipelineResult]
+PipelineRunner = Callable[..., Any]
+
+
+_VALID_EXTRACTION_SOURCE_TYPES = {item.value for item in SourceType}
+
+def _normalized_extraction_source_type(value: str | None) -> SourceType:
+    raw = (value or "").strip().casefold()
+    aliases = {
+        "web": SourceType.DIRECTORY,
+        "manual_seed": SourceType.DIRECTORY,
+        "official_website": SourceType.OFFICIAL_SITE,
+        "website": SourceType.OFFICIAL_SITE,
+        "social": SourceType.FOUNDER_PROFILE,
+        "social_media": SourceType.FOUNDER_PROFILE,
+    }
+    if raw in aliases:
+        return aliases[raw]
+    if raw in _VALID_EXTRACTION_SOURCE_TYPES:
+        return SourceType(raw)
+    return SourceType.DIRECTORY
+
+def _safe_http_url(primary: str | None, fallback: str | None = None) -> HttpUrl | None:
+    for raw in (primary, fallback):
+        value = (raw or "").strip()
+        if not value:
+            continue
+        try:
+            return HttpUrl(value)
+        except Exception:
+            continue
+    return None
 
 
 class ProductService:
@@ -50,10 +79,14 @@ class ProductService:
         self,
         session: Session,
         *,
-        pipeline_runner: PipelineRunner = run_full_pipeline,
+        pipeline_runner: PipelineRunner | None = None,
     ) -> None:
         self.session = session
         self.repository = ProductRepository(session)
+        if pipeline_runner is None and os.getenv("APP_MODE", "").casefold() != "product":
+            from src.pipeline.run_pipeline import run_full_pipeline
+
+            pipeline_runner = run_full_pipeline
         self.pipeline_runner = pipeline_runner
 
     def create_startup(self, payload: dict[str, Any]) -> Startup:
@@ -127,6 +160,49 @@ class ProductService:
 
         self.repository.update_analysis_run_status(run.id, status="running", started_at=datetime.now(UTC))
         self.session.commit()
+
+        if self.pipeline_runner is None:
+            from src.orchestration.service import WorkflowOrchestrationService
+            from src.orchestration.result_adapter import workflow_state_to_output_snapshot
+
+            try:
+                orch = WorkflowOrchestrationService(self.session)
+                state = orch.create_and_run_workflow(
+                    startup_id=startup.id,
+                    analysis_run_id=run.id,
+                    use_rag=use_rag,
+                )
+                final_status = "completed"
+                error_message = None
+                degraded_reason = None
+                if state.status == "awaiting_review" or state.review_required:
+                    final_status = "awaiting_review"
+                elif state.error_message:
+                    final_status = "failed"
+                    error_message = state.error_message
+                elif state.degraded_nodes:
+                    final_status = "degraded"
+                    degraded_reason = ", ".join(dict.fromkeys(state.degraded_nodes))
+                self.repository.update_analysis_run_status(
+                    run.id,
+                    status=final_status,
+                    completed_at=None if final_status == "awaiting_review" else datetime.now(UTC),
+                    error_message=error_message,
+                    degraded_reason=degraded_reason,
+                    output_snapshot=workflow_state_to_output_snapshot(state),
+                )
+                self.session.commit()
+                return self.repository.get_analysis_run(run.id) or run
+            except Exception as exc:
+                self.session.rollback()
+                failed = self.repository.update_analysis_run_status(
+                    run.id,
+                    status="failed",
+                    completed_at=datetime.now(UTC),
+                    error_message=str(exc),
+                )
+                self.session.commit()
+                return self.repository.get_analysis_run(failed.id) or failed
 
         degraded_codes: list[str] = []
         try:
@@ -485,17 +561,24 @@ class ProductService:
         }
 
     def _pipeline_inputs(self, startup: Startup) -> tuple[StartupProfile, list[Evidence]]:
-        evidence = [
-            Evidence(
-                claim=item.claim,
-                source_url=HttpUrl(item.source_url),
-                source_type=SourceType(item.source_type),
-                quote_or_evidence=item.quote_or_evidence,
-                confidence=ConfidenceLevel(item.confidence),
-                collected_at=item.collected_at,
+        evidence: list[Evidence] = []
+        for item in startup.evidence:
+            source_url = _safe_http_url(item.source_url, startup.website)
+            if source_url is None:
+                continue
+            confidence_raw = (item.confidence or "low").strip().casefold()
+            if confidence_raw not in {level.value for level in ConfidenceLevel}:
+                confidence_raw = "low"
+            evidence.append(
+                Evidence(
+                    claim=item.claim,
+                    source_url=source_url,
+                    source_type=_normalized_extraction_source_type(item.source_type),
+                    quote_or_evidence=item.quote_or_evidence,
+                    confidence=ConfidenceLevel(confidence_raw),
+                    collected_at=item.collected_at,
+                )
             )
-            for item in startup.evidence
-        ]
         evidence_texts = [f"{item.claim} {item.quote_or_evidence}" for item in startup.evidence]
         confidence_score = (
             sum(

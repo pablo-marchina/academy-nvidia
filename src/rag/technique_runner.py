@@ -16,10 +16,12 @@ from __future__ import annotations
 
 import importlib
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 from src.governance.runtime_catalog import RuntimeCatalog
 from src.rag.schemas import RetrievedContext, TechniquesConfig
+from src.rag.technique_registry import TechniqueRunResult, class_name_for_technique
 
 _RAG_DIR = Path(__file__).resolve().parent
 
@@ -116,7 +118,7 @@ MANUAL_CLASS_NAMES: dict[str, str] = {
 
 
 def _to_title(snake: str) -> str:
-    return MANUAL_CLASS_NAMES.get(snake, "".join(p.capitalize() for p in snake.split("_")))
+    return class_name_for_technique(snake)
 
 
 def _load_and_run_technique(mod_name: str, contexts: list[RetrievedContext], **kwargs: Any) -> tuple[str, list[RetrievedContext] | None, str | None]:
@@ -139,6 +141,10 @@ def run_techniques_hybrid(
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Run techniques in hybrid mode with group dependencies.
+
+    Techniques are executed in dependency order.  Runtime remains sequential
+    inside each group because most techniques mutate the context list and a
+    parallel merge would make the result order non-auditable.
 
     Parameters
     ----------
@@ -185,20 +191,43 @@ def run_techniques_hybrid(
                 tname = t["name"]
                 result_contexts = None
                 err: str | None = None
+                start = perf_counter()
+                input_count = len(contexts)
+                input_quality = _average_relevance(contexts)
                 try:
                     result_contexts = _run_single_technique(tname, contexts, **kwargs)
                 except Exception as exc:
                     err = str(exc)
                 if result_contexts is not None:
                     contexts = result_contexts
-                results.append({
-                    "technique": tname,
-                    "group": gname,
-                    "success": err is None,
-                    "error": err,
-                })
+                output_quality = _average_relevance(contexts)
+                results.append(
+                    TechniqueRunResult(
+                        technique=tname,
+                        group=gname,
+                        success=err is None,
+                        input_count=input_count,
+                        output_count=len(contexts),
+                        latency_ms=(perf_counter() - start) * 1000,
+                        quality_delta=output_quality - input_quality,
+                        cost_estimate=0.0,
+                        error=err,
+                        evidence={
+                            "free_self_hosted": True,
+                            "runtime_mode": "hybrid_sequential_dependency_order",
+                            "parallel_requested": bool(group.get("parallel", False)),
+                            "parallel_executed": False,
+                        },
+                    ).model_dump()
+                )
 
     return {"contexts": contexts, "results": results, "group_order": group_order}
+
+
+def _average_relevance(contexts: list[RetrievedContext]) -> float:
+    if not contexts:
+        return 0.0
+    return sum(float(c.relevance_score) for c in contexts) / len(contexts)
 
 
 def _run_single_technique(mod_name: str, contexts: list[RetrievedContext], **kwargs: Any) -> list[RetrievedContext] | None:

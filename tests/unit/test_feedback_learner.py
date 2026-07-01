@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.decisioning.feedback_learner import apply_feedback_weight
+from src.decisioning.feedback_learner import apply_feedback_weight, learn_feedback_weight
 from src.orchestration.state import ProductWorkflowState
 
 
@@ -42,6 +42,13 @@ class TestApplyFeedbackWeight:
         result = apply_feedback_weight(0.3333, positive=1, negative=2)
         assert result == 0.2633  # 0.3333 + 0.03 - 0.10
 
+    def test_learn_feedback_weight_exposes_quantitative_adjustment(self) -> None:
+        result = learn_feedback_weight(0.3, positive=1)
+        assert result["adjusted_weight"] == 0.34
+        assert result["sample_size"] == 1.0
+        assert result["confidence"] == 0.2
+        assert result["uncertainty"] == 0.8
+
 
 class TestApplyFeedbackWeightsNode:
     def test_skipped_when_no_feedback(self) -> None:
@@ -73,9 +80,10 @@ class TestApplyFeedbackWeightsNode:
         result = node.fn(state)
         assert result.status == "completed"
         assert "confidence" in result.state_updates["adjusted_weights"]
+        assert "confidence" in result.state_updates["feedback_adjustments"]
         assert result.state_updates["iteration_count"] == 1
-        # base weight = 0.30, +1 * 0.03 = 0.33
-        assert result.state_updates["adjusted_weights"]["confidence"] == 0.33
+        # base weight = 0.30, sample_confidence=0.20, boundary_damping=0.80
+        assert result.state_updates["adjusted_weights"]["confidence"] == 0.34
 
     def test_clears_feedback_counts_after_apply(self) -> None:
         import src.orchestration.node_impl  # noqa: F401
@@ -95,7 +103,7 @@ class TestRouteAfterFeedback:
     @staticmethod
     def _routing_function(state: ProductWorkflowState) -> str:
         if state.review_decision == "request_more_evidence" and state.iteration_count < state.max_iterations:
-            return "score_startup"
+            return "score_startup_probabilistic"
         return "finish"
 
     def test_loops_back_when_request_more_evidence(self) -> None:
@@ -105,7 +113,7 @@ class TestRouteAfterFeedback:
             iteration_count=0,
             max_iterations=3,
         )
-        assert self._routing_function(state) == "score_startup"
+        assert self._routing_function(state) == "score_startup_probabilistic"
 
     def test_loops_back_with_remaining_iterations(self) -> None:
         state = ProductWorkflowState(
@@ -114,7 +122,7 @@ class TestRouteAfterFeedback:
             iteration_count=1,
             max_iterations=3,
         )
-        assert self._routing_function(state) == "score_startup"
+        assert self._routing_function(state) == "score_startup_probabilistic"
 
     def test_goes_to_finish_when_approved(self) -> None:
         state = ProductWorkflowState(

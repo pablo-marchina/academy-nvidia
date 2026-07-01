@@ -422,3 +422,356 @@ sources:
       deprecated_at: null
       superseded_by: null
       deprecation_reason: null
+  inception:
+    title: NVIDIA Inception
+    url: https://www.nvidia.com/en-us/startups/
+    product: NVIDIA Inception
+    gap_types:
+    - nvidia_ecosystem_fit_gap
+    - go_to_market_gap
+    - startup_program_fit_gap
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: 3a65279151c0ff0d02467a44f44aec89
+    previous_content_hash: null
+    collected_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-06-30T00:00:00+00:00'
+    valid_from: '2026-06-30T00:00:00+00:00'
+    valid_until: null
+    freshness_policy: weekly
+    stale_after_days: 7
+    is_active: true
+    deprecated_at: null
+    superseded_by: null
+    deprecation_reason: null
+    versions:
+    - version: '1.0'
+      content_hash: 3a65279151c0ff0d02467a44f44aec89
+      previous_content_hash: null
+      collected_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-06-30T00:00:00+00:00'
+      valid_from: '2026-06-30T00:00:00+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
+  nemo:
+    title: NVIDIA NeMo
+    url: https://docs.nvidia.com/nemo-framework/user-guide/latest/overview.html
+    product: NVIDIA NeMo
+    gap_types:
+    - genai_llm_gap
+    - training_scalability_gap
+    - model_customization_gap
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: d4cd0941fd1f70b423abfacc9893da42
+    previous_content_hash: null
+    collected_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-06-30T00:00:00+00:00'
+    valid_from: '2026-06-30T00:00:00+00:00'
+    valid_until: null
+    freshness_policy: weekly
+    stale_after_days: 7
+    is_active: true
+    deprecated_at: null
+    superseded_by: null
+    deprecation_reason: null
+    versions:
+    - version: '1.0'
+      content_hash: d4cd0941fd1f70b423abfacc9893da42
+      previous_content_hash: null
+      collected_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-06-30T00:00:00+00:00'
+      valid_from: '2026-06-30T00:00:00+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
+  cuda:
+    title: NVIDIA CUDA
+    url: https://developer.nvidia.com/cuda-toolkit
+    product: CUDA
+    gap_types:
+    - compute_acceleration_gap
+    - training_scalability_gap
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: be66e06fe2317414834135ebe9eff117
+    previous_content_hash: null
+    collected_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-06-30T00:00:00+00:00'
+    valid_from: '2026-06-30T00:00:00+00:00'
+    valid_until: null
+    freshness_policy: weekly
+    stale_after_days: 7
+    is_active: true
+    deprecated_at: null
+    superseded_by: null
+    deprecation_reason: null
+    versions:
+    - version: '1.0'
+      content_hash: be66e06fe2317414834135ebe9eff117
+      previous_content_hash: null
+      collected_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-06-30T00:00:00+00:00'
+      valid_from: '2026-06-30T00:00:00+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
+  cudf:
+    title: NVIDIA cuDF
+    url: https://docs.rapids.ai/api/cudf/stable/
+    product: cuDF
+    gap_types:
+    - slow_data_pipeline
+    - heavy_tabular_processing
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: 4cc791e831d495f9dfcecba17f91f546
+    previous_content_hash: null
+    collected_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-06-30T00:00:00+00:00'
+    valid_from: '2026-06-30T00:00:00+00:00'
+    valid_until: null
+    freshness_policy: weekly
+    stale_after_days: 7
+    is_active: true
+    deprecated_at: null
+    superseded_by: null
+    deprecation_reason: null
+    versions:
+    - version: '1.0'
+      content_hash: 4cc791e831d495f9dfcecba17f91f546
+      previous_content_hash: null
+      collected_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-06-30T00:00:00+00:00'
+      valid_from: '2026-06-30T00:00:00+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
+  cuml:
+    title: NVIDIA cuML
+    url: https://docs.rapids.ai/api/cuml/stable/
+    product: cuML
+    gap_types:
+    - slow_data_pipeline
+    - training_scalability_gap
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: 5784ef6d9d004de50715a704bebc17fe
+    previous_content_hash: null
+    collected_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-06-30T00:00:00+00:00'
+    valid_from: '2026-06-30T00:00:00+00:00'
+    valid_until: null
+    freshness_policy: weekly
+    stale_after_days: 7
+    is_active: true
+    deprecated_at: null
+    superseded_by: null
+    deprecation_reason: null
+    versions:
+    - version: '1.0'
+      content_hash: 5784ef6d9d004de50715a704bebc17fe
+      previous_content_hash: null
+      collected_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-06-30T00:00:00+00:00'
+      valid_from: '2026-06-30T00:00:00+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
+  ai_enterprise:
+    title: NVIDIA AI Enterprise
+    url: https://docs.nvidia.com/ai-enterprise/
+    product: NVIDIA AI Enterprise
+    gap_types:
+    - mlops_deployment_gap
+    - governance_gap
+    - enterprise_readiness_gap
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: 712ac546e3c46343da37b03db8a3b222
+    previous_content_hash: null
+    collected_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-06-30T00:00:00+00:00'
+    valid_from: '2026-06-30T00:00:00+00:00'
+    valid_until: null
+    freshness_policy: weekly
+    stale_after_days: 7
+    is_active: true
+    deprecated_at: null
+    superseded_by: null
+    deprecation_reason: null
+    versions:
+    - version: '1.0'
+      content_hash: 712ac546e3c46343da37b03db8a3b222
+      previous_content_hash: null
+      collected_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-06-30T00:00:00+00:00'
+      valid_from: '2026-06-30T00:00:00+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
+  nvidia_api_catalog:
+    title: NVIDIA API Catalog
+    url: https://build.nvidia.com/
+    product: NVIDIA API Catalog
+    gap_types:
+    - external_api_dependency
+    - model_selection_gap
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: 21473e5edde3a7831ccf2cc429cdc05f
+    previous_content_hash: null
+    collected_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-06-30T00:00:00+00:00'
+    valid_from: '2026-06-30T00:00:00+00:00'
+    valid_until: null
+    freshness_policy: weekly
+    stale_after_days: 7
+    is_active: true
+    deprecated_at: null
+    superseded_by: null
+    deprecation_reason: null
+    versions:
+    - version: '1.0'
+      content_hash: 21473e5edde3a7831ccf2cc429cdc05f
+      previous_content_hash: null
+      collected_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-06-30T00:00:00+00:00'
+      valid_from: '2026-06-30T00:00:00+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
+  nvidia_blueprint_ai_agents:
+    title: NVIDIA AI Blueprints for Agents
+    url: https://build.nvidia.com/nvidia/blueprints
+    product: NVIDIA AI Blueprints
+    gap_types:
+    - agent_governance_gap
+    - genai_llm_gap
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: 0766bed31f39ee01fb4eedc5504811eb
+    previous_content_hash: null
+    collected_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-06-30T00:00:00+00:00'
+    valid_from: '2026-06-30T00:00:00+00:00'
+    valid_until: null
+    freshness_policy: weekly
+    stale_after_days: 7
+    is_active: true
+    deprecated_at: null
+    superseded_by: null
+    deprecation_reason: null
+    versions:
+    - version: '1.0'
+      content_hash: 0766bed31f39ee01fb4eedc5504811eb
+      previous_content_hash: null
+      collected_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-06-30T00:00:00+00:00'
+      valid_from: '2026-06-30T00:00:00+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
+  nvidia_whitepaper_inference:
+    title: NVIDIA Inference Optimization Whitepaper
+    url: https://developer.nvidia.com/deep-learning-performance-training-inference
+    product: NVIDIA Inference Optimization
+    gap_types:
+    - high_latency
+    - high_inference_cost
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: ce8e523e9e00bd6cb1ce11b7f93ac7ce
+    previous_content_hash: null
+    collected_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-06-30T00:00:00+00:00'
+    valid_from: '2026-06-30T00:00:00+00:00'
+    valid_until: null
+    freshness_policy: weekly
+    stale_after_days: 7
+    is_active: true
+    deprecated_at: null
+    superseded_by: null
+    deprecation_reason: null
+    versions:
+    - version: '1.0'
+      content_hash: ce8e523e9e00bd6cb1ce11b7f93ac7ce
+      previous_content_hash: null
+      collected_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-06-30T00:00:00+00:00'
+      valid_from: '2026-06-30T00:00:00+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
+  nvidia_whitepaper_rag:
+    title: NVIDIA RAG Whitepaper
+    url: https://developer.nvidia.com/blog/tag/rag/
+    product: NVIDIA RAG
+    gap_types:
+    - rag_quality_gap
+    - agent_governance_gap
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: 2f6797ffd05c048bc22a8d4011be6172
+    previous_content_hash: null
+    collected_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-06-30T00:00:00+00:00'
+    valid_from: '2026-06-30T00:00:00+00:00'
+    valid_until: null
+    freshness_policy: weekly
+    stale_after_days: 7
+    is_active: true
+    deprecated_at: null
+    superseded_by: null
+    deprecation_reason: null
+    versions:
+    - version: '1.0'
+      content_hash: 2f6797ffd05c048bc22a8d4011be6172
+      previous_content_hash: null
+      collected_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-06-30T00:00:00+00:00'
+      valid_from: '2026-06-30T00:00:00+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null

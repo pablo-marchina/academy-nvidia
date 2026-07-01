@@ -50,6 +50,9 @@ def _next_link(base_url: str, html: str, max_pages: int = 20,
             if http_client is not None:
                 resp = http_client(current_url)
             else:
+                import os
+                if os.getenv("APP_MODE", "").casefold() == "product":
+                    raise RuntimeError("Direct directory pagination is disabled in APP_MODE=product; inject governed http_client.")
                 resp = httpx.get(current_url, timeout=10, follow_redirects=True)
             status = resp.status_code if hasattr(resp, "status_code") else getattr(resp, "status", 0)
             if status != 200:

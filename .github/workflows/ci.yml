@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  product-governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install Python package
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Runtime gates
+        run: |
+          python scripts/check_single_runtime_pipeline.py
+          python scripts/check_no_mock_runtime.py
+          python scripts/build_runtime_usage_inventory.py --output final_case_evidence/runtime_usage_inventory.csv
+          python scripts/build_best_case_runtime_report.py --inventory final_case_evidence/runtime_usage_inventory.csv --output final_case_evidence/best_case_runtime_report.json
+      - name: Focused tests
+        run: |
+          pytest -q \
+            tests/unit/test_best_case_runtime_report.py \
+            tests/unit/test_runtime_usage_inventory.py \
+            tests/unit/test_ai_native_model.py \
+            tests/unit/test_probabilistic_workflow_scoring.py \
+            tests/unit/test_rag_technique_registry.py \
+            tests/acceptance/test_no_mock_in_production.py

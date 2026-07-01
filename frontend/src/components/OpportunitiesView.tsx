@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { OpportunityListItem, RankedOpportunityRead } from "../api/types";
-import { listOpportunities, listRankedOpportunities } from "../api/product";
+import { getQualityReport, listOpportunities, listRankedOpportunities } from "../api/product";
 
 interface OpportunitiesViewProps {
   onSelectRun: (runId: string) => void;
@@ -22,6 +22,11 @@ export function OpportunitiesView({ onSelectRun, onSelectStartup }: Opportunitie
   const [rankedTotal, setRankedTotal] = useState(0);
   const [loadingRanked, setLoadingRanked] = useState(false);
   const [rankedError, setRankedError] = useState<string | null>(null);
+  const [qualityThresholds, setQualityThresholds] = useState<Record<string, number>>({});
+
+  function threshold(metric: string, fallback = 1): number {
+    return qualityThresholds[metric] ?? fallback;
+  }
 
   async function loadAll(pageOffset = 0) {
     setLoading(true);
@@ -50,6 +55,19 @@ export function OpportunitiesView({ onSelectRun, onSelectStartup }: Opportunitie
       setLoadingRanked(false);
     }
   }
+
+  useEffect(() => {
+    getQualityReport()
+      .then((report) => {
+        const next: Record<string, number> = {};
+        Object.entries(report.thresholds ?? {}).forEach(([metric, spec]) => {
+          const thresholdValue = spec?.threshold;
+          if (typeof thresholdValue === "number") next[metric] = thresholdValue;
+        });
+        setQualityThresholds(next);
+      })
+      .catch(() => setQualityThresholds({}));
+  }, []);
 
   useEffect(() => {
     if (tab === "all") {
@@ -137,12 +155,12 @@ export function OpportunitiesView({ onSelectRun, onSelectStartup }: Opportunitie
                         <td>{o.evidence_coverage != null ? `${Math.round(o.evidence_coverage * 100)}%` : "—"}</td>
                         <td>{o.unsupported_claim_count ?? "—"}</td>
                         <td>
-                          <span className={`badge ${o.export_readiness_score != null && o.export_readiness_score >= 0.7 ? "cap-ok" : "cap-warn"}`}>
+                          <span className={`badge ${o.export_readiness_score != null && o.export_readiness_score >= threshold("export_readiness_score") ? "cap-ok" : "cap-warn"}`}>
                             {o.export_readiness_score != null ? o.export_readiness_score.toFixed(2) : "—"}
                           </span>
                         </td>
                         <td>
-                          <span className={`badge ${o.review_readiness_score != null && o.review_readiness_score >= 0.7 ? "cap-ok" : "cap-warn"}`}>
+                          <span className={`badge ${o.review_readiness_score != null && o.review_readiness_score >= threshold("review_readiness_score") ? "cap-ok" : "cap-warn"}`}>
                             {o.review_readiness_score != null ? o.review_readiness_score.toFixed(2) : "—"}
                           </span>
                         </td>
