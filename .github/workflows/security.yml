@@ -35,7 +35,7 @@ jobs:
           python -m pip install ".[security]"
       - name: Audit external Python dependencies
         run: |
-          python -m pip freeze | grep -v '^nvidia-startup-ai-radar==' > audited-requirements.txt
+          python -m pip freeze | grep -vi '^nvidia-startup-ai-radar' > audited-requirements.txt
           pip-audit --strict --requirement audited-requirements.txt
       - name: Run high-severity Python static analysis
         run: bandit -q -r src scripts -lll
