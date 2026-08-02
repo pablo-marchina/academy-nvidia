@@ -30,18 +30,19 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
-      - name: Run radar runtime diagnostic
+      - name: Run bounded radar runtime diagnostic
         env:
           APP_MODE: test
-          PRODUCT_DB_URL: sqlite:////tmp/radar_runtime_diagnostic.db
           RAG_REQUIRED_FOR_PRODUCT: "false"
           RADAR_ENRICH_VERIFIED_SEEDS: ""
+          RADAR_ANALYSIS_MAX_SOURCES: "5"
         run: |
           mkdir -p /tmp/radar-diagnostic
           python - <<'PY'
           from __future__ import annotations
 
           import json
+          import os
           import time
           import traceback
           from collections import Counter
@@ -51,17 +52,28 @@ jobs:
           from src.services.product.radar_dashboard_service import PopulateOptions, RadarDashboardService
 
           output = Path('/tmp/radar-diagnostic/result.json')
-          runtime = configure_product_database('sqlite:////tmp/radar_runtime_diagnostic.db')
-          report: dict[str, object] = {'cases': []}
+          report: dict[str, object] = {
+              'configuration': {
+                  'dashboard_limit': 100,
+                  'source_limit': 0,
+                  'analysis_source_cap': int(os.getenv('RADAR_ANALYSIS_MAX_SOURCES', '5')),
+                  'pipeline_limits': [1, 3, 5],
+              },
+              'cases': [],
+          }
 
-          for limit in (1, 3, 5):
+          for pipeline_limit in (1, 3, 5):
+              db_path = Path(f'/tmp/radar_runtime_diagnostic_{pipeline_limit}.db')
+              db_path.unlink(missing_ok=True)
+              runtime = configure_product_database(f'sqlite:///{db_path}')
               with runtime.session_factory() as session:
                   started = time.perf_counter()
                   try:
                       result = RadarDashboardService(session).populate(
                           PopulateOptions(
-                              limit=limit,
+                              limit=100,
                               source_limit=0,
+                              pipeline_limit=pipeline_limit,
                               run_pipeline=True,
                               force_rerun=True,
                           )
@@ -69,8 +81,43 @@ jobs:
                       elapsed = time.perf_counter() - started
                       pipeline_results = result.get('pipeline_results', [])
                       dashboard = result.get('dashboard', {})
+                      items = dashboard.get('items', [])
+
+                      recommendation_counts = [
+                          len(item.get('activation_recommendations') or [])
+                          for item in items
+                      ]
+                      technology_counts = [
+                          len(item.get('top_nvidia_technologies') or [])
+                          for item in items
+                      ]
+                      company_names = [str(item.get('company_name') or '') for item in items]
+                      source_counts = [int(item.get('source_count') or 0) for item in items]
+                      invalid_recommendation_rows = [
+                          {
+                              'company_name': item.get('company_name'),
+                              'recommendation_count': len(item.get('activation_recommendations') or []),
+                              'technology_count': len(item.get('top_nvidia_technologies') or []),
+                          }
+                          for item in items
+                          if len(item.get('activation_recommendations') or []) > 2
+                          or len(item.get('top_nvidia_technologies') or []) > 5
+                      ]
+                      medical_without_imaging = [
+                          str(item.get('company_name') or '')
+                          for item in items
+                          if any(
+                              tech in {'NVIDIA Clara', 'MONAI'}
+                              for tech in (item.get('top_nvidia_technologies') or [])
+                          )
+                          and not any(
+                              phrase in json.dumps(item.get('information') or {}, ensure_ascii=False).casefold()
+                              for phrase in ('medical imaging', 'radiology', 'pathology', 'tomography', 'mri', 'x-ray')
+                          )
+                      ]
+
                       case = {
-                          'limit': limit,
+                          'pipeline_limit': pipeline_limit,
                           'elapsed_seconds': round(elapsed, 4),
                           'discovery_results': result.get('discovery_results', []),
                           'promoted_count': len(result.get('promoted_candidates', [])),
@@ -79,16 +126,28 @@ jobs:
                           'pipeline_errors': [item for item in pipeline_results if item.get('status') == 'failed'][:10],
                           'dashboard_total': dashboard.get('total'),
                           'dashboard_analyzed_total': dashboard.get('analyzed_total'),
-                          'dashboard_items': dashboard.get('items', []),
+                          'company_names': company_names,
+                          'unique_company_names': len({name.casefold() for name in company_names if name}),
+                          'recommendation_counts': recommendation_counts,
+                          'technology_counts': technology_counts,
+                          'source_counts': source_counts,
+                          'invalid_recommendation_rows': invalid_recommendation_rows,
+                          'medical_without_imaging': medical_without_imaging,
+                          'artifact_errors': [
+                              item.get('artifact_errors')
+                              for item in pipeline_results
+                              if item.get('artifact_errors')
+                          ],
                           'queue_count': len(result.get('discovery_queue', [])),
                           'rejected_count': len(result.get('rejected_entities', [])),
+                          'dashboard_items': items,
                       }
                       report['cases'].append(case)
                       print(json.dumps(case, ensure_ascii=False, indent=2, default=str))
                   except Exception as exc:
                       elapsed = time.perf_counter() - started
                       case = {
-                          'limit': limit,
+                          'pipeline_limit': pipeline_limit,
                           'elapsed_seconds': round(elapsed, 4),
                           'exception': repr(exc),
                           'traceback': traceback.format_exc(),
