@@ -36,6 +36,16 @@ jobs:
           cat tools/runtime-fix-patch/patch_chunk_* | base64 -d | gzip -d > /tmp/runtime_fix.patch
           git apply --check /tmp/runtime_fix.patch
           git apply /tmp/runtime_fix.patch
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/agents/search_planner.py')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace(
+              "f\"https://serpapi.com/search.json?q={quote_plus('\\\"' + startup_name + '\\" startup AI Brasil')}\"",
+              "f\"https://serpapi.com/search.json?q={quote_plus(startup_name + ' startup AI Brasil')}\"",
+          )
+          path.write_text(text, encoding='utf-8')
+          PY
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
