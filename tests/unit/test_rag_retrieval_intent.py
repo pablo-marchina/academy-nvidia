@@ -36,6 +36,13 @@ def test_gap_and_technology_query_is_an_intersection() -> None:
             ["high_inference_cost"],
         ),
         _chunk(
+            "tensorrt_000",
+            "tensorrt",
+            "TensorRT",
+            "TensorRT accelerates general deep-learning inference.",
+            ["high_inference_cost"],
+        ),
+        _chunk(
             "tensorrt_llm_000",
             "tensorrt_llm",
             "TensorRT-LLM",
