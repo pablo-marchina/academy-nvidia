@@ -154,6 +154,16 @@ class WorkflowRunner:
         self.session.flush()
         return run.id
 
+    def _attach_analysis_run(self, state: ProductWorkflowState, analysis_run_id: str) -> None:
+        """Persist the workflow-to-analysis link used by APIs and the frontend."""
+        workflow = self.repo.get_workflow_run(state.workflow_id)
+        if workflow is None:
+            raise LookupError(f"WorkflowRun not found: {state.workflow_id}")
+        workflow.analysis_run_id = analysis_run_id
+        if state.startup_id and workflow.startup_id is None:
+            workflow.startup_id = state.startup_id
+        self.session.flush()
+
     def _sync_analysis_run(
         self,
         state: ProductWorkflowState,
@@ -207,6 +217,7 @@ class WorkflowRunner:
         analysis_run_id = self._ensure_analysis_run(state)
         if analysis_run_id:
             state.analysis_run_id = analysis_run_id
+            self._attach_analysis_run(state, analysis_run_id)
             self._sync_analysis_run(state, status=WorkflowStatus.RUNNING)
 
         checkpointer = _build_checkpointer()
