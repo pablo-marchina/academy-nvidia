@@ -4,11 +4,13 @@ on:
   push:
     branches:
       - improve/dashboard-output-performance
-    paths:
-      - tools/runtime-fix-patch/**
 
 permissions:
   contents: write
+
+concurrency:
+  group: apply-runtime-fix-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   apply-and-test:
