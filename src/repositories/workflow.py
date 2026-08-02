@@ -58,6 +58,30 @@ class WorkflowRepository:
             stmt = stmt.where(WorkflowRun.startup_id == startup_id)
         return list(self.session.scalars(stmt.offset(offset).limit(limit)))
 
+    def claim_next_queued_workflow(self) -> WorkflowRun | None:
+        """Atomically claim the oldest queued run for a durable worker.
+
+        PostgreSQL uses ``FOR UPDATE SKIP LOCKED`` so multiple workers can poll
+        safely without executing the same workflow. SQLite keeps the simpler
+        query for explicit development/tests only.
+        """
+        stmt = (
+            select(WorkflowRun)
+            .where(WorkflowRun.status == WorkflowStatus.QUEUED)
+            .order_by(WorkflowRun.created_at.asc())
+            .limit(1)
+        )
+        bind = self.session.get_bind()
+        if bind.dialect.name.startswith("postgresql"):
+            stmt = stmt.with_for_update(skip_locked=True)
+        run = self.session.scalar(stmt)
+        if run is None:
+            return None
+        run.status = WorkflowStatus.RUNNING
+        run.started_at = run.started_at or datetime.now(UTC)
+        self.session.flush()
+        return run
+
     def get_workflow_for_analysis_run(self, analysis_run_id: str) -> WorkflowRun | None:
         stmt = select(WorkflowRun).where(WorkflowRun.analysis_run_id == analysis_run_id)
         return self.session.scalar(stmt)
