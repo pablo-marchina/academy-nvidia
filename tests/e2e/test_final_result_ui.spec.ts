@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Route } from "@playwright/test";
 
 const API = "http://localhost:8000";
 const workflowId = "wf-release-contract-001";
@@ -130,7 +130,7 @@ const workflow = {
   updated_at: now,
 };
 
-async function mockJson(route: Parameters<Parameters<typeof test>[1]>[0]["page"]["route"] extends never ? never : any, body: unknown, status = 200) {
+async function mockJson(route: Route, body: unknown, status = 200): Promise<void> {
   await route.fulfill({
     status,
     contentType: "application/json",
