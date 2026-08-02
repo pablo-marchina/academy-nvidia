@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - improve/dashboard-output-performance
+  pull_request:
 
 permissions:
   contents: write
@@ -70,6 +71,7 @@ jobs:
           python -m pip install 'bandit>=1.8,<2'
           bandit -q -r src scripts -lll
       - name: Commit compatibility hash annotations
+        if: github.event_name == 'push'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
