@@ -13,6 +13,15 @@ import sys
 from pathlib import PurePosixPath
 
 
+# These small, deterministic files are committed fixtures consumed by ingestion
+# lifecycle tests. Everything else under staging/archive remains forbidden.
+ALLOWED_TEST_FIXTURES = {
+    "data/nvidia_corpus/archive/archive_test/20260610_120000_archive_test.md",
+    "data/nvidia_corpus/archive/nim_test/20260610_120000_nim_test.md",
+    "data/nvidia_corpus/staging/test_source/20260610T120000.md",
+    "data/nvidia_corpus/staging/test_source/20260610T120000_meta.json",
+}
+
 FORBIDDEN_PREFIXES = (
     ".cache/",
     ".mypy_cache/",
@@ -71,6 +80,8 @@ def is_forbidden(path: str) -> bool:
     normalized = PurePosixPath(path).as_posix()
     lower = normalized.lower()
 
+    if normalized in ALLOWED_TEST_FIXTURES:
+        return False
     if normalized in FORBIDDEN_EXACT_PATHS:
         return True
     if lower.startswith(FORBIDDEN_PREFIXES):
