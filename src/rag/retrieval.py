@@ -81,16 +81,17 @@ class ChunkIndex:
         technology_candidates = self._technology_candidates(query)
 
         if query.gap_type and query.technology:
-            # The user requested a specific technology for a specific gap.
-            # Prefer product/title-level matches within the gap and never let a
-            # mention in another product page outrank the requested product.
-            intersected = [
-                chunk
-                for chunk in gap_candidates
-                if _technology_match_strength(chunk, query.technology) >= 0.7
+            # Preserve exact product intent before considering aliases. A query
+            # for TensorRT-LLM must not admit the shorter TensorRT product just
+            # because its normalized name is a prefix of the requested name.
+            tech_key = _normalize_text(query.technology)
+            exact_candidates = self._eligible(self.by_tech.get(tech_key, []), query)
+            exact_ids = {chunk.chunk_id for chunk in exact_candidates}
+            exact_intersection = [
+                chunk for chunk in gap_candidates if chunk.chunk_id in exact_ids
             ]
-            if intersected:
-                return _deduplicate(intersected)
+            if exact_intersection:
+                return _deduplicate(exact_intersection)
 
             technology_ids = {chunk.chunk_id for chunk in technology_candidates}
             fallback_intersection = [
