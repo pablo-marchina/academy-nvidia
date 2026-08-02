@@ -30,8 +30,10 @@ def _register_suite(name: str, description: str, pytest_args: list[str]) -> None
 
 _register_suite(
     "rag",
-    "RAG retrieval metrics (hit rate, precision, recall)",
+    "RAG retrieval metrics, corpus governance, precision, and recall",
     [
+        "tests/unit/test_corpus_release_contract.py",
+        "tests/unit/test_rag_retrieval_contract.py",
         "tests/unit/test_rag_eval.py",
         "tests/unit/test_rag_eval_semantic.py",
         "tests/unit/test_rag_eval_reranking.py",
