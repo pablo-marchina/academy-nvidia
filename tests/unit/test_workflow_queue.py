@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+from sqlalchemy import create_engine, inspect
+
+from src.database.models import Base
 from src.database.session import configure_product_database, reset_product_database_runtime
 from src.orchestration.service import WorkflowOrchestrationService
 from src.orchestration.state import WorkflowStatus
@@ -53,3 +61,43 @@ def test_enqueue_requires_a_target(monkeypatch) -> None:
             raise AssertionError("enqueue_workflow should reject a targetless workflow")
 
     reset_product_database_runtime()
+
+
+def test_alembic_schema_contains_every_orm_table_and_column(tmp_path: Path) -> None:
+    database_path = tmp_path / "model-parity.db"
+    database_url = f"sqlite:///{database_path.as_posix()}"
+    repository_root = Path(__file__).resolve().parents[2]
+    environment = os.environ.copy()
+    environment.update({"APP_MODE": "product", "PRODUCT_DB_URL": database_url})
+
+    subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=repository_root,
+        env=environment,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    engine = create_engine(database_url)
+    try:
+        database_inspector = inspect(engine)
+        database_tables = set(database_inspector.get_table_names())
+        missing_tables: dict[str, list[str]] = {}
+        missing_columns: dict[str, list[str]] = {}
+
+        for model_table in Base.metadata.sorted_tables:
+            if model_table.name not in database_tables:
+                missing_tables[model_table.name] = sorted(column.name for column in model_table.columns)
+                continue
+            database_columns = {
+                column["name"] for column in database_inspector.get_columns(model_table.name)
+            }
+            absent = sorted({column.name for column in model_table.columns} - database_columns)
+            if absent:
+                missing_columns[model_table.name] = absent
+    finally:
+        engine.dispose()
+
+    assert not missing_tables, missing_tables
+    assert not missing_columns, missing_columns
