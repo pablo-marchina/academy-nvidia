@@ -2,6 +2,8 @@ name: nvidia-startup-ai-radar
 
 x-backend-environment: &backend-environment
   APP_MODE: product
+  API_AUTH_MODE: internal_proxy
+  INTERNAL_PROXY_KEY: ${INTERNAL_PROXY_KEY:?Set INTERNAL_PROXY_KEY in .env}
   PRODUCT_DB_URL: postgresql+psycopg2://radar:radar@postgres:5432/nvidia_radar
   LANGGRAPH_CHECKPOINTER: postgres
   LANGGRAPH_POSTGRES_URL: postgresql://radar:radar@postgres:5432/nvidia_radar
@@ -129,7 +131,7 @@ services:
     restart: unless-stopped
     command: ["sh", "-c", "python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --workers $${API_WORKERS:-2}"]
     ports:
-      - "8080:8000"
+      - "127.0.0.1:8080:8000"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -170,6 +172,8 @@ services:
       args:
         VITE_API_BASE_URL: /api
     restart: unless-stopped
+    environment:
+      INTERNAL_PROXY_KEY: ${INTERNAL_PROXY_KEY:?Set INTERNAL_PROXY_KEY in .env}
     ports:
       - "3000:80"
     depends_on:
