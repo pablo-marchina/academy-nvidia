@@ -5,53 +5,14 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  publish-rag-e2e-code-fix:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: improve/dashboard-output-performance
-          fetch-depth: 2
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-      - name: Apply correctness patch
-        run: python scripts/apply_rag_e2e_correctness_fix.py
-      - name: Run focused correctness tests
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e '.[dev]'
-          pytest -q \
-            tests/unit/test_rag_e2e_output_contract.py \
-            tests/unit/test_radar_relevant_gaps.py \
-            tests/unit/test_workload_classifier.py
-      - name: Commit and push tested code only
-        run: |
-          rm -f scripts/apply_rag_e2e_correctness_fix.py
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add \
-            models/cross_encoder/config.pbtxt \
-            src/diagnosis/gap_diagnosis_scoring.py \
-            src/recommendation/nvidia_technology_mapping.py \
-            tests/unit/test_rag_e2e_output_contract.py \
-            scripts/apply_rag_e2e_correctness_fix.py
-          git diff --cached --check
-          git commit -m 'Fix production RAG gap and provenance contracts'
-          git push origin HEAD:improve/dashboard-output-performance
-
   product-governance:
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
