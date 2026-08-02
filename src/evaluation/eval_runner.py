@@ -24,33 +24,54 @@ _RESULTS_PATH = _RESULTS_DIR / "ci_results.jsonl"
 SUITES: dict[str, dict[str, Any]] = {}
 
 
-def _register_suite(name: str, description: str, pytest_args: list[str]) -> Any:
+def _register_suite(name: str, description: str, pytest_args: list[str]) -> None:
     SUITES[name] = {"description": description, "pytest_args": pytest_args}
 
 
-_register_suite("rag", "RAG retrieval metrics (hit rate, precision, recall)", [
-    "tests/unit/test_rag_eval.py",
-    "tests/unit/test_rag_eval_semantic.py",
-    "tests/unit/test_rag_eval_reranking.py",
-])
-_register_suite("answer_quality", "Answer quality evaluation via LLM judge", [
-    "tests/unit/test_answer_quality_eval.py",
-])
-_register_suite("gap_diagnosis", "Gap diagnosis baseline accuracy", [
-    "tests/unit/test_gap_diagnosis_baseline.py",
-])
-_register_suite("scraping", "Scraping baseline extraction quality", [
-    "tests/unit/test_scraping_baseline.py",
-])
-_register_suite("source_evidence", "Source quality and evidence confidence calibration", [
-    "tests/unit/test_source_evidence_baseline.py",
-])
-_register_suite("recommendation", "Recommendation engine calibration", [
-    "tests/unit/test_recommendation_baseline.py",
-])
-_register_suite("ragas", "RAGAS evaluation metrics", [
-    "tests/unit/test_ragas_eval.py",
-])
+_register_suite(
+    "rag",
+    "RAG retrieval metrics (hit rate, precision, recall)",
+    [
+        "tests/unit/test_rag_eval.py",
+        "tests/unit/test_rag_eval_semantic.py",
+        "tests/unit/test_rag_eval_reranking.py",
+        "tests/evals/test_qdrant_retrieval_eval.py",
+    ],
+)
+_register_suite(
+    "answer_quality",
+    "Answer quality evaluation via deterministic golden set",
+    ["tests/evals/test_answer_quality_golden.py"],
+)
+_register_suite(
+    "gap_diagnosis",
+    "Gap diagnosis baseline accuracy",
+    ["tests/evals/test_gap_diagnosis_baseline.py"],
+)
+_register_suite(
+    "scraping",
+    "Scraping baseline extraction quality",
+    ["tests/evals/test_scraping_baseline.py"],
+)
+_register_suite(
+    "source_evidence",
+    "Source quality and evidence confidence calibration",
+    ["tests/evals/test_source_evidence_baseline.py"],
+)
+_register_suite(
+    "recommendation",
+    "Recommendation engine calibration",
+    ["tests/evals/test_recommendation_baseline.py"],
+)
+_register_suite(
+    "ragas",
+    "RAGAS evaluation metrics",
+    ["tests/evals/test_ragas_eval.py"],
+)
+
+
+def _missing_suite_paths(pytest_args: list[str]) -> list[str]:
+    return [path for path in pytest_args if path.endswith(".py") and not Path(path).is_file()]
 
 
 def run_suite(name: str, store: BenchmarkResultStore, ci_mode: bool = False) -> bool:
@@ -59,9 +80,25 @@ def run_suite(name: str, store: BenchmarkResultStore, ci_mode: bool = False) -> 
         print(f"  UNKNOWN SUITE: {name}")
         return False
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Suite: {name} — {suite['description']}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
+
+    missing_paths = _missing_suite_paths(suite["pytest_args"])
+    if missing_paths:
+        message = f"suite registry references missing test files: {', '.join(missing_paths)}"
+        print(message)
+        store.append(
+            BenchmarkResult(
+                run_id=f"{name}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}",
+                candidate_id=name,
+                candidate_name=name,
+                dataset_id="pytest",
+                status="failed",
+                error=message,
+            )
+        )
+        return not ci_mode
 
     pytest_args = suite["pytest_args"] + ["--tb=short", "-q"]
     run_id = f"{name}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
@@ -75,56 +112,69 @@ def run_suite(name: str, store: BenchmarkResultStore, ci_mode: bool = False) -> 
         )
         passed = result.returncode == 0
         status = "passed" if passed else "failed"
-        print(result.stdout[-500:] if result.stdout else "")
-        if result.stderr:
-            print(result.stderr[-500:])
 
-        store.append(BenchmarkResult(
-            run_id=run_id,
-            candidate_id=name,
-            candidate_name=name,
-            dataset_id="pytest",
-            status=status,
-            metrics=[MetricResult(
-                name="exit_code",
-                value=result.returncode,
-                unit="code",
-                higher_is_better=result.returncode == 0,
-            )],
-            metadata={"stdout_len": len(result.stdout), "stderr_len": len(result.stderr)},
-        ))
+        # A failing evaluation must preserve the complete diagnostic output so
+        # CI failures are actionable. Successful suites remain compact.
+        stdout = result.stdout or ""
+        stderr = result.stderr or ""
+        print(stdout[-1000:] if passed else stdout)
+        if stderr:
+            print(stderr[-1000:] if passed else stderr)
+
+        store.append(
+            BenchmarkResult(
+                run_id=run_id,
+                candidate_id=name,
+                candidate_name=name,
+                dataset_id="pytest",
+                status=status,
+                metrics=[
+                    MetricResult(
+                        name="exit_code",
+                        value=result.returncode,
+                        unit="code",
+                        higher_is_better=result.returncode == 0,
+                    )
+                ],
+                metadata={"stdout_len": len(stdout), "stderr_len": len(stderr)},
+            )
+        )
         print(f"  Status: {status.upper()} (exit code {result.returncode})")
         if ci_mode and not passed:
             return False
         return True
     except subprocess.TimeoutExpired:
-        print(f"  TIMEOUT after 600s")
-        store.append(BenchmarkResult(
-            run_id=run_id,
-            candidate_id=name,
-            candidate_name=name,
-            dataset_id="pytest",
-            status="failed",
-            error="Timeout (600s)",
-        ))
+        print("  TIMEOUT after 600s")
+        store.append(
+            BenchmarkResult(
+                run_id=run_id,
+                candidate_id=name,
+                candidate_name=name,
+                dataset_id="pytest",
+                status="failed",
+                error="Timeout (600s)",
+            )
+        )
         return not ci_mode
     except Exception as exc:
         print(f"  FAILED: {exc}")
-        store.append(BenchmarkResult(
-            run_id=run_id,
-            candidate_id=name,
-            candidate_name=name,
-            dataset_id="pytest",
-            status="failed",
-            error=str(exc),
-        ))
+        store.append(
+            BenchmarkResult(
+                run_id=run_id,
+                candidate_id=name,
+                candidate_name=name,
+                dataset_id="pytest",
+                status="failed",
+                error=str(exc),
+            )
+        )
         return not ci_mode
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="CI eval runner")
     parser.add_argument("--suite", choices=list(SUITES.keys()) + ["all"], default="all")
-    parser.add_argument("--ci", action="store_true", help="Fail on first regression")
+    parser.add_argument("--ci", action="store_true", help="Fail when any suite regresses")
     args = parser.parse_args()
 
     store = BenchmarkResultStore(_RESULTS_PATH)
@@ -137,7 +187,7 @@ def main() -> None:
         if not run_suite(name, store, ci_mode=args.ci):
             all_passed = False
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Results saved to: {_RESULTS_PATH}")
     sys.exit(0 if all_passed else 1)
 
