@@ -1,12 +1,14 @@
 """Lexical retrieval over NVIDIA corpus chunks.
 
 The lexical path is intentionally deterministic, but it still needs to model
-query intent correctly.  In particular:
+query intent correctly. In particular:
 
 * a gap + technology query is an intersection, not a union;
 * an exact product match outranks a product merely mentioned in another page;
 * broad gap/keyword queries should expose source diversity instead of allowing
-  one long document to consume the whole top-k budget.
+  one long document to consume the whole top-k budget;
+* source taxonomy is searchable, so terms such as ``inference`` and ``latency``
+  still retrieve products whose clean page text uses a narrower vocabulary.
 """
 
 from __future__ import annotations
@@ -189,11 +191,19 @@ def _keyword_match_strength(chunk: RagChunk, keywords: list[str]) -> float:
     product = _normalize_text(chunk.product)
     title = _normalize_text(chunk.title)
     content = _normalize_text(chunk.content)
+    taxonomy = _normalize_text(" ".join(chunk.gap_types))
+    taxonomy_tokens = set(taxonomy.split())
     strengths: list[float] = []
 
     for keyword in normalized_keywords:
+        keyword_tokens = set(keyword.split())
         if keyword in product or keyword in title:
             strengths.append(1.0)
+            continue
+        if keyword in taxonomy or (
+            keyword_tokens and keyword_tokens.issubset(taxonomy_tokens)
+        ):
+            strengths.append(0.95)
             continue
         occurrences = content.count(keyword)
         if occurrences:
