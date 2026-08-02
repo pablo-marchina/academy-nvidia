@@ -447,7 +447,7 @@ class RadarDashboardService:
             "confidence": item.get("confidence"),
             "evidence_coverage": item.get("evidence_coverage"),
             "unsupported_claim_count": item.get("unsupported_claim_count"),
-            "top_gaps": item.get("top_gaps", []),
+            "top_gaps": self._relevant_top_gaps(run),
             "top_nvidia_technologies": [item["technology"] for item in ranked_technologies],
             "activation_recommendations": recommendations,
             "source_count": self._source_count(run),
@@ -465,6 +465,78 @@ class RadarDashboardService:
                 "review_readiness_score": item.get("review_readiness_score"),
             },
         }
+
+    @staticmethod
+    def _relevant_top_gaps(run: AnalysisRun | None) -> list[str]:
+        """Expose only evidence-supported, medium/high-confidence runtime gaps."""
+        if run is None or run.startup is None:
+            return []
+
+        from src.services.product.workload_classifier import classify_workloads, needs_guardrails
+
+        startup = run.startup
+        evidence_text = " ".join(
+            f"{evidence.claim} {evidence.quote_or_evidence}"
+            for evidence in (startup.evidence or [])
+        )
+        profile = (run.output_snapshot_json or {}).get("startup_profile") or {}
+        text = " ".join(
+            [
+                str(startup.description or ""),
+                str(startup.product_summary or ""),
+                str(profile.get("description") or ""),
+                " ".join(str(value) for value in profile.get("ai_signals", []) or []),
+                " ".join(str(value) for value in profile.get("tech_stack_signals", []) or []),
+                evidence_text,
+            ]
+        )
+        matches = classify_workloads(text, max_families=2)
+        if not matches:
+            return []
+
+        family_gaps = {
+            "llm_nlp": {
+                "agent_governance_gap",
+                "model_evaluation_gap",
+                "observability_gap",
+                "high_latency",
+                "high_inference_cost",
+                "external_api_dependency",
+            },
+            "voice": {"voice_need", "high_latency", "observability_gap"},
+            "computer_vision": {"computer_vision_need", "high_latency", "observability_gap"},
+            "tabular_ml": {
+                "heavy_tabular_processing",
+                "slow_data_pipeline",
+                "high_training_cost",
+                "high_inference_cost",
+            },
+            "robotics_simulation": {"robotics_need", "simulation_need"},
+            "cybersecurity": {"ai_cybersecurity_need"},
+            "medical_imaging": {"healthcare_compliance_need", "computer_vision_need"},
+        }
+        allowed: set[str] = set()
+        for match in matches:
+            allowed.update(family_gaps.get(match.family, set()))
+        if needs_guardrails(text) and any(match.family == "llm_nlp" for match in matches):
+            allowed.add("agent_governance_gap")
+
+        confidence_rank = {"high": 2, "medium": 1}
+        supported = [
+            gap
+            for gap in run.gaps
+            if gap.detected
+            and gap.gap_type in allowed
+            and str(gap.confidence or "").casefold() in confidence_rank
+        ]
+        supported.sort(
+            key=lambda gap: (
+                confidence_rank.get(str(gap.confidence or "").casefold(), 0),
+                gap.gap_type,
+            ),
+            reverse=True,
+        )
+        return [gap.gap_type for gap in supported[:3]]
 
     def _startup_row(self, startup: Startup, latest: AnalysisRun | None) -> dict[str, Any]:
         return {
