@@ -77,6 +77,8 @@ test("production frontend presents the validated end-to-end RAG result", async (
 
   const qualityPanel = page.locator(".panel").filter({ hasText: "Quality gates and runtime trace" });
   await expect(qualityPanel).toBeVisible();
+  const pipelineQuality = qualityPanel.locator(".evidence-mini-grid > div").filter({ hasText: "Pipeline quality gate" });
+  await expect(pipelineQuality).toContainText("passed");
   const retrievalMode = qualityPanel.locator(".evidence-mini-grid > div").filter({ hasText: "RAG retrieval mode" });
   await expect(retrievalMode).toContainText("bm25_graphrag_qdrant_triton_rerank");
   const graphRag = qualityPanel.locator(".evidence-mini-grid > div").filter({ hasText: "GraphRAG" });
