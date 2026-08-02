@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: "3.14"
+  PYTHON_VERSION: "3.11"
 
 jobs:
   eval:
@@ -41,20 +41,27 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,rag,eval,ragas-eval,observability]"
+          python -m pip install -e ".[dev,eval,ragas-eval,observability]"
 
       - name: Run evaluation suites
         env:
-          APP_MODE: product
+          # Evaluation mode exercises real retrieval/scoring without requiring
+          # the external Triton service used by the deployable product runtime.
+          APP_MODE: evaluation
           QDRANT_URL: http://localhost:6333
           QDRANT_COLLECTION: nvidia_corpus
-          PRODUCT_DB_URL: postgresql://postgres:postgres@localhost:5432/startup_radar
+          PRODUCT_DB_URL: postgresql+psycopg://postgres:postgres@localhost:5432/startup_radar
+          LANGGRAPH_POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/startup_radar
           RAG_EMBEDDING_MODEL: BAAI/bge-m3
           QDRANT_VECTOR_SIZE: "1024"
+          BM25_ENABLED: "true"
+          GRAPHRAG_ENABLED: "true"
+          TRITON_RERANKER_ENABLED: "false"
         run: |
           python -m src.evaluation.eval_runner --ci
 
