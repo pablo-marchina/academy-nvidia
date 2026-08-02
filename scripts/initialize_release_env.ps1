@@ -29,6 +29,7 @@ function New-RandomHex([int]$ByteCount) {
 
 $proxyKey = New-RandomHex 48
 $databasePassword = New-RandomHex 32
+$qdrantApiKey = New-RandomHex 32
 $content = Get-Content -Raw -Path $TemplatePath
 $content = $content.Replace(
     'replace-with-a-random-value-of-at-least-32-characters',
@@ -37,6 +38,10 @@ $content = $content.Replace(
 $content = $content.Replace(
     'replace-with-a-random-database-password',
     $databasePassword
+)
+$content = $content.Replace(
+    'replace-with-a-random-qdrant-api-key',
+    $qdrantApiKey
 )
 
 Set-Content -Path $TargetPath -Value $content -Encoding utf8NoBOM
