@@ -50,14 +50,29 @@ def test_gap_query_covers_sources_before_duplicate_chunks() -> None:
     assert [result.source_id for result in results] == ["nim", "tensorrt_llm", "triton"]
 
 
-def test_keyword_query_filters_before_source_diversification() -> None:
+def test_keyword_query_uses_governed_aliases_not_incidental_content() -> None:
     chunks = [
         _chunk("nim", "NVIDIA NIM", 0),
         _chunk("riva", "NVIDIA Riva", 0, gap="voice_need"),
     ]
-    chunks[1].content = "NVIDIA Riva speech recognition and voice AI"
+    chunks[1].content = "Navigation script mentions inference but the governed Riva aliases do not."
     index = ChunkIndex(chunks)
 
     results = index.retrieve(RetrievalQuery(keywords=["inference"]), top_k=3)
 
     assert [result.source_id for result in results] == ["nim"]
+
+
+def test_keyword_normalization_matches_hyphenated_aliases() -> None:
+    index = ChunkIndex(
+        [
+            _chunk("cudf", "cuDF", 0, gap="slow_data_pipeline"),
+            _chunk("nim", "NVIDIA NIM", 0),
+        ]
+    )
+
+    hyphenated = index.retrieve(RetrievalQuery(keywords=["open-source"]), top_k=5)
+    spaced = index.retrieve(RetrievalQuery(keywords=["open source"]), top_k=5)
+
+    assert [item.source_id for item in hyphenated] == ["cudf"]
+    assert [item.source_id for item in spaced] == ["cudf"]
