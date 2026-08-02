@@ -4,43 +4,44 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nvidia-startup-ai-radar"
-version = "0.1.0"
-description = "Foundation workspace for the NVIDIA Startup AI Radar project."
+version = "1.0.0"
+description = "Production NVIDIA Startup AI Radar with evidence-grounded recommendations."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.13"
 dependencies = [
-  "fastapi",
-  "uvicorn",
-  "pydantic>=2.7",
-  "pydantic-settings",
-  "python-dotenv",
-  "httpx>=0.28",
-  "requests",
-  "PyYAML",
-  "beautifulsoup4",
-  "trafilatura",
-  "playwright",
-  "qdrant-client",
-  "sqlalchemy",
-  "alembic",
-  "psycopg2-binary",
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.30,<1",
+  "pydantic>=2.7,<3",
+  "pydantic-settings>=2.3,<3",
+  "python-dotenv>=1,<2",
+  "httpx>=0.28,<1",
+  "requests>=2.32,<3",
+  "PyYAML>=6,<7",
+  "beautifulsoup4>=4.12,<5",
+  "trafilatura>=2,<3",
+  "playwright>=1.50,<2",
+  "qdrant-client>=1.14,<2",
+  "sqlalchemy>=2.0,<3",
+  "alembic>=1.13,<2",
+  "psycopg2-binary>=2.9,<3",
+  "psycopg[binary]>=3.2,<4",
   "langgraph>=1.2,<2",
-  "langgraph-checkpoint-postgres>=3.1.0",
+  "langgraph-checkpoint-postgres>=3.1.0,<4",
   "litellm>=1.60,<3",
 ]
 
 [project.optional-dependencies]
 dev = [
-  "pytest",
-  "ruff",
-  "black",
-  "mypy",
+  "pytest>=8,<9",
+  "ruff>=0.9,<1",
+  "black>=24,<26",
+  "mypy>=1.14,<2",
 ]
 rag = [
-  "qdrant-client",
-  "sentence-transformers>=2.2.0",
-  "rank-bm25",
-  "bm25s",
+  "qdrant-client>=1.14,<2",
+  "sentence-transformers>=3.4,<6",
+  "rank-bm25>=0.2,<1",
+  "bm25s>=0.2,<1",
 ]
 llm-judge = [
   "instructor>=1.8,<2",
@@ -50,61 +51,64 @@ agents = [
 ]
 agent-orchestration = [
   "langgraph>=1.2,<2",
-  "langgraph-checkpoint-postgres>=3.1.0",
+  "langgraph-checkpoint-postgres>=3.1.0,<4",
+  "psycopg[binary]>=3.2,<4",
 ]
 postgres = [
-  "psycopg2-binary",
+  "psycopg2-binary>=2.9,<3",
+  "psycopg[binary]>=3.2,<4",
 ]
 eval = [
-  "datasets",
+  "datasets>=3,<5",
 ]
 ragas-eval = [
-  "ragas>=0.2.0",
+  "ragas>=0.2,<1",
 ]
 observability = [
-  "opentelemetry-api>=1.30",
-  "opentelemetry-sdk>=1.30",
-  "prometheus-client>=0.21",
+  "opentelemetry-api>=1.30,<2",
+  "opentelemetry-sdk>=1.30,<2",
+  "prometheus-client>=0.21,<1",
 ]
 security = [
-  "bandit",
-  "pip-audit",
-  "detect-secrets",
+  "bandit>=1.8,<2",
+  "pip-audit>=2.8,<3",
+  "detect-secrets>=1.5,<2",
 ]
 scraping = [
-  "httpx>=0.28",
-  "diskcache>=5.6",
-  "rapidfuzz>=3.0",
-  "youtube-transcript-api>=1.0",
-  "feedparser>=6.0",
-  "pymupdf>=1.24",
-  "markitdown>=0.1",
-  "crawl4ai>=0.5",
-  "fake-useragent>=2.0",
-  "tenacity>=9.0",
-  "tldextract>=5.0",
-  "selectolax>=0.3",
-  "readability-lxml>=0.8",
-  "langdetect>=1.0",
-  "orjson>=3.0",
-  "rich>=13.0",
-  "praw>=7.0",
+  "httpx>=0.28,<1",
+  "diskcache>=5.6,<6",
+  "rapidfuzz>=3,<4",
+  "youtube-transcript-api>=1,<2",
+  "feedparser>=6,<7",
+  "pymupdf>=1.24,<2",
+  "markitdown>=0.1,<1",
+  "crawl4ai>=0.5,<1",
+  "fake-useragent>=2,<3",
+  "tenacity>=9,<10",
+  "tldextract>=5,<6",
+  "selectolax>=0.3,<1",
+  "readability-lxml>=0.8,<1",
+  "langdetect>=1,<2",
+  "orjson>=3,<4",
+  "rich>=13,<15",
+  "praw>=7,<8",
 ]
 full = [
-  "qdrant-client",
-  "sentence-transformers>=2.2.0",
-  "rank-bm25",
-  "bm25s",
+  "qdrant-client>=1.14,<2",
+  "sentence-transformers>=3.4,<6",
+  "rank-bm25>=0.2,<1",
+  "bm25s>=0.2,<1",
   "langgraph>=1.2,<2",
-  "langgraph-checkpoint-postgres>=3.1.0",
-  "psycopg2-binary",
-  "datasets",
-  "bandit",
-  "pip-audit",
-  "detect-secrets",
+  "langgraph-checkpoint-postgres>=3.1.0,<4",
+  "psycopg2-binary>=2.9,<3",
+  "psycopg[binary]>=3.2,<4",
+  "datasets>=3,<5",
+  "bandit>=1.8,<2",
+  "pip-audit>=2.8,<3",
+  "detect-secrets>=1.5,<2",
   "instructor>=1.8,<2",
-  "cyclonedx-bom",
-  "ragas>=0.2.0",
+  "cyclonedx-bom>=5,<8",
+  "ragas>=0.2,<1",
 ]
 
 [tool.setuptools]
