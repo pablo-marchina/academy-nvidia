@@ -130,16 +130,28 @@ const workflow = {
   updated_at: now,
 };
 
+const corsHeaders = {
+  "access-control-allow-origin": "http://127.0.0.1:5173",
+  "access-control-allow-methods": "GET,POST,PATCH,OPTIONS",
+  "access-control-allow-headers": "content-type",
+};
+
 async function mockJson(route: Route, body: unknown, status = 200): Promise<void> {
   await route.fulfill({
     status,
     contentType: "application/json",
+    headers: corsHeaders,
     body: JSON.stringify(body),
   });
 }
 
 test("final cockpit presents the complete persisted pipeline result", async ({ page }) => {
   await page.route(`${API}/**`, async (route) => {
+    if (route.request().method() === "OPTIONS") {
+      await route.fulfill({ status: 204, headers: corsHeaders });
+      return;
+    }
+
     const url = new URL(route.request().url());
     const path = url.pathname;
 
