@@ -7,6 +7,23 @@ on:
 jobs:
   product-governance:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: startup_radar
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d startup_radar"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PRODUCT_DB_URL: postgresql+psycopg://postgres:postgres@localhost:5432/startup_radar
+      LANGGRAPH_POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/startup_radar
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -54,6 +71,7 @@ jobs:
             tests/unit/test_ai_native_model.py \
             tests/unit/test_probabilistic_workflow_scoring.py \
             tests/unit/test_rag_technique_registry.py \
+            tests/integration/test_postgres_checkpointer_contract.py \
             tests/integration/test_product_workflow_api.py \
             tests/acceptance/test_no_mock_in_production.py
 
