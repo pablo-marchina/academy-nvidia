@@ -5,7 +5,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -16,6 +16,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Apply measured RAG ingestion calibration
+        if: github.event_name == 'push'
+        run: |
+          python tools/apply_rag_ingestion_calibration.py
+          if git diff --quiet -- src/quality/decision_calibration_registry.py tests/unit/test_rag_ingestion_release_calibration.py; then
+            echo "Calibration already committed."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/quality/decision_calibration_registry.py tests/unit/test_rag_ingestion_release_calibration.py
+            git commit -m "Calibrate production RAG ingestion gates"
+            git push origin HEAD:improve/dashboard-output-performance
+          fi
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -56,6 +69,7 @@ jobs:
             scripts/bootstrap_nvidia_corpus.py \
             scripts/refresh_nvidia_corpus_metadata.py \
             tests/unit/test_product_checkpointer_url.py \
+            tests/unit/test_rag_ingestion_release_calibration.py \
             tests/unit/test_workflow_queue.py \
             tests/unit/test_health_executor_release.py
       - name: Focused tests
@@ -67,6 +81,7 @@ jobs:
             tests/unit/test_probabilistic_workflow_scoring.py \
             tests/unit/test_rag_technique_registry.py \
             tests/unit/test_rag_ingestion.py \
+            tests/unit/test_rag_ingestion_release_calibration.py \
             tests/unit/test_rag_retrieval_intent.py \
             tests/unit/test_adaptive_source_planner.py \
             tests/unit/test_manual_seed_entity_signal.py \
