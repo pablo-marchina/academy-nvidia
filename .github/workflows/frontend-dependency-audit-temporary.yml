@@ -1,0 +1,40 @@
+name: Frontend Dependency Audit Temporary
+
+on:
+  push:
+    branches:
+      - improve/dashboard-output-performance
+
+permissions:
+  contents: read
+
+jobs:
+  audit-and-refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Capture current audit
+        working-directory: frontend
+        run: npm audit --json > ../npm-audit-before.json || true
+      - name: Refresh supported frontend toolchain
+        working-directory: frontend
+        run: |
+          npm install --save-exact --package-lock-only vite@8.1.5 @vitejs/plugin-react@6.0.4
+          npm audit --json > ../npm-audit-after.json || true
+      - name: Verify build with refreshed lockfile
+        working-directory: frontend
+        run: npm ci && npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-audit-lockfile
+          path: |
+            frontend/package.json
+            frontend/package-lock.json
+            npm-audit-before.json
+            npm-audit-after.json
+          if-no-files-found: error
