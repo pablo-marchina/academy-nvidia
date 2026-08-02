@@ -1,1 +1,1 @@
-Trigger the validated residual recommendation-quality fix.
+Trigger the simplified validated residual recommendation-quality fix.
