@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.diagnosis.schemas import GAP_TECH_MAP, GapType
 from src.rag.embeddings import EmbeddingProvider
+from src.rag.graphrag_runtime import graphrag_expand
 from src.rag.retrieval import ChunkIndex
 from src.rag.schemas import RetrievalQuery, RetrievedContext
 from src.rag.semantic_retrieval import semantic_retrieve
 from src.rag.sparse_retrieval import SparseRetriever
-from src.rag.graphrag_runtime import graphrag_expand
 from src.rag.vector_store import VectorStore
-from src.diagnosis.schemas import GAP_TECH_MAP, GapType
 
 _RRF_K = 60
 
