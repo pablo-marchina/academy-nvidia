@@ -69,6 +69,7 @@ class StartupDiscoveryService:
         try:
             candidates_data: list[dict[str, Any]] = []
             duplicates_found = 0
+            rejected_invalid_entities = 0
 
             existing_candidates = self.repo.list_candidates(limit=10000)
             existing_names = [c.discovered_name for c in existing_candidates]
@@ -90,9 +91,7 @@ class StartupDiscoveryService:
                 combined_text = " ".join(
                     part
                     for part in [
-                        name,
                         description,
-                        sector,
                         str(entry.get("raw_text_excerpt") or ""),
                         str(entry.get("ai_signal_text") or ""),
                         str(entry.get("technology_text") or ""),
@@ -121,7 +120,7 @@ class StartupDiscoveryService:
                     evidence_count=len(signals_result.get("evidence_excerpts", []) or []),
                 )
                 if not quality.accepted:
-                    duplicates_found += 1
+                    rejected_invalid_entities += 1
                     continue
 
                 norm_name = normalize_name(name)
@@ -176,6 +175,7 @@ class StartupDiscoveryService:
                 "total_entries": len(seed_entries),
                 "candidates_created": len(created),
                 "duplicates_found": duplicates_found,
+                "rejected_invalid_entities": rejected_invalid_entities,
             }
         except Exception as exc:
             self.session.rollback()

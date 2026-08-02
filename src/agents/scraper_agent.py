@@ -186,18 +186,16 @@ def collect_governed_sources(
             authority_weight=0.95,
         ))
 
-    # Add non-blocked configured governed sources after the adaptive plan.
-    for src in governed_records:
-        url = (src.base_url or "").strip()
-        if not url and src.source_category == "official_website":
-            url = website_url
-        if not url or url in seen_urls or src.production_blockers:
-            continue
-        seen_urls.add(url)
-        populated.append(src.model_copy(update={"base_url": url}))
+    # Global directory and portfolio home pages are deliberately excluded from
+    # per-company analysis. They may discover candidates, but they are not
+    # entity-specific evidence and previously caused both latency and profile
+    # contamination. Only the adaptive plan and official company URL are used.
 
     if not populated:
         return [], ["No collectable sources after adaptive plan and URL resolution"]
+
+    max_sources = max(1, min(int(__import__("os").getenv("RADAR_ANALYSIS_MAX_SOURCES", "5")), 12))
+    populated = populated[:max_sources]
 
     collector = HttpSourceCollector()
     request = CollectionRequest(

@@ -34,8 +34,9 @@ _SOURCE_TYPE_ALIASES = {"web": "directory", "manual_seed": "directory", "officia
 
 @dataclass(frozen=True)
 class PopulateOptions:
-    limit: int = 50
+    limit: int = 100
     source_limit: int = 6
+    pipeline_limit: int = 5
     run_pipeline: bool = True
     force_rerun: bool = False
 
@@ -60,11 +61,12 @@ class RadarDashboardService:
             discovery_results.append(seed_result)
         discovery_results.extend(self._run_available_source_scrapers(options.source_limit))
         self._mark_invalid_runtime_entities()
-        promoted = self._promote_best_candidates(options.limit)
+        pipeline_limit = max(0, min(int(options.pipeline_limit), 25))
+        promoted = self._promote_best_candidates(pipeline_limit if options.run_pipeline else 0)
         pipeline_results: list[dict[str, Any]] = []
 
-        if options.run_pipeline:
-            startup_ids = self._startup_ids_for_runtime(limit=options.limit, promoted=promoted)
+        if options.run_pipeline and pipeline_limit > 0:
+            startup_ids = self._startup_ids_for_runtime(limit=pipeline_limit, promoted=promoted)
             pipeline_results = self._run_pipeline_for_startups(
                 startup_ids,
                 force_rerun=options.force_rerun,
@@ -97,8 +99,6 @@ class RadarDashboardService:
             if run is None or run.startup is None or not self._is_valid_startup_entity(run.startup):
                 continue
             row = self._opportunity_row(item, run)
-            if row["recommendation_status"] != "ready":
-                continue
             seen_startup_ids.add(startup_id)
             rows.append(row)
 
@@ -212,32 +212,35 @@ class RadarDashboardService:
                     results.append({"startup_id": startup_id, "status": "failed", "error": str(exc)})
                     continue
 
+            artifact_errors: list[str] = []
             if analysis_run_id:
-                self._ensure_post_pipeline_artifacts(analysis_run_id)
+                artifact_errors = self._ensure_post_pipeline_artifacts(analysis_run_id)
             results.append(
                 {
                     "startup_id": startup_id,
                     "analysis_run_id": analysis_run_id,
                     "workflow_id": workflow_id,
-                    "status": status,
+                    "status": "degraded" if artifact_errors and status == "completed" else status,
+                    "artifact_errors": artifact_errors,
                 }
             )
         return results
 
-    def _ensure_post_pipeline_artifacts(self, analysis_run_id: str) -> None:
+    def _ensure_post_pipeline_artifacts(self, analysis_run_id: str) -> list[str]:
         # These are idempotent/replacing operations and keep all dashboard columns fed by runtime artifacts.
-        try:
-            ActivationPlaybookService(self.session).persist_recommendations_for_run(analysis_run_id)
-        except Exception:
-            self.session.rollback()
-        try:
-            ActivationDossierService(self.session).build_dossier_for_analysis_run(analysis_run_id)
-        except Exception:
-            self.session.rollback()
-        try:
-            OpportunityScoreService(self.session).compute_score(analysis_run_id)
-        except Exception:
-            self.session.rollback()
+        errors: list[str] = []
+        operations = (
+            ("activation_recommendations", lambda: ActivationPlaybookService(self.session).persist_recommendations_for_run(analysis_run_id)),
+            ("activation_dossier", lambda: ActivationDossierService(self.session).build_dossier_for_analysis_run(analysis_run_id)),
+            ("opportunity_score", lambda: OpportunityScoreService(self.session).compute_score(analysis_run_id)),
+        )
+        for artifact_name, operation in operations:
+            try:
+                operation()
+            except Exception as exc:
+                self.session.rollback()
+                errors.append(f"{artifact_name}: {type(exc).__name__}: {exc}")
+        return errors
 
     def _mark_invalid_runtime_entities(self) -> None:
         changed = False
@@ -314,65 +317,67 @@ class RadarDashboardService:
 
     @staticmethod
     def _rank_technologies_for_startup(technologies: list[str], run: AnalysisRun | None) -> list[dict[str, Any]]:
-        unique = list(dict.fromkeys(str(t) for t in technologies if t))
-        if not unique:
+        if run is None or run.startup is None:
             return []
-        startup = run.startup if run is not None else None
+        from src.services.product.workload_classifier import (
+            classify_workloads,
+            needs_guardrails,
+            recommended_technologies,
+        )
+
+        startup = run.startup
         evidence_text = " ".join(
-            f"{ev.claim} {ev.quote_or_evidence}" for ev in (startup.evidence or [])
-        ) if startup is not None else ""
-        text = " ".join([
-            getattr(startup, "name", "") if startup is not None else "",
-            getattr(startup, "sector", "") if startup is not None else "",
-            getattr(startup, "description", "") if startup is not None else "",
-            getattr(startup, "product_summary", "") if startup is not None else "",
-            evidence_text,
-        ]).casefold()
+            f"{evidence.claim} {evidence.quote_or_evidence}"
+            for evidence in (startup.evidence or [])
+        )
+        profile = (run.output_snapshot_json or {}).get("startup_profile") or {}
+        text = " ".join(
+            [
+                str(startup.description or ""),
+                str(startup.product_summary or ""),
+                str(profile.get("description") or ""),
+                " ".join(str(value) for value in profile.get("ai_signals", []) or []),
+                " ".join(str(value) for value in profile.get("tech_stack_signals", []) or []),
+                evidence_text,
+            ]
+        )
+        matches = classify_workloads(text, max_families=2)
+        if not matches:
+            return []
 
-        counts = {tech: sum(1 for candidate in technologies if str(candidate) == tech) for tech in unique}
-        weights: dict[str, float] = {tech: 0.3 + min(0.5, counts[tech] * 0.08) for tech in unique}
+        ordered = recommended_technologies(matches, limit=6)
+        if needs_guardrails(text) and any(match.family == "llm_nlp" for match in matches):
+            ordered.insert(min(2, len(ordered)), "NeMo Guardrails")
+        ordered = list(dict.fromkeys(ordered))[:5]
 
-        def boost(terms: tuple[str, ...], techs: tuple[str, ...], value: float) -> None:
-            if any(term in text for term in terms):
-                for tech in techs:
-                    if tech in weights:
-                        weights[tech] += value
-
-        boost(("llm", "language model", "modelo de linguagem", "generative", "ia generativa", "nlp", "legal ai"), ("NVIDIA NeMo", "NeMo Guardrails", "NVIDIA NIM", "TensorRT-LLM"), 1.4)
-        boost(("agent", "agents", "agente", "governance", "compliance", "workflow", "automation"), ("NeMo Guardrails", "NVIDIA NeMo", "NVIDIA NIM", "NVIDIA AI Enterprise"), 1.2)
-        boost(("legal", "law", "jurid", "juríd", "litigation", "contract", "compliance"), ("NVIDIA NeMo", "NeMo Guardrails", "TensorRT-LLM", "NVIDIA NIM", "NVIDIA AI Enterprise"), 2.4)
-        boost(("health", "medical", "hospital", "clinical", "telemedicine", "patient", "diagnostic", "healthcare"), ("NVIDIA Clara", "MONAI", "NVIDIA AI Enterprise", "NeMo Guardrails", "NVIDIA NIM"), 3.0)
-        boost(("speech", "voice", "asr", "audio", "call center", "interview"), ("NVIDIA Riva", "NVIDIA NIM", "Triton Inference Server"), 3.0)
-        boost(("computer vision", "visão computacional", "image", "video", "visual inspection", "drone", "camera"), ("TensorRT", "Triton Inference Server", "NVIDIA NIM", "NVIDIA AI Enterprise"), 2.5)
-        boost(("agtech", "agri", "agriculture", "crop", "soil", "climate", "field", "farm", "pest", "geospatial"), ("RAPIDS", "cuDF", "cuML", "TensorRT", "NVIDIA AI Enterprise"), 2.5)
-        boost(("analytics", "data", "risk", "credit", "predictive", "forecasting", "business intelligence"), ("RAPIDS", "cuDF", "cuML", "NVIDIA AI Enterprise"), 1.0)
-        boost(("robot", "robotics", "autonomous", "simulation", "digital twin", "heavy equipment", "fleet", "iot"), ("NVIDIA Isaac", "NVIDIA Omniverse", "CUDA", "NVIDIA AI Enterprise"), 1.7)
-        boost(("construction", "proptech", "bim", "civil engineering", "obra", "residential", "estimate costs", "house project"), ("NVIDIA Omniverse", "NVIDIA AI Enterprise", "NVIDIA NIM", "Triton Inference Server", "RAPIDS"), 1.8)
-        boost(("fintech", "financial", "banking", "payment", "pix", "fraud", "cybersecurity"), ("NVIDIA Morpheus", "RAPIDS", "cuML", "NVIDIA AI Enterprise", "NVIDIA NIM"), 1.3)
-        boost(("education", "edtech", "student", "teacher", "tutor", "classroom", "school", "educational"), ("NVIDIA NIM", "NVIDIA NeMo", "NeMo Guardrails", "NVIDIA Riva", "NVIDIA AI Enterprise"), 1.2)
-        boost(("hr", "recruit", "talent", "payroll", "workforce", "people"), ("NVIDIA NIM", "NVIDIA NeMo", "NeMo Guardrails", "NVIDIA Riva", "NVIDIA AI Enterprise"), 1.2)
-
-        def prioritize(terms: tuple[str, ...], ordered_techs: tuple[str, ...]) -> None:
-            if any(term in text for term in terms):
-                for index, tech in enumerate(ordered_techs):
-                    if tech in weights:
-                        # Domain evidence is stronger than generic gap defaults. Use a calibrated
-                        # floor so the ordered, domain-specific technology family becomes visible first.
-                        weights[tech] = max(weights[tech], 100.0 - index)
-
-        prioritize(("speech", "voice", "asr", "audio", "call center"), ("NVIDIA Riva", "NVIDIA NIM", "Triton Inference Server", "NVIDIA AI Enterprise"))
-        prioritize(("health", "medical", "hospital", "clinical", "telemedicine", "patient", "diagnostic", "healthcare"), ("NVIDIA Clara", "MONAI", "NVIDIA AI Enterprise", "NeMo Guardrails", "NVIDIA NIM"))
-        prioritize(("legal", "law", "jurid", "juríd", "litigation", "contract", "compliance"), ("NVIDIA NeMo", "NeMo Guardrails", "NVIDIA NIM", "TensorRT-LLM", "NVIDIA AI Enterprise"))
-        prioritize(("agtech", "agri", "agriculture", "crop", "soil", "climate", "field", "farm", "pest", "geospatial"), ("RAPIDS", "cuDF", "cuML", "TensorRT", "NVIDIA AI Enterprise"))
-        prioritize(("computer vision", "visão computacional", "image", "video", "visual inspection", "drone", "camera"), ("TensorRT", "Triton Inference Server", "NVIDIA NIM", "NVIDIA AI Enterprise"))
-        prioritize(("robot", "robotics", "autonomous", "simulation", "digital twin", "heavy equipment", "fleet", "iot"), ("NVIDIA Isaac", "NVIDIA Omniverse", "CUDA", "NVIDIA AI Enterprise"))
-        prioritize(("construction", "proptech", "bim", "civil engineering", "obra", "residential", "estimate costs", "house project"), ("NVIDIA Omniverse", "NVIDIA AI Enterprise", "NVIDIA NIM", "Triton Inference Server", "RAPIDS"))
-        prioritize(("fintech", "financial", "banking", "payment", "pix", "fraud", "credit risk"), ("RAPIDS", "cuML", "NVIDIA Morpheus", "NVIDIA NIM", "NVIDIA AI Enterprise"))
-        prioritize(("education", "edtech", "student", "teacher", "tutor", "classroom", "school", "educational"), ("NVIDIA NIM", "NVIDIA NeMo", "NeMo Guardrails", "NVIDIA Riva", "NVIDIA AI Enterprise"))
-        prioritize(("hr", "recruit", "talent", "payroll", "workforce", "interview"), ("NVIDIA NIM", "NVIDIA NeMo", "NeMo Guardrails", "NVIDIA Riva", "NVIDIA AI Enterprise"))
-
-        ranked = sorted(weights.items(), key=lambda item: (-item[1], unique.index(item[0])))
-        return [{"technology": tech, "runtime_fit_score": round(score, 4)} for tech, score in ranked]
+        aliases = {
+            "NVIDIA TensorRT": "TensorRT",
+            "NVIDIA RAPIDS": "RAPIDS",
+            "RAPIDS cuDF": "cuDF",
+            "RAPIDS cuML": "cuML",
+            "Clara / MONAI": "MONAI",
+        }
+        available = {aliases.get(str(value), str(value)) for value in technologies if value}
+        ranked: list[dict[str, Any]] = []
+        for index, technology in enumerate(ordered):
+            # Profile-backed recommendations may be generated after mapping, so
+            # keep evidence-backed technologies even when no mapping record has
+            # been persisted yet. Existing mappings receive a small boost.
+            score = 1.0 - (index * 0.08) + (0.08 if technology in available else 0.0)
+            ranked.append(
+                {
+                    "technology": technology,
+                    "runtime_fit_score": round(max(0.0, score), 4),
+                    "workload_families": [match.family for match in matches if technology in match.technologies],
+                    "matched_phrases": [
+                        phrase
+                        for match in matches
+                        if technology in match.technologies
+                        for phrase in match.matched_phrases[:4]
+                    ],
+                }
+            )
+        return ranked
 
     def _discovery_queue(self, *, limit: int = 100) -> list[dict[str, Any]]:
         rows = []
@@ -548,7 +553,11 @@ class RadarDashboardService:
     def _source_count(run: AnalysisRun | None) -> int:
         if run is None or run.startup is None:
             return 0
-        return len(run.startup.evidence or [])
+        return len({
+            str(evidence.source_url or "").strip()
+            for evidence in (run.startup.evidence or [])
+            if str(evidence.source_url or "").strip()
+        })
 
     @staticmethod
     def _dashboard_sort_key(row: dict[str, Any]) -> tuple[float, float, float]:

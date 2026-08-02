@@ -456,13 +456,15 @@ export function getRadarDashboard(limit = 100): Promise<RadarDashboardRead> {
 
 export function populateRadarDashboard(
   limit = 100,
-  sourceLimit = 8,
+  sourceLimit = 4,
+  pipelineLimit = 5,
   runPipeline = true,
   forceRerun = false,
 ): Promise<RadarPopulateResponse> {
   const params = new URLSearchParams({
     limit: String(limit),
     source_limit: String(sourceLimit),
+    pipeline_limit: String(pipelineLimit),
     run_pipeline: String(runPipeline),
     force_rerun: String(forceRerun),
   });

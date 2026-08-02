@@ -17,7 +17,8 @@ type StatusFilter = "all" | "ready" | "analyzed" | "pending" | "attention";
 type SortOption = "score" | "evidence" | "sources" | "name";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
-const SOURCE_LIMIT_OPTIONS = [4, 8, 12, 20] as const;
+const SOURCE_LIMIT_OPTIONS = [0, 2, 4, 6] as const;
+const PIPELINE_LIMIT_OPTIONS = [1, 3, 5, 10] as const;
 
 function formatScore(value: number | null | undefined): string {
   return typeof value === "number" && Number.isFinite(value)
@@ -234,7 +235,8 @@ export function RadarDashboardView({ onSelectStartup, onSelectRun }: RadarDashbo
   const [populateResult, setPopulateResult] = useState<RadarPopulateResponse | null>(null);
   const [runPipeline, setRunPipeline] = useState(true);
   const [forceRerun, setForceRerun] = useState(false);
-  const [sourceLimit, setSourceLimit] = useState<number>(8);
+  const [sourceLimit, setSourceLimit] = useState<number>(2);
+  const [pipelineLimit, setPipelineLimit] = useState<number>(5);
   const [activeTab, setActiveTab] = useState<ActiveTab>("companies");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -268,6 +270,7 @@ export function RadarDashboardView({ onSelectStartup, onSelectRun }: RadarDashbo
       const response = await populateRadarDashboard(
         limit,
         sourceLimit,
+        pipelineLimit,
         runPipeline,
         forceRerun,
       );
@@ -282,7 +285,7 @@ export function RadarDashboardView({ onSelectStartup, onSelectRun }: RadarDashbo
     } finally {
       setPopulating(false);
     }
-  }, [forceRerun, runPipeline, sourceLimit]);
+  }, [forceRerun, pipelineLimit, runPipeline, sourceLimit]);
 
   useEffect(() => {
     void load();
@@ -449,12 +452,23 @@ export function RadarDashboardView({ onSelectStartup, onSelectRun }: RadarDashbo
               Force rerun
             </label>
             <label className="radar-inline-field">
-              Sources per run
+              Discovery sources
               <select
                 value={sourceLimit}
                 onChange={(event) => setSourceLimit(Number(event.target.value))}
               >
                 {SOURCE_LIMIT_OPTIONS.map((option) => (
+                  <option value={option} key={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+            <label className="radar-inline-field">
+              Companies analyzed per run
+              <select
+                value={pipelineLimit}
+                onChange={(event) => setPipelineLimit(Number(event.target.value))}
+              >
+                {PIPELINE_LIMIT_OPTIONS.map((option) => (
                   <option value={option} key={option}>{option}</option>
                 ))}
               </select>
