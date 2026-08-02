@@ -38,13 +38,13 @@ jobs:
       - name: Prepare complete tested files
         run: |
           git show HEAD^:.github/workflows/ci.yml > .github/workflows/ci.yml
-          mkdir -p rag-e2e-tested-files/.github/workflows
+          mkdir -p rag-e2e-tested-files/workflows
           mkdir -p rag-e2e-tested-files/models/cross_encoder
           mkdir -p rag-e2e-tested-files/src/diagnosis
           mkdir -p rag-e2e-tested-files/src/recommendation
           mkdir -p rag-e2e-tested-files/tests/unit
-          cp .github/workflows/ci.yml rag-e2e-tested-files/.github/workflows/ci.yml
-          cp .github/workflows/release-validation.yml rag-e2e-tested-files/.github/workflows/release-validation.yml
+          cp .github/workflows/ci.yml rag-e2e-tested-files/workflows/ci.yml
+          cp .github/workflows/release-validation.yml rag-e2e-tested-files/workflows/release-validation.yml
           cp models/cross_encoder/config.pbtxt rag-e2e-tested-files/models/cross_encoder/config.pbtxt
           cp src/diagnosis/gap_diagnosis_scoring.py rag-e2e-tested-files/src/diagnosis/gap_diagnosis_scoring.py
           cp src/recommendation/nvidia_technology_mapping.py rag-e2e-tested-files/src/recommendation/nvidia_technology_mapping.py
