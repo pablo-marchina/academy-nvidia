@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+from collections import defaultdict
 from datetime import UTC, datetime
 
 from src.rag.schemas import RagChunk, RetrievalQuery, RetrievedContext
@@ -21,40 +23,43 @@ class ChunkIndex:
     def _rebuild(self) -> None:
         self.by_gap.clear()
         self.by_tech.clear()
-        for c in self.chunks:
-            for gap in c.gap_types:
-                self.by_gap.setdefault(gap, []).append(c)
-            tech_key = c.product.lower()
-            self.by_tech.setdefault(tech_key, []).append(c)
+        for chunk in self.chunks:
+            for gap in chunk.gap_types:
+                self.by_gap.setdefault(gap, []).append(chunk)
+            tech_key = _normalize_technology(chunk.product)
+            self.by_tech.setdefault(tech_key, []).append(chunk)
 
     def _candidates_from_query(self, query: RetrievalQuery) -> list[RagChunk]:
-        seen: set[str] = set()
-        result: list[RagChunk] = []
+        """Return candidates using conjunctive structured filters.
+
+        A query that specifies both a gap and a technology is an intersection,
+        not a union. The previous union behavior introduced unrelated NIM,
+        TensorRT-LLM, and Triton chunks into technology-specific results.
+        """
+        if not query.gap_type and not query.technology and not query.keywords:
+            return []
 
         if query.gap_type:
-            for c in self.by_gap.get(query.gap_type, []):
-                if c.chunk_id not in seen and _is_retrievable(c, query):
-                    seen.add(c.chunk_id)
-                    result.append(c)
+            candidates = list(self.by_gap.get(query.gap_type, []))
+        elif query.technology:
+            candidates = list(self.by_tech.get(_normalize_technology(query.technology), []))
+        else:
+            candidates = list(self.chunks)
 
         if query.technology:
-            tech_key = query.technology.lower()
-            for c in self.by_tech.get(tech_key, []):
-                if c.chunk_id not in seen and _is_retrievable(c, query):
-                    seen.add(c.chunk_id)
-                    result.append(c)
+            candidates = [chunk for chunk in candidates if _technology_matches(chunk, query.technology)]
 
-        if not result and query.keywords:
-            for c in self.chunks:
-                content_lower = c.content.lower()
-                product_lower = c.product.lower()
-                kw_lower = query.keywords
-                if any(k.lower() in content_lower or k.lower() in product_lower for k in kw_lower):
-                    if c.chunk_id not in seen and _is_retrievable(c, query):
-                        seen.add(c.chunk_id)
-                        result.append(c)
+        if query.keywords:
+            candidates = [chunk for chunk in candidates if _keywords_match(chunk, query.keywords)]
 
-        return result
+        seen: set[str] = set()
+        return [
+            chunk
+            for chunk in candidates
+            if chunk.chunk_id not in seen
+            and not seen.add(chunk.chunk_id)
+            and _is_retrievable(chunk, query)
+        ]
 
     def retrieve(
         self,
@@ -62,13 +67,11 @@ class ChunkIndex:
         top_k: int = _DEFAULT_TOP_K,
     ) -> list[RetrievedContext]:
         candidates = self._candidates_from_query(query)
-
-        if not candidates:
+        if not candidates or top_k <= 0:
             return []
 
-        scored = [_score_chunk(c, query) for c in candidates]
-        scored.sort(key=lambda x: x[1], reverse=True)
-        top = scored[:top_k]
+        scored = [_score_chunk(chunk, query) for chunk in candidates]
+        top = _source_diverse_top(scored, top_k)
         return [ctx for ctx, _ in top]
 
     def retrieve_by_gap_type(
@@ -86,22 +89,76 @@ class ChunkIndex:
         return self.retrieve(RetrievalQuery(technology=technology), top_k=top_k)
 
 
+def _normalize_technology(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", value.casefold())
+
+
+def _technology_matches(chunk: RagChunk, technology: str) -> bool:
+    wanted = _normalize_technology(technology)
+    if not wanted:
+        return True
+    product = _normalize_technology(chunk.product)
+    nvidia_technology = _normalize_technology(chunk.nvidia_technology or "")
+    return wanted in {product, nvidia_technology}
+
+
+def _keywords_match(chunk: RagChunk, keywords: list[str]) -> bool:
+    haystack = f"{chunk.product}\n{chunk.title}\n{chunk.content}".casefold()
+    return any(keyword.casefold() in haystack for keyword in keywords if keyword.strip())
+
+
+def _source_diverse_top(
+    scored: list[tuple[RetrievedContext, float]],
+    top_k: int,
+) -> list[tuple[RetrievedContext, float]]:
+    """Rank by relevance while guaranteeing source coverage before duplicates.
+
+    Golden and production queries frequently request a gap addressed by several
+    NVIDIA technologies. Taking the first ``k`` tied chunks allowed one verbose
+    document to occupy every slot. We first select the best chunk per source,
+    then fill remaining capacity with the next best chunks.
+    """
+    ranked = sorted(scored, key=lambda item: (-item[1], item[0].source_id, item[0].chunk_id))
+    by_source: dict[str, list[tuple[RetrievedContext, float]]] = defaultdict(list)
+    for item in ranked:
+        by_source[item[0].source_id].append(item)
+
+    source_heads = sorted(
+        (items[0] for items in by_source.values()),
+        key=lambda item: (-item[1], item[0].source_id, item[0].chunk_id),
+    )
+    selected = source_heads[:top_k]
+    selected_ids = {item[0].chunk_id for item in selected}
+
+    if len(selected) < top_k:
+        for item in ranked:
+            if item[0].chunk_id in selected_ids:
+                continue
+            selected.append(item)
+            selected_ids.add(item[0].chunk_id)
+            if len(selected) == top_k:
+                break
+
+    return selected
+
+
 def _score_chunk(chunk: RagChunk, query: RetrievalQuery) -> tuple[RetrievedContext, float]:
     """Score a chunk's relevance to a query (0.0 to 1.0)."""
     score = 0.0
-    content_lower = chunk.content.lower()
-    product_lower = chunk.product.lower()
+    content_lower = chunk.content.casefold()
+    product_lower = chunk.product.casefold()
 
     if query.gap_type and query.gap_type in chunk.gap_types:
         score += 0.4
 
     if query.technology:
-        q_tech = query.technology.lower()
+        q_tech = query.technology.casefold()
         if q_tech in product_lower or q_tech in content_lower:
             score += 0.3
 
     if query.keywords:
-        matched = sum(1 for kw in query.keywords if kw.lower() in content_lower)
+        haystack = f"{product_lower}\n{chunk.title.casefold()}\n{content_lower}"
+        matched = sum(1 for keyword in query.keywords if keyword.casefold() in haystack)
         if matched > 0:
             score += 0.3 * min(matched / len(query.keywords), 1.0)
 
