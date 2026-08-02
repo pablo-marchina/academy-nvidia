@@ -26,7 +26,7 @@ try:
 except ImportError:
     PROMETHEUS_AVAILABLE = False
 
-_PUBLIC_PATHS = {"/health/live", "/health/ready", "/metrics", "/openapi.json", "/docs", "/redoc"}
+_PUBLIC_PATHS = {"/health/live", "/health/ready"}
 _INSECURE_PROXY_VALUES = {
     "",
     "change-me",
@@ -57,11 +57,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
+_product_mode = _is_product_mode()
 app = FastAPI(
     title="NVIDIA Startup AI Radar API",
     description="Product API for persisted startup analysis, recommendations, dossiers, and exports.",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url=None if _product_mode else "/docs",
+    redoc_url=None if _product_mode else "/redoc",
+    openapi_url=None if _product_mode else "/openapi.json",
 )
 
 
@@ -75,8 +79,7 @@ def _cors_origins() -> list[str]:
     else:
         origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
     if app_mode == "product" and "*" in origins:
-        msg = "APP_MODE=product does not allow wildcard CORS origins."
-        raise RuntimeError(msg)
+        raise RuntimeError("APP_MODE=product does not allow wildcard CORS origins.")
     return origins
 
 
