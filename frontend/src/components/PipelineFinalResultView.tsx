@@ -535,6 +535,7 @@ export function PipelineFinalResultView({ workflowId, onBackToWorkflow, onSelect
                 { label: "Passed metrics", value: quality ? `${quality.passed_metrics}/${quality.total_metrics}` : "—" },
                 { label: "Export readiness", value: quality?.export_readiness_score },
                 { label: "Review readiness", value: quality?.review_readiness_score },
+                { label: "Pipeline quality gate", value: asRecord(workflowState.quality_gates_result).status },
                 { label: "RAG retrieval mode", value: ragMetrics.retrieval_mode ?? ragOutput.retrieval_mode ?? workflowState.rag_retrieval_mode },
                 { label: "GraphRAG", value: ragMetrics.graphrag_active ?? ragOutput.graphrag_enabled ?? workflowState.graphrag_enabled },
                 { label: "Triton rerank", value: ragMetrics.triton_reranker_active ?? ragMetrics.triton_reranker_required ?? ragOutput.triton_reranker_enabled ?? workflowState.triton_reranker_enabled },
