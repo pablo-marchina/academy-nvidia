@@ -1,0 +1,209 @@
+name: Release Validation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  production-stack-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reclaim runner disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
+          docker system prune --all --force || true
+          df -h
+
+      - name: Prepare non-default release environment
+        run: |
+          cp .env.example .env
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.env')
+          content = path.read_text(encoding='utf-8')
+          content = content.replace(
+              'replace-with-a-random-value-of-at-least-32-characters',
+              'ci-proxy-9a4f10f4c5414f8f8b2c913d87e5c04d6ef1a63b45fbb60a',
+          )
+          content = content.replace(
+              'replace-with-a-random-database-password',
+              'ci-db-4b9de674c49343d5999d8bb8531d1be8d31ee1fa',
+          )
+          content = content.replace('NVIDIA_API_KEY=\n', 'NVIDIA_API_KEY=ci-release-smoke-not-used\n')
+          path.write_text(content, encoding='utf-8')
+          PY
+          docker compose config --quiet
+
+      - name: Build production images
+        run: docker compose build api frontend triton-reranker
+
+      - name: Start the complete release stack
+        run: docker compose up -d
+
+      - name: Wait for public liveness and full readiness
+        run: |
+          for attempt in $(seq 1 180); do
+            if curl --fail --silent --show-error http://localhost:3000/api/health/ready > readiness.json; then
+              cat readiness.json
+              break
+            fi
+            if [ "$attempt" -eq 180 ]; then
+              echo "Release readiness did not become healthy."
+              cat readiness.json 2>/dev/null || true
+              docker compose ps
+              docker compose logs --no-color migrate rag-bootstrap triton-reranker api workflow-worker frontend
+              exit 1
+            fi
+            sleep 5
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('readiness.json').read_text(encoding='utf-8'))
+          assert payload['ready'] is True, payload
+          assert payload['schema']['ready'] is True, payload
+          for dependency in ('product_db', 'qdrant', 'rag', 'triton'):
+              assert payload['dependencies'][dependency]['status'] == 'available', payload
+          PY
+          curl --fail --silent --show-error http://localhost:3000/health
+          curl --fail --silent --show-error http://localhost:3000/api/health/live
+
+      - name: Verify API isolation and Triton inference
+        run: |
+          direct_status=$(curl --silent --output direct-api.json --write-out '%{http_code}' http://127.0.0.1:8080/startups)
+          test "$direct_status" = "401"
+          cat direct-api.json
+          curl --fail --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -d '{"inputs":[{"name":"query","shape":[1],"datatype":"BYTES","data":["computer vision inference"]},{"name":"documents","shape":[2],"datatype":"BYTES","data":["TensorRT accelerates vision inference.","Riva provides speech AI services."]}],"outputs":[{"name":"scores"}]}' \
+            http://127.0.0.1:8000/v2/models/cross_encoder/infer > triton-inference.json
+          cat triton-inference.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('triton-inference.json').read_text(encoding='utf-8'))
+          outputs = {item['name']: item for item in payload['outputs']}
+          assert outputs['scores']['shape'] == [2], payload
+          assert len(outputs['scores']['data']) == 2, payload
+          PY
+
+      - name: Verify durable queue and worker execution
+        run: |
+          docker compose stop workflow-worker
+          python - <<'PY'
+          import json
+          import time
+          import urllib.request
+          from pathlib import Path
+
+          base = 'http://localhost:3000/api'
+
+          def request(path: str, *, method: str = 'GET', payload=None):
+              data = None if payload is None else json.dumps(payload).encode('utf-8')
+              req = urllib.request.Request(
+                  base + path,
+                  data=data,
+                  method=method,
+                  headers={'Content-Type': 'application/json'},
+              )
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  return response.status, json.loads(response.read().decode('utf-8'))
+
+          startup_payload = {
+              'name': 'Pix Force Release Smoke',
+              'website': 'https://pixforce.com.br/',
+              'country': 'Brazil',
+              'sector': 'Computer Vision',
+              'description': 'Computer vision company used for production release smoke validation.',
+              'product_summary': 'Develops computer vision solutions for industrial inspection.',
+              'status': 'active',
+              'tags': ['computer-vision', 'industrial-ai'],
+              'evidence': [
+                  {
+                      'claim': 'The company develops computer vision solutions.',
+                      'source_url': 'https://pixforce.com.br/',
+                      'source_type': 'official_site',
+                      'quote_or_evidence': 'Official company website describes computer vision solutions.',
+                      'confidence': 'high',
+                      'metadata': {'release_smoke': True},
+                  }
+              ],
+          }
+          status, startup = request('/startups', method='POST', payload=startup_payload)
+          assert status == 201, (status, startup)
+          status, workflow = request(
+              '/workflows/product-runs',
+              method='POST',
+              payload={'startup_id': startup['id'], 'use_rag': True},
+          )
+          assert status == 202, (status, workflow)
+          assert workflow['status'] == 'queued', workflow
+          Path('release-workflow.json').write_text(
+              json.dumps({'startup': startup, 'workflow': workflow}, indent=2),
+              encoding='utf-8',
+          )
+          print(workflow['id'])
+          PY
+          docker compose start workflow-worker
+          workflow_id=$(python -c "import json; print(json.load(open('release-workflow.json'))['workflow']['id'])")
+          for attempt in $(seq 1 120); do
+            curl --fail --silent --show-error \
+              "http://localhost:3000/api/workflows/product-runs/${workflow_id}" > workflow-result.json
+            workflow_status=$(python -c "import json; print(json.load(open('workflow-result.json'))['status'])")
+            echo "workflow=${workflow_id} status=${workflow_status}"
+            case "$workflow_status" in
+              completed|degraded|awaiting_review)
+                cat workflow-result.json
+                exit 0
+                ;;
+              failed|cancelled)
+                cat workflow-result.json
+                docker compose logs --no-color workflow-worker api
+                exit 1
+                ;;
+            esac
+            sleep 5
+          done
+          echo "Workflow did not reach a valid terminal/review state."
+          cat workflow-result.json
+          docker compose logs --no-color workflow-worker api
+          exit 1
+
+      - name: Capture release diagnostics
+        if: always()
+        run: |
+          docker compose ps > compose-ps.txt || true
+          docker compose logs --no-color > compose.log 2>&1 || true
+          df -h > disk-usage.txt || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-stack-release-diagnostics
+          path: |
+            readiness.json
+            direct-api.json
+            triton-inference.json
+            release-workflow.json
+            workflow-result.json
+            compose-ps.txt
+            compose.log
+            disk-usage.txt
+          if-no-files-found: ignore
+
+      - name: Stop release stack
+        if: always()
+        run: docker compose down --volumes --remove-orphans || true
