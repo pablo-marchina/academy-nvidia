@@ -62,12 +62,14 @@ jobs:
             tests/unit/test_radar_dashboard_runtime_gate.py \
             tests/evals/test_recommendation_baseline.py
           npm run build --prefix frontend
-      - name: Commit validated changes
+      - name: Commit validated code changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # GitHub Actions cannot push workflow-file changes with this token.
+          # Keep the current CI workflow and let the connector update it later.
+          git checkout HEAD -- .github/workflows/ci.yml
           git rm -r tools/runtime-fix-patch
-          git rm .github/workflows/apply-runtime-fix-temporary.yml
           git add .
           git commit -m "fix: make radar runtime faster and evidence-specific"
           git push origin HEAD:improve/dashboard-output-performance
