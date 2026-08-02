@@ -32,110 +32,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - name: Apply residual output-quality fixes
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          classifier_path = Path('src/services/product/workload_classifier.py')
-          classifier = classifier_path.read_text(encoding='utf-8')
-          if '"big data": 3.5,' not in classifier:
-              classifier = classifier.replace(
-                  '            "tabular data": 3.0,\n',
-                  '            "tabular data": 3.0,\n'
-                  '            "big data": 3.5,\n'
-                  '            "data science": 3.0,\n'
-                  '            "enterprise analytics": 3.0,\n'
-                  '            "accelerated analytics": 4.0,\n',
-              )
-          classifier_path.write_text(classifier, encoding='utf-8')
-
-          radar_path = Path('src/services/product/radar_dashboard_service.py')
-          radar = radar_path.read_text(encoding='utf-8')
-          radar = radar.replace(
-              '            "top_gaps": item.get("top_gaps", []),\n',
-              '            "top_gaps": self._relevant_top_gaps(run),\n',
-          )
-          method_anchor = '    def _startup_row(self, startup: Startup, latest: AnalysisRun | None) -> dict[str, Any]:\n'
-          if 'def _relevant_top_gaps(' not in radar:
-              method = '''    @staticmethod
-    def _relevant_top_gaps(run: AnalysisRun | None) -> list[str]:
-        """Expose only evidence-supported, medium/high-confidence runtime gaps."""
-        if run is None or run.startup is None:
-            return []
-
-        from src.services.product.workload_classifier import classify_workloads, needs_guardrails
-
-        startup = run.startup
-        evidence_text = " ".join(
-            f"{evidence.claim} {evidence.quote_or_evidence}"
-            for evidence in (startup.evidence or [])
-        )
-        profile = (run.output_snapshot_json or {}).get("startup_profile") or {}
-        text = " ".join(
-            [
-                str(startup.description or ""),
-                str(startup.product_summary or ""),
-                str(profile.get("description") or ""),
-                " ".join(str(value) for value in profile.get("ai_signals", []) or []),
-                " ".join(str(value) for value in profile.get("tech_stack_signals", []) or []),
-                evidence_text,
-            ]
-        )
-        matches = classify_workloads(text, max_families=2)
-        if not matches:
-            return []
-
-        family_gaps = {
-            "llm_nlp": {
-                "agent_governance_gap",
-                "model_evaluation_gap",
-                "observability_gap",
-                "high_latency",
-                "high_inference_cost",
-                "external_api_dependency",
-            },
-            "voice": {"voice_need", "high_latency", "observability_gap"},
-            "computer_vision": {"computer_vision_need", "high_latency", "observability_gap"},
-            "tabular_ml": {
-                "heavy_tabular_processing",
-                "slow_data_pipeline",
-                "high_training_cost",
-                "high_inference_cost",
-            },
-            "robotics_simulation": {"robotics_need", "simulation_need"},
-            "cybersecurity": {"ai_cybersecurity_need"},
-            "medical_imaging": {"healthcare_compliance_need", "computer_vision_need"},
-        }
-        allowed: set[str] = set()
-        for match in matches:
-            allowed.update(family_gaps.get(match.family, set()))
-        if needs_guardrails(text) and any(match.family == "llm_nlp" for match in matches):
-            allowed.add("agent_governance_gap")
-
-        confidence_rank = {"high": 2, "medium": 1}
-        supported = [
-            gap
-            for gap in run.gaps
-            if gap.detected
-            and gap.gap_type in allowed
-            and str(gap.confidence or "").casefold() in confidence_rank
-        ]
-        supported.sort(
-            key=lambda gap: (
-                confidence_rank.get(str(gap.confidence or "").casefold(), 0),
-                gap.gap_type,
-            ),
-            reverse=True,
-        )
-        return [gap.gap_type for gap in supported[:3]]
-
-'''
-              radar = radar.replace(method_anchor, method + method_anchor)
-          radar_path.write_text(radar, encoding='utf-8')
-
-          test_path = Path('tests/unit/test_radar_relevant_gaps.py')
-          test_path.write_text('''from types import SimpleNamespace\n\nfrom src.services.product.radar_dashboard_service import RadarDashboardService\nfrom src.services.product.workload_classifier import classify_workloads\n\n\ndef test_big_data_and_data_science_map_to_tabular_ml() -> None:\n    matches = classify_workloads(\n        "Enterprise big data company applying machine learning, analytics and data science."\n    )\n    assert matches\n    assert matches[0].family == "tabular_ml"\n\n\ndef test_dashboard_filters_gaps_to_supported_workloads_and_confidence() -> None:\n    startup = SimpleNamespace(\n        description="Conversational AI platform using NLP, LLM workflows and AI agents.",\n        product_summary="",\n        evidence=[],\n    )\n    gaps = [\n        SimpleNamespace(gap_type="agent_governance_gap", detected=True, confidence="high"),\n        SimpleNamespace(gap_type="model_evaluation_gap", detected=True, confidence="medium"),\n        SimpleNamespace(gap_type="observability_gap", detected=True, confidence="medium"),\n        SimpleNamespace(gap_type="computer_vision_need", detected=True, confidence="high"),\n        SimpleNamespace(gap_type="robotics_need", detected=True, confidence="high"),\n        SimpleNamespace(gap_type="high_latency", detected=True, confidence="low"),\n    ]\n    run = SimpleNamespace(\n        startup=startup,\n        output_snapshot_json={"startup_profile": {}},\n        gaps=gaps,\n    )\n\n    assert RadarDashboardService._relevant_top_gaps(run) == [\n        "agent_governance_gap",\n        "observability_gap",\n        "model_evaluation_gap",\n    ]\n''', encoding='utf-8')
-          PY
+        run: python tools/apply_residual_fix.py
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -154,7 +51,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm tools/trigger-residual-fix.txt
+          git rm tools/apply_residual_fix.py tools/trigger-residual-fix.txt
           git add \
             src/services/product/workload_classifier.py \
             src/services/product/radar_dashboard_service.py \
