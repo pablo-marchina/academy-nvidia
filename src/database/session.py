@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from src.database.models import Base
 
 DEFAULT_PRODUCT_DB_URL = "sqlite:///data/product/product.db"
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass(frozen=True)
@@ -49,10 +50,14 @@ def _ensure_sqlite_directory(database_url: str) -> None:
     Path(url.database).expanduser().resolve().parent.mkdir(parents=True, exist_ok=True)
 
 
+def _is_product_mode() -> bool:
+    return os.getenv("APP_MODE", "").casefold() == "product"
+
+
 def build_product_database(database_url: str | None = None) -> ProductDatabaseRuntime:
     url = database_url or get_product_db_url()
     backend = make_url(url).get_backend_name()
-    if os.getenv("APP_MODE", "").lower() == "product" and not backend.startswith("postgresql"):
+    if _is_product_mode() and not backend.startswith("postgresql"):
         msg = "APP_MODE=product requires PRODUCT_DB_URL to use PostgreSQL"
         raise RuntimeError(msg)
     _ensure_sqlite_directory(url)
@@ -60,6 +65,31 @@ def build_product_database(database_url: str | None = None) -> ProductDatabaseRu
     engine = create_engine(url, future=True, pool_pre_ping=True, connect_args=connect_args)
     factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, class_=Session)
     return ProductDatabaseRuntime(url=url, engine=engine, session_factory=factory)
+
+
+def assert_product_schema_current(engine: Engine) -> None:
+    """Fail closed unless the database revision exactly matches Alembic head."""
+    try:
+        from alembic.config import Config
+        from alembic.migration import MigrationContext
+        from alembic.script import ScriptDirectory
+    except ImportError as exc:  # pragma: no cover - Alembic is a product dependency
+        raise RuntimeError("Alembic is required to validate the production database schema") from exc
+
+    config = Config(str(_PROJECT_ROOT / "alembic.ini"))
+    config.set_main_option("script_location", str(_PROJECT_ROOT / "migrations"))
+    script = ScriptDirectory.from_config(config)
+    expected_heads = set(script.get_heads())
+    with engine.connect() as connection:
+        current_heads = set(MigrationContext.configure(connection).get_current_heads())
+
+    if current_heads != expected_heads:
+        current = ", ".join(sorted(current_heads)) or "<none>"
+        expected = ", ".join(sorted(expected_heads)) or "<none>"
+        raise RuntimeError(
+            "Product database schema is not current "
+            f"(current={current}, expected={expected}). Run `python -m alembic upgrade head`."
+        )
 
 
 def configure_product_database(
@@ -72,7 +102,10 @@ def configure_product_database(
         _runtime.engine.dispose()
     _runtime = build_product_database(database_url)
     if create_schema:
-        Base.metadata.create_all(_runtime.engine)
+        if _is_product_mode():
+            assert_product_schema_current(_runtime.engine)
+        else:
+            Base.metadata.create_all(_runtime.engine)
     return _runtime
 
 
@@ -85,7 +118,10 @@ def get_product_database() -> ProductDatabaseRuntime:
 
 def initialize_product_database() -> ProductDatabaseRuntime:
     runtime = get_product_database()
-    Base.metadata.create_all(runtime.engine)
+    if _is_product_mode():
+        assert_product_schema_current(runtime.engine)
+    else:
+        Base.metadata.create_all(runtime.engine)
     return runtime
 
 
