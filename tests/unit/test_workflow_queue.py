@@ -6,7 +6,7 @@ from src.orchestration.state import WorkflowStatus
 from src.repositories.workflow import WorkflowRepository
 
 
-def test_enqueue_and_claim_workflow(monkeypatch) -> None:
+def test_enqueue_claim_and_attach_analysis_workflow(monkeypatch) -> None:
     monkeypatch.setenv("APP_MODE", "test")
     reset_product_database_runtime()
     runtime = configure_product_database("sqlite:///:memory:")
@@ -23,9 +23,16 @@ def test_enqueue_and_claim_workflow(monkeypatch) -> None:
         assert claimed is not None
         assert claimed.id == workflow_id
         assert claimed.status == WorkflowStatus.RUNNING
+        attached = repo.attach_analysis_run(workflow_id, "analysis-test")
+        assert attached is not None
+        assert attached.analysis_run_id == "analysis-test"
+        assert attached.state_json["analysis_run_id"] == "analysis-test"
         session.commit()
 
     with runtime.session_factory() as session:
+        persisted = WorkflowRepository(session).get_workflow_run(workflow_id)
+        assert persisted is not None
+        assert persisted.analysis_run_id == "analysis-test"
         assert WorkflowRepository(session).claim_next_queued_workflow() is None
 
     reset_product_database_runtime()
