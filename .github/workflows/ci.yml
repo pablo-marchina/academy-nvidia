@@ -39,6 +39,19 @@ jobs:
           python scripts/check_no_mock_runtime.py
           python scripts/build_runtime_usage_inventory.py --output final_case_evidence/runtime_usage_inventory.csv
           python scripts/build_best_case_runtime_report.py --inventory final_case_evidence/runtime_usage_inventory.csv --output final_case_evidence/best_case_runtime_report.json
+      - name: Lint release-critical code
+        run: |
+          ruff check \
+            src/api/main.py \
+            src/api/workflow_routes.py \
+            src/database/session.py \
+            src/orchestration/service.py \
+            src/orchestration/worker.py \
+            src/repositories/workflow.py \
+            src/services/product/health_executor.py \
+            scripts/bootstrap_nvidia_corpus.py \
+            tests/unit/test_workflow_queue.py \
+            tests/unit/test_health_executor_release.py
       - name: Focused tests
         run: |
           pytest -q \
@@ -55,8 +68,24 @@ jobs:
             tests/unit/test_radar_relevant_gaps.py \
             tests/unit/test_activation_playbook_matcher.py \
             tests/unit/test_radar_dashboard_runtime_gate.py \
+            tests/unit/test_workflow_queue.py \
+            tests/unit/test_health_executor_release.py \
             tests/evals/test_recommendation_baseline.py \
             tests/acceptance/test_no_mock_in_production.py
+      - name: Verify Alembic upgrade and schema head
+        run: |
+          rm -f data/product/product.db
+          python -m alembic upgrade head
+          APP_MODE=test PRODUCT_DB_URL=sqlite:///data/product/product.db python - <<'PY'
+          from src.database.session import assert_product_schema_current, build_product_database
+          runtime = build_product_database("sqlite:///data/product/product.db")
+          assert_product_schema_current(runtime.engine)
+          print("Alembic schema is current")
+          PY
+      - name: Validate production Compose model
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
       - name: Build frontend
         working-directory: frontend
         run: npm run build
