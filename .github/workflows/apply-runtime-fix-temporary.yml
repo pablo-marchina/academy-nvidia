@@ -1,9 +1,9 @@
 name: Apply Runtime Fix Temporary
 
 on:
-  push:
+  pull_request:
     branches:
-      - improve/dashboard-output-performance
+      - main
 
 permissions:
   contents: write
