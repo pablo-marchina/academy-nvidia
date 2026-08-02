@@ -69,6 +69,54 @@ def test_gap_and_technology_query_is_an_intersection() -> None:
     assert [result.source_id for result in results] == ["tensorrt_llm"]
 
 
+def test_tensorrt_query_does_not_match_tensorrt_llm_product() -> None:
+    chunks = [
+        _chunk(
+            "tensorrt_000",
+            "tensorrt",
+            "TensorRT",
+            "TensorRT accelerates computer vision inference.",
+            ["computer_vision_need"],
+        ),
+        _chunk(
+            "tensorrt_llm_000",
+            "tensorrt_llm",
+            "TensorRT-LLM",
+            "TensorRT-LLM optimizes large language model inference.",
+            ["computer_vision_need"],
+        ),
+    ]
+
+    results = ChunkIndex(chunks).retrieve(
+        RetrievalQuery(
+            gap_type="computer_vision_need",
+            technology="TensorRT",
+        ),
+        top_k=3,
+    )
+
+    assert [result.source_id for result in results] == ["tensorrt"]
+
+
+def test_safe_short_alias_matches_descriptive_product_name() -> None:
+    chunks = [
+        _chunk(
+            "triton_000",
+            "triton",
+            "Triton Inference Server",
+            "Triton serves optimized inference workloads.",
+            ["high_latency"],
+        )
+    ]
+
+    results = ChunkIndex(chunks).retrieve(
+        RetrievalQuery(gap_type="high_latency", technology="Triton"),
+        top_k=3,
+    )
+
+    assert [result.source_id for result in results] == ["triton"]
+
+
 def test_broad_gap_query_round_robins_sources() -> None:
     chunks: list[RagChunk] = []
     for source_id, product in (
