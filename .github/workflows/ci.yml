@@ -49,6 +49,12 @@ jobs:
             tests/unit/test_rag_technique_registry.py \
             tests/unit/test_rag_ingestion.py \
             tests/unit/test_rag_retrieval_intent.py \
+            tests/unit/test_adaptive_source_planner.py \
+            tests/unit/test_manual_seed_entity_signal.py \
+            tests/unit/test_workload_classifier.py \
+            tests/unit/test_activation_playbook_matcher.py \
+            tests/unit/test_radar_dashboard_runtime_gate.py \
+            tests/evals/test_recommendation_baseline.py \
             tests/acceptance/test_no_mock_in_production.py
       - name: Build frontend
         working-directory: frontend
