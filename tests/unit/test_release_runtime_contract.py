@@ -59,6 +59,7 @@ def test_runner_persists_final_analysis_snapshot(tmp_path: Path, monkeypatch) ->
         runtime = __import__("src.database.session", fromlist=["get_product_database"]).get_product_database()
         session = runtime.session_factory()
         product_repo = ProductRepository(session)
+        workflow_repo = WorkflowRepository(session)
         startup = product_repo.create_startup(
             name="Release Contract AI",
             website="https://release-contract.example.com",
@@ -70,7 +71,7 @@ def test_runner_persists_final_analysis_snapshot(tmp_path: Path, monkeypatch) ->
             tags=["ai-native"],
         )
         session.flush()
-        workflow = WorkflowRepository(session).create_workflow_run(startup_id=startup.id, graph_version="test")
+        workflow = workflow_repo.create_workflow_run(startup_id=startup.id, graph_version="test")
         session.flush()
 
         class FakeGraph:
@@ -102,7 +103,10 @@ def test_runner_persists_final_analysis_snapshot(tmp_path: Path, monkeypatch) ->
         assert result.status == "completed"
         assert result.analysis_run_id
         analysis = product_repo.get_analysis_run(result.analysis_run_id)
+        persisted_workflow = workflow_repo.get_workflow_run(workflow.id)
         assert analysis is not None
+        assert persisted_workflow is not None
+        assert persisted_workflow.analysis_run_id == result.analysis_run_id
         assert analysis.status == "completed"
         assert analysis.output_snapshot_json["workflow_id"] == workflow.id
         assert analysis.output_snapshot_json["startup_name"] == "Release Contract AI"
