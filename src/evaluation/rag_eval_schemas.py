@@ -1,7 +1,9 @@
 """Schemas for RAG Evaluation — retrieval metrics and quality gates.
 
 Epic 13 adds: RetrievalMode, ModeEvalResult, RagEvalComparison.
-Epic 14 adds: HYBRID_RERANKED, HYBRID_RERANKED_PACKED modes + 8 new metrics.
+Epic 14 adds: HYBRID_RERANKED, HYBRID_RERANKED_PACKED + 8 metrics.
+The active corpus can grow beyond the original golden set, so each case can
+separate required sources from additional allowed sources.
 """
 
 from __future__ import annotations
@@ -24,13 +26,20 @@ class RetrievalMode(str, Enum):
 
 
 class RagEvalCase(BaseModel):
-    """A golden query case for RAG evaluation."""
+    """A golden query case for RAG evaluation.
+
+    ``expected_*`` values are required for coverage. ``allowed_*`` values
+    define the wider relevance boundary used for precision and top-1 checks.
+    When no allowed values are supplied, expected values remain authoritative.
+    """
 
     case_id: str
     description: str
     query: RetrievalQuery
     expected_source_ids: list[str] = Field(default_factory=list)
     expected_products: list[str] = Field(default_factory=list)
+    allowed_source_ids: list[str] = Field(default_factory=list)
+    allowed_products: list[str] = Field(default_factory=list)
     is_critical: bool = False
     top_k_for_test: int = 3
 
@@ -49,7 +58,6 @@ class RagRetrievalMetrics(BaseModel):
     missing_context_count: int = 0
     top_1_expected_match: bool = False
     context_precision: float = 0.0
-    # Epic 14 metrics
     duplicate_context_count: int = 0
     packed_context_count: int = 0
     dropped_context_count: int = 0
@@ -71,6 +79,8 @@ class RagEvalResult(BaseModel):
     retrieved_contexts: list[RetrievedContext] = Field(default_factory=list)
     expected_source_ids: list[str] = Field(default_factory=list)
     expected_products: list[str] = Field(default_factory=list)
+    allowed_source_ids: list[str] = Field(default_factory=list)
+    allowed_products: list[str] = Field(default_factory=list)
     failure_reasons: list[str] = Field(default_factory=list)
 
 
@@ -94,20 +104,24 @@ class ModeEvalResult(BaseModel):
 
 
 class RagEvalComparison(BaseModel):
-    """Side-by-side comparison of all retrieval modes.
-
-    Epic 13: 3 modes (lexical, semantic, hybrid).
-    Epic 14: 5 modes (+ hybrid_reranked, hybrid_reranked_packed).
-    """
+    """Side-by-side comparison of all retrieval modes."""
 
     lexical: ModeEvalResult
     semantic: ModeEvalResult
     hybrid: ModeEvalResult
     hybrid_reranked: ModeEvalResult = Field(
-        default_factory=lambda: ModeEvalResult(mode=RetrievalMode.HYBRID_RERANKED, results=[], gates=[])
+        default_factory=lambda: ModeEvalResult(
+            mode=RetrievalMode.HYBRID_RERANKED,
+            results=[],
+            gates=[],
+        )
     )
     hybrid_reranked_packed: ModeEvalResult = Field(
-        default_factory=lambda: ModeEvalResult(mode=RetrievalMode.HYBRID_RERANKED_PACKED, results=[], gates=[])
+        default_factory=lambda: ModeEvalResult(
+            mode=RetrievalMode.HYBRID_RERANKED_PACKED,
+            results=[],
+            gates=[],
+        )
     )
     critical_regressions: list[str] = Field(default_factory=list)
     """Case IDs where semantic or hybrid regressed vs lexical on a critical query."""
