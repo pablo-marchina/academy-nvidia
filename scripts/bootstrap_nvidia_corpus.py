@@ -13,9 +13,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.load_product_env import load_product_env
-from src.rag.ingestion_pipeline import check_corpus_readiness
-from src.rag.qdrant_store import QdrantStore, build_qdrant_store
+from scripts.load_product_env import load_product_env  # noqa: E402
+from src.rag.ingestion_pipeline import check_corpus_readiness  # noqa: E402
+from src.rag.qdrant_store import QdrantStore, build_qdrant_store  # noqa: E402
 
 
 def _wait_for_qdrant() -> QdrantStore:
