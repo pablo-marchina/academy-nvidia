@@ -24,7 +24,6 @@ class WorkflowOrchestrationService:
         use_rag: bool = True,
         graph_version: str = "1.0",
     ) -> Any:
-        """Persist a durable queued workflow and return immediately."""
         if not use_rag:
             raise ValueError("RAG is mandatory for the single product workflow; use_rag=false is not allowed.")
         if not any((startup_id, discovery_candidate_id, analysis_run_id)):
@@ -53,7 +52,6 @@ class WorkflowOrchestrationService:
         return workflow_run
 
     def run_existing_workflow(self, workflow_id: str) -> ProductWorkflowState:
-        """Execute a previously persisted queued/claimed workflow."""
         run = self.repo.get_workflow_run(workflow_id)
         if run is None:
             raise LookupError(f"Workflow run not found: {workflow_id}")
@@ -88,6 +86,8 @@ class WorkflowOrchestrationService:
 
         runner = WorkflowRunner(self.session)
         final_state = runner.run_workflow(state)
+        if final_state.analysis_run_id:
+            self.repo.attach_analysis_run(workflow_id, final_state.analysis_run_id)
         self.session.commit()
         return final_state
 
@@ -100,7 +100,6 @@ class WorkflowOrchestrationService:
         use_rag: bool = True,
         graph_version: str = "1.0",
     ) -> ProductWorkflowState:
-        """Compatibility path for internal bounded synchronous batches."""
         run = self.enqueue_workflow(
             startup_id=startup_id,
             discovery_candidate_id=discovery_candidate_id,
@@ -207,7 +206,14 @@ class WorkflowOrchestrationService:
         workflow_state = ProductWorkflowState(**state_data)
 
         runner = WorkflowRunner(self.session)
-        runner.resume_workflow(workflow_state, decision=decision, notes=notes, reviewed_by=reviewer)
+        final_state = runner.resume_workflow(
+            workflow_state,
+            decision=decision,
+            notes=notes,
+            reviewed_by=reviewer,
+        )
+        if final_state.analysis_run_id:
+            self.repo.attach_analysis_run(workflow_id, final_state.analysis_run_id)
         self.session.commit()
 
         return {
