@@ -5,14 +5,14 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  apply-rag-e2e-fix:
+  export-rag-e2e-fix:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -35,19 +35,27 @@ jobs:
             tests/unit/test_rag_e2e_output_contract.py \
             tests/unit/test_radar_relevant_gaps.py \
             tests/unit/test_workload_classifier.py
-      - name: Restore permanent CI and remove temporary machinery
+      - name: Prepare complete tested files
         run: |
           git show HEAD^:.github/workflows/ci.yml > .github/workflows/ci.yml
-          rm -f scripts/apply_rag_e2e_correctness_fix.py
-          rm -f .github/workflows/apply-rag-e2e-correctness-fix.yml
-      - name: Commit and push validated fixes
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git diff --cached --check
-          git commit -m 'Validate production RAG output end to end'
-          git push origin HEAD:improve/dashboard-output-performance
+          mkdir -p rag-e2e-tested-files/.github/workflows
+          mkdir -p rag-e2e-tested-files/models/cross_encoder
+          mkdir -p rag-e2e-tested-files/src/diagnosis
+          mkdir -p rag-e2e-tested-files/src/recommendation
+          mkdir -p rag-e2e-tested-files/tests/unit
+          cp .github/workflows/ci.yml rag-e2e-tested-files/.github/workflows/ci.yml
+          cp .github/workflows/release-validation.yml rag-e2e-tested-files/.github/workflows/release-validation.yml
+          cp models/cross_encoder/config.pbtxt rag-e2e-tested-files/models/cross_encoder/config.pbtxt
+          cp src/diagnosis/gap_diagnosis_scoring.py rag-e2e-tested-files/src/diagnosis/gap_diagnosis_scoring.py
+          cp src/recommendation/nvidia_technology_mapping.py rag-e2e-tested-files/src/recommendation/nvidia_technology_mapping.py
+          cp tests/unit/test_rag_e2e_output_contract.py rag-e2e-tested-files/tests/unit/test_rag_e2e_output_contract.py
+          find rag-e2e-tested-files -type f -print0 | sort -z | xargs -0 sha256sum > rag-e2e-tested-files/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rag-e2e-tested-files
+          path: rag-e2e-tested-files
+          if-no-files-found: error
+          retention-days: 7
 
   product-governance:
     if: github.event_name == 'push'
