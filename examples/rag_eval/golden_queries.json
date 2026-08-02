@@ -13,8 +13,8 @@
       "query": { "gap_type": "high_inference_cost", "technology": null, "keywords": [] },
       "expected_source_ids": ["nim", "tensorrt_llm", "triton"],
       "expected_products": ["NVIDIA NIM", "TensorRT-LLM", "Triton Inference Server"],
-      "allowed_source_ids": ["nim", "nvidia_whitepaper_inference", "tensorrt_llm", "triton"],
-      "allowed_products": ["NVIDIA NIM", "NVIDIA Inference Optimization", "TensorRT-LLM", "Triton Inference Server"],
+      "allowed_source_ids": ["nim", "nvidia_whitepaper_inference", "tensorrt", "tensorrt_llm", "triton"],
+      "allowed_products": ["NVIDIA NIM", "NVIDIA Inference Optimization", "TensorRT", "TensorRT-LLM", "Triton Inference Server"],
       "is_critical": true,
       "top_k_for_test": 15
     },
@@ -46,8 +46,8 @@
       "query": { "gap_type": "high_latency", "technology": null, "keywords": [] },
       "expected_source_ids": ["nim", "tensorrt_llm", "triton"],
       "expected_products": ["NVIDIA NIM", "TensorRT-LLM", "Triton Inference Server"],
-      "allowed_source_ids": ["nim", "nvidia_whitepaper_inference", "tensorrt_llm", "triton"],
-      "allowed_products": ["NVIDIA NIM", "NVIDIA Inference Optimization", "TensorRT-LLM", "Triton Inference Server"],
+      "allowed_source_ids": ["nim", "nvidia_whitepaper_inference", "tensorrt", "tensorrt_llm", "triton"],
+      "allowed_products": ["NVIDIA NIM", "NVIDIA Inference Optimization", "TensorRT", "TensorRT-LLM", "Triton Inference Server"],
       "is_critical": false,
       "top_k_for_test": 15
     },
@@ -189,8 +189,8 @@
       "query": { "gap_type": null, "technology": null, "keywords": ["inference"] },
       "expected_source_ids": ["nim", "tensorrt_llm", "triton"],
       "expected_products": ["NVIDIA NIM", "TensorRT-LLM", "Triton Inference Server"],
-      "allowed_source_ids": ["nim", "nvidia_whitepaper_inference", "tensorrt_llm", "triton", "cuda"],
-      "allowed_products": ["NVIDIA NIM", "NVIDIA Inference Optimization", "TensorRT-LLM", "Triton Inference Server", "CUDA"],
+      "allowed_source_ids": ["nim", "nvidia_whitepaper_inference", "tensorrt", "tensorrt_llm", "triton", "cuda"],
+      "allowed_products": ["NVIDIA NIM", "NVIDIA Inference Optimization", "TensorRT", "TensorRT-LLM", "Triton Inference Server", "CUDA"],
       "is_critical": true,
       "top_k_for_test": 10
     },
@@ -200,8 +200,8 @@
       "query": { "gap_type": null, "technology": null, "keywords": ["production"] },
       "expected_source_ids": ["nim", "riva", "tensorrt_llm"],
       "expected_products": ["NVIDIA NIM", "NVIDIA Riva", "TensorRT-LLM"],
-      "allowed_source_ids": ["ai_enterprise", "nim", "riva", "tensorrt_llm", "triton"],
-      "allowed_products": ["NVIDIA AI Enterprise", "NVIDIA NIM", "NVIDIA Riva", "TensorRT-LLM", "Triton Inference Server"],
+      "allowed_source_ids": ["ai_enterprise", "nim", "riva", "tensorrt", "tensorrt_llm", "triton"],
+      "allowed_products": ["NVIDIA AI Enterprise", "NVIDIA NIM", "NVIDIA Riva", "TensorRT", "TensorRT-LLM", "Triton Inference Server"],
       "is_critical": false,
       "top_k_for_test": 5
     },
@@ -222,8 +222,8 @@
       "query": { "gap_type": null, "technology": null, "keywords": ["latency"] },
       "expected_source_ids": ["nim", "riva", "tensorrt_llm", "triton"],
       "expected_products": ["NVIDIA NIM", "NVIDIA Riva", "TensorRT-LLM", "Triton Inference Server"],
-      "allowed_source_ids": ["nim", "nvidia_whitepaper_inference", "riva", "tensorrt_llm", "triton"],
-      "allowed_products": ["NVIDIA NIM", "NVIDIA Inference Optimization", "NVIDIA Riva", "TensorRT-LLM", "Triton Inference Server"],
+      "allowed_source_ids": ["nim", "nvidia_whitepaper_inference", "riva", "tensorrt", "tensorrt_llm", "triton"],
+      "allowed_products": ["NVIDIA NIM", "NVIDIA Inference Optimization", "NVIDIA Riva", "TensorRT", "TensorRT-LLM", "Triton Inference Server"],
       "is_critical": false,
       "top_k_for_test": 8
     },
@@ -233,10 +233,10 @@
       "query": { "gap_type": null, "technology": null, "keywords": ["model"] },
       "expected_source_ids": ["clara_monai", "isaac", "nim", "omniverse", "rapids", "riva", "tensorrt_llm"],
       "expected_products": ["Clara / MONAI", "NVIDIA Isaac", "NVIDIA NIM", "NVIDIA Omniverse", "NVIDIA RAPIDS", "NVIDIA Riva", "TensorRT-LLM"],
-      "allowed_source_ids": ["clara_monai", "isaac", "nim", "omniverse", "rapids", "riva", "tensorrt_llm", "triton", "nemo", "nvidia_api_catalog", "cuda"],
-      "allowed_products": ["Clara / MONAI", "NVIDIA Isaac", "NVIDIA NIM", "NVIDIA Omniverse", "NVIDIA RAPIDS", "NVIDIA Riva", "TensorRT-LLM", "Triton Inference Server", "NVIDIA NeMo", "NVIDIA API Catalog", "CUDA"],
+      "allowed_source_ids": ["clara_monai", "isaac", "nim", "omniverse", "rapids", "riva", "tensorrt", "tensorrt_llm", "triton", "nemo", "nvidia_api_catalog", "cuda"],
+      "allowed_products": ["Clara / MONAI", "NVIDIA Isaac", "NVIDIA NIM", "NVIDIA Omniverse", "NVIDIA RAPIDS", "NVIDIA Riva", "TensorRT", "TensorRT-LLM", "Triton Inference Server", "NVIDIA NeMo", "NVIDIA API Catalog", "CUDA"],
       "is_critical": false,
-      "top_k_for_test": 10
+      "top_k_for_test": 12
     }
   ]
 }
