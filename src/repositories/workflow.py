@@ -14,9 +14,6 @@ class WorkflowRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    # ------------------------------------------------------------------
-    # WorkflowRun
-    # ------------------------------------------------------------------
     def create_workflow_run(
         self,
         *,
@@ -43,6 +40,17 @@ class WorkflowRepository:
         stmt = select(WorkflowRun).where(WorkflowRun.id == workflow_id)
         return self.session.scalar(stmt)
 
+    def attach_analysis_run(self, workflow_id: str, analysis_run_id: str) -> WorkflowRun | None:
+        run = self.get_workflow_run(workflow_id)
+        if run is None:
+            return None
+        run.analysis_run_id = analysis_run_id
+        state = dict(run.state_json or {})
+        state["analysis_run_id"] = analysis_run_id
+        run.state_json = state
+        self.session.flush()
+        return run
+
     def list_workflow_runs(
         self,
         *,
@@ -59,12 +67,6 @@ class WorkflowRepository:
         return list(self.session.scalars(stmt.offset(offset).limit(limit)))
 
     def claim_next_queued_workflow(self) -> WorkflowRun | None:
-        """Atomically claim the oldest queued run for a durable worker.
-
-        PostgreSQL uses ``FOR UPDATE SKIP LOCKED`` so multiple workers can poll
-        safely without executing the same workflow. SQLite keeps the simpler
-        query for explicit development/tests only.
-        """
         stmt = (
             select(WorkflowRun)
             .where(WorkflowRun.status == WorkflowStatus.QUEUED)
@@ -116,11 +118,7 @@ class WorkflowRepository:
         return run
 
     def complete_workflow(self, workflow_id: str, *, state_json: dict[str, Any]) -> WorkflowRun | None:
-        return self.update_workflow_status(
-            workflow_id,
-            status=WorkflowStatus.COMPLETED,
-            state_json=state_json,
-        )
+        return self.update_workflow_status(workflow_id, status=WorkflowStatus.COMPLETED, state_json=state_json)
 
     def fail_workflow(
         self,
@@ -150,9 +148,6 @@ class WorkflowRepository:
             state_json=state_json,
         )
 
-    # ------------------------------------------------------------------
-    # WorkflowNodeRun
-    # ------------------------------------------------------------------
     def create_node_run(
         self,
         *,
