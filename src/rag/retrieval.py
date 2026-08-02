@@ -1,14 +1,19 @@
-"""Lexical retrieval over NVIDIA corpus chunks."""
+"""Governed lexical retrieval over NVIDIA corpus chunks."""
 
 from __future__ import annotations
 
 import re
 from collections import defaultdict
 from datetime import UTC, datetime
+from functools import lru_cache
+from pathlib import Path
+
+import yaml
 
 from src.rag.schemas import RagChunk, RetrievalQuery, RetrievedContext
 
 _DEFAULT_TOP_K = 3
+_KEYWORDS_FILE = Path("data/nvidia_corpus/retrieval_keywords.yaml")
 
 
 class ChunkIndex:
@@ -33,8 +38,8 @@ class ChunkIndex:
         """Return candidates using conjunctive structured filters.
 
         A query that specifies both a gap and a technology is an intersection,
-        not a union. The previous union behavior introduced unrelated NIM,
-        TensorRT-LLM, and Triton chunks into technology-specific results.
+        not a union. Keyword recall is governed by the source alias registry,
+        so downloaded page chrome cannot make an unrelated source eligible.
         """
         if not query.gap_type and not query.technology and not query.keywords:
             return []
@@ -52,14 +57,14 @@ class ChunkIndex:
         if query.keywords:
             candidates = [chunk for chunk in candidates if _keywords_match(chunk, query.keywords)]
 
+        unique: list[RagChunk] = []
         seen: set[str] = set()
-        return [
-            chunk
-            for chunk in candidates
-            if chunk.chunk_id not in seen
-            and not seen.add(chunk.chunk_id)
-            and _is_retrievable(chunk, query)
-        ]
+        for chunk in candidates:
+            if chunk.chunk_id in seen or not _is_retrievable(chunk, query):
+                continue
+            seen.add(chunk.chunk_id)
+            unique.append(chunk)
+        return unique
 
     def retrieve(
         self,
@@ -93,6 +98,33 @@ def _normalize_technology(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", value.casefold())
 
 
+def _normalize_keyword(value: str) -> str:
+    return " ".join(re.findall(r"[a-z0-9]+", value.casefold()))
+
+
+@lru_cache(maxsize=1)
+def _load_retrieval_keywords() -> dict[str, set[str]]:
+    if not _KEYWORDS_FILE.is_file():
+        return {}
+    raw = yaml.safe_load(_KEYWORDS_FILE.read_text(encoding="utf-8")) or {}
+    mapping = raw.get("keywords", {})
+    if not isinstance(mapping, dict):
+        return {}
+
+    normalized: dict[str, set[str]] = {}
+    for source_id, values in mapping.items():
+        if not isinstance(values, list):
+            continue
+        aliases = {_normalize_keyword(str(value)) for value in values if str(value).strip()}
+        normalized[str(source_id)] = {alias for alias in aliases if alias}
+    return normalized
+
+
+def reset_retrieval_keyword_cache() -> None:
+    """Clear the governed keyword registry cache for deterministic tests."""
+    _load_retrieval_keywords.cache_clear()
+
+
 def _technology_matches(chunk: RagChunk, technology: str) -> bool:
     wanted = _normalize_technology(technology)
     if not wanted:
@@ -102,9 +134,25 @@ def _technology_matches(chunk: RagChunk, technology: str) -> bool:
     return wanted in {product, nvidia_technology}
 
 
+def _source_aliases(chunk: RagChunk) -> set[str]:
+    governed = set(_load_retrieval_keywords().get(chunk.source_id, set()))
+    governed.add(_normalize_keyword(chunk.product))
+    governed.add(_normalize_keyword(chunk.title))
+    return {alias for alias in governed if alias}
+
+
+def _keyword_hits(chunk: RagChunk, keywords: list[str]) -> int:
+    aliases = _source_aliases(chunk)
+    normalized_queries = [_normalize_keyword(keyword) for keyword in keywords if keyword.strip()]
+    return sum(
+        1
+        for query in normalized_queries
+        if query and any(query == alias or query in alias or alias in query for alias in aliases)
+    )
+
+
 def _keywords_match(chunk: RagChunk, keywords: list[str]) -> bool:
-    haystack = f"{chunk.product}\n{chunk.title}\n{chunk.content}".casefold()
-    return any(keyword.casefold() in haystack for keyword in keywords if keyword.strip())
+    return _keyword_hits(chunk, keywords) > 0
 
 
 def _source_diverse_top(
@@ -145,20 +193,15 @@ def _source_diverse_top(
 def _score_chunk(chunk: RagChunk, query: RetrievalQuery) -> tuple[RetrievedContext, float]:
     """Score a chunk's relevance to a query (0.0 to 1.0)."""
     score = 0.0
-    content_lower = chunk.content.casefold()
-    product_lower = chunk.product.casefold()
 
     if query.gap_type and query.gap_type in chunk.gap_types:
         score += 0.4
 
-    if query.technology:
-        q_tech = query.technology.casefold()
-        if q_tech in product_lower or q_tech in content_lower:
-            score += 0.3
+    if query.technology and _technology_matches(chunk, query.technology):
+        score += 0.3
 
     if query.keywords:
-        haystack = f"{product_lower}\n{chunk.title.casefold()}\n{content_lower}"
-        matched = sum(1 for keyword in query.keywords if keyword.casefold() in haystack)
+        matched = _keyword_hits(chunk, query.keywords)
         if matched > 0:
             score += 0.3 * min(matched / len(query.keywords), 1.0)
 
