@@ -4,38 +4,37 @@ on:
   push:
     branches:
       - improve/dashboard-output-performance
-  pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   audit-and-refresh:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: improve/dashboard-output-performance
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Capture current audit
-        working-directory: frontend
-        run: npm audit --json > ../npm-audit-before.json || true
       - name: Refresh supported frontend toolchain
         working-directory: frontend
         run: |
           npm install --save-exact --package-lock-only vite@8.1.5 @vitejs/plugin-react@6.0.4
-          npm audit --json > ../npm-audit-after.json || true
-      - name: Verify build with refreshed lockfile
-        working-directory: frontend
-        run: npm ci && npm run build
-      - uses: actions/upload-artifact@v4
-        with:
-          name: frontend-audit-lockfile
-          path: |
-            frontend/package.json
-            frontend/package-lock.json
-            npm-audit-before.json
-            npm-audit-after.json
-          if-no-files-found: error
+          npm audit --audit-level=high
+          npm ci
+          npm run build
+      - name: Commit audited lockfile when changed
+        run: |
+          if git diff --quiet -- frontend/package.json frontend/package-lock.json; then
+            echo "Frontend dependencies already audited."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/package.json frontend/package-lock.json
+          git commit -m "Update audited frontend dependencies"
+          git push origin HEAD:improve/dashboard-output-performance
