@@ -21,6 +21,26 @@ jobs:
           python-version: "3.11"
       - name: Install refresh dependencies
         run: python -m pip install httpx PyYAML
+      - name: Repair official sources that moved
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          path = Path("data/nvidia_corpus/sources.yaml")
+          payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+          replacements = {
+              "isaac": "https://docs.isaacsim.omniverse.nvidia.com/latest/index.html",
+              "riva": "https://docs.nvidia.com/riva/index.html",
+              "nvidia_whitepaper_rag": "https://developer.nvidia.com/topics/ai/retrieval-augmented-generation",
+          }
+          for source_id, url in replacements.items():
+              payload["sources"][source_id]["url"] = url
+          path.write_text(
+              yaml.safe_dump(payload, default_flow_style=False, allow_unicode=True, sort_keys=False),
+              encoding="utf-8",
+          )
+          PY
       - name: Verify stale official sources and refresh metadata
         run: |
           python scripts/refresh_nvidia_corpus_metadata.py \
@@ -30,7 +50,7 @@ jobs:
             --fail-on-stale \
             --fail-on-expired \
             --report-path corpus-freshness-report.json
-      - name: Commit freshness metadata when changed
+      - name: Commit verified source metadata
         if: github.event_name == 'push'
         run: |
           if git diff --quiet -- data/nvidia_corpus/sources.yaml; then
