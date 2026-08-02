@@ -20,9 +20,13 @@ dependencies = [
   "beautifulsoup4",
   "trafilatura",
   "playwright",
-  "qdrant-client",
+  "qdrant-client>=1.12,<1.13",
+  "sentence-transformers>=3.0,<4",
+  "rank-bm25>=0.2.2,<1",
+  "bm25s>=0.2,<1",
   "sqlalchemy",
   "alembic",
+  "psycopg[binary]>=3.2,<4",
   "psycopg2-binary",
   "langgraph>=1.2,<2",
   "langgraph-checkpoint-postgres>=3.1.0",
@@ -37,10 +41,10 @@ dev = [
   "mypy",
 ]
 rag = [
-  "qdrant-client",
-  "sentence-transformers>=2.2.0",
-  "rank-bm25",
-  "bm25s",
+  "qdrant-client>=1.12,<1.13",
+  "sentence-transformers>=3.0,<4",
+  "rank-bm25>=0.2.2,<1",
+  "bm25s>=0.2,<1",
 ]
 llm-judge = [
   "instructor>=1.8,<2",
@@ -51,8 +55,10 @@ agents = [
 agent-orchestration = [
   "langgraph>=1.2,<2",
   "langgraph-checkpoint-postgres>=3.1.0",
+  "psycopg[binary]>=3.2,<4",
 ]
 postgres = [
+  "psycopg[binary]>=3.2,<4",
   "psycopg2-binary",
 ]
 eval = [
@@ -91,12 +97,13 @@ scraping = [
   "praw>=7.0",
 ]
 full = [
-  "qdrant-client",
-  "sentence-transformers>=2.2.0",
-  "rank-bm25",
-  "bm25s",
+  "qdrant-client>=1.12,<1.13",
+  "sentence-transformers>=3.0,<4",
+  "rank-bm25>=0.2.2,<1",
+  "bm25s>=0.2,<1",
   "langgraph>=1.2,<2",
   "langgraph-checkpoint-postgres>=3.1.0",
+  "psycopg[binary]>=3.2,<4",
   "psycopg2-binary",
   "datasets",
   "bandit",
