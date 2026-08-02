@@ -1,0 +1,79 @@
+name: Apply Runner Release Fix Temporary
+
+on:
+  push:
+    branches:
+      - improve/dashboard-output-performance
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: improve/dashboard-output-performance
+      - name: Patch checkpointer URL and analysis linkage
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/orchestration/runner.py')
+          content = path.read_text(encoding='utf-8')
+          old_url = '''        from langgraph.checkpoint.postgres import PostgresSaver
+          from src.database.session import get_product_db_url
+
+          url = get_product_db_url()
+          if url and url.startswith("postgresql"):
+              import psycopg
+              from psycopg.rows import dict_row
+
+              conn = psycopg.connect(url, autocommit=True, prepare_threshold=0, row_factory=dict_row)
+'''
+          new_url = '''        from langgraph.checkpoint.postgres import PostgresSaver
+          from src.database.session import get_product_db_url
+
+          url = os.environ.get("LANGGRAPH_POSTGRES_URL", "").strip() or get_product_db_url()
+          url = url.replace("postgresql+psycopg2://", "postgresql://", 1)
+          url = url.replace("postgresql+psycopg://", "postgresql://", 1)
+          if url and url.startswith("postgresql"):
+              import psycopg
+              from psycopg.rows import dict_row
+
+              conn = psycopg.connect(url, autocommit=True, prepare_threshold=0, row_factory=dict_row)
+'''
+          if old_url not in content:
+              raise SystemExit('Expected checkpointer URL block not found')
+          content = content.replace(old_url, new_url, 1)
+
+          old_analysis = '''        analysis_run_id = self._ensure_analysis_run(state)
+          if analysis_run_id:
+              state.analysis_run_id = analysis_run_id
+
+          checkpointer = _build_checkpointer()
+'''
+          new_analysis = '''        analysis_run_id = self._ensure_analysis_run(state)
+          if analysis_run_id:
+              state.analysis_run_id = analysis_run_id
+              self.repo.attach_analysis_run(state.workflow_id, analysis_run_id)
+
+          checkpointer = _build_checkpointer()
+'''
+          if old_analysis not in content:
+              raise SystemExit('Expected analysis linkage block not found')
+          content = content.replace(old_analysis, new_analysis, 1)
+          path.write_text(content, encoding='utf-8')
+          PY
+      - name: Commit runner patch
+        run: |
+          if git diff --quiet -- src/orchestration/runner.py; then
+            echo 'Runner already patched.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/orchestration/runner.py
+          git commit -m 'Fix production LangGraph PostgreSQL checkpointer URL'
+          git push origin HEAD:improve/dashboard-output-performance
