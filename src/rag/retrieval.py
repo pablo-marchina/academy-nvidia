@@ -153,6 +153,15 @@ def _normalize_text(value: str | None) -> str:
     return " ".join(_TOKEN_RE.findall(value.casefold()))
 
 
+def _canonical_technology_tokens(value: str | None) -> frozenset[str]:
+    """Normalize safe aliases without collapsing distinct NVIDIA products."""
+    tokens = set(_normalize_text(value).split())
+    tokens.discard("nvidia")
+    if "triton" in tokens:
+        tokens.difference_update({"inference", "server"})
+    return frozenset(tokens)
+
+
 def _technology_match_strength(chunk: RagChunk, technology: str | None) -> float:
     query = _normalize_text(technology)
     if not query:
@@ -163,19 +172,19 @@ def _technology_match_strength(chunk: RagChunk, technology: str | None) -> float
     title = _normalize_text(chunk.title)
     content = _normalize_text(chunk.content)
     query_tokens = set(query.split())
+    canonical_query = _canonical_technology_tokens(technology)
 
     if query in {product, registered_technology}:
         return 1.0
-    if product and (query in product or product in query):
-        return 0.92
-    if registered_technology and (
-        query in registered_technology or registered_technology in query
+    if canonical_query and canonical_query == _canonical_technology_tokens(chunk.product):
+        return 0.96
+    if (
+        canonical_query
+        and canonical_query == _canonical_technology_tokens(chunk.nvidia_technology)
     ):
-        return 0.9
-    if query_tokens and query_tokens.issubset(set(product.split())):
-        return 0.86
-    if title and (query == title or query in title):
-        return 0.78
+        return 0.94
+    if canonical_query and canonical_query == _canonical_technology_tokens(chunk.title):
+        return 0.8
     if query in content:
         return 0.35
     if query_tokens and query_tokens.issubset(set(content.split())):
