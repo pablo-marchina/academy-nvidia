@@ -32,7 +32,7 @@ jobs:
         run: |
           docker compose config --quiet
           python scripts/check_product_configuration.py
-          python -m compileall -q src scripts tests/unit/test_release_runtime_contract.py
+          python -m compileall -q src scripts tests
 
       - name: Runtime governance gates
         run: |
@@ -45,6 +45,7 @@ jobs:
         run: |
           pytest -q \
             tests/unit/test_release_runtime_contract.py \
+            tests/unit/test_rag_retrieval_contract.py \
             tests/unit/test_best_case_runtime_report.py \
             tests/unit/test_runtime_usage_inventory.py \
             tests/unit/test_ai_native_model.py \
