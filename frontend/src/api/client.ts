@@ -11,11 +11,18 @@ const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
 ).replace(/\/$/, "");
 
-const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_READ_TIMEOUT_MS = 30_000;
+const DEFAULT_WRITE_TIMEOUT_MS = 10 * 60_000;
 const inFlightGetRequests = new Map<string, Promise<unknown>>();
 
 function requestKey(url: string, method: string): string {
   return `${method}:${url}`;
+}
+
+function defaultTimeoutMs(method: string): number {
+  return method === "GET" || method === "HEAD"
+    ? DEFAULT_READ_TIMEOUT_MS
+    : DEFAULT_WRITE_TIMEOUT_MS;
 }
 
 async function executeRequest<T>(
@@ -23,12 +30,14 @@ async function executeRequest<T>(
   options: RequestOptions,
 ): Promise<T> {
   const {
-    timeoutMs = DEFAULT_TIMEOUT_MS,
+    timeoutMs: requestedTimeoutMs,
     dedupe: _dedupe,
     signal: callerSignal,
     headers: callerHeaders,
     ...fetchInit
   } = options;
+  const method = (fetchInit.method || "GET").toUpperCase();
+  const timeoutMs = requestedTimeoutMs ?? defaultTimeoutMs(method);
   const controller = new AbortController();
   let timedOut = false;
 
