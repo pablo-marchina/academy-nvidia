@@ -43,3 +43,5 @@ jobs:
           git diff --cached --check
           git commit -m 'Validate production RAG output end to end'
           git push origin HEAD:improve/dashboard-output-performance
+
+# This comment intentionally retriggers the already-present workflow.
