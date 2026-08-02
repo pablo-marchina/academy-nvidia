@@ -42,6 +42,10 @@ jobs:
       - name: Run offline evaluation suites
         run: python -m src.evaluation.eval_runner --ci
 
+      - name: Write RAG diagnostics
+        if: always()
+        run: python scripts/report_rag_eval.py --output data/eval_results/rag_diagnostics.json
+
       - name: Upload evaluation results
         uses: actions/upload-artifact@v4
         if: always()
