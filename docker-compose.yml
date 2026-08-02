@@ -11,6 +11,7 @@ x-backend-environment: &backend-environment
   RAG_REQUIRED_FOR_PRODUCT: "true"
   RAG_VECTOR_BACKEND: qdrant
   QDRANT_URL: http://qdrant:6333
+  QDRANT_API_KEY: ${QDRANT_API_KEY:?Set QDRANT_API_KEY in .env}
   QDRANT_COLLECTION: ${QDRANT_COLLECTION:-nvidia_corpus}
   QDRANT_VECTOR_SIZE: ${QDRANT_VECTOR_SIZE:-1024}
   QDRANT_MIN_POINTS: ${QDRANT_MIN_POINTS:-10}
@@ -57,6 +58,8 @@ services:
   qdrant:
     image: qdrant/qdrant:v1.18.1
     restart: unless-stopped
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:?Set QDRANT_API_KEY in .env}
     ports:
       - "127.0.0.1:6333:6333"
       - "127.0.0.1:6334:6334"
