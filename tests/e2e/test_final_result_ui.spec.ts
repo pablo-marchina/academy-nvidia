@@ -321,7 +321,7 @@ test("final cockpit presents the complete persisted pipeline result", async ({ p
   await expect(page.getByRole("heading", { name: "Final Pipeline Result" })).toBeVisible();
   await expect(page.getByText("Release Contract AI").first()).toBeVisible();
   await expect(page.getByText("NVIDIA NIM").first()).toBeVisible();
-  await expect(page.getByText("The startup operates a production AI inference platform.")).toBeVisible();
+  await expect(page.getByText("The startup operates a production AI inference platform.").first()).toBeVisible();
   await expect(page.getByText(/optimized inference microservices/)).toBeVisible();
   await expect(page.getByText("passed", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(/Adopt NVIDIA NIM and validate latency/)).toBeVisible();
