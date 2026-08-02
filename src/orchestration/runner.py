@@ -37,15 +37,24 @@ _POSTGRES_CHECKPOINTER: Any | None = None
 _CHECKPOINTER_CACHE: dict[str, Any] = {}
 
 
+def _postgres_connection_url() -> str:
+    from src.database.session import get_product_db_url
+
+    url = os.environ.get("LANGGRAPH_POSTGRES_URL", "").strip() or get_product_db_url()
+    return (
+        url.replace("postgresql+psycopg2://", "postgresql://", 1)
+        .replace("postgresql+psycopg://", "postgresql://", 1)
+    )
+
+
 def _build_postgres_checkpointer() -> Any | None:
     global _POSTGRES_CHECKPOINTER
     if _POSTGRES_CHECKPOINTER is not None:
         return _POSTGRES_CHECKPOINTER
     try:
         from langgraph.checkpoint.postgres import PostgresSaver
-        from src.database.session import get_product_db_url
 
-        url = get_product_db_url()
+        url = _postgres_connection_url()
         if url and url.startswith("postgresql"):
             import psycopg
             from psycopg.rows import dict_row
@@ -97,12 +106,12 @@ class WorkflowRunner:
         self.repo = WorkflowRepository(session)
 
     def _dump_state(self, state: ProductWorkflowState) -> dict:
-        _session_val = state.metadata_json.pop("_session", None)
+        session_value = state.metadata_json.pop("_session", None)
         try:
             return state.model_dump(mode="json")
         finally:
-            if _session_val is not None:
-                state.metadata_json["_session"] = _session_val
+            if session_value is not None:
+                state.metadata_json["_session"] = session_value
 
     def _ensure_analysis_run(self, state: ProductWorkflowState) -> str | None:
         if state.analysis_run_id:
@@ -126,6 +135,7 @@ class WorkflowRunner:
         analysis_run_id = self._ensure_analysis_run(state)
         if analysis_run_id:
             state.analysis_run_id = analysis_run_id
+            self.repo.attach_analysis_run(state.workflow_id, analysis_run_id)
 
         checkpointer = _build_checkpointer()
         if _is_explicit_product_mode() and not _is_postgres_checkpointer(checkpointer):
@@ -142,7 +152,7 @@ class WorkflowRunner:
 
             readiness = graph_module.ProductReadinessService().get_product_readiness()
             if getattr(readiness, "ready", True) is False:
-                messages = [str(m) for m in (getattr(readiness, "user_messages", []) or [])]
+                messages = [str(message) for message in (getattr(readiness, "user_messages", []) or [])]
                 state.current_node = "preflight_configuration_check"
                 if "preflight_configuration_check" not in state.failed_nodes:
                     state.failed_nodes.append("preflight_configuration_check")
@@ -154,15 +164,11 @@ class WorkflowRunner:
                 )
                 return state
         except Exception:
-            # The graph preflight performs the authoritative check when LangGraph is available.
             pass
 
         graph = build_workflow_graph(checkpointer=checkpointer)
         if graph is None:
-            state.error_message = (
-                "LangGraph is not available. "
-                "It is required to build the workflow graph."
-            )
+            state.error_message = "LangGraph is not available. It is required to build the workflow graph."
             self.repo.fail_workflow(
                 state.workflow_id,
                 error_message=state.error_message,
@@ -239,11 +245,7 @@ class WorkflowRunner:
         state.status = WorkflowStatus.AWAITING_REVIEW
         return state
 
-    def _finalize_workflow(
-        self,
-        state: ProductWorkflowState,
-        result: Any,
-    ) -> None:
+    def _finalize_workflow(self, state: ProductWorkflowState, result: Any) -> None:
         if isinstance(result, ProductWorkflowState):
             state = result
         elif isinstance(result, dict):
@@ -276,8 +278,7 @@ class WorkflowRunner:
     ) -> ProductWorkflowState:
         thread_id: str | None = state.metadata_json.get("_langgraph_thread_id")
         if not thread_id:
-            msg = f"No checkpoint thread_id found for workflow {state.workflow_id}"
-            raise RuntimeError(msg)
+            raise RuntimeError(f"No checkpoint thread_id found for workflow {state.workflow_id}")
 
         checkpointer = _get_cached_checkpointer(thread_id)
         if checkpointer is None:
@@ -285,20 +286,18 @@ class WorkflowRunner:
             if checkpointer is not None:
                 _cache_checkpointer(thread_id, checkpointer)
         if checkpointer is None:
-            msg = (
-                f"Cannot resume workflow {state.workflow_id} - "
-                f"no cached or persistent checkpointer for thread_id {thread_id}. "
-                "Ensure the initial run completed with a checkpointer."
+            raise RuntimeError(
+                f"Cannot resume workflow {state.workflow_id} - no cached or persistent checkpointer "
+                f"for thread_id {thread_id}. Ensure the initial run completed with a checkpointer."
             )
-            raise RuntimeError(msg)
         if _is_explicit_product_mode() and not _is_postgres_checkpointer(checkpointer):
-            msg = "APP_MODE=product requires a persistent LangGraph Postgres checkpointer for resume."
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                "APP_MODE=product requires a persistent LangGraph Postgres checkpointer for resume."
+            )
 
         graph = build_workflow_graph(checkpointer=checkpointer)
         if graph is None:
-            msg = "Cannot resume — LangGraph workflow graph is not available"
-            raise RuntimeError(msg)
+            raise RuntimeError("Cannot resume — LangGraph workflow graph is not available")
 
         config: dict[str, Any] = {"configurable": {"thread_id": thread_id}}
 
