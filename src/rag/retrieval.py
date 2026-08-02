@@ -13,7 +13,8 @@ import yaml
 from src.rag.schemas import RagChunk, RetrievalQuery, RetrievedContext
 
 _DEFAULT_TOP_K = 3
-_KEYWORDS_FILE = Path("data/nvidia_corpus/retrieval_keywords.yaml")
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_KEYWORDS_FILE = _PROJECT_ROOT / "data" / "nvidia_corpus" / "retrieval_keywords.yaml"
 
 
 class ChunkIndex:
