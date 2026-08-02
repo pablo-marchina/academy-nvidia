@@ -162,6 +162,97 @@ def _extract_texts_from_items(items: list[dict[str, Any]]) -> list[str]:
     return texts
 
 
+
+_GAP_SIGNAL_ALIASES: dict[GapType, tuple[str, ...]] = {
+    GapType.COMPUTE_ACCELERATION_GAP: (
+        "gpu acceleration", "compute acceleration", "high inference cost",
+        "high latency", "throughput bottleneck",
+    ),
+    GapType.INFERENCE_PERFORMANCE_GAP: (
+        "inference latency", "high latency", "low latency", "inference cost",
+        "inference performance", "real time inference", "real-time inference",
+        "model serving",
+    ),
+    GapType.TRAINING_SCALABILITY_GAP: (
+        "training scalability", "distributed training", "training cost",
+        "model training", "fine tuning", "fine-tuning",
+    ),
+    GapType.MLOPS_DEPLOYMENT_GAP: (
+        "mlops", "model deployment", "model serving", "observability",
+        "production monitoring", "agent governance",
+    ),
+    GapType.DATA_PIPELINE_GAP: (
+        "data pipeline", "slow data pipeline", "etl", "big data",
+        "data processing", "data engineering",
+    ),
+    GapType.MODEL_OPTIMIZATION_GAP: (
+        "model optimization", "inference optimization", "quantization",
+        "pruning", "distillation", "model compression",
+    ),
+    GapType.COMPUTER_VISION_GAP: (
+        "computer vision", "visao computacional", "visual inspection",
+        "inspecao visual", "image recognition", "object detection",
+        "video analytics", "image analytics", "optical character recognition",
+    ),
+    GapType.GENAI_LLM_GAP: (
+        "large language model", "llm", "generative ai", "ia generativa",
+        "retrieval augmented generation", "conversational ai", "chatbot",
+        "external api dependency",
+    ),
+    GapType.CYBERSECURITY_AI_GAP: (
+        "cybersecurity", "ciberseguranca", "threat detection",
+        "security operations", "network anomaly", "malware detection",
+    ),
+    GapType.NVIDIA_ECOSYSTEM_FIT_GAP: (
+        "nvidia ecosystem", "nvidia", "cuda", "gpu acceleration", "gpu computing",
+    ),
+    GapType.EVIDENCE_COVERAGE_GAP: (
+        "insufficient evidence", "missing evidence", "evidence coverage",
+    ),
+    GapType.TECHNICAL_DEPTH_GAP: (
+        "technical architecture", "technical stack", "deployment architecture",
+        "model architecture", "infrastructure architecture",
+    ),
+}
+
+
+def _gap_signal_keywords(gap_type: GapType) -> list[str]:
+    keywords = list(_GAP_SIGNAL_ALIASES.get(gap_type, ()))
+    keywords.extend(item.value.replace("_", " ") for item in GAP_TECH_MAP.get(gap_type, []))
+    return list(dict.fromkeys(keyword.casefold() for keyword in keywords if keyword))
+
+
+def _evidence_item_text(item: dict[str, Any]) -> str:
+    return str(
+        item.get("text")
+        or item.get("snippet")
+        or item.get("claim")
+        or item.get("quote_or_evidence")
+        or ""
+    )
+
+
+def _matching_evidence_items(
+    evidence_items: list[dict[str, Any]],
+    gap_type: GapType,
+) -> list[dict[str, Any]]:
+    keywords = _gap_signal_keywords(gap_type)
+    if not keywords:
+        return []
+    return [item for item in evidence_items if _text_contains_any(_evidence_item_text(item), keywords)]
+
+
+def _numeric_evidence_confidence(item: dict[str, Any]) -> float:
+    for key in ("evidence_confidence_score", "extraction_confidence", "confidence_score"):
+        value = item.get(key)
+        if isinstance(value, (int, float)):
+            return max(0.0, min(1.0, float(value)))
+    value = item.get("confidence")
+    if isinstance(value, str):
+        return {"high": 1.0, "medium": 0.6, "low": 0.3}.get(value.casefold(), 0.0)
+    return 0.0
+
+
 def _compute_uncertainty(
     evidence_count: int,
     avg_confidence: float,
@@ -190,19 +281,14 @@ def extract_gap_severity_features(
     claim_texts = [str(c.get("claim_text", "")) for c in claims if isinstance(c, dict)]
     all_texts = ev_texts + ac_texts + claim_texts
 
-    related_tech_gaps = GAP_TECH_MAP.get(gap_type, [])
-    related_keywords = [t.value for t in related_tech_gaps]
-
-    missing_required_signal_count = 0
-    for kw in related_keywords:
-        if not _text_contains_any(" ".join(all_texts), [kw]):
-            missing_required_signal_count += 1
+    related_keywords = _gap_signal_keywords(gap_type)
+    matching_items = _matching_evidence_items(evidence_items, gap_type)
+    matching_claim_count = _count_by_keyword(claim_texts, related_keywords)
+    has_relevant_signal = bool(matching_items or matching_claim_count)
+    missing_required_signal_count = 0 if has_relevant_signal else 1
 
     weak_evidence_count = sum(
-        1
-        for item in evidence_items
-        if isinstance(item.get("evidence_confidence_score"), (int, float))
-        and float(item["evidence_confidence_score"]) < 0.4
+        1 for item in matching_items if _numeric_evidence_confidence(item) < 0.4
     )
 
     rejected_evidence_count = len(rejected_evidence_items)
@@ -213,7 +299,7 @@ def extract_gap_severity_features(
         1 for item in evidence_items if isinstance(item.get("confidence"), str) and item["confidence"] in ("low",)
     )
 
-    relevant_signal_absence = missing_required_signal_count / max(1, len(related_keywords)) if related_keywords else 0.0
+    relevant_signal_absence = 0.0 if has_relevant_signal else 1.0
 
     nvidia_fit_keywords = [
         "gpu",
@@ -236,9 +322,11 @@ def extract_gap_severity_features(
     )
     business_impact_proxy = min(1.0, ai_signal_count * 0.15)
 
+    matching_confidences = [_numeric_evidence_confidence(item) for item in matching_items]
     uncertainty_penalty = _compute_uncertainty(
-        evidence_count=len(evidence_items),
-        avg_confidence=0.5,
+        evidence_count=len(matching_items),
+        avg_confidence=_mean(matching_confidences),
+        min_expected=1,
     )
 
     # Normalize count-based features to [0, 1] so weighted scoring stays in range
@@ -273,47 +361,35 @@ def extract_gap_confidence_features(
     collection_metrics: dict[str, Any] | None,
     extraction_metrics: dict[str, Any] | None,
 ) -> GapConfidenceFeatures:
-    ev_texts = _extract_texts_from_items(evidence_items)
-    ac_texts = _extract_texts_from_items(accepted_evidence_items)
-    claim_texts = [str(c.get("claim_text", "")) for c in claims if isinstance(c, dict)]
-    ev_texts + ac_texts + claim_texts
-
-    related_tech_gaps = GAP_TECH_MAP.get(gap_type, [])
-    related_keywords = [t.value for t in related_tech_gaps]
-
-    supporting_evidence_count = 0
-    if related_keywords:
-        for item in evidence_items:
-            text = str(item.get("text", "") or item.get("snippet", "") or item.get("claim", ""))
-            if _text_contains_any(text, related_keywords):
-                supporting_evidence_count += 1
+    matching_items = _matching_evidence_items(evidence_items, gap_type)
+    supporting_evidence_count = len(matching_items) / max(1, len(evidence_items))
 
     source_ids: set[str] = set()
-    for item in evidence_items:
-        sid = item.get("source_id") or item.get("url", "")
+    for item in matching_items:
+        sid = item.get("source_id") or item.get("source_url") or item.get("url", "")
         if sid:
-            source_ids.add(sid)
+            source_ids.add(str(sid))
     supporting_source_count = len(source_ids)
 
     confidences: list[float] = []
-    for item in evidence_items:
-        ec = item.get("evidence_confidence_score")
-        if isinstance(ec, (int, float)):
-            confidences.append(float(ec))
+    for item in matching_items:
+        confidences.append(_numeric_evidence_confidence(item))
     average_evidence_confidence = _mean(confidences)
 
     qualities: list[float] = []
-    for item in evidence_items:
+    for item in matching_items:
         sq = item.get("source_quality_score")
         if isinstance(sq, (int, float)):
             qualities.append(float(sq))
+        elif item.get("source_type") == "official_site":
+            qualities.append(1.0)
     average_source_quality = _mean(qualities)
 
     cross_source_agreement_count = 0
     source_claims: dict[str, set[str]] = {}
-    for item in evidence_items:
-        sid = item.get("source_id") or item.get("url", "")
-        claim = str(item.get("text", "") or item.get("snippet", "") or item.get("claim", ""))
+    for item in matching_items:
+        sid = item.get("source_id") or item.get("source_url") or item.get("url", "")
+        claim = _evidence_item_text(item)
         if sid and claim:
             if sid not in source_claims:
                 source_claims[sid] = set()
@@ -347,7 +423,7 @@ def extract_gap_confidence_features(
     _MAX_CONTRADICTIONS = 4.0
 
     return GapConfidenceFeatures(
-        supporting_evidence_count=round(min(1.0, supporting_evidence_count / _MAX_SUPPORTING_EVIDENCE), 4),
+        supporting_evidence_count=round(min(1.0, supporting_evidence_count), 4),
         supporting_source_count=round(min(1.0, supporting_source_count / _MAX_SUPPORTING_SOURCES), 4),
         average_evidence_confidence=round(average_evidence_confidence, 4),
         average_source_quality=round(average_source_quality, 4),
@@ -471,19 +547,21 @@ def _diagnose_single_gap(
     prod_allowed = True
     gap_blockers: list[str] = []
 
+    matching_items = _matching_evidence_items(evidence_items, gap_type)
+    evidence_coverage = len(matching_items) / max(1, len(evidence_items))
     if len(evidence_items) == 0:
         status = GapDiagnosisStatus.NEEDS_MORE_EVIDENCE
         prod_allowed = False
         gap_blockers.append("No evidence items available for gap diagnosis")
-    elif (
-        min_evidence_coverage is not None
-        and confidence_features.supporting_evidence_count < min_evidence_coverage * len(evidence_items)
-    ):
+    elif not matching_items:
+        status = GapDiagnosisStatus.NEEDS_MORE_EVIDENCE
+        prod_allowed = False
+        gap_blockers.append(f"No evidence semantically supports gap '{gap_type.value}'")
+    elif min_evidence_coverage is not None and evidence_coverage < min_evidence_coverage:
         status = GapDiagnosisStatus.NEEDS_MORE_EVIDENCE
         prod_allowed = False
         gap_blockers.append(
-            f"Supporting evidence count ({confidence_features.supporting_evidence_count}) "
-            f"below minimum coverage ({min_evidence_coverage})"
+            f"Evidence coverage ({round(evidence_coverage, 4)}) below minimum ({min_evidence_coverage})"
         )
     elif production_threshold is not None and final_severity > production_threshold:
         status = GapDiagnosisStatus.FAILED
@@ -491,7 +569,7 @@ def _diagnose_single_gap(
         status = GapDiagnosisStatus.PASSED
 
     supporting_ids: list[str] = []
-    for item in evidence_items:
+    for item in matching_items:
         eid = item.get("id") or item.get("evidence_id") or ""
         if eid:
             supporting_ids.append(str(eid))
