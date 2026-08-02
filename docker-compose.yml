@@ -62,12 +62,6 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:6333/healthz || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
-      start_period: 10s
     networks:
       - startup-radar-net
 
@@ -119,7 +113,7 @@ services:
     command: ["python", "scripts/bootstrap_nvidia_corpus.py"]
     depends_on:
       qdrant:
-        condition: service_healthy
+        condition: service_started
       init-volumes:
         condition: service_completed_successfully
     volumes:
