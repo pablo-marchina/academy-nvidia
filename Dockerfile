@@ -20,7 +20,8 @@ COPY scripts ./scripts
 COPY config ./config
 COPY migrations ./migrations
 COPY alembic.ini ./
-COPY data/nvidia_corpus ./data/nvidia_corpus
+# .dockerignore removes databases, exports, raw/staging data, and other runtime artifacts.
+COPY data ./data
 COPY models/ai_native_classifier ./models/ai_native_classifier
 
 RUN python -m pip install --upgrade pip \
