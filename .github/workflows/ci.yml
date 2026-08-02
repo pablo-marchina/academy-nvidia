@@ -48,12 +48,14 @@ jobs:
             src/api/main.py \
             src/api/workflow_routes.py \
             src/database/session.py \
+            src/orchestration/runner.py \
             src/orchestration/service.py \
             src/orchestration/worker.py \
             src/repositories/workflow.py \
             src/services/product/health_executor.py \
             scripts/bootstrap_nvidia_corpus.py \
             scripts/refresh_nvidia_corpus_metadata.py \
+            tests/unit/test_product_checkpointer_url.py \
             tests/unit/test_workflow_queue.py \
             tests/unit/test_health_executor_release.py
       - name: Focused tests
@@ -72,6 +74,7 @@ jobs:
             tests/unit/test_radar_relevant_gaps.py \
             tests/unit/test_activation_playbook_matcher.py \
             tests/unit/test_radar_dashboard_runtime_gate.py \
+            tests/unit/test_product_checkpointer_url.py \
             tests/unit/test_workflow_queue.py \
             tests/unit/test_health_executor_release.py \
             tests/evals/test_recommendation_baseline.py \
