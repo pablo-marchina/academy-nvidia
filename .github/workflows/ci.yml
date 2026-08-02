@@ -41,6 +41,7 @@ jobs:
           python scripts/check_no_mock_runtime.py
           python scripts/build_runtime_usage_inventory.py --output final_case_evidence/runtime_usage_inventory.csv
           python scripts/build_best_case_runtime_report.py --inventory final_case_evidence/runtime_usage_inventory.csv --output final_case_evidence/best_case_runtime_report.json
+          python scripts/audit_nvidia_corpus_freshness.py --fail-on-stale --fail-on-expired
       - name: Lint release-critical code
         run: |
           ruff check \
@@ -52,6 +53,7 @@ jobs:
             src/repositories/workflow.py \
             src/services/product/health_executor.py \
             scripts/bootstrap_nvidia_corpus.py \
+            scripts/refresh_nvidia_corpus_metadata.py \
             tests/unit/test_workflow_queue.py \
             tests/unit/test_health_executor_release.py
       - name: Focused tests
