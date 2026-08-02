@@ -11,7 +11,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from src.extraction.schemas import Evidence, SourceType, StartupProfile
+from src.extraction.schemas import ConfidenceLevel, Evidence, SourceType, StartupProfile
 from src.scraping.source_policy import source_quality_score
 
 _EXTRACTION_METHOD = "deterministic_pattern"
@@ -71,9 +71,33 @@ def _build_evidence_item(
     score = source_quality_score(source_type)
 
     factuality: str = "observed" if text else "unknown"
+    primary_source = profile.sources[0] if profile.sources else None
+    canonical_claim = (
+        primary_source.claim
+        if primary_source is not None and primary_source.claim
+        else f"{profile.startup_name} shows evidence of {', '.join(profile.ai_signals[:3]) or 'AI activity'}."
+    )
+    canonical_quote = (
+        primary_source.quote_or_evidence
+        if primary_source is not None and primary_source.quote_or_evidence
+        else snippet
+    )
+    canonical_confidence = (
+        primary_source.confidence.value
+        if primary_source is not None and hasattr(primary_source.confidence, "value")
+        else ConfidenceLevel.from_score(conf).value
+    )
+    canonical_collected_at = (
+        primary_source.collected_at.isoformat()
+        if primary_source is not None
+        else extracted_at
+    )
 
     item: dict[str, Any] = {
         "evidence_id": str(uuid.uuid4()),
+        "claim": canonical_claim,
+        "quote_or_evidence": canonical_quote,
+        "confidence": canonical_confidence,
         "source_id": source_id,
         "source_url": source_url,
         "url": source_url,
@@ -81,7 +105,7 @@ def _build_evidence_item(
         "title": profile.startup_name,
         "snippet": snippet,
         "extracted_text_hash": txt_hash,
-        "collected_at": extracted_at,
+        "collected_at": canonical_collected_at,
         "extracted_at": now_ts,
         "evidence_type": "extracted",
         "source_quality_score": score,
