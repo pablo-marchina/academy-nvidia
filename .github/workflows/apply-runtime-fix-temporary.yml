@@ -39,12 +39,13 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           path = Path('src/agents/search_planner.py')
-          text = path.read_text(encoding='utf-8')
-          text = text.replace(
-              "f\"https://serpapi.com/search.json?q={quote_plus('\\\"' + startup_name + '\\" startup AI Brasil')}\"",
-              "f\"https://serpapi.com/search.json?q={quote_plus(startup_name + ' startup AI Brasil')}\"",
-          )
-          path.write_text(text, encoding='utf-8')
+          lines = path.read_text(encoding='utf-8').splitlines()
+          for index, line in enumerate(lines):
+              if 'serpapi.com/search.json?q=' not in line:
+                  continue
+              indent = line[: len(line) - len(line.lstrip())]
+              lines[index] = indent + '"https://serpapi.com/search.json?q=" + quote_plus(startup_name + " startup AI Brasil"),'
+          path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
           PY
       - name: Install dependencies
         run: |
