@@ -23,13 +23,6 @@ class HealthCheckResult:
     detail: str = ""
 
 
-_RAG_CATEGORIES = {"rag"}
-
-
-def _is_rag_capability(category: str) -> bool:
-    return category in _RAG_CATEGORIES
-
-
 _executor: HealthCheckExecutor | None = None
 
 
@@ -41,11 +34,7 @@ def get_health_executor() -> HealthCheckExecutor:
 
 
 class HealthCheckExecutor:
-    """Run health checks for capabilities by ``health_check_key``.
-
-    Each check is cached for ``cache_ttl`` seconds to avoid
-    hammering dependencies on every readiness call.
-    """
+    """Run cached, real dependency checks by ``health_check_key``."""
 
     def __init__(self, cache_ttl: float = 30.0) -> None:
         self._cache_ttl = cache_ttl
@@ -75,12 +64,14 @@ class HealthCheckExecutor:
             result = self._check_qdrant()
         elif key == "rag":
             result = self._check_rag_corpus()
+        elif key == "triton":
+            result = self._check_triton()
         elif key == "llm_judge":
             result = self._check_llm_judge()
         else:
             result = HealthCheckResult(
-                status=CapabilityStatus.available,
-                detail=f"No health check implemented for '{key}'",
+                status=CapabilityStatus.unavailable,
+                detail=f"No health check implemented for required key '{key}'",
             )
         result.latency_ms = round((time.monotonic() - start) * 1000, 1)
         return result
@@ -160,6 +151,36 @@ class HealthCheckExecutor:
                 detail=f"Qdrant unreachable at {url}: {exc}",
             )
 
+    def _check_triton(self) -> HealthCheckResult:
+        health_url = os.environ.get("TRITON_RERANKER_HEALTH_URL", "").strip()
+        if not health_url:
+            infer_url = os.environ.get("TRITON_RERANKER_URL", "").strip()
+            if infer_url.endswith("/infer"):
+                health_url = infer_url[: -len("/infer")] + "/ready"
+        if not health_url:
+            return HealthCheckResult(
+                status=CapabilityStatus.unavailable,
+                detail="TRITON_RERANKER_HEALTH_URL is not configured",
+            )
+        try:
+            import httpx
+
+            response = httpx.get(health_url, timeout=5.0)
+            if response.status_code == 200:
+                return HealthCheckResult(
+                    status=CapabilityStatus.available,
+                    detail=f"Triton cross_encoder model is ready at {health_url}",
+                )
+            return HealthCheckResult(
+                status=CapabilityStatus.unavailable,
+                detail=f"Triton readiness returned HTTP {response.status_code} at {health_url}",
+            )
+        except Exception as exc:
+            return HealthCheckResult(
+                status=CapabilityStatus.unavailable,
+                detail=f"Triton reranker unavailable at {health_url}: {exc}",
+            )
+
     def _check_rag_corpus(self) -> HealthCheckResult:
         corpus_dir = Path("data/nvidia_corpus")
         if not corpus_dir.exists():
@@ -205,7 +226,7 @@ class HealthCheckExecutor:
         if not provider:
             return HealthCheckResult(
                 status=CapabilityStatus.degraded,
-                detail=("LLM judge enabled but ANSWER_QUALITY_LLM_JUDGE_PROVIDER env var is not set"),
+                detail="LLM judge enabled but ANSWER_QUALITY_LLM_JUDGE_PROVIDER env var is not set",
             )
         if provider == "null":
             return HealthCheckResult(
@@ -217,7 +238,7 @@ class HealthCheckExecutor:
             )
         return HealthCheckResult(
             status=CapabilityStatus.degraded,
-            detail=(f"ANSWER_QUALITY_LLM_JUDGE_PROVIDER={provider} has no active runtime provider implementation"),
+            detail=f"ANSWER_QUALITY_LLM_JUDGE_PROVIDER={provider} has no active runtime provider implementation",
         )
 
 
