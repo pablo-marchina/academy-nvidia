@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 import os
 import time
 import uuid
@@ -25,9 +26,33 @@ try:
 except ImportError:
     PROMETHEUS_AVAILABLE = False
 
+_PUBLIC_PATHS = {"/health/live", "/health/ready", "/metrics", "/openapi.json", "/docs", "/redoc"}
+_INSECURE_PROXY_VALUES = {
+    "",
+    "change-me",
+    "replace-me",
+    "replace-with-a-random-value-of-at-least-32-characters",
+}
+
+
+def _is_product_mode() -> bool:
+    return os.environ.get("APP_MODE", "product").casefold() == "product"
+
+
+def _validate_security_configuration() -> None:
+    if not _is_product_mode():
+        return
+    mode = os.environ.get("API_AUTH_MODE", "internal_proxy").casefold()
+    if mode != "internal_proxy":
+        raise RuntimeError("APP_MODE=product requires API_AUTH_MODE=internal_proxy")
+    key = os.environ.get("INTERNAL_PROXY_KEY", "")
+    if key in _INSECURE_PROXY_VALUES or len(key) < 32:
+        raise RuntimeError("INTERNAL_PROXY_KEY must be a non-default random value with at least 32 characters")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    _validate_security_configuration()
     initialize_product_database()
     yield
 
@@ -65,9 +90,20 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def request_context(request: Request, call_next) -> Response:
+async def security_and_request_context(request: Request, call_next) -> Response:
     request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
     started = time.monotonic()
+
+    if _is_product_mode() and request.url.path not in _PUBLIC_PATHS:
+        expected = os.environ.get("INTERNAL_PROXY_KEY", "")
+        provided = request.headers.get("x-internal-proxy-key", "")
+        if not expected or not hmac.compare_digest(provided, expected):
+            return JSONResponse(
+                {"detail": "Request must pass through the trusted frontend proxy.", "request_id": request_id},
+                status_code=401,
+                headers={"x-request-id": request_id},
+            )
+
     response = await call_next(request)
     response.headers["x-request-id"] = request_id
     response.headers["x-response-time-ms"] = f"{(time.monotonic() - started) * 1000:.1f}"
