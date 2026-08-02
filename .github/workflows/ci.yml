@@ -5,13 +5,40 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  apply-rag-taxonomy-corpus-fix:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/improve/dashboard-output-performance'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: improve/dashboard-output-performance
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Apply alias-aware retrieval and TensorRT corpus metadata
+        run: |
+          python -m pip install PyYAML
+          python tools/apply_rag_taxonomy_corpus_fix.py
+          git diff --check
+      - name: Commit repaired RAG contract
+        run: |
+          if git diff --quiet; then
+            echo "No patch required."
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/rag/hybrid_retrieval.py data/nvidia_corpus/source_allowlist.yaml data/nvidia_corpus/sources.yaml
+          git commit -m "Align RAG gap taxonomy and TensorRT corpus"
+          git push origin HEAD:improve/dashboard-output-performance
+
   product-governance:
     runs-on: ubuntu-latest
     steps:
@@ -56,6 +83,8 @@ jobs:
             scripts/bootstrap_nvidia_corpus.py \
             scripts/refresh_nvidia_corpus_metadata.py \
             tests/unit/test_extractor_evidence_contract.py \
+            tests/unit/test_hybrid_retrieval_gap_taxonomy.py \
+            tests/unit/test_tensorrt_corpus_source.py \
             tests/unit/test_product_checkpointer_url.py \
             tests/unit/test_rag_ingestion_release_calibration.py \
             tests/unit/test_workflow_queue.py \
@@ -78,6 +107,8 @@ jobs:
             tests/unit/test_activation_playbook_matcher.py \
             tests/unit/test_radar_dashboard_runtime_gate.py \
             tests/unit/test_extractor_evidence_contract.py \
+            tests/unit/test_hybrid_retrieval_gap_taxonomy.py \
+            tests/unit/test_tensorrt_corpus_source.py \
             tests/unit/test_product_checkpointer_url.py \
             tests/unit/test_workflow_queue.py \
             tests/unit/test_health_executor_release.py \
