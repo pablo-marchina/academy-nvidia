@@ -5,40 +5,13 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  apply-rag-taxonomy-corpus-fix:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/improve/dashboard-output-performance'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: improve/dashboard-output-performance
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Apply alias-aware retrieval and TensorRT corpus metadata
-        run: |
-          python -m pip install PyYAML
-          python tools/apply_rag_taxonomy_corpus_fix.py
-          git diff --check
-      - name: Commit repaired RAG contract
-        run: |
-          if git diff --quiet; then
-            echo "No patch required."
-            exit 0
-          fi
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add src/rag/hybrid_retrieval.py data/nvidia_corpus/source_allowlist.yaml data/nvidia_corpus/sources.yaml
-          git commit -m "Align RAG gap taxonomy and TensorRT corpus"
-          git push origin HEAD:improve/dashboard-output-performance
-
   product-governance:
     runs-on: ubuntu-latest
     steps:
