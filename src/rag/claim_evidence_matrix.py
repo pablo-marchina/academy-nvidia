@@ -23,7 +23,7 @@ class ClaimEvidenceMatrix:
                 claims = self._extract_numbers(ctx.content)
 
                 for claim in claims:
-                    key = hashlib.md5(claim.encode()).hexdigest()
+                    key = hashlib.md5(claim.encode(), usedforsecurity=False).hexdigest()
 
                     if key not in claim_sources:
                         claim_sources[key] = set()

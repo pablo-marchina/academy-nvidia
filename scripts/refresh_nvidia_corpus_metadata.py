@@ -73,7 +73,7 @@ def _is_stale(source: dict[str, object], now: datetime) -> bool:
 
 
 def _hash_file(path: Path) -> str:
-    return hashlib.md5(path.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+    return hashlib.md5(path.read_text(encoding="utf-8").encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
 def _official_https_url(url: str) -> bool:

@@ -28,7 +28,7 @@ class ReportVersioning:
         import hashlib
         import json
 
-        version_hash = hashlib.md5(json.dumps([c.chunk_id for c in contexts], sort_keys=True).encode()).hexdigest()[:12]
+        version_hash = hashlib.md5(json.dumps([c.chunk_id for c in contexts], sort_keys=True).encode(), usedforsecurity=False).hexdigest()[:12]
 
         self._report_versions.append({"hash": version_hash, "count": len(contexts)})
 
