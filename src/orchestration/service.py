@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from src.orchestration.runner import WorkflowRunner, _has_langgraph
-from src.orchestration.state import ProductWorkflowState
+from src.orchestration.state import ProductWorkflowState, WorkflowStatus
 from src.repositories.workflow import WorkflowRepository
 
 
@@ -14,6 +14,82 @@ class WorkflowOrchestrationService:
     def __init__(self, session: Session) -> None:
         self.session = session
         self.repo = WorkflowRepository(session)
+
+    def enqueue_workflow(
+        self,
+        *,
+        startup_id: str | None = None,
+        discovery_candidate_id: str | None = None,
+        analysis_run_id: str | None = None,
+        use_rag: bool = True,
+        graph_version: str = "1.0",
+    ) -> Any:
+        """Persist a durable queued workflow and return immediately."""
+        if not use_rag:
+            raise ValueError("RAG is mandatory for the single product workflow; use_rag=false is not allowed.")
+        if not any((startup_id, discovery_candidate_id, analysis_run_id)):
+            raise ValueError("A startup_id, discovery_candidate_id, or analysis_run_id is required.")
+
+        workflow_run = self.repo.create_workflow_run(
+            startup_id=startup_id,
+            discovery_candidate_id=discovery_candidate_id,
+            analysis_run_id=analysis_run_id,
+            graph_version=graph_version,
+            state_json={},
+        )
+        state = ProductWorkflowState(
+            workflow_id=workflow_run.id,
+            startup_id=startup_id,
+            discovery_candidate_id=discovery_candidate_id,
+            analysis_run_id=analysis_run_id,
+            status=WorkflowStatus.QUEUED,
+            metadata_json={
+                "_rag_available": True,
+                "_langgraph_available": _has_langgraph(),
+            },
+        )
+        workflow_run.state_json = state.model_dump(mode="json")
+        self.session.commit()
+        return workflow_run
+
+    def run_existing_workflow(self, workflow_id: str) -> ProductWorkflowState:
+        """Execute a previously persisted queued/claimed workflow."""
+        run = self.repo.get_workflow_run(workflow_id)
+        if run is None:
+            raise LookupError(f"Workflow run not found: {workflow_id}")
+        if run.status in {
+            WorkflowStatus.COMPLETED,
+            WorkflowStatus.DEGRADED,
+            WorkflowStatus.FAILED,
+            WorkflowStatus.CANCELLED,
+        }:
+            raise RuntimeError(f"Workflow {workflow_id} is already terminal with status={run.status}")
+
+        state_data = dict(run.state_json or {})
+        state_data.update(
+            {
+                "workflow_id": run.id,
+                "startup_id": run.startup_id,
+                "discovery_candidate_id": run.discovery_candidate_id,
+                "analysis_run_id": run.analysis_run_id,
+                "status": run.status,
+                "current_node": run.current_node or state_data.get("current_node", ""),
+            }
+        )
+        metadata = dict(state_data.get("metadata_json") or {})
+        metadata.update(
+            {
+                "_rag_available": True,
+                "_langgraph_available": _has_langgraph(),
+            }
+        )
+        state_data["metadata_json"] = metadata
+        state = ProductWorkflowState(**state_data)
+
+        runner = WorkflowRunner(self.session)
+        final_state = runner.run_workflow(state)
+        self.session.commit()
+        return final_state
 
     def create_and_run_workflow(
         self,
@@ -24,38 +100,15 @@ class WorkflowOrchestrationService:
         use_rag: bool = True,
         graph_version: str = "1.0",
     ) -> ProductWorkflowState:
-        import os
-        if not use_rag:
-            raise ValueError("RAG is mandatory for the single product workflow; use_rag=false is not allowed.")
-        has_lg = _has_langgraph()
-
-        workflow_run = self.repo.create_workflow_run(
+        """Compatibility path for internal bounded synchronous batches."""
+        run = self.enqueue_workflow(
             startup_id=startup_id,
             discovery_candidate_id=discovery_candidate_id,
             analysis_run_id=analysis_run_id,
+            use_rag=use_rag,
             graph_version=graph_version,
-            state_json={
-                "startup_id": startup_id,
-                "discovery_candidate_id": discovery_candidate_id,
-                "analysis_run_id": analysis_run_id,
-            },
         )
-
-        state = ProductWorkflowState(
-            workflow_id=workflow_run.id,
-            startup_id=startup_id,
-            discovery_candidate_id=discovery_candidate_id,
-            analysis_run_id=analysis_run_id,
-            metadata_json={
-                "_rag_available": use_rag,
-                "_langgraph_available": has_lg,
-            },
-        )
-
-        runner = WorkflowRunner(self.session)
-        final_state = runner.run_workflow(state)
-        self.session.commit()
-        return final_state
+        return self.run_existing_workflow(run.id)
 
     def get_workflow_state(self, workflow_id: str) -> ProductWorkflowState | None:
         run = self.repo.get_workflow_run(workflow_id)
@@ -64,6 +117,9 @@ class WorkflowOrchestrationService:
         state_data = dict(run.state_json or {})
         state_data["workflow_id"] = run.id
         state_data["startup_id"] = run.startup_id
+        state_data["discovery_candidate_id"] = run.discovery_candidate_id
+        state_data["analysis_run_id"] = run.analysis_run_id
+        state_data["status"] = run.status
         state_data["current_node"] = run.current_node
         return ProductWorkflowState(**state_data)
 
