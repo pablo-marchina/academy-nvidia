@@ -1,0 +1,55 @@
+name: Apply Frontend RAG Metrics Fix
+
+on:
+  push:
+    branches:
+      - improve/dashboard-output-performance
+    paths:
+      - .github/workflows/apply-frontend-rag-metrics-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: improve/dashboard-output-performance
+
+      - name: Project nested RAG metrics correctly
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('frontend/src/components/PipelineFinalResultView.tsx')
+          content = path.read_text(encoding='utf-8')
+
+          anchor = '  const ragOutput = asRecord(nodeOutputs.retrieve_nvidia_context ?? nodeOutputs.rag_output ?? workflowState.rag_runtime_metrics ?? null);\n'
+          replacement = anchor + '  const ragMetrics = asRecord(ragOutput.rag_retrieval_metrics ?? ragOutput.rag_metrics ?? workflowState.rag_runtime_metrics ?? ragOutput);\n'
+          if anchor not in content:
+              raise SystemExit('Could not find ragOutput projection anchor')
+          content = content.replace(anchor, replacement, 1)
+
+          replacements = {
+              'ragOutput.retrieval_mode ?? workflowState.rag_retrieval_mode':
+                  'ragMetrics.retrieval_mode ?? ragOutput.retrieval_mode ?? workflowState.rag_retrieval_mode',
+              'ragOutput.graphrag_enabled ?? workflowState.graphrag_enabled':
+                  'ragMetrics.graphrag_active ?? ragOutput.graphrag_enabled ?? workflowState.graphrag_enabled',
+              'ragOutput.triton_reranker_enabled ?? workflowState.triton_reranker_enabled':
+                  'ragMetrics.triton_reranker_active ?? ragMetrics.triton_reranker_required ?? ragOutput.triton_reranker_enabled ?? workflowState.triton_reranker_enabled',
+          }
+          for old, new in replacements.items():
+              if old not in content:
+                  raise SystemExit(f'Could not find frontend projection: {old}')
+              content = content.replace(old, new, 1)
+
+          path.write_text(content, encoding='utf-8')
+          PY
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add frontend/src/components/PipelineFinalResultView.tsx
+          git commit -m "Show actual hybrid RAG metrics in final result"
+          git push origin HEAD:improve/dashboard-output-performance
