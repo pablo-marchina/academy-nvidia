@@ -12,7 +12,7 @@ sources:
     content_hash: 794154bae25ff7959d38618211ca8fbb
     previous_content_hash: 934758cf3e136e39bef9553b89bdd01b
     collected_at: '2026-06-28T07:13:52.099956+00:00'
-    last_checked_at: '2026-06-28T07:13:52.099956+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-28T07:13:52.099956+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -52,7 +52,7 @@ sources:
       content_hash: 794154bae25ff7959d38618211ca8fbb
       previous_content_hash: 934758cf3e136e39bef9553b89bdd01b
       collected_at: '2026-06-28T07:13:52.099956+00:00'
-      last_checked_at: '2026-06-28T07:13:52.099956+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-28T07:13:52.099956+00:00'
       valid_until: null
       freshness_policy: weekly
@@ -73,7 +73,7 @@ sources:
     content_hash: a810888075c3665bc2cb6aeb02c0d3f7
     previous_content_hash: 0b4d8b96e2293299647b32d274747bfc
     collected_at: '2026-06-28T07:13:53.549196+00:00'
-    last_checked_at: '2026-06-28T07:13:53.549196+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-28T07:13:53.549196+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -113,7 +113,7 @@ sources:
       content_hash: a810888075c3665bc2cb6aeb02c0d3f7
       previous_content_hash: 0b4d8b96e2293299647b32d274747bfc
       collected_at: '2026-06-28T07:13:53.549196+00:00'
-      last_checked_at: '2026-06-28T07:13:53.549196+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-28T07:13:53.549196+00:00'
       valid_until: null
       freshness_policy: weekly
@@ -134,7 +134,7 @@ sources:
     content_hash: 8fa19f84a4b4ea6cac910eae0045e090
     previous_content_hash: 179efdb66c06c42034d635efbc6f0392
     collected_at: '2026-06-28T07:13:54.977538+00:00'
-    last_checked_at: '2026-06-28T07:13:54.977538+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-28T07:13:54.977538+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -174,7 +174,7 @@ sources:
       content_hash: 8fa19f84a4b4ea6cac910eae0045e090
       previous_content_hash: 179efdb66c06c42034d635efbc6f0392
       collected_at: '2026-06-28T07:13:54.977538+00:00'
-      last_checked_at: '2026-06-28T07:13:54.977538+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-28T07:13:54.977538+00:00'
       valid_until: null
       freshness_policy: weekly
@@ -194,7 +194,7 @@ sources:
     content_hash: b48cc8958f973ccd3d805d8591428460
     previous_content_hash: null
     collected_at: '2026-06-10T00:00:00Z'
-    last_checked_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
     freshness_policy: monthly
@@ -208,7 +208,7 @@ sources:
       content_hash: b48cc8958f973ccd3d805d8591428460
       previous_content_hash: null
       collected_at: '2026-06-10T00:00:00Z'
-      last_checked_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-10T00:00:00Z'
       valid_until: null
       freshness_policy: monthly
@@ -229,7 +229,7 @@ sources:
     content_hash: c32ef3e9aa7fd84fd1d8dff584671ac4
     previous_content_hash: null
     collected_at: '2026-06-10T00:00:00Z'
-    last_checked_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
     freshness_policy: monthly
@@ -243,7 +243,7 @@ sources:
       content_hash: c32ef3e9aa7fd84fd1d8dff584671ac4
       previous_content_hash: null
       collected_at: '2026-06-10T00:00:00Z'
-      last_checked_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-10T00:00:00Z'
       valid_until: null
       freshness_policy: monthly
@@ -254,7 +254,7 @@ sources:
       deprecation_reason: null
   riva:
     title: NVIDIA Riva
-    url: https://docs.nvidia.com/deeplearning/riva/
+    url: https://docs.nvidia.com/riva/index.html
     product: NVIDIA Riva
     gap_types:
     - voice_need
@@ -263,7 +263,7 @@ sources:
     content_hash: ecfd08eb211cb6fde0573846c166332f
     previous_content_hash: null
     collected_at: '2026-06-10T00:00:00Z'
-    last_checked_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
     freshness_policy: monthly
@@ -277,7 +277,7 @@ sources:
       content_hash: ecfd08eb211cb6fde0573846c166332f
       previous_content_hash: null
       collected_at: '2026-06-10T00:00:00Z'
-      last_checked_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-10T00:00:00Z'
       valid_until: null
       freshness_policy: monthly
@@ -297,7 +297,7 @@ sources:
     content_hash: ff13c5417c071774f3ec9cc643d3f2ac
     previous_content_hash: null
     collected_at: '2026-06-10T00:00:00Z'
-    last_checked_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
     freshness_policy: monthly
@@ -311,7 +311,7 @@ sources:
       content_hash: ff13c5417c071774f3ec9cc643d3f2ac
       previous_content_hash: null
       collected_at: '2026-06-10T00:00:00Z'
-      last_checked_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-10T00:00:00Z'
       valid_until: null
       freshness_policy: monthly
@@ -322,7 +322,7 @@ sources:
       deprecation_reason: null
   isaac:
     title: NVIDIA Isaac
-    url: https://docs.isaac.robot.nvidia.com/
+    url: https://docs.isaacsim.omniverse.nvidia.com/latest/index.html
     product: NVIDIA Isaac
     gap_types:
     - robotics_need
@@ -331,7 +331,7 @@ sources:
     content_hash: b21c24b16a375bb50ae4a37af7c2ef6a
     previous_content_hash: null
     collected_at: '2026-06-10T00:00:00Z'
-    last_checked_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
     freshness_policy: monthly
@@ -345,7 +345,7 @@ sources:
       content_hash: b21c24b16a375bb50ae4a37af7c2ef6a
       previous_content_hash: null
       collected_at: '2026-06-10T00:00:00Z'
-      last_checked_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-10T00:00:00Z'
       valid_until: null
       freshness_policy: monthly
@@ -365,7 +365,7 @@ sources:
     content_hash: c4d415d9d8041ae032b7524c1aad9561
     previous_content_hash: null
     collected_at: '2026-06-10T00:00:00Z'
-    last_checked_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
     freshness_policy: monthly
@@ -379,7 +379,7 @@ sources:
       content_hash: c4d415d9d8041ae032b7524c1aad9561
       previous_content_hash: null
       collected_at: '2026-06-10T00:00:00Z'
-      last_checked_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-10T00:00:00Z'
       valid_until: null
       freshness_policy: monthly
@@ -399,7 +399,7 @@ sources:
     content_hash: 1bc28284be938d0d207cf2c9751a060f
     previous_content_hash: null
     collected_at: '2026-06-10T00:00:00Z'
-    last_checked_at: '2026-06-10T00:00:00Z'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-10T00:00:00Z'
     valid_until: null
     freshness_policy: monthly
@@ -413,7 +413,7 @@ sources:
       content_hash: 1bc28284be938d0d207cf2c9751a060f
       previous_content_hash: null
       collected_at: '2026-06-10T00:00:00Z'
-      last_checked_at: '2026-06-10T00:00:00Z'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-10T00:00:00Z'
       valid_until: null
       freshness_policy: monthly
@@ -435,7 +435,7 @@ sources:
     content_hash: 3a65279151c0ff0d02467a44f44aec89
     previous_content_hash: null
     collected_at: '2026-06-30T00:00:00+00:00'
-    last_checked_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-30T00:00:00+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -449,7 +449,7 @@ sources:
       content_hash: 3a65279151c0ff0d02467a44f44aec89
       previous_content_hash: null
       collected_at: '2026-06-30T00:00:00+00:00'
-      last_checked_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-30T00:00:00+00:00'
       valid_until: null
       freshness_policy: weekly
@@ -471,7 +471,7 @@ sources:
     content_hash: d4cd0941fd1f70b423abfacc9893da42
     previous_content_hash: null
     collected_at: '2026-06-30T00:00:00+00:00'
-    last_checked_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-30T00:00:00+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -485,7 +485,7 @@ sources:
       content_hash: d4cd0941fd1f70b423abfacc9893da42
       previous_content_hash: null
       collected_at: '2026-06-30T00:00:00+00:00'
-      last_checked_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-30T00:00:00+00:00'
       valid_until: null
       freshness_policy: weekly
@@ -506,7 +506,7 @@ sources:
     content_hash: be66e06fe2317414834135ebe9eff117
     previous_content_hash: null
     collected_at: '2026-06-30T00:00:00+00:00'
-    last_checked_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-30T00:00:00+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -520,7 +520,7 @@ sources:
       content_hash: be66e06fe2317414834135ebe9eff117
       previous_content_hash: null
       collected_at: '2026-06-30T00:00:00+00:00'
-      last_checked_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-30T00:00:00+00:00'
       valid_until: null
       freshness_policy: weekly
@@ -541,7 +541,7 @@ sources:
     content_hash: 4cc791e831d495f9dfcecba17f91f546
     previous_content_hash: null
     collected_at: '2026-06-30T00:00:00+00:00'
-    last_checked_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-30T00:00:00+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -555,7 +555,7 @@ sources:
       content_hash: 4cc791e831d495f9dfcecba17f91f546
       previous_content_hash: null
       collected_at: '2026-06-30T00:00:00+00:00'
-      last_checked_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-30T00:00:00+00:00'
       valid_until: null
       freshness_policy: weekly
@@ -576,7 +576,7 @@ sources:
     content_hash: 5784ef6d9d004de50715a704bebc17fe
     previous_content_hash: null
     collected_at: '2026-06-30T00:00:00+00:00'
-    last_checked_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-30T00:00:00+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -590,7 +590,7 @@ sources:
       content_hash: 5784ef6d9d004de50715a704bebc17fe
       previous_content_hash: null
       collected_at: '2026-06-30T00:00:00+00:00'
-      last_checked_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-30T00:00:00+00:00'
       valid_until: null
       freshness_policy: weekly
@@ -612,7 +612,7 @@ sources:
     content_hash: 712ac546e3c46343da37b03db8a3b222
     previous_content_hash: null
     collected_at: '2026-06-30T00:00:00+00:00'
-    last_checked_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-30T00:00:00+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -626,7 +626,7 @@ sources:
       content_hash: 712ac546e3c46343da37b03db8a3b222
       previous_content_hash: null
       collected_at: '2026-06-30T00:00:00+00:00'
-      last_checked_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-30T00:00:00+00:00'
       valid_until: null
       freshness_policy: weekly
@@ -647,7 +647,7 @@ sources:
     content_hash: 21473e5edde3a7831ccf2cc429cdc05f
     previous_content_hash: null
     collected_at: '2026-06-30T00:00:00+00:00'
-    last_checked_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-30T00:00:00+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -661,7 +661,7 @@ sources:
       content_hash: 21473e5edde3a7831ccf2cc429cdc05f
       previous_content_hash: null
       collected_at: '2026-06-30T00:00:00+00:00'
-      last_checked_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-30T00:00:00+00:00'
       valid_until: null
       freshness_policy: weekly
@@ -682,7 +682,7 @@ sources:
     content_hash: 0766bed31f39ee01fb4eedc5504811eb
     previous_content_hash: null
     collected_at: '2026-06-30T00:00:00+00:00'
-    last_checked_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-30T00:00:00+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -696,7 +696,7 @@ sources:
       content_hash: 0766bed31f39ee01fb4eedc5504811eb
       previous_content_hash: null
       collected_at: '2026-06-30T00:00:00+00:00'
-      last_checked_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-30T00:00:00+00:00'
       valid_until: null
       freshness_policy: weekly
@@ -717,7 +717,7 @@ sources:
     content_hash: ce8e523e9e00bd6cb1ce11b7f93ac7ce
     previous_content_hash: null
     collected_at: '2026-06-30T00:00:00+00:00'
-    last_checked_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-30T00:00:00+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -731,7 +731,7 @@ sources:
       content_hash: ce8e523e9e00bd6cb1ce11b7f93ac7ce
       previous_content_hash: null
       collected_at: '2026-06-30T00:00:00+00:00'
-      last_checked_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-30T00:00:00+00:00'
       valid_until: null
       freshness_policy: weekly
@@ -742,7 +742,7 @@ sources:
       deprecation_reason: null
   nvidia_whitepaper_rag:
     title: NVIDIA RAG Whitepaper
-    url: https://developer.nvidia.com/blog/tag/rag/
+    url: https://developer.nvidia.com/topics/ai/retrieval-augmented-generation
     product: NVIDIA RAG
     gap_types:
     - rag_quality_gap
@@ -752,7 +752,7 @@ sources:
     content_hash: 2f6797ffd05c048bc22a8d4011be6172
     previous_content_hash: null
     collected_at: '2026-06-30T00:00:00+00:00'
-    last_checked_at: '2026-06-30T00:00:00+00:00'
+    last_checked_at: '2026-08-02T18:43:26.870284+00:00'
     valid_from: '2026-06-30T00:00:00+00:00'
     valid_until: null
     freshness_policy: weekly
@@ -766,7 +766,7 @@ sources:
       content_hash: 2f6797ffd05c048bc22a8d4011be6172
       previous_content_hash: null
       collected_at: '2026-06-30T00:00:00+00:00'
-      last_checked_at: '2026-06-30T00:00:00+00:00'
+      last_checked_at: '2026-08-02T18:43:26.870284+00:00'
       valid_from: '2026-06-30T00:00:00+00:00'
       valid_until: null
       freshness_policy: weekly
