@@ -22,6 +22,8 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
+      - name: Repository artifact gate
+        run: python scripts/check_no_tracked_runtime_artifacts.py
       - name: Runtime gates
         run: |
           python scripts/check_single_runtime_pipeline.py
@@ -37,3 +39,6 @@ jobs:
             tests/unit/test_probabilistic_workflow_scoring.py \
             tests/unit/test_rag_technique_registry.py \
             tests/acceptance/test_no_mock_in_production.py
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
