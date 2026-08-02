@@ -57,6 +57,7 @@ jobs:
             scripts/refresh_nvidia_corpus_metadata.py \
             tests/unit/test_extractor_evidence_contract.py \
             tests/unit/test_hybrid_retrieval_gap_taxonomy.py \
+            tests/unit/test_runtime_gap_evidence_integration.py \
             tests/unit/test_tensorrt_corpus_source.py \
             tests/unit/test_product_checkpointer_url.py \
             tests/unit/test_rag_ingestion_release_calibration.py \
@@ -81,6 +82,7 @@ jobs:
             tests/unit/test_radar_dashboard_runtime_gate.py \
             tests/unit/test_extractor_evidence_contract.py \
             tests/unit/test_hybrid_retrieval_gap_taxonomy.py \
+            tests/unit/test_runtime_gap_evidence_integration.py \
             tests/unit/test_tensorrt_corpus_source.py \
             tests/unit/test_product_checkpointer_url.py \
             tests/unit/test_workflow_queue.py \
