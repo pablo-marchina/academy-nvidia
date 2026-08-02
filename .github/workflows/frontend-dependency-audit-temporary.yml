@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - improve/dashboard-output-performance
+  pull_request:
 
 permissions:
   contents: read
