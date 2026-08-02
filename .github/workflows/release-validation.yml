@@ -40,6 +40,10 @@ jobs:
               'replace-with-a-random-database-password',
               'ci-db-4b9de674c49343d5999d8bb8531d1be8d31ee1fa',
           )
+          content = content.replace(
+              'replace-with-a-random-qdrant-api-key',
+              'ci-qdrant-9e33e60a68f949fab84379afd8210dcbb781ff99',
+          )
           content = content.replace('NVIDIA_API_KEY=\n', 'NVIDIA_API_KEY=ci-release-smoke-not-used\n')
           path.write_text(content, encoding='utf-8')
           PY
@@ -87,7 +91,7 @@ jobs:
           cat direct-api.json
           curl --fail --silent --show-error \
             -H 'Content-Type: application/json' \
-            -d '{"inputs":[{"name":"query","shape":[1],"datatype":"BYTES","data":["computer vision inference"]},{"name":"documents","shape":[2],"datatype":"BYTES","data":["TensorRT accelerates vision inference.","Riva provides speech AI services."]}],"outputs":[{"name":"scores"}]}' \
+            -d '{"inputs":[{"name":"query","shape":[1],"datatype":"BYTES","data":["computer vision inference"]},{"name":"documents","shape":[2,1],"datatype":"BYTES","data":["TensorRT accelerates vision inference.","Riva provides speech AI services."]}],"outputs":[{"name":"scores"}]}' \
             http://127.0.0.1:8000/v2/models/cross_encoder/infer > triton-inference.json
           cat triton-inference.json
           python - <<'PY'
@@ -105,7 +109,6 @@ jobs:
           docker compose stop workflow-worker
           python - <<'PY'
           import json
-          import time
           import urllib.request
           from pathlib import Path
 
@@ -165,7 +168,7 @@ jobs:
             workflow_status=$(python -c "import json; print(json.load(open('workflow-result.json'))['status'])")
             echo "workflow=${workflow_id} status=${workflow_status}"
             case "$workflow_status" in
-              completed|degraded|awaiting_review)
+              completed|awaiting_review)
                 cat workflow-result.json
                 exit 0
                 ;;
@@ -181,6 +184,119 @@ jobs:
           cat workflow-result.json
           docker compose logs --no-color workflow-worker api
           exit 1
+
+      - name: Validate real RAG and recommendation output contract
+        run: |
+          workflow_id=$(python -c "import json; print(json.load(open('release-workflow.json'))['workflow']['id'])")
+          curl --fail --silent --show-error \
+            "http://localhost:3000/api/workflows/product-runs/${workflow_id}" > workflow-result.json
+          curl --fail --silent --show-error \
+            "http://localhost:3000/api/workflows/product-runs/${workflow_id}/nodes" > workflow-nodes.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('workflow-result.json').read_text(encoding='utf-8'))
+          nodes = json.loads(Path('workflow-nodes.json').read_text(encoding='utf-8'))
+          assert payload['status'] in {'completed', 'awaiting_review'}, payload
+          assert not payload.get('error_message'), payload
+
+          state = payload['state']
+          completed = set(state.get('completed_nodes', []))
+          required_nodes = {
+              'diagnose_gaps',
+              'retrieve_nvidia_context',
+              'enhance_contexts_with_techniques',
+              'map_nvidia_technologies',
+              'rank_recommendations',
+              'rank_with_expected_utility',
+              'generate_brief',
+              'run_quality_gates',
+          }
+          assert required_nodes <= completed, (required_nodes - completed, payload)
+          node_status = {item['node_name']: item['status'] for item in nodes}
+          for name in required_nodes:
+              assert node_status.get(name) == 'completed', (name, node_status, payload)
+
+          outputs = state.get('node_outputs', {})
+          rag = outputs.get('rag_output', {})
+          metrics = rag.get('rag_retrieval_metrics', {})
+          assert rag.get('rag_retrieval_status') == 'passed', rag
+          assert metrics.get('retrieval_mode') == 'bm25_graphrag_qdrant_triton_rerank', metrics
+          assert metrics.get('bm25_active') is True, metrics
+          assert metrics.get('graphrag_active') is True, metrics
+          assert metrics.get('triton_reranker_required') is True, metrics
+          assert metrics.get('retrieved_context_count', 0) > 0, metrics
+          assert metrics.get('citation_ready_context_count', 0) > 0, metrics
+          assert metrics.get('reranked_context_count', 0) > 0, metrics
+          assert metrics.get('gaps_without_context_count') == 0, metrics
+
+          contexts = state.get('nvidia_contexts', [])
+          assert contexts, state
+          assert all(ctx.get('citation_ready') for ctx in contexts), contexts
+          assert all(ctx.get('source_id') and ctx.get('url') for ctx in contexts), contexts
+          assert all(ctx.get('retrieval_mode') == 'bm25_graphrag_qdrant_triton_rerank' for ctx in contexts), contexts
+          assert all(ctx.get('bm25_active') is True for ctx in contexts), contexts
+          assert all(ctx.get('graphrag_active') is True for ctx in contexts), contexts
+          assert all(ctx.get('triton_reranker_active') is True for ctx in contexts), contexts
+          assert all((ctx.get('triton_reranker_metadata') or {}).get('called') is True for ctx in contexts), contexts
+
+          gaps = (outputs.get('gap_output') or {}).get('gaps', [])
+          production_gaps = {
+              gap['gap_type']: set(gap.get('supporting_evidence_ids') or [])
+              for gap in gaps
+              if gap.get('production_allowed') and gap.get('supporting_evidence_ids')
+          }
+          assert production_gaps, gaps
+          assert 'computer_vision_gap' in production_gaps, production_gaps
+          unsupported = {
+              'genai_llm_gap', 'cybersecurity_ai_gap', 'data_pipeline_gap',
+              'training_scalability_gap', 'nvidia_ecosystem_fit_gap',
+          }
+          assert not (unsupported & set(production_gaps)), production_gaps
+
+          mapping_result = outputs.get('nvidia_mapping_result', {})
+          mappings = [item for item in mapping_result.get('nvidia_technology_mappings', []) if item.get('production_allowed')]
+          assert mappings, mapping_result
+          assert len(mappings) <= 4, mappings
+          for mapping in mappings:
+              assert mapping['gap_type'] in production_gaps, mapping
+              assert set(mapping.get('supporting_evidence_ids') or []) <= production_gaps[mapping['gap_type']], mapping
+              assert mapping.get('supporting_evidence_ids'), mapping
+              assert mapping.get('supporting_rag_context_ids'), mapping
+          technologies = {item['nvidia_technology'] for item in mappings}
+          assert technologies <= {'TensorRT', 'NVIDIA NIM', 'NVIDIA AI Enterprise', 'NVIDIA API Catalog'}, technologies
+          assert 'TensorRT' in technologies, technologies
+
+          recommendation_result = outputs.get('nvidia_recommendation_result', {})
+          recommendations = recommendation_result.get('nvidia_recommendations', [])
+          assert recommendations, recommendation_result
+          production_recommendations = [
+              item for item in recommendations if item.get('production_allowed')
+          ]
+          assert production_recommendations, recommendation_result
+          assert len(production_recommendations) <= 2, production_recommendations
+          assert state.get('quality_gates_result', {}).get('status') == 'passed', state.get('quality_gates_result')
+          assert state.get('brief'), state
+          assert state.get('analysis_run_id'), state
+          assert state.get('evidence_ids'), state
+          assert state.get('gap_ids'), state
+          assert state.get('mapping_ids'), state
+
+          report = {
+              'workflow_id': payload['id'],
+              'status': payload['status'],
+              'completed_nodes': sorted(required_nodes),
+              'rag_metrics': metrics,
+              'production_gaps': {key: sorted(value) for key, value in production_gaps.items()},
+              'production_mappings': mappings,
+              'recommendations': recommendations,
+              'production_recommendations': production_recommendations,
+              'quality_gates': state.get('quality_gates_result'),
+          }
+          Path('rag-e2e-validation.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
+          print(json.dumps(report, indent=2))
+          PY
 
       - name: Capture release diagnostics
         if: always()
@@ -199,6 +315,8 @@ jobs:
             triton-inference.json
             release-workflow.json
             workflow-result.json
+            workflow-nodes.json
+            rag-e2e-validation.json
             compose-ps.txt
             compose.log
             disk-usage.txt
