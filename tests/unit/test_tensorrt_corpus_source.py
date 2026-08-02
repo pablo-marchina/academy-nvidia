@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import hashlib
-from pathlib import Path
+import pathlib
 
 import yaml
 
 
-CORPUS_ROOT = Path("data/nvidia_corpus")
+CORPUS_ROOT = pathlib.Path("data/nvidia_corpus")
 
 
 def test_tensor_rt_source_is_governed_fresh_and_hash_consistent() -> None:
