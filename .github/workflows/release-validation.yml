@@ -127,7 +127,7 @@ jobs:
 
           startup_payload = {
               'name': 'Pix Force Release Smoke',
-              'website': 'https://pixforce.com.br/',
+              'website': 'https://pixforce.com/',
               'country': 'Brazil',
               'sector': 'Computer Vision',
               'description': 'Computer vision company used for production release smoke validation.',
@@ -136,13 +136,21 @@ jobs:
               'tags': ['computer-vision', 'industrial-ai'],
               'evidence': [
                   {
-                      'claim': 'The company develops computer vision solutions.',
-                      'source_url': 'https://pixforce.com.br/',
+                      'claim': 'Pix Force develops artificial-intelligence and computer-vision solutions for industrial operations.',
+                      'source_url': 'https://pixforce.com/',
                       'source_type': 'official_site',
-                      'quote_or_evidence': 'Official company website describes computer vision solutions.',
+                      'quote_or_evidence': 'The official homepage states that Pix Force develops AI and computer-vision solutions that interpret images and videos.',
                       'confidence': 'high',
-                      'metadata': {'release_smoke': True},
-                  }
+                      'metadata': {'release_smoke': True, 'verified_page': 'homepage'},
+                  },
+                  {
+                      'claim': 'Pix Force reports more than 100 computer-vision projects implemented since 2016.',
+                      'source_url': 'https://pixforce.com/pt-br/quem-somos/',
+                      'source_type': 'official_site',
+                      'quote_or_evidence': 'The official Quem Somos page reports more than 100 computer-vision projects across industrial segments.',
+                      'confidence': 'high',
+                      'metadata': {'release_smoke': True, 'verified_page': 'quem-somos'},
+                  },
               ],
           }
           status, startup = request('/startups', method='POST', payload=startup_payload)
