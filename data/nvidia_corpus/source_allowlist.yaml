@@ -30,6 +30,21 @@ sources:
     license_note: "NVIDIA Documentation License"
     notes: "LLM optimization toolkit documentation."
 
+  - source_id: tensorrt
+    title: "NVIDIA TensorRT"
+    url: "https://docs.nvidia.com/deeplearning/tensorrt/latest/"
+    product: "TensorRT"
+    gap_types: ["computer_vision_need", "high_inference_cost", "high_latency"]
+    version: "1.0"
+    document_type: "nvidia_corpus"
+    allowed: true
+    update_frequency: "weekly"
+    freshness_policy: "weekly"
+    stale_after_days: 7
+    expected_format: "markdown"
+    license_note: "NVIDIA Documentation License — read-only, no redistribution"
+    notes: "General TensorRT inference optimization documentation, including computer-vision deployment."
+
   - source_id: triton
     title: "Triton Inference Server"
     url: "https://docs.nvidia.com/deeplearning/triton-inference-server/"

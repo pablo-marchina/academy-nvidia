@@ -11,6 +11,7 @@ from src.rag.semantic_retrieval import semantic_retrieve
 from src.rag.sparse_retrieval import SparseRetriever
 from src.rag.graphrag_runtime import graphrag_expand
 from src.rag.vector_store import VectorStore
+from src.diagnosis.schemas import GAP_TECH_MAP, GapType
 
 _RRF_K = 60
 
@@ -68,7 +69,10 @@ def hybrid_retrieve(
             vector_store,
             top_k=retrieve_top_k,
             product=product,
-            gap_type=gap_type,
+            # The corpus stores both diagnosis-level and technical gap taxonomies.
+            # Apply the alias-aware filter after dense/lexical fusion rather than
+            # forcing an exact Qdrant payload match here.
+            gap_type=None,
             source_id=source_id,
             include_deprecated=include_deprecated,
             include_expired=include_expired,
@@ -120,6 +124,17 @@ def _rrf_fuse_many(
     return fused
 
 
+def _gap_type_aliases(gap_type: str) -> set[str]:
+    """Return diagnosis and technical taxonomy aliases for corpus filtering."""
+    aliases = {gap_type}
+    try:
+        diagnosis_gap = GapType(gap_type)
+    except ValueError:
+        return aliases
+    aliases.update(technical_gap.value for technical_gap in GAP_TECH_MAP.get(diagnosis_gap, []))
+    return aliases
+
+
 def _apply_filters(
     contexts: list[RetrievedContext],
     product: str | None = None,
@@ -132,7 +147,8 @@ def _apply_filters(
         p_lower = product.lower()
         result = [c for c in result if c.product.lower() == p_lower]
     if gap_type:
-        result = [c for c in result if gap_type in c.gap_types]
+        aliases = _gap_type_aliases(gap_type)
+        result = [c for c in result if aliases.intersection(c.gap_types)]
     if source_id:
         result = [c for c in result if c.source_id == source_id]
     return result

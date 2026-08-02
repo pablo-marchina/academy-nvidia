@@ -122,6 +122,42 @@ sources:
       deprecated_at: null
       superseded_by: null
       deprecation_reason: null
+  tensorrt:
+    title: NVIDIA TensorRT
+    url: https://docs.nvidia.com/deeplearning/tensorrt/latest/
+    product: TensorRT
+    gap_types:
+    - computer_vision_need
+    - high_inference_cost
+    - high_latency
+    version: '1.0'
+    document_type: nvidia_corpus
+    content_hash: 29d617b531042b40d1d9bc1802c4bd5e
+    previous_content_hash: null
+    collected_at: '2026-08-02T23:07:11.381977+00:00'
+    last_checked_at: '2026-08-02T23:07:11.381977+00:00'
+    valid_from: '2026-08-02T23:07:11.381977+00:00'
+    valid_until: null
+    freshness_policy: weekly
+    stale_after_days: 7
+    is_active: true
+    deprecated_at: null
+    superseded_by: null
+    deprecation_reason: null
+    versions:
+    - version: '1.0'
+      content_hash: 29d617b531042b40d1d9bc1802c4bd5e
+      previous_content_hash: null
+      collected_at: '2026-08-02T23:07:11.381977+00:00'
+      last_checked_at: '2026-08-02T23:07:11.381977+00:00'
+      valid_from: '2026-08-02T23:07:11.381977+00:00'
+      valid_until: null
+      freshness_policy: weekly
+      stale_after_days: 7
+      is_active: true
+      deprecated_at: null
+      superseded_by: null
+      deprecation_reason: null
   triton:
     title: Triton Inference Server
     url: https://docs.nvidia.com/deeplearning/triton-inference-server/
