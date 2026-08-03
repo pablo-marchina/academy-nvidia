@@ -85,7 +85,7 @@ jobs:
             --report-path final_case_evidence/live_corpus_ingestion.json
 
       - name: Execute live public-evidence company validation
-        run: python scripts/validate_live_outputs.py
+        run: python scripts/validate_live_outputs_persisted.py
 
       - name: Install frontend dependencies
         working-directory: frontend
