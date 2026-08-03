@@ -14,6 +14,10 @@ def _write_corpus(tmp_path: Path, *, finished_at: datetime, content: str = "gove
     corpus_dir.mkdir()
     document = corpus_dir / "nim.md"
     document.write_text(content, encoding="utf-8")
+    (corpus_dir / "sources.yaml").write_text(
+        "sources:\n  nim:\n    is_active: true\n",
+        encoding="utf-8",
+    )
     source_hash = hashlib.md5(content.encode("utf-8")).hexdigest()
     (corpus_dir / ".ingestion_manifest.json").write_text(
         json.dumps(
@@ -46,6 +50,16 @@ def test_recent_hash_matched_manifest_is_valid(tmp_path: Path) -> None:
     assert "hash-matched Qdrant index" in detail
 
 
+def test_ungoverned_markdown_fixture_does_not_pollute_source_set(tmp_path: Path) -> None:
+    corpus_dir = _write_corpus(tmp_path, finished_at=datetime.now(UTC))
+    (corpus_dir / "temporary_test_fixture.md").write_text("not an active governed source", encoding="utf-8")
+    with patch.dict("os.environ", {"QDRANT_COLLECTION": "nvidia_corpus_test"}):
+        valid, detail = _validate_ingestion_manifest(corpus_dir)
+
+    assert valid is True
+    assert "1 document(s)" in detail
+
+
 def test_manifest_fails_closed_when_corpus_changes_after_ingestion(tmp_path: Path) -> None:
     corpus_dir = _write_corpus(tmp_path, finished_at=datetime.now(UTC))
     (corpus_dir / "nim.md").write_text("changed after ingestion", encoding="utf-8")
@@ -66,3 +80,17 @@ def test_manifest_fails_when_index_is_too_old(tmp_path: Path) -> None:
 
     assert valid is False
     assert "RAG_INDEX_MAX_AGE_HOURS=24" in detail
+
+
+def test_manifest_fails_when_active_source_document_is_missing(tmp_path: Path) -> None:
+    corpus_dir = _write_corpus(tmp_path, finished_at=datetime.now(UTC))
+    (corpus_dir / "sources.yaml").write_text(
+        "sources:\n  nim:\n    is_active: true\n  tensorrt_llm:\n    is_active: true\n",
+        encoding="utf-8",
+    )
+    with patch.dict("os.environ", {"QDRANT_COLLECTION": "nvidia_corpus_test"}):
+        valid, detail = _validate_ingestion_manifest(corpus_dir)
+
+    assert valid is False
+    assert "source set mismatch" in detail
+    assert "tensorrt_llm" in detail
