@@ -13,14 +13,6 @@ def replace_once(path: Path, old: str, new: str) -> None:
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
 
 
-def replace_all(path: Path, old: str, new: str, expected: int) -> None:
-    text = path.read_text(encoding="utf-8")
-    count = text.count(old)
-    if count != expected:
-        raise RuntimeError(f"Expected {expected} matches in {path}, found {count}: {old[:200]}")
-    path.write_text(text.replace(old, new), encoding="utf-8")
-
-
 def patch_api_schema() -> None:
     path = ROOT / "src/api/product_schemas.py"
     replace_once(
@@ -32,9 +24,16 @@ def patch_api_schema() -> None:
 
 def patch_api_routes() -> None:
     path = ROOT / "src/api/workflow_routes.py"
-    old = '''            error_message=nr.error_message,\n            retry_count=nr.retry_count,\n            created_at=nr.created_at,\n'''
-    new = '''            error_message=nr.error_message,\n            retry_count=nr.retry_count,\n            input_snapshot=nr.input_snapshot_json or {},\n            output_snapshot=nr.output_snapshot_json or {},\n            metadata=nr.metadata_json or {},\n            created_at=nr.created_at,\n'''
-    replace_all(path, old, new, expected=2)
+    replace_once(
+        path,
+        '''            error_message=nr.error_message,\n            retry_count=nr.retry_count,\n            created_at=nr.created_at,\n        )\n        for nr in node_runs\n    ]\n''',
+        '''            error_message=nr.error_message,\n            retry_count=nr.retry_count,\n            input_snapshot=nr.input_snapshot_json or {},\n            output_snapshot=nr.output_snapshot_json or {},\n            metadata=nr.metadata_json or {},\n            created_at=nr.created_at,\n        )\n        for nr in node_runs\n    ]\n''',
+    )
+    replace_once(
+        path,
+        '''                error_message=nr.error_message,\n                retry_count=nr.retry_count,\n                created_at=nr.created_at,\n            )\n            for nr in node_runs\n        ],\n''',
+        '''                error_message=nr.error_message,\n                retry_count=nr.retry_count,\n                input_snapshot=nr.input_snapshot_json or {},\n                output_snapshot=nr.output_snapshot_json or {},\n                metadata=nr.metadata_json or {},\n                created_at=nr.created_at,\n            )\n            for nr in node_runs\n        ],\n''',
+    )
 
 
 def patch_persisted_validator() -> None:
