@@ -556,7 +556,7 @@ def _diagnose_single_gap(
     prod_allowed = True
     gap_blockers: list[str] = []
 
-    related_keywords = [item.value for item in GAP_TECH_MAP.get(gap_type, [])]
+    related_keywords = _technical_gap_keywords(GAP_TECH_MAP.get(gap_type, []))
     supporting_evidence_count_raw = sum(
         1
         for item in evidence_items
@@ -568,11 +568,6 @@ def _diagnose_single_gap(
     observed_evidence_coverage = (
         supporting_evidence_count_raw / len(evidence_items) if evidence_items else 0.0
     )
-    distinct_sources = {
-        str(item.get("source_url") or item.get("url") or item.get("source_id") or "").strip()
-        for item in evidence_items
-        if item.get("source_id") or item.get("source_url") or item.get("url")
-    }
     # Absence of a public mention is not evidence that an operational gap
     # exists. Three independent sources can corroborate a positive signal, but
     # they cannot turn silence about latency, cost, governance, or MLOps into a
@@ -593,9 +588,9 @@ def _diagnose_single_gap(
         status = GapDiagnosisStatus.NEEDS_MORE_EVIDENCE
         prod_allowed = False
         gap_blockers.append(
-            f"Observed gap-specific evidence coverage ({observed_evidence_coverage:.4f}) "
-            f"below minimum ({min_evidence_coverage:.4f}) and absence is not "
-            "corroborated by at least three distinct sources"
+            f"Observed positive gap-specific evidence coverage ({observed_evidence_coverage:.4f}) "
+            f"below minimum ({min_evidence_coverage:.4f}); public silence is not "
+            "accepted as proof of an operational gap"
         )
     elif production_threshold is not None and final_severity > production_threshold:
         status = GapDiagnosisStatus.FAILED
