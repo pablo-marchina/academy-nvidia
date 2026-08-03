@@ -88,3 +88,5 @@ nvidia_startup_ai_radar.egg-info/
 final_case_evidence/*benchmark*
 final_case_evidence/*catalog_analysis*
 scripts/test_full_catalog*.py
+# Runtime corpus index manifest
+data/nvidia_corpus/.ingestion_manifest.json
