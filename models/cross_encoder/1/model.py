@@ -16,7 +16,9 @@ class TritonPythonModel:
         model_name = os.environ.get("CE_MODEL_NAME", "cross-encoder/ms-marco-MiniLM-L-6-v2")
         from sentence_transformers import CrossEncoder
 
-        self.model = CrossEncoder(model_name)
+        # config.pbtxt declares KIND_CPU. Keep the Python model on CPU as well so
+        # local execution is deterministic and does not require a host GPU.
+        self.model = CrossEncoder(model_name, device="cpu")
 
     def execute(self, requests):
         responses = []
