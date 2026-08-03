@@ -4,9 +4,11 @@ FROM python:3.11-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_NO_CACHE_DIR=1 \
+    PIP_DEFAULT_TIMEOUT=120 \
     HF_HOME=/opt/model-cache \
     SENTENCE_TRANSFORMERS_HOME=/opt/model-cache
+
+ARG TORCH_VERSION=2.12.1
 
 WORKDIR /app
 
@@ -24,7 +26,13 @@ COPY alembic.ini ./
 COPY data ./data
 COPY models/ai_native_classifier ./models/ai_native_classifier
 
-RUN python -m pip install --upgrade pip \
+# The backend runs inference on CPU. Installing the official CPU-only PyTorch
+# wheel before the project prevents pip from pulling multi-gigabyte CUDA wheels
+# such as nvidia-cusolver into this slim runtime image. The cache mount survives
+# failed builds without being copied into the final image.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --upgrade pip \
+    && python -m pip install "torch==${TORCH_VERSION}" --index-url https://download.pytorch.org/whl/cpu \
     && python -m pip install -e ".[full,observability]"
 
 RUN mkdir -p /app/data/product /opt/model-cache \
