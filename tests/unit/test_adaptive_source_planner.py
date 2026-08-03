@@ -43,3 +43,11 @@ def test_stop_collection_requires_low_marginal_gain_for_source_limit() -> None:
 
     assert keep_collecting is False
     assert stop is True
+
+
+def test_verified_website_excludes_generic_and_guessed_sources() -> None:
+    plan = build_search_plan("Maritaca AI", website_url="https://www.maritaca.ai/")
+
+    assert [item["url"] for item in plan] == ["https://www.maritaca.ai/"]
+    assert plan[0]["is_official_source"] is True
+    assert plan[0]["source_type"] == "official_site"
