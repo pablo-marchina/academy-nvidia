@@ -1,0 +1,78 @@
+name: Diagnose runtime output repair
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/diagnose-runtime-output-repair.yml
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Extract and execute repair with captured diagnostics
+        shell: bash
+        run: |
+          set +e
+          mkdir -p final_case_evidence
+          python - <<'PY' > final_case_evidence/runtime_repair_extraction.log 2>&1
+          from pathlib import Path
+          import textwrap
+
+          source = Path('.github/workflows/final-runtime-output-repair.yml').read_text(encoding='utf-8').splitlines()
+          start = next(i for i, line in enumerate(source) if line.strip() == "python - <<'PY'") + 1
+          end = next(i for i in range(start, len(source)) if source[i].strip() == 'PY')
+          script = textwrap.dedent('\n'.join(source[start:end])) + '\n'
+          Path('/tmp/apply_runtime_output_repair.py').write_text(script, encoding='utf-8')
+          compile(script, '/tmp/apply_runtime_output_repair.py', 'exec')
+          print(f'extracted_lines={len(script.splitlines())}')
+          PY
+          extract_status=$?
+          echo "extract_status=$extract_status" >> final_case_evidence/runtime_repair_extraction.log
+
+          if [ "$extract_status" -eq 0 ]; then
+            python /tmp/apply_runtime_output_repair.py > final_case_evidence/runtime_repair_apply.log 2>&1
+            apply_status=$?
+          else
+            apply_status=99
+            echo 'repair script was not executed because extraction failed' > final_case_evidence/runtime_repair_apply.log
+          fi
+          echo "apply_status=$apply_status" >> final_case_evidence/runtime_repair_apply.log
+
+          python - <<'PY' > final_case_evidence/runtime_repair_snapshot.txt 2>&1
+          from pathlib import Path
+          checks = {
+              'quality_datetime_import': ('src/api/product_routes.py', 'from datetime import UTC, datetime'),
+              'planner_max_sources': ('src/agents/search_planner.py', 'max_sources: int | None = None'),
+              'collect_failures_defined': ('src/orchestration/node_impl.py', 'failures = critical_failures + degraded_failures'),
+              'pipeline_error_exposed': ('src/services/product/radar_dashboard_service.py', '"error": error or None'),
+              'worker_persisted_status_log': ('src/orchestration/worker.py', 'workflow_finished_failed'),
+              'worker_healthcheck': ('docker-compose.yml', "b'src.orchestration.worker'"),
+              'frontend_actionable_detail': ('frontend/src/views/RadarDashboardView.tsx', 'function runtimeItemDetail'),
+              'regression_tests': ('tests/unit/test_runtime_merge_regressions.py', 'test_search_planner_uses_defined_bounded_source_limit'),
+          }
+          for name, (path, needle) in checks.items():
+              file = Path(path)
+              present = file.exists() and needle in file.read_text(encoding='utf-8')
+              print(f'{name}={present}')
+          PY
+
+      - name: Commit diagnostic evidence and remove workflow
+        if: always()
+        shell: bash
+        run: |
+          rm -f .github/workflows/diagnose-runtime-output-repair.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add final_case_evidence/runtime_repair_extraction.log final_case_evidence/runtime_repair_apply.log final_case_evidence/runtime_repair_snapshot.txt .github/workflows/diagnose-runtime-output-repair.yml
+          git commit -m "chore: record runtime repair diagnostics" || exit 0
+          git pull --rebase origin main
+          git push origin HEAD:main
