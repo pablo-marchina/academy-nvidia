@@ -62,9 +62,10 @@ CASES: list[dict[str, Any]] = [
         "expected_classifications": ["ai_native", "ai_native_service", "ai_enabled"],
         "expected_technologies": ["TensorRT", "NVIDIA NIM", "RAPIDS", "cuDF", "cuML"],
         "sources": [
-            {"url": "https://www.cromai.com/", "type": "official_site", "anchors": ["visão computacional", "IA", "imagens"]},
-            {"url": "https://www.cromai.com/a-cromai/", "type": "official_site", "anchors": ["inteligência artificial", "agricultura", "visão computacional"]},
-            {"url": "https://polosebraeagro.sebrae.com.br/agritech-sebrae/cromai/", "type": "directory", "anchors": ["Cromai", "inteligência artificial", "imagens"]},
+            {"url": "https://www.cromai.com/", "type": "official_site", "anchors": ["inteligência artificial", "IA", "plantas daninhas"]},
+            {"url": "https://agencia.fapesp.br/artificial-intelligence-applied-to-drone-imagery-helps-improve-agricultural-productivity/50441", "type": "news", "anchors": ["Cromai", "artificial intelligence", "drone"]},
+            {"url": "https://impacto.google/historias/cromai", "type": "directory", "anchors": ["Cromai", "inteligência artificial", "plantas daninhas"]},
+            {"url": "https://startups.com.br/negocios/sustentabilidade/cromai-com-tecnologia-agro-sustentavel-e-tambem-mais-lucrativo/", "type": "news", "anchors": ["Cromai", "IA", "plantas daninhas"]},
         ],
     },
     {
