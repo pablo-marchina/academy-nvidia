@@ -44,6 +44,10 @@ $content = $content.Replace(
     $qdrantApiKey
 )
 
-Set-Content -Path $TargetPath -Value $content -Encoding utf8NoBOM
+# Windows PowerShell 5.1 does not support `-Encoding utf8NoBOM`.
+# Use the .NET API so the script behaves consistently in PowerShell 5.1 and 7+.
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($TargetPath, $content, $utf8NoBom)
+
 Write-Host "Created $TargetPath with cryptographically random local secrets."
 Write-Host 'Open .env and add NVIDIA_API_KEY plus any optional governed collector keys.'
