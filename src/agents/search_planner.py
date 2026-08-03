@@ -1,17 +1,16 @@
 """Build entity-specific, governed search plans for a startup.
 
-The previous planner guessed several domains and attached every configured
-startup directory to every company. That multiplied latency and allowed pages
-about unrelated companies to contaminate the profile. Plans are now built from
-known entity URLs first; a search API is only a discovery mechanism when it is
-actually configured.
+Plans are built from verified entity URLs first. Global directory home pages
+are not attached to every company, and search APIs are only used when explicitly
+configured.
 """
 
 from __future__ import annotations
 
-import re
+import os
+from collections.abc import Iterable
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import quote_plus, urlparse
 
 
 def _is_allowed_source(url: str) -> bool:
@@ -85,14 +84,29 @@ def _classify_source(
         return "founder_profile"
     if hint in {"blog", "job_post", "founder_profile", "search_api"}:
         return hint
-    if hint in {"public_directory", "startup_program", "accelerator", "vc_portfolio", "event_page", "manual_seed", "directory"}:
+    if hint in {
+        "public_directory",
+        "startup_program",
+        "accelerator",
+        "vc_portfolio",
+        "event_page",
+        "manual_seed",
+        "directory",
+    }:
         return "directory"
     if any(value in host for value in _DIRECTORY_HOSTS):
         return "directory"
     return "news"
 
 
-def build_search_plan(startup_name: str, website_url: str = "") -> list[dict[str, Any]]:
+def build_search_plan(
+    startup_name: str,
+    *,
+    website_url: str = "",
+    known_source_urls: Iterable[str] | None = None,
+    max_sources: int | None = None,
+) -> list[dict[str, Any]]:
+    """Return a bounded plan composed only of entity-specific URLs."""
     from src.sourcing.adaptive_source_planner import SourceCandidate, source_decision_trace
 
     source_limit = max_sources
@@ -129,7 +143,13 @@ def build_search_plan(startup_name: str, website_url: str = "") -> list[dict[str
             source_url=normalized_url,
             authority=authority,
             freshness=0.78 if source_type in {"news", "job_post", "blog", "search_api"} else 0.62,
-            independence=0.85 if source_type in {"news", "directory"} else 0.35 if source_type == "official_site" else 0.55,
+            independence=(
+                0.85
+                if source_type in {"news", "directory"}
+                else 0.35
+                if source_type == "official_site"
+                else 0.55
+            ),
             known_gap_coverage=min(1.0, prior_count / 2.0),
             expected_category_coverage=1.0 / float(prior_count + 1),
             marginal_new_evidence=1.0 / float(prior_count + 1),
@@ -155,20 +175,23 @@ def build_search_plan(startup_name: str, website_url: str = "") -> list[dict[str
         source_type_counts[source_type] = prior_count + 1
 
     if website_url:
-        _add(
-            website_url,
-            "Persisted startup official website",
-            source_type_hint="official_site",
-            is_probable_owned_domain=True,
-        )
-    else:
-        direct_urls = [
-            (f"https://{normalized}.com.br", "Probable startup-owned Brazilian domain", True),
-            (f"https://www.{normalized}.com.br", "Probable startup-owned Brazilian domain (www)", True),
-            (f"https://{normalized}.com", "Probable startup-owned .com domain", True),
-            (f"https://www.{normalized}.com", "Probable startup-owned .com domain (www)", True),
-        ]
-        for url, reason, owned in direct_urls:
-            _add(url, reason, is_probable_owned_domain=owned)
+        add(website_url, f"{startup_name} official website", source_type_hint="official_site")
 
-    return sorted(plan, key=lambda item: float(item["marginal_utility"]), reverse=True)
+    for url in known_source_urls or ():
+        add(str(url), "Persisted entity-specific evidence URL")
+
+    if os.getenv("SERPAPI_API_KEY") and startup_name:
+        add(
+            "https://serpapi.com/search.json?q=" + quote_plus(startup_name + " startup AI Brasil"),
+            "Configured search API for exact company name",
+            source_type_hint="search_api",
+        )
+
+    plan.sort(
+        key=lambda item: (
+            1 if item["is_official_source"] else 0,
+            float(item["marginal_utility"]),
+        ),
+        reverse=True,
+    )
+    return plan[:source_limit]
