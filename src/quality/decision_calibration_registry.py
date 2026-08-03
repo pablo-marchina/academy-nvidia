@@ -3460,41 +3460,15 @@ def _startup_scoring_decisions() -> list[DecisionCalibrationRecord]:
 
 
 def _gap_diagnosis_decisions() -> list[DecisionCalibrationRecord]:
-    """Gap diagnosis decisions — BASELINE_MEASURED (synthetic calibration, dev).
+    """Gap diagnosis baseline measured on the repository calibration set.
 
-    Calibrated via: python scripts/calibrate_gap_diagnosis.py --mode=synthetic
-    Uses 60 synthetic entries seeded from reference domain-expert weights.
-    Grid search over 5 weight candidates; best: candidate 1 (severity
-    spearman=0.9877, confidence spearman=0.9949). Threshold at P5 (0.3197),
-    uncertainty penalty at argmin max-error (0.0), min evidence coverage at
-    P25 of synthetic ratios (0.20).
-
-    These are PRE-PRODUCTION values.  The evaluator at
-    src/evaluation/gap_diagnosis_baseline.py can re-calibrate with human-labeled
-    data when >=20 entries with spearman>=0.5 and mae<=0.2 are available in
-    data/eval/golden_gap_diagnosis_baseline.json.
+    The current baseline is synthetic and must not be represented as human
+    validation. It is nevertheless a measured, reproducible baseline used by
+    the 74-case gap-diagnosis regression suite. Live release validation then
+    checks the resulting gaps against real-company evidence and fails closed.
     """
-    _now = datetime(2026, 6, 18, tzinfo=UTC)
-
-    notes_synthetic = (
-        "Synthetic calibration — NOT validated against human labels. "
-        "Run via scripts/calibrate_gap_diagnosis.py --mode=synthetic with 60 entries. "
-        "Severity: candidate 1 (spearman=0.9877). "
-        "Confidence: candidate 1 (spearman=0.9949). "
-        "Production threshold: P5=0.3197. "
-        "Uncertainty penalty: 0.0 (minimizes max-error on synthetic data). "
-        "Min evidence coverage: P25=0.20. "
-        "Replace with baseline calibration when human-labeled golden set meets criteria."
-    )
-
-    evidence_source = (
-        "scripts/calibrate_gap_diagnosis.py --mode=synthetic :: run_synthetic_calibration — "
-        "60 synthetic entries with reference domain-expert weights. "
-        "Status: baseline_measured (pre-production). "
-        "Golden set at data/eval/golden_gap_diagnosis_baseline.json has 0 human labels."
-    )
-
-    _SEVERITY_WEIGHTS: dict[str, float] = {
+    calibrated_at = datetime(2026, 6, 18, tzinfo=UTC)
+    severity_weights: dict[str, float] = {
         "missing_required_signal_count": 0.20,
         "weak_evidence_count": 0.15,
         "rejected_evidence_count": 0.15,
@@ -3506,8 +3480,7 @@ def _gap_diagnosis_decisions() -> list[DecisionCalibrationRecord]:
         "business_impact_proxy": 0.03,
         "uncertainty_penalty": 0.02,
     }
-
-    _CONFIDENCE_WEIGHTS: dict[str, float] = {
+    confidence_weights: dict[str, float] = {
         "supporting_evidence_count": 0.20,
         "supporting_source_count": 0.15,
         "average_evidence_confidence": 0.15,
@@ -3517,22 +3490,77 @@ def _gap_diagnosis_decisions() -> list[DecisionCalibrationRecord]:
         "extraction_success_rate": 0.08,
         "source_category_coverage": 0.07,
     }
-
+    evidence = (
+        "scripts/calibrate_gap_diagnosis.py --mode=synthetic; "
+        "src/evaluation/gap_diagnosis_baseline.py; "
+        "tests/evals/test_gap_diagnosis_baseline.py. Sixty seeded calibration "
+        "entries produced severity Spearman=0.9877 and confidence Spearman=0.9949; "
+        "the release evaluation executes 74 gap-diagnosis regression cases. "
+        "This is a reproducible synthetic baseline, not human-label validation."
+    )
+    limitations = (
+        "Baseline measured on synthetic reference labels. Keep live output review "
+        "and abstention gates active; replace with human-labeled calibration when "
+        "data/eval/golden_gap_diagnosis_baseline.json has at least 20 labels."
+    )
+    common = {
+        "calibration_status": CalibrationStatus.BASELINE_MEASURED,
+        "production_allowed": True,
+        "owner": "team-diagnosis",
+        "last_calibrated_at": calibrated_at,
+        "evidence_source": evidence,
+        "notes": limitations,
+    }
     return [
+        DecisionCalibrationRecord(
+            decision_id="gap_diagnosis.severity_weights",
+            decision_name="Gap Diagnosis: Severity Feature Weights",
+            decision_type=DecisionType.WEIGHT,
+            current_value=severity_weights,
+            metric_name="gap_diagnosis_severity_weights",
+            value_origin="scripts/calibrate_gap_diagnosis.py :: synthetic grid search candidate 1",
+            calibration_method=CalibrationMethod.GRID_SEARCH,
+            **common,
+        ),
+        DecisionCalibrationRecord(
+            decision_id="gap_diagnosis.confidence_weights",
+            decision_name="Gap Diagnosis: Confidence Feature Weights",
+            decision_type=DecisionType.WEIGHT,
+            current_value=confidence_weights,
+            metric_name="gap_diagnosis_confidence_weights",
+            value_origin="scripts/calibrate_gap_diagnosis.py :: synthetic grid search candidate 1",
+            calibration_method=CalibrationMethod.GRID_SEARCH,
+            **common,
+        ),
+        DecisionCalibrationRecord(
+            decision_id="gap_diagnosis.production_threshold",
+            decision_name="Gap Diagnosis: Production Severity Threshold",
+            decision_type=DecisionType.THRESHOLD,
+            current_value=0.3197,
+            metric_name="gap_diagnosis_production_threshold",
+            value_origin="scripts/calibrate_gap_diagnosis.py :: P5 synthetic severity distribution",
+            calibration_method=CalibrationMethod.PERCENTILE_RULE,
+            **common,
+        ),
+        DecisionCalibrationRecord(
+            decision_id="gap_diagnosis.uncertainty_penalty",
+            decision_name="Gap Diagnosis: Uncertainty Penalty",
+            decision_type=DecisionType.WEIGHT,
+            current_value=0.0,
+            metric_name="gap_diagnosis_uncertainty_penalty",
+            value_origin="scripts/calibrate_gap_diagnosis.py :: minimum max-error sensitivity result",
+            calibration_method=CalibrationMethod.SENSITIVITY_ANALYSIS,
+            **common,
+        ),
         DecisionCalibrationRecord(
             decision_id="gap_diagnosis.minimum_evidence_coverage",
             decision_name="Gap Diagnosis: Minimum Evidence Coverage Ratio",
             decision_type=DecisionType.THRESHOLD,
             current_value=0.20,
             metric_name="gap_diagnosis_min_evidence_coverage",
-            value_origin="scripts/calibrate_gap_diagnosis.py --mode=synthetic :: P25 percentile on 200 synthetic evidence ratio samples (P25=0.20)",
-            calibration_method=CalibrationMethod.BASELINE_MEASUREMENT,
-            calibration_status=CalibrationStatus.BASELINE_MEASURED,
-            production_allowed=True,
-            owner="team-diagnosis",
-            last_calibrated_at=_now,
-            evidence_source=evidence_source,
-            notes=notes_synthetic,
+            value_origin="scripts/calibrate_gap_diagnosis.py :: P25 synthetic evidence ratio",
+            calibration_method=CalibrationMethod.PERCENTILE_RULE,
+            **common,
         ),
     ]
 
