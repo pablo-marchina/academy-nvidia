@@ -468,6 +468,8 @@ def build_nvidia_technology_mappings(
     for gap_type_str, candidate_techs in GAP_TECHNOLOGY_CANDIDATES.items():
         gap_result = gap_result_by_type.get(gap_type_str)
         rag_ctxs = rag_contexts_by_gap.get(gap_type_str, [])
+        if not rag_ctxs and gap_result is not None:
+            rag_ctxs = rag_contexts_by_gap.get(gap_result.gap_id, [])
 
         for tech in candidate_techs:
             mapping_index += 1
