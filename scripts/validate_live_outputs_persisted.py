@@ -148,7 +148,11 @@ def _enrich_report() -> int:
                 node_snapshots = snapshots_response.json()
                 state = _reconstruct_state(workflow, node_snapshots)
                 node_outputs = state.get("node_outputs") or {}
-                mapping_output = node_outputs.get("mapping_output") or {}
+                mapping_output = (
+                    node_outputs.get("nvidia_mapping_result")
+                    or node_outputs.get("mapping_output")
+                    or {}
+                )
                 rag_output = node_outputs.get("rag_output") or {}
                 gap_output = node_outputs.get("gap_output") or {}
                 company["persisted_state_fetch_status"] = 200
