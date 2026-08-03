@@ -465,8 +465,11 @@ def build_nvidia_technology_mappings(
     mappings: list[NvidiaTechnologyMappingRecord] = []
     mapping_index = 0
 
+    selected_gap_types = set(gap_result_by_type)
     for gap_type_str, candidate_techs in GAP_TECHNOLOGY_CANDIDATES.items():
-        gap_result = gap_result_by_type.get(gap_type_str)
+        if gap_type_str not in selected_gap_types:
+            continue
+        gap_result = gap_result_by_type[gap_type_str]
         rag_ctxs = rag_contexts_by_gap.get(gap_type_str, [])
         if not rag_ctxs and gap_result is not None:
             rag_ctxs = rag_contexts_by_gap.get(gap_result.gap_id, [])
@@ -655,14 +658,17 @@ def build_nvidia_technology_mappings(
     overall_status: str
     if is_blocked:
         overall_status = NvidiaMappingStatus.BLOCKED_UNCALIBRATED_MAPPING.value
-    elif any(m.blockers and "No RAG contexts" in " ".join(m.blockers) for m in mappings) and not any(
-        m.production_allowed for m in mappings
-    ):
-        overall_status = NvidiaMappingStatus.NEEDS_MORE_EVIDENCE.value
     elif any(m.production_allowed for m in mappings):
         overall_status = NvidiaMappingStatus.PASSED.value
-    else:
+    elif any(m.supporting_rag_context_ids and m.supporting_evidence_ids for m in mappings):
+        # At least one candidate is evidence-grounded and RAG-grounded. A score
+        # below the calibrated production threshold requires review; unsupported
+        # sibling candidates must not downgrade the whole gap to missing evidence.
         overall_status = NvidiaMappingStatus.NEEDS_REVIEW.value
+    elif mappings:
+        overall_status = NvidiaMappingStatus.NEEDS_MORE_EVIDENCE.value
+    else:
+        overall_status = NvidiaMappingStatus.FAILED.value
 
     # ── Compute calibration metrics ─────────────────────────────────────
     cal_metrics = NvidiaMappingCalibrationMetrics(
