@@ -811,19 +811,21 @@ def node_collect_sources(state: ProductWorkflowState) -> NodeResult:
     if error_rate > max_error_rate:
         failures.append("maximum_collection_error_rate_exceeded")
 
-    if errors or failures:
+    if failures:
         msg_parts = []
         if errors:
             msg_parts.append(f"Source collection had errors: {'; '.join(errors[:5])}")
-        if failures:
-            msg_parts.append(f"Source coverage gate failed: {', '.join(failures)}")
+        msg_parts.append(f"Source coverage gate failed: {', '.join(failures)}")
         msg = " | ".join(msg_parts)
         return NodeResult(
-            status=NodeStatus.FAILED if _is_product_mode() and failures else NodeStatus.DEGRADED,
-            error_message=msg if _is_product_mode() and failures else None,
+            status=NodeStatus.FAILED if _is_product_mode() else NodeStatus.DEGRADED,
+            error_message=msg if _is_product_mode() else None,
             degraded_reason=msg,
             state_updates=updates,
         )
+    if errors:
+        collection_metrics["warnings"] = errors[:10]
+        updates["node_outputs"] = {**state.node_outputs, "collection_metrics": collection_metrics}
     return NodeResult(
         status=NodeStatus.COMPLETED,
         state_updates=updates,

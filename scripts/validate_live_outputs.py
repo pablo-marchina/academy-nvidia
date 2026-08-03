@@ -53,6 +53,7 @@ CASES: list[dict[str, Any]] = [
             {"url": "https://www.getenter.ai/", "type": "official_site", "anchors": ["Agentes de IA", "jurídico", "documento"]},
             {"url": "https://www.getenter.ai/sobre-nos", "type": "official_site", "anchors": ["inteligência artificial", "clientes", "Brasil"]},
             {"url": "https://www.gtlaw.com/en/news/2026/05/press-releases/greenberg-traurig-represents-enter-in-%24100m-series-b--creating-latin-americas-first-ai-unicorn", "type": "news", "anchors": ["Enter", "artificial intelligence", "legal"]},
+            {"url": "https://www.infomoney.com.br/mercados/startups-quem-e-a-enter-unicornio-brasileiro-de-ia-do-setor-juridico/", "type": "news", "anchors": ["Enter", "inteligência artificial", "jurídico"]},
         ],
     },
     {

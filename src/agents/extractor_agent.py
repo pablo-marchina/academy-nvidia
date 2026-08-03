@@ -58,7 +58,7 @@ def _build_evidence_item(
     text: str = source_candidate.get("text", "")
     source_url: str = source_candidate.get("source_url") or source_candidate.get("url", "")
     source_id: str = source_candidate.get("source_id", "")
-    collected_at_raw: str = source_candidate.get("collected_at", "")
+    collected_at_raw: str = source_candidate.get("collected_at") or source_candidate.get("fetched_at") or ""
 
     now_ts: str = datetime.now(UTC).isoformat()
     extracted_at: str = collected_at_raw if collected_at_raw else now_ts
@@ -69,15 +69,24 @@ def _build_evidence_item(
 
     st_value: str = source_type.value if isinstance(source_type, SourceType) else str(source_type)
     score = source_quality_score(source_type)
+    from src.extraction.schemas import ConfidenceLevel
+
+    confidence_level = ConfidenceLevel.from_score(conf).value
+    summary = profile.product_summary if profile.product_summary != "Not verified" else profile.description
+    claim_text = f"{profile.startup_name}: {summary or snippet}"[:1000]
+    quote = text[:1200] if text else snippet
 
     factuality: str = "observed" if text else "unknown"
 
     item: dict[str, Any] = {
         "evidence_id": str(uuid.uuid4()),
+        "claim": claim_text,
         "source_id": source_id,
         "source_url": source_url,
         "url": source_url,
         "source_type": st_value,
+        "quote_or_evidence": quote,
+        "confidence": confidence_level,
         "title": profile.startup_name,
         "snippet": snippet,
         "extracted_text_hash": txt_hash,
