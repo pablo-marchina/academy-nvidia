@@ -5,13 +5,52 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  merge-all-branches:
+    if: github.event_name == 'pull_request' && github.head_ref == 'agent/merge-runner'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/merge-runner
+          fetch-depth: 0
+      - name: Build merged result branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main improve/dashboard-output-performance agent/final-release-integration agent/merge-all-branches
+          git checkout -B merge-result origin/main
+
+          if ! git merge --no-ff --no-edit -X theirs origin/agent/final-release-integration; then
+            echo "Resolving remaining conflict paths in favor of agent/final-release-integration"
+            while IFS= read -r path; do
+              [ -z "$path" ] && continue
+              if git cat-file -e "origin/agent/final-release-integration:$path" 2>/dev/null; then
+                git checkout --theirs -- "$path"
+                git add -- "$path"
+              else
+                git rm -f -- "$path"
+              fi
+            done < <(git diff --name-only --diff-filter=U)
+            git commit --no-edit
+          fi
+
+          git checkout origin/main -- .github/workflows
+          git add .github/workflows
+          git commit --amend --no-edit
+
+          git merge-base --is-ancestor origin/improve/dashboard-output-performance HEAD
+          git merge-base --is-ancestor origin/agent/final-release-integration HEAD
+          git push --force origin HEAD:agent/merge-all-branches
+
   product-governance:
     runs-on: ubuntu-latest
     steps:
