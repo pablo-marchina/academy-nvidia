@@ -18,22 +18,32 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Extract deterministic repair script
+      - name: Apply deterministic repairs
+        run: python scripts/repair_runtime_output.py
+
+      - name: Verify repaired source contracts
         run: |
+          python -m compileall -q \
+            src/agents/search_planner.py \
+            src/orchestration/node_impl.py \
+            src/api/product_routes.py \
+            src/services/product/radar_dashboard_service.py \
+            src/orchestration/worker.py \
+            scripts/repair_runtime_output.py
           python - <<'PY'
           from pathlib import Path
-          import textwrap
-
-          source = Path('.github/workflows/final-runtime-output-repair.yml').read_text(encoding='utf-8').splitlines()
-          start = next(i for i, line in enumerate(source) if line.strip() == "python - <<'PY'") + 1
-          end = next(i for i in range(start, len(source)) if source[i].strip() == 'PY')
-          script = textwrap.dedent('\n'.join(source[start:end])) + '\n'
-          Path('/tmp/apply_runtime_output_repair.py').write_text(script, encoding='utf-8')
-          compile(script, '/tmp/apply_runtime_output_repair.py', 'exec')
+          checks = {
+              'src/api/product_routes.py': 'from datetime import UTC, datetime',
+              'src/orchestration/node_impl.py': 'failures = critical_failures + degraded_failures',
+              'src/services/product/radar_dashboard_service.py': '"error": error or None',
+              'src/orchestration/worker.py': 'workflow_finished_failed',
+              'docker-compose.yml': "b'src.orchestration.worker'",
+              'frontend/src/views/RadarDashboardView.tsx': 'function runtimeItemDetail',
+              'tests/unit/test_runtime_merge_regressions.py': 'test_search_planner_uses_defined_bounded_source_limit',
+          }
+          for path, needle in checks.items():
+              assert needle in Path(path).read_text(encoding='utf-8'), (path, needle)
           PY
-
-      - name: Apply repairs
-        run: python /tmp/apply_runtime_output_repair.py
 
       - name: Commit repairs
         run: |
@@ -41,7 +51,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
-            src/agents/search_planner.py \
             src/orchestration/node_impl.py \
             src/api/product_routes.py \
             src/services/product/radar_dashboard_service.py \
@@ -50,6 +59,7 @@ jobs:
             docker-compose.yml \
             frontend/src/views/RadarDashboardView.tsx \
             tests/unit/test_runtime_merge_regressions.py \
+            scripts/repair_runtime_output.py \
             .github/workflows/apply-runtime-output-repair.yml
           git commit -m "fix: apply end-to-end runtime output corrections"
           git pull --rebase origin main
