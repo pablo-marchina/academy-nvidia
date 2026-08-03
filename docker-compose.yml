@@ -48,8 +48,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d startup_radar"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U radar -d nvidia_radar"]
+      interval: 5s
       timeout: 5s
       retries: 20
     networks:
@@ -69,26 +69,113 @@ services:
       - startup-radar-net
 
   triton-reranker:
+    image: academy-nvidia-triton-reranker:local
     build:
       context: .
-      dockerfile: Dockerfile.triton-reranker
-    image: academy-nvidia/triton-reranker:24.06
-    container_name: startup-radar-triton-reranker
-    command: ["tritonserver", "--model-repository=/models", "--model-control-mode=explicit", "--load-model=cross_encoder"]
+      dockerfile: docker/triton/Dockerfile
+    restart: unless-stopped
     environment:
       CE_MODEL_NAME: cross-encoder/ms-marco-MiniLM-L-6-v2
     ports:
-      - "8100:8000"
-      - "8101:8001"
-      - "8102:8002"
+      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8001:8001"
+      - "127.0.0.1:8002:8002"
     volumes:
       - ./models:/models:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/v2/health/ready || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 120s
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/v2/models/cross_encoder/ready || exit 1"]
+      interval: 10s
+      timeout: 8s
+      retries: 20
+      start_period: 90s
+    networks:
+      - startup-radar-net
+
+  init-volumes:
+    <<: *backend-service
+    user: "0:0"
+    command: ["sh", "-c", "mkdir -p /app/data/product /opt/model-cache && chown -R 65534:65534 /app/data/product /opt/model-cache"]
+    volumes:
+      - product_data:/app/data/product
+      - model_cache:/opt/model-cache
+
+  migrate:
+    <<: *backend-service
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-volumes:
+        condition: service_completed_successfully
+    volumes:
+      - product_data:/app/data/product
+      - model_cache:/opt/model-cache
+
+  rag-bootstrap:
+    <<: *backend-service
+    command: ["python", "scripts/bootstrap_nvidia_corpus.py"]
+    depends_on:
+      qdrant:
+        condition: service_started
+      init-volumes:
+        condition: service_completed_successfully
+    volumes:
+      - product_data:/app/data/product
+      - model_cache:/opt/model-cache
+
+  api:
+    <<: *backend-service
+    restart: unless-stopped
+    command: ["sh", "-c", "python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --workers $${API_WORKERS:-2}"]
+    ports:
+      - "127.0.0.1:8080:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      rag-bootstrap:
+        condition: service_completed_successfully
+      triton-reranker:
+        condition: service_healthy
+    volumes:
+      - product_data:/app/data/product
+      - model_cache:/opt/model-cache
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  workflow-worker:
+    <<: *backend-service
+    restart: unless-stopped
+    command: ["python", "-m", "src.orchestration.worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      rag-bootstrap:
+        condition: service_completed_successfully
+      triton-reranker:
+        condition: service_healthy
+    volumes:
+      - product_data:/app/data/product
+      - model_cache:/opt/model-cache
+
+  frontend:
+    image: academy-nvidia-frontend:local
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    restart: unless-stopped
+    environment:
+      INTERNAL_PROXY_KEY: ${INTERNAL_PROXY_KEY:?Set INTERNAL_PROXY_KEY in .env}
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
     networks:
       - startup-radar-net
 
