@@ -110,4 +110,5 @@ def test_error_rate_includes_successful_real_evidence(monkeypatch) -> None:  # n
 
     metrics = result.state_updates["node_outputs"]["collection_metrics"]
     assert metrics["collection_error_rate"] == 0.25
-    assert result.status.value == "degraded"
+    assert metrics["warnings"] == ["https://blocked.example: robots_disallowed"]
+    assert result.status.value == "completed"
