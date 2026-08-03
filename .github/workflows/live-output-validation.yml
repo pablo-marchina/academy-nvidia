@@ -112,6 +112,7 @@ jobs:
         working-directory: frontend
         env:
           LIVE_VALIDATION_REPORT: ../final_case_evidence/live_output_validation_report.json
+          PLAYWRIGHT_REUSE_EXISTING_SERVERS: "true"
         run: npx playwright test test_live_output_ui.spec.ts
 
       - name: Upload live validation evidence
