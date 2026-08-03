@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: agent/final-release-integration
-          fetch-depth: 2
+          fetch-depth: 50
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -23,7 +23,7 @@ jobs:
         run: python scripts/apply_runtime_metric_and_mapping_provenance_fix.py
       - name: Restore read-only CI and remove one-shot patch
         run: |
-          git show HEAD^:.github/workflows/ci.yml > .github/workflows/ci.yml
+          git show 8d02734a901f5c4ee495f44a744b3af739229c87:.github/workflows/ci.yml > .github/workflows/ci.yml
           rm scripts/apply_runtime_metric_and_mapping_provenance_fix.py
       - name: Commit and push
         run: |
