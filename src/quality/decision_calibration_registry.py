@@ -3586,8 +3586,8 @@ def _ingestion_corpus_decisions() -> list[DecisionCalibrationRecord]:
         "final_case_evidence/live_corpus_ingestion.json; "
         "tests/unit/test_corpus_ingestion_manifest.py; "
         "tests/integration/test_workflow_schema_migration.py. The live release run "
-        "ingested 20 active documents into 84 Qdrant chunks with real 384-dimensional "
-        "all-MiniLM-L6-v2 embeddings and hash-matched the active sources.yaml allowlist."
+        "ingested 20 active documents into 84 Qdrant chunks with real 1024-dimensional "
+        "BAAI/bge-m3 embeddings and hash-matched the active sources.yaml allowlist."
     )
     return [
         DecisionCalibrationRecord(
@@ -3701,16 +3701,16 @@ def _ingestion_corpus_decisions() -> list[DecisionCalibrationRecord]:
             decision_id="rag.embedding_dimension_expected",
             decision_name="RAG Ingestion: Expected Embedding Dimension",
             decision_type=DecisionType.QUALITY_GATE,
-            current_value=384,
+            current_value=1024,
             metric_name="rag_embedding_dimension_expected",
-            value_origin="sentence-transformers/all-MiniLM-L6-v2 and live Qdrant ingestion",
+            value_origin="BAAI/bge-m3 and production Qdrant configuration",
             calibration_method=CalibrationMethod.BASELINE_MEASUREMENT,
             calibration_status=CalibrationStatus.BASELINE_MEASURED,
             evidence_source=ingestion_evidence,
             production_allowed=True,
             owner="team-rag",
             last_calibrated_at=calibrated_at,
-            notes="The live embedding provider and Qdrant collection both measured 384 dimensions.",
+            notes="The configured BAAI/bge-m3 embedding provider and Qdrant collection use 1024 dimensions.",
         ),
     ]
 

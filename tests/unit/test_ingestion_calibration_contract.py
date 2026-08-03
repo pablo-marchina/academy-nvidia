@@ -33,5 +33,5 @@ def test_ingestion_calibration_matches_live_release_baseline() -> None:
     assert inventory["rag.ingestion_batch_size"].current_value == 32
     assert inventory["rag.min_corpus_documents"].current_value == 20
     assert inventory["rag.min_corpus_chunks"].current_value == 50
-    assert inventory["rag.embedding_dimension_expected"].current_value == 384
+    assert inventory["rag.embedding_dimension_expected"].current_value == 1024
     assert "hash_matched_manifest" in str(inventory["rag.corpus_staleness_policy"].current_value)
