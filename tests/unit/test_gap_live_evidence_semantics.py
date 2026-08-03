@@ -38,6 +38,46 @@ def test_natural_quote_evidence_and_source_urls_make_relevant_gap_retrieval_elig
     assert len(cv_gap.supporting_evidence_ids) == 3
 
 
+def test_only_matching_evidence_ids_are_attached_to_a_gap() -> None:
+    evidence = [
+        {
+            "evidence_id": "ev-cv",
+            "source_url": "https://vision.example/case",
+            "quote_or_evidence": "Visão computacional detecta plantas daninhas em imagens de drones.",
+            "source_quality_score": 0.9,
+            "evidence_confidence_score": 0.9,
+            "confidence": "high",
+        },
+        {
+            "evidence_id": "ev-company",
+            "source_url": "https://company.example/about",
+            "quote_or_evidence": "A empresa atende produtores rurais em todo o Brasil.",
+            "source_quality_score": 0.8,
+            "evidence_confidence_score": 0.8,
+            "confidence": "high",
+        },
+        {
+            "evidence_id": "ev-market",
+            "source_url": "https://market.example/profile",
+            "quote_or_evidence": "A plataforma oferece automação para operações agrícolas.",
+            "source_quality_score": 0.8,
+            "evidence_confidence_score": 0.8,
+            "confidence": "high",
+        },
+    ]
+
+    summary = diagnose_gaps_quantitative(
+        run_id="matching-provenance-test",
+        evidence_items=evidence,
+        accepted_evidence_items=evidence,
+    )
+
+    cv_gap = next(g for g in summary.gaps if g.gap_type == GapType.COMPUTER_VISION_GAP)
+    assert cv_gap.thresholds["observed_evidence_coverage"] == 0.3333
+    assert cv_gap.production_allowed is True
+    assert cv_gap.supporting_evidence_ids == ["ev-cv"]
+
+
 def test_unrelated_gap_is_not_created_from_silence() -> None:
     evidence = [
         {
