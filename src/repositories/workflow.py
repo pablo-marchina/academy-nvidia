@@ -203,9 +203,15 @@ class WorkflowRepository:
             node_run.error_message = error_message
         if status in ("running", "completed", "failed", "degraded") and node_run.started_at is None:
             node_run.started_at = datetime.now(UTC)
-        if status in ("completed", "failed", "degraded", "skipped"):
+        terminal_statuses = ("completed", "failed", "degraded", "skipped")
+        if status in terminal_statuses:
             node_run.completed_at = datetime.now(UTC)
-        self.session.flush()
+            # A failed workflow is rolled back before its failure state is recorded.
+            # Node outputs are audit evidence and must survive that rollback, so a
+            # terminal node transition defines its own durable transaction boundary.
+            self.session.commit()
+        else:
+            self.session.flush()
         return node_run
 
     def increment_node_retry(self, node_run_id: str) -> WorkflowNodeRun | None:

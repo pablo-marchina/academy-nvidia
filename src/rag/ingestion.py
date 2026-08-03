@@ -12,7 +12,8 @@ from bs4 import BeautifulSoup
 
 from src.rag.schemas import RagChunk, RagDocument, RagSource
 
-_CORPUS_DIR = Path("data/nvidia_corpus")
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_CORPUS_DIR = _PROJECT_ROOT / "data" / "nvidia_corpus"
 _SOURCES_FILE = _CORPUS_DIR / "sources.yaml"
 _MAX_UNSTRUCTURED_CHUNKS = 5
 _MIN_TARGET_CHARS = 800
@@ -131,6 +132,14 @@ def _extract_title(text: str) -> str | None:
         if stripped.startswith("# ") and not stripped.startswith("## "):
             return stripped[2:].strip()
     return None
+
+
+def _validate_active_document(doc: RagDocument) -> None:
+    content = doc.raw_text.strip()
+    if not content:
+        raise RuntimeError(f"Active NVIDIA corpus source is empty: {doc.source_id}")
+    if "placeholder" in content.casefold():
+        raise RuntimeError(f"Active NVIDIA corpus source is still a placeholder: {doc.source_id}")
 
 
 def chunk_document(doc: RagDocument, sources: dict[str, RagSource]) -> list[RagChunk]:
@@ -256,7 +265,7 @@ def _make_chunk(
 
 
 def load_and_chunk_corpus() -> list[RagChunk]:
-    """Load all active allowlisted corpus files and return clean chunks."""
+    """Load all active, governed markdown files from the corpus directory."""
     sources = load_sources()
     all_chunks: list[RagChunk] = []
     if not _CORPUS_DIR.exists():
@@ -274,5 +283,6 @@ def load_and_chunk_corpus() -> list[RagChunk]:
         doc = load_markdown_document(md_path)
         if doc is None:
             continue
+        _validate_active_document(doc)
         all_chunks.extend(chunk_document(doc, sources))
     return all_chunks

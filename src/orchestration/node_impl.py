@@ -308,8 +308,15 @@ def _gap_type_for_runtime_gap(gap_id: str) -> str:
     from src.diagnosis.schemas import GAP_TECH_MAP, GapType
     from src.extraction.schemas import TechnicalGap
 
-    if gap_id in {item.value for item in GapType}:
+    known_gap_types = {item.value for item in GapType}
+    if gap_id in known_gap_types:
         return gap_id
+    # Quantitative diagnosis emits stable runtime IDs such as
+    # ``gap-3-mlops_deployment_gap``. Preserve the semantic suffix instead of
+    # collapsing every runtime ID to the NVIDIA ecosystem fallback.
+    for gap_type in GapType:
+        if gap_id.endswith(gap_type.value):
+            return gap_type.value
     try:
         technical_gap = TechnicalGap(gap_id)
     except ValueError:
@@ -368,16 +375,38 @@ def _normalize_rag_context_for_runtime(ctx: dict[str, Any], default_gap_ids: lis
 
 def _rag_contexts_by_gap(contexts: list[Any], gap_ids: list[str]) -> dict[str, list[dict[str, Any]]]:
     normalized = [_as_state_dict(ctx) for ctx in contexts]
-    target_gap_types = {_gap_type_for_runtime_gap(gap_id) for gap_id in gap_ids}
-    grouped: dict[str, list[dict[str, Any]]] = {gap_type: [] for gap_type in target_gap_types}
+    selected = {gap_id: _gap_type_for_runtime_gap(gap_id) for gap_id in gap_ids}
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for gap_id, gap_type in selected.items():
+        grouped.setdefault(gap_id, [])
+        grouped.setdefault(gap_type, [])
+
     for ctx in normalized:
         if not ctx:
             continue
-        ctx_gap_types = {str(gap_type) for gap_type in ctx.get("gap_types", [])}
-        if not ctx_gap_types:
-            ctx_gap_types = target_gap_types
-        for gap_type in ctx_gap_types & target_gap_types:
-            grouped.setdefault(gap_type, []).append(ctx)
+        raw_labels = ctx.get("gap_types") or ctx.get("gap_type") or []
+        if isinstance(raw_labels, str):
+            raw_labels = [raw_labels]
+        labels = {str(label) for label in raw_labels if label}
+        normalized_labels = {_gap_type_for_runtime_gap(label) for label in labels}
+
+        matched = False
+        for gap_id, gap_type in selected.items():
+            if gap_id in labels or gap_type in labels or gap_type in normalized_labels:
+                for key in (gap_id, gap_type):
+                    bucket = grouped.setdefault(key, [])
+                    if ctx not in bucket:
+                        bucket.append(ctx)
+                matched = True
+
+        # Contexts without an explicit gap label were produced by a query over
+        # the selected gaps, so retain them for audit rather than silently drop.
+        if not labels and not matched:
+            for gap_id, gap_type in selected.items():
+                for key in (gap_id, gap_type):
+                    bucket = grouped.setdefault(key, [])
+                    if ctx not in bucket:
+                        bucket.append(ctx)
     return grouped
 
 
@@ -402,7 +431,15 @@ def _gap_results_for_mapping(state: ProductWorkflowState) -> list[Any]:
         except Exception:
             pass
     if parsed:
-        return parsed
+        selected_gap_ids = set(state.gap_ids)
+        selected_gap_types = {_gap_type_for_runtime_gap(gap_id) for gap_id in state.gap_ids}
+        selected = [
+            item
+            for item in parsed
+            if item.gap_id in selected_gap_ids or item.gap_type.value in selected_gap_types
+        ]
+        if selected:
+            return selected
 
     score = state.evidence_weighted_scores or state.scores or {}
     confidence = max(0.0, min(1.0, float(score.get("confidence", 0.5))))
@@ -648,7 +685,6 @@ def node_load_startup_or_candidate(state: ProductWorkflowState) -> NodeResult:
 def node_plan_search(state: ProductWorkflowState) -> NodeResult:
     startup_name = ""
     website_url = ""
-    known_source_urls: list[str] = []
     if state.startup_id:
         session = state.metadata_json.get("_session")
         if session:
@@ -659,11 +695,6 @@ def node_plan_search(state: ProductWorkflowState) -> NodeResult:
             if startup:
                 startup_name = startup.name
                 website_url = startup.website or ""
-                known_source_urls = [
-                    str(evidence.source_url)
-                    for evidence in (startup.evidence or [])
-                    if str(evidence.source_url or "").startswith(("http://", "https://"))
-                ]
     if not startup_name and state.metadata_json.get("startup_name"):
         startup_name = state.metadata_json["startup_name"]
 
@@ -676,17 +707,7 @@ def node_plan_search(state: ProductWorkflowState) -> NodeResult:
 
     from src.agents.search_planner import build_search_plan
 
-    plan = build_search_plan(
-        startup_name,
-        website_url=website_url,
-        known_source_urls=known_source_urls,
-    )
-    if not plan:
-        return NodeResult(
-            status=NodeStatus.DEGRADED,
-            degraded_reason="No entity-specific source URL available for collection",
-            state_updates={"search_plan": []},
-        )
+    plan = build_search_plan(startup_name, website_url=website_url)
     return NodeResult(
         status=NodeStatus.COMPLETED,
         state_updates={"search_plan": plan},
@@ -759,11 +780,17 @@ def node_collect_sources(state: ProductWorkflowState) -> NodeResult:
                         }
                     )
 
-    distinct_sources = {
-        str(ev.get("source_url") or ev.get("url") or ev.get("source_id") or ev.get("source") or "")
-        for ev in evidence_items
-        if ev.get("source_url") or ev.get("url") or ev.get("source_id") or ev.get("source")
-    }
+    from urllib.parse import urlparse
+
+    distinct_sources: set[str] = set()
+    for ev in evidence_items:
+        raw_source = str(ev.get("source_url") or ev.get("url") or ev.get("source_id") or ev.get("source") or "").strip()
+        if not raw_source:
+            continue
+        parsed = urlparse(raw_source)
+        identity = parsed.netloc.casefold().removeprefix("www.") if parsed.netloc else raw_source
+        if identity:
+            distinct_sources.add(identity)
     source_categories = {
         str(ev.get("source_type") or ev.get("category") or ev.get("source_category") or "")
         for ev in evidence_items
@@ -776,7 +803,10 @@ def node_collect_sources(state: ProductWorkflowState) -> NodeResult:
         in {"official_site", "official_website"}
         and bool(ev.get("is_official_source", True))
     )
-    attempted_count = max(1, len(state.search_plan))
+    # Measure the effective acquisition batch, including valid persisted
+    # evidence merged above. Counting only planned URLs makes one robots block
+    # look like a 100% failure even when several real sources are available.
+    attempted_count = max(1, len(evidence_items) + len(errors))
     error_rate = len(errors) / attempted_count
     product_mode = _is_product_mode()
     min_raw = int(os.getenv("SCRAPING_MIN_RAW_EVIDENCE", "2" if product_mode else "1"))
@@ -819,22 +849,22 @@ def node_collect_sources(state: ProductWorkflowState) -> NodeResult:
     if error_rate > max_error_rate:
         degraded_failures.append("maximum_collection_error_rate_exceeded")
 
-    if errors or critical_failures or degraded_failures:
+    if failures:
         msg_parts = []
         if errors:
             msg_parts.append(f"Source collection had errors: {'; '.join(errors[:5])}")
-        if critical_failures:
-            msg_parts.append(f"Critical source coverage gate failed: {', '.join(critical_failures)}")
-        if degraded_failures:
-            msg_parts.append(f"Source diversity warning: {', '.join(degraded_failures)}")
+        msg_parts.append(f"Source coverage gate failed: {', '.join(failures)}")
         msg = " | ".join(msg_parts)
         is_failed = _is_product_mode() and bool(critical_failures)
         return NodeResult(
-            status=NodeStatus.FAILED if is_failed else NodeStatus.DEGRADED,
-            error_message=msg if is_failed else None,
+            status=NodeStatus.FAILED if _is_product_mode() else NodeStatus.DEGRADED,
+            error_message=msg if _is_product_mode() else None,
             degraded_reason=msg,
             state_updates=updates,
         )
+    if errors:
+        collection_metrics["warnings"] = errors[:10]
+        updates["node_outputs"] = {**state.node_outputs, "collection_metrics": collection_metrics}
     return NodeResult(
         status=NodeStatus.COMPLETED,
         state_updates=updates,
@@ -960,6 +990,11 @@ def node_extract_profile(state: ProductWorkflowState) -> NodeResult:
         state_updates={
             "evidence_items": result.get("evidence_items", []),
             "startup_profile": result.get("startup_profile", {}),
+            "node_outputs": {
+                **state.node_outputs,
+                "claims": result.get("claims", []),
+                "extraction_metrics": result.get("extraction_metrics", {}),
+            },
         },
         degraded_reason="; ".join(errors[:5]) if errors else None,
     )
@@ -1077,6 +1112,9 @@ def node_diagnose_gaps(state: ProductWorkflowState) -> NodeResult:
     from src.diagnosis.gap_diagnosis_scoring import diagnose_gaps_quantitative
 
     accepted = state.node_outputs.get("validated_evidence", []) or state.evidence_items
+    claims = state.node_outputs.get("claims", [])
+    if not isinstance(claims, list):
+        claims = []
     evidence_validation = {
         "accepted_evidence_count": len(accepted),
         "raw_evidence_count": len(state.evidence_items),
@@ -1093,7 +1131,7 @@ def node_diagnose_gaps(state: ProductWorkflowState) -> NodeResult:
             evidence_items=state.evidence_items,
             accepted_evidence_items=accepted,
             rejected_evidence_items=[],
-            claims=[],
+            claims=claims,
             evidence_validation=evidence_validation,
             ai_native_score=float((state.scores or {}).get("probabilistic_score", (state.scores or {}).get("score", 0.0))),
             nvidia_fit_score=float((state.scores or {}).get("inception_fit", 0.0)),
@@ -1168,9 +1206,16 @@ def node_retrieve_nvidia_context(state: ProductWorkflowState) -> NodeResult:
         contexts: list[dict[str, Any]] = []
         raw_by_gap = result.get("rag_contexts_by_gap", {})
         if isinstance(raw_by_gap, dict):
-            for items in raw_by_gap.values():
-                if isinstance(items, list):
-                    contexts.extend([item for item in items if isinstance(item, dict)])
+            for gap_key, items in raw_by_gap.items():
+                if not isinstance(items, list):
+                    continue
+                for item in items:
+                    if not isinstance(item, dict):
+                        continue
+                    context = dict(item)
+                    if not context.get("gap_types") and not context.get("gap_type"):
+                        context["gap_types"] = [str(gap_key)]
+                    contexts.append(context)
         if not contexts:
             raw_contexts = result.get("rag_contexts", [])
             if isinstance(raw_contexts, list):
@@ -1453,6 +1498,11 @@ def node_match_activation_playbooks(state: ProductWorkflowState) -> NodeResult:
         return NodeResult(status=NodeStatus.SKIPPED, error_message="No analysis_run_id for playbook matching")
 
     try:
+        # Gap and mapping nodes commit their terminal snapshots and product
+        # records before this node runs. Expire identity-map relationships so
+        # ActivationPlaybookService reads the newly persisted gaps/mappings
+        # instead of collections cached when the AnalysisRun was created.
+        session.expire_all()
         act_service = ActivationPlaybookService(session)
         recs = act_service.generate_recommendations_for_run(analysis_run_id)
         if recs:
