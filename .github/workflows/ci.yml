@@ -10,20 +10,6 @@ permissions:
 jobs:
   product-governance:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16.4
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: startup_radar
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d startup_radar"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     env:
       PRODUCT_DB_URL: postgresql+psycopg://postgres:postgres@localhost:5432/startup_radar
       LANGGRAPH_POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/startup_radar
@@ -38,6 +24,18 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+
+      - name: Start runner PostgreSQL
+        run: |
+          sudo systemctl start postgresql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "ALTER USER postgres PASSWORD 'postgres';"
+          sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='startup_radar'" | grep -q 1 \
+            || sudo -u postgres createdb startup_radar
+          for i in $(seq 1 30); do
+            PGPASSWORD=postgres pg_isready -h localhost -U postgres -d startup_radar && exit 0
+            sleep 1
+          done
+          exit 1
 
       - name: Install Python package and mandatory product runtime
         run: |
