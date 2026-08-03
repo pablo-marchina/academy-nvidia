@@ -56,7 +56,9 @@ jobs:
           POSTGRES_PASSWORD: validation-password
           QDRANT_API_KEY: validation-qdrant-key
           INTERNAL_PROXY_KEY: validation-internal-proxy-key-1234567890
-        run: docker compose config --quiet
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
 
       - name: Build production frontend
         working-directory: frontend
