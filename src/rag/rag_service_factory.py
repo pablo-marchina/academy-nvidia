@@ -14,7 +14,12 @@ import math
 from typing import Any
 
 from src.diagnosis.nvidia_mapping import map_gap_to_technologies
-from src.diagnosis.schemas import GAP_TECH_MAP, GapDiagnosisResultItem, GapDiagnosisSummary
+from src.diagnosis.schemas import (
+    GAP_TECH_MAP,
+    GapDiagnosisResultItem,
+    GapDiagnosisStatus,
+    GapDiagnosisSummary,
+)
 from src.quality.decision_calibration_registry import (
     CalibrationStatus,
     get_project_decision_inventory,
@@ -660,13 +665,45 @@ class QdrantRagService:
         if self._validation_error:
             return _validation_error_result()
 
-        calibrated_gaps = [g for g in gap_items if g.production_allowed]
+        production_gaps = [g for g in gap_items if g.production_allowed]
+        investigative_mode = False
+        calibrated_gaps = production_gaps
+
+        # NVIDIA retrieval can help investigate a calibrated hypothesis even when
+        # company evidence is not yet sufficient for a production decision. Keep
+        # this mode explicit and force the RAG result to needs_review; downstream
+        # release validation must never treat it as decision-ready.
+        if not calibrated_gaps:
+            investigative_candidates = [
+                g
+                for g in gap_items
+                if g.status in {GapDiagnosisStatus.NEEDS_MORE_EVIDENCE, GapDiagnosisStatus.NEEDS_REVIEW}
+                and g.calibration_decision_ids
+                and g.severity_score > 0.0
+            ]
+            calibrated_gaps = sorted(
+                investigative_candidates,
+                key=lambda item: (item.severity_score, item.confidence_score),
+                reverse=True,
+            )[:3]
+            investigative_mode = bool(calibrated_gaps)
 
         if not calibrated_gaps:
+            diagnostics = [
+                {
+                    "gap_id": g.gap_id,
+                    "status": g.status.value,
+                    "severity": g.severity_score,
+                    "confidence": g.confidence_score,
+                    "production_allowed": g.production_allowed,
+                    "blockers": g.blockers,
+                }
+                for g in gap_items[:5]
+            ]
             return QdrantRagService._empty_result(
                 status="rag_blocked_no_calibrated_gaps",
                 rag_retrieval_status="blocked_no_calibrated_gaps",
-                blockers=["No calibrated gaps with production_allowed=True"],
+                blockers=[f"No retrieval-eligible calibrated gaps; diagnostics={diagnostics}"],
                 gap_count=len(gap_items),
                 calibrated_gap_count=0,
                 missing_rag_calibration_count=missing_rag_calibration_count,
@@ -744,9 +781,15 @@ class QdrantRagService:
             "reranker_required": True,
                 "lexical_corpus_chunk_count": len(self._chunk_index.chunks),
             "rag_blocker_count": 0,
+            "investigative_mode": investigative_mode,
+            "production_gap_count": len(production_gaps),
         }
 
-        if retrieved_context_count == 0:
+        if investigative_mode:
+            rag_retrieval_status = "needs_review"
+            top_status = "rag_needs_review"
+            review_required = True
+        elif retrieved_context_count == 0:
             rag_retrieval_status = "needs_review"
             top_status = "rag_needs_review"
             review_required = True
@@ -782,7 +825,11 @@ class QdrantRagService:
             },
             "status": top_status,
             "review_required": review_required,
-            "blockers": None,
+            "blockers": (
+                ["RAG contexts were produced for calibrated hypotheses only; company gap evidence still requires review."]
+                if investigative_mode
+                else None
+            ),
         }
 
 

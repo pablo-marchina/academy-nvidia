@@ -149,17 +149,94 @@ def _count_by_keyword(
 
 
 def _text_contains_any(text: str, keywords: list[str]) -> bool:
-    lower = text.lower()
-    return any(kw in lower for kw in keywords)
+    lower = text.casefold()
+    return any(kw.casefold() in lower for kw in keywords if kw)
+
+
+def _evidence_text(item: dict[str, Any]) -> str:
+    """Return the canonical natural-language evidence payload across schemas."""
+    return str(
+        item.get("text")
+        or item.get("quote_or_evidence")
+        or item.get("snippet")
+        or item.get("claim")
+        or ""
+    )
+
+
+_TECHNICAL_GAP_KEYWORD_ALIASES: dict[str, list[str]] = {
+    "external_api_dependency": [
+        "external api", "api externa", "third-party api", "api dependency",
+        "openai api", "anthropic api", "model api",
+    ],
+    "high_inference_cost": [
+        "inference cost", "custo de inferência", "custo de inferencia",
+        "serving cost", "cost per token", "gpu cost",
+    ],
+    "high_latency": [
+        "high latency", "latência", "latencia", "inference speed",
+        "real-time inference", "inferência em tempo real", "inferencia em tempo real",
+    ],
+    "agent_governance_gap": [
+        "ai agent", "agente de ia", "agentes de ia", "agentic",
+        "guardrail", "governance", "governança", "governanca",
+    ],
+    "observability_gap": [
+        "observability", "observabilidade", "monitoring", "monitoramento",
+        "telemetry", "telemetria", "tracing",
+    ],
+    "model_evaluation_gap": [
+        "model evaluation", "avaliação de modelo", "avaliacao de modelo",
+        "benchmark", "evaluation framework", "evals",
+    ],
+    "privacy_or_controlled_deployment_gap": [
+        "privacy", "privacidade", "on-premise", "on premises", "on-prem",
+        "controlled deployment", "data sovereignty", "soberania de dados",
+    ],
+    "slow_data_pipeline": [
+        "data pipeline", "pipeline de dados", "etl", "data processing",
+        "processamento de dados", "stream processing",
+    ],
+    "heavy_tabular_processing": [
+        "tabular", "dados tabulares", "dataframe", "data frame",
+        "analytics workload", "carga analítica", "carga analitica",
+    ],
+    "voice_need": ["voice", "speech", "voz", "audio", "áudio", "transcription"],
+    "simulation_need": [
+        "simulation", "simulação", "simulacao", "digital twin", "gêmeo digital", "gemeo digital",
+    ],
+    "computer_vision_need": [
+        "computer vision", "visão computacional", "visao computacional",
+        "image recognition", "image analysis", "análise de imagem", "analise de imagem",
+        "drone imagery", "medical imaging", "diagnóstico por imagem", "diagnostico por imagem",
+        "object detection", "plantas daninhas",
+    ],
+    "robotics_need": ["robotics", "robótica", "robotica", "robot", "autonomous machine"],
+    "healthcare_compliance_need": [
+        "healthcare", "saúde", "saude", "medical", "medicina", "patient", "paciente",
+        "clinical", "clínico", "clinico", "diagnóstico", "diagnostico",
+    ],
+    "ai_cybersecurity_need": [
+        "cybersecurity", "cibersegurança", "ciberseguranca", "threat detection",
+        "fraud detection", "security operations",
+    ],
+}
+
+
+def _technical_gap_keywords(technical_gaps: list[Any]) -> list[str]:
+    keywords: list[str] = []
+    for gap in technical_gaps:
+        value = str(getattr(gap, "value", gap))
+        candidates = [value, value.replace("_", " "), *_TECHNICAL_GAP_KEYWORD_ALIASES.get(value, [])]
+        for candidate in candidates:
+            normalized = candidate.strip().casefold()
+            if normalized and normalized not in keywords:
+                keywords.append(normalized)
+    return keywords
 
 
 def _extract_texts_from_items(items: list[dict[str, Any]]) -> list[str]:
-    texts: list[str] = []
-    for item in items:
-        text = item.get("text") or item.get("snippet") or item.get("claim") or ""
-        if text:
-            texts.append(str(text))
-    return texts
+    return [text for item in items if (text := _evidence_text(item))]
 
 
 def _compute_uncertainty(
@@ -191,7 +268,7 @@ def extract_gap_severity_features(
     all_texts = ev_texts + ac_texts + claim_texts
 
     related_tech_gaps = GAP_TECH_MAP.get(gap_type, [])
-    related_keywords = [t.value for t in related_tech_gaps]
+    related_keywords = _technical_gap_keywords(related_tech_gaps)
 
     missing_required_signal_count = 0
     for kw in related_keywords:
@@ -279,18 +356,18 @@ def extract_gap_confidence_features(
     ev_texts + ac_texts + claim_texts
 
     related_tech_gaps = GAP_TECH_MAP.get(gap_type, [])
-    related_keywords = [t.value for t in related_tech_gaps]
+    related_keywords = _technical_gap_keywords(related_tech_gaps)
 
     supporting_evidence_count = 0
     if related_keywords:
         for item in evidence_items:
-            text = str(item.get("text", "") or item.get("snippet", "") or item.get("claim", ""))
+            text = _evidence_text(item)
             if _text_contains_any(text, related_keywords):
                 supporting_evidence_count += 1
 
     source_ids: set[str] = set()
     for item in evidence_items:
-        sid = item.get("source_id") or item.get("url", "")
+        sid = item.get("source_url") or item.get("url") or item.get("source_id") or ""
         if sid:
             source_ids.add(sid)
     supporting_source_count = len(source_ids)
@@ -312,8 +389,8 @@ def extract_gap_confidence_features(
     cross_source_agreement_count = 0
     source_claims: dict[str, set[str]] = {}
     for item in evidence_items:
-        sid = item.get("source_id") or item.get("url", "")
-        claim = str(item.get("text", "") or item.get("snippet", "") or item.get("claim", ""))
+        sid = item.get("source_url") or item.get("url") or item.get("source_id") or ""
+        claim = _evidence_text(item)
         if sid and claim:
             if sid not in source_claims:
                 source_claims[sid] = set()
@@ -476,7 +553,7 @@ def _diagnose_single_gap(
         1
         for item in evidence_items
         if _text_contains_any(
-            str(item.get("text") or item.get("snippet") or item.get("claim") or ""),
+            _evidence_text(item),
             related_keywords,
         )
     ) if related_keywords else 0
@@ -484,7 +561,7 @@ def _diagnose_single_gap(
         supporting_evidence_count_raw / len(evidence_items) if evidence_items else 0.0
     )
     distinct_sources = {
-        str(item.get("source_id") or item.get("source_url") or item.get("url") or "").strip()
+        str(item.get("source_url") or item.get("url") or item.get("source_id") or "").strip()
         for item in evidence_items
         if item.get("source_id") or item.get("source_url") or item.get("url")
     }

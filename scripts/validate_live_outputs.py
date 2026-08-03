@@ -264,11 +264,27 @@ def _run_case(client: TestClient, case: dict[str, Any]) -> dict[str, Any]:
         and rec.get("supporting_evidence_ids")
     )
     completed = workflow.get("status") in {"completed", "degraded", "awaiting_review"}
+    node_outputs = state.get("node_outputs") or {}
+    rag_output = node_outputs.get("rag_output") if isinstance(node_outputs, dict) else {}
+    gap_output = node_outputs.get("gap_output") if isinstance(node_outputs, dict) else {}
+    if not isinstance(rag_output, dict):
+        rag_output = {}
+    if not isinstance(gap_output, dict):
+        gap_output = {}
+    rag_retrieval_status = str(rag_output.get("rag_retrieval_status") or "missing")
+    decision_ready = rag_retrieval_status == "passed"
     classification_ok = classification in case["expected_classifications"]
     recommendation_ok = bool(expected_match)
     provenance_ok = supporting_rec_count > 0
     output_complete = all(output_fields.values())
-    passed = completed and classification_ok and recommendation_ok and provenance_ok and output_complete
+    passed = (
+        completed
+        and decision_ready
+        and classification_ok
+        and recommendation_ok
+        and provenance_ok
+        and output_complete
+    )
 
     result.update(
         {
@@ -289,7 +305,26 @@ def _run_case(client: TestClient, case: dict[str, Any]) -> dict[str, Any]:
             "output_fields": output_fields,
             "output_complete": output_complete,
             "source_domains_in_runtime": _source_domains(state),
-            "collection_metrics": (state.get("node_outputs") or {}).get("collection_metrics", {}),
+            "collection_metrics": node_outputs.get("collection_metrics", {}),
+            "rag_retrieval_status": rag_retrieval_status,
+            "decision_ready": decision_ready,
+            "rag_metrics": rag_output.get("rag_retrieval_metrics", {}),
+            "gap_diagnosis_status": gap_output.get("gap_diagnosis_status"),
+            "gap_metrics": gap_output.get("metrics", {}),
+            "gap_diagnostics": [
+                {
+                    "gap_id": gap.get("gap_id"),
+                    "gap_type": gap.get("gap_type"),
+                    "status": gap.get("status"),
+                    "severity_score": gap.get("severity_score"),
+                    "confidence_score": gap.get("confidence_score"),
+                    "production_allowed": gap.get("production_allowed"),
+                    "thresholds": gap.get("thresholds", {}),
+                    "blockers": gap.get("blockers", []),
+                }
+                for gap in gap_output.get("gaps", [])
+                if isinstance(gap, dict)
+            ],
             "blockers": state.get("blockers") or [],
             "error_message": workflow.get("error_message"),
             "degraded_reason": workflow.get("degraded_reason"),
