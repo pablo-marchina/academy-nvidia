@@ -308,7 +308,7 @@ try {
     Write-Host "Report: $reportPath"
 }
 catch {
-    if (-not (Test-Path $reportPath) -or $KeepReportOnFailure) {
+    if ($true) {
         $failureReport = [ordered]@{
             status = "failed"
             started_at = $startedAt.ToString("o")
@@ -323,4 +323,5 @@ catch {
     Write-Error $_
     exit 1
 }
+
 
