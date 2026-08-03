@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -111,6 +111,41 @@ def list_workflow_node_runs(
             retry_count=nr.retry_count,
             created_at=nr.created_at,
         )
+        for nr in node_runs
+    ]
+
+
+@router.get(
+    "/workflows/product-runs/{workflow_id}/node-snapshots",
+    response_model=list[dict[str, Any]],
+)
+def list_workflow_node_snapshots(
+    workflow_id: str,
+    session: DbSession,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+) -> list[dict[str, Any]]:
+    """Expose persisted node snapshots for audit and failed-run reconstruction."""
+    repo = WorkflowRepository(session)
+    run = repo.get_workflow_run(workflow_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail=f"Workflow run not found: {workflow_id}")
+    node_runs = repo.list_node_runs(workflow_id, offset=offset, limit=limit)
+    return [
+        {
+            "id": nr.id,
+            "workflow_run_id": nr.workflow_run_id,
+            "node_name": nr.node_name,
+            "status": nr.status,
+            "started_at": nr.started_at,
+            "completed_at": nr.completed_at,
+            "error_message": nr.error_message,
+            "retry_count": nr.retry_count,
+            "input_snapshot": nr.input_snapshot_json or {},
+            "output_snapshot": nr.output_snapshot_json or {},
+            "metadata": nr.metadata_json or {},
+            "created_at": nr.created_at,
+        }
         for nr in node_runs
     ]
 
