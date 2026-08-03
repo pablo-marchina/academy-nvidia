@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from src.diagnosis.gap_diagnosis_scoring import diagnose_gaps_quantitative
-from src.diagnosis.schemas import GapType
+from src.diagnosis.schemas import GapDiagnosisStatus, GapType
 
 
 def test_natural_quote_evidence_and_source_urls_make_relevant_gap_retrieval_eligible() -> None:
@@ -76,6 +76,51 @@ def test_only_matching_evidence_ids_are_attached_to_a_gap() -> None:
     assert cv_gap.thresholds["observed_evidence_coverage"] == 0.3333
     assert cv_gap.production_allowed is True
     assert cv_gap.supporting_evidence_ids == ["ev-cv"]
+
+
+def test_high_severity_detected_gap_requires_review_without_failing_diagnosis() -> None:
+    evidence = [
+        {
+            "evidence_id": f"ev-{idx}",
+            "source_url": f"https://vision{idx}.example/case",
+            "quote_or_evidence": "Computer vision identifies weeds in drone imagery.",
+            "source_quality_score": 0.5,
+            "evidence_confidence_score": 0.2,
+            "confidence": "low",
+        }
+        for idx in range(3)
+    ]
+    rejected = [
+        {
+            "evidence_id": f"rejected-{idx}",
+            "source_url": f"https://rejected{idx}.example/case",
+            "quote_or_evidence": "Rejected weak evidence.",
+        }
+        for idx in range(5)
+    ]
+    claims = [
+        {
+            "claim_id": f"claim-{idx}",
+            "claim_text": "Unsupported non-critical claim",
+            "support_status": "unsupported",
+            "is_critical": False,
+        }
+        for idx in range(5)
+    ]
+
+    summary = diagnose_gaps_quantitative(
+        run_id="detected-gap-status-test",
+        evidence_items=evidence,
+        accepted_evidence_items=evidence,
+        rejected_evidence_items=rejected,
+        claims=claims,
+    )
+
+    cv_gap = next(g for g in summary.gaps if g.gap_type == GapType.COMPUTER_VISION_GAP)
+    assert cv_gap.severity_score > cv_gap.thresholds["production_threshold"]
+    assert cv_gap.status == GapDiagnosisStatus.NEEDS_REVIEW
+    assert cv_gap.production_allowed is True
+    assert summary.gap_diagnosis_status != GapDiagnosisStatus.FAILED
 
 
 def test_unrelated_gap_is_not_created_from_silence() -> None:
