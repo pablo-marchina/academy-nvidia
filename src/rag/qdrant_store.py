@@ -336,7 +336,7 @@ class QdrantStore(VectorStore):
 def _entry_to_point(entry: VectorEntry, models_module: Any) -> Any:
     """Convert a ``VectorEntry`` to a Qdrant ``PointStruct``."""
     now = datetime.now(UTC).isoformat()
-    chunk_hash = entry.chunk_hash or hashlib.md5(entry.content.encode("utf-8")).hexdigest()
+    chunk_hash = entry.chunk_hash or hashlib.md5(entry.content.encode("utf-8"), usedforsecurity=False).hexdigest()
 
     return models_module.PointStruct(
         id=_point_id_for_chunk(entry.chunk_id),

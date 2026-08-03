@@ -14,9 +14,6 @@ class WorkflowRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    # ------------------------------------------------------------------
-    # WorkflowRun
-    # ------------------------------------------------------------------
     def create_workflow_run(
         self,
         *,
@@ -43,6 +40,17 @@ class WorkflowRepository:
         stmt = select(WorkflowRun).where(WorkflowRun.id == workflow_id)
         return self.session.scalar(stmt)
 
+    def attach_analysis_run(self, workflow_id: str, analysis_run_id: str) -> WorkflowRun | None:
+        run = self.get_workflow_run(workflow_id)
+        if run is None:
+            return None
+        run.analysis_run_id = analysis_run_id
+        state = dict(run.state_json or {})
+        state["analysis_run_id"] = analysis_run_id
+        run.state_json = state
+        self.session.flush()
+        return run
+
     def list_workflow_runs(
         self,
         *,
@@ -57,6 +65,24 @@ class WorkflowRepository:
         if startup_id:
             stmt = stmt.where(WorkflowRun.startup_id == startup_id)
         return list(self.session.scalars(stmt.offset(offset).limit(limit)))
+
+    def claim_next_queued_workflow(self) -> WorkflowRun | None:
+        stmt = (
+            select(WorkflowRun)
+            .where(WorkflowRun.status == WorkflowStatus.QUEUED)
+            .order_by(WorkflowRun.created_at.asc())
+            .limit(1)
+        )
+        bind = self.session.get_bind()
+        if bind.dialect.name.startswith("postgresql"):
+            stmt = stmt.with_for_update(skip_locked=True)
+        run = self.session.scalar(stmt)
+        if run is None:
+            return None
+        run.status = WorkflowStatus.RUNNING
+        run.started_at = run.started_at or datetime.now(UTC)
+        self.session.flush()
+        return run
 
     def get_workflow_for_analysis_run(self, analysis_run_id: str) -> WorkflowRun | None:
         stmt = select(WorkflowRun).where(WorkflowRun.analysis_run_id == analysis_run_id)
@@ -92,11 +118,7 @@ class WorkflowRepository:
         return run
 
     def complete_workflow(self, workflow_id: str, *, state_json: dict[str, Any]) -> WorkflowRun | None:
-        return self.update_workflow_status(
-            workflow_id,
-            status=WorkflowStatus.COMPLETED,
-            state_json=state_json,
-        )
+        return self.update_workflow_status(workflow_id, status=WorkflowStatus.COMPLETED, state_json=state_json)
 
     def fail_workflow(
         self,
@@ -126,9 +148,6 @@ class WorkflowRepository:
             state_json=state_json,
         )
 
-    # ------------------------------------------------------------------
-    # WorkflowNodeRun
-    # ------------------------------------------------------------------
     def create_node_run(
         self,
         *,

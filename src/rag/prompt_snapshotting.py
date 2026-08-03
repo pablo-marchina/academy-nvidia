@@ -27,7 +27,7 @@ class PromptSnapshotting:
 
         import hashlib
 
-        snapshot = hashlib.md5("".join(c.content[:50] for c in contexts).encode()).hexdigest()[:12]
+        snapshot = hashlib.md5("".join(c.content[:50] for c in contexts).encode(), usedforsecurity=False).hexdigest()[:12]
 
         self._snapshots.append(snapshot)
 

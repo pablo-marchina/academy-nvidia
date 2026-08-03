@@ -276,23 +276,22 @@ def extract_mapping_features(
     ]
     rag_relevance_mean = _mean(rag_relevance_scores)
 
-    tech_keywords = [technology.lower(), technology.lower().replace("nvidia ", "")]
+    supporting_evidence_ids = set(gap_result.supporting_evidence_ids if gap_result else [])
     ev_for_tech = [
         item
         for item in evidence_items
-        if _text_contains_any(
-            str(item.get("text", "") or item.get("snippet", "") or item.get("claim", "")),
-            tech_keywords,
-        )
+        if str(item.get("id") or item.get("evidence_id") or "") in supporting_evidence_ids
     ]
     evidence_count = len(ev_for_tech)
 
     ev_confidences: list[float] = []
     ev_qualities: list[float] = []
     for item in ev_for_tech:
-        ec = item.get("evidence_confidence_score")
+        ec = item.get("evidence_confidence_score", item.get("extraction_confidence"))
         if isinstance(ec, (int, float)):
             ev_confidences.append(float(ec))
+        elif isinstance(item.get("confidence"), str):
+            ev_confidences.append({"high": 1.0, "medium": 0.6, "low": 0.3}.get(str(item["confidence"]).casefold(), 0.0))
         sq = item.get("source_quality_score")
         if isinstance(sq, (int, float)):
             ev_qualities.append(float(sq))
@@ -340,7 +339,7 @@ def extract_mapping_features(
         if sid:
             source_ids.add(sid)
     for item in ev_for_tech:
-        sid = item.get("source_id") or item.get("url", "")
+        sid = item.get("source_id") or item.get("source_url") or item.get("url", "")
         if sid:
             source_ids.add(sid)
     cross_source_count = min(1.0, len(source_ids) / 5.0)
@@ -457,6 +456,8 @@ def build_nvidia_technology_mappings(
     for gap_type_str, candidate_techs in GAP_TECHNOLOGY_CANDIDATES.items():
         gap_result = gap_result_by_type.get(gap_type_str)
         rag_ctxs = rag_contexts_by_gap.get(gap_type_str, [])
+        if gap_result is None or not gap_result.production_allowed or not gap_result.supporting_evidence_ids:
+            continue
 
         for tech in candidate_techs:
             mapping_index += 1
@@ -566,15 +567,7 @@ def build_nvidia_technology_mappings(
                 if cid and _context_matches_technology(ctx, tech):
                     rag_ctx_ids.append(str(cid))
 
-            ev_ids: list[str] = []
-            tech_keywords_search = [tech.lower(), tech.replace("nvidia ", "").strip().lower()]
-            for item in evidence_items:
-                eid = item.get("id") or item.get("evidence_id") or ""
-                if eid and _text_contains_any(
-                    str(item.get("text", "") or item.get("snippet", "") or item.get("claim", "")),
-                    tech_keywords_search,
-                ):
-                    ev_ids.append(str(eid))
+            ev_ids = list(dict.fromkeys(str(eid) for eid in gap_result.supporting_evidence_ids if eid))
 
             # ── Determine status ────────────────────────────────────────
             status: NvidiaMappingStatus

@@ -20,7 +20,9 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import logging
+import os
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -30,20 +32,28 @@ except ImportError:  # pragma: no cover - fallback for minimal clean environment
     class _MemoryCache:
         def __init__(self, *args, **kwargs):
             self._data = {}
+
         def get(self, key):
             return self._data.get(key)
+
         def set(self, key, value, expire=None):
             self._data[key] = value
+
         def delete(self, key):
             self._data.pop(key, None)
+
         def clear(self):
             self._data.clear()
+
         def volume(self):
             return sum(len(str(v)) for v in self._data.values())
+
         def close(self):
             pass
+
         def __len__(self):
             return len(self._data)
+
     class diskcache:  # type: ignore[no-redef]
         Cache = _MemoryCache
 
@@ -51,7 +61,8 @@ from src.scraping.rate_limit_policy import list_policies_requiring_api_key
 
 logger = logging.getLogger(__name__)
 
-_CACHE_DIR = ".cache/scraping"
+_PRODUCT_DATA_DIR = Path(os.getenv("PRODUCT_DATA_DIR", "data/product"))
+_CACHE_DIR = Path(os.getenv("SCRAPING_CACHE_DIR", str(_PRODUCT_DATA_DIR / "scraping-cache")))
 _DEFAULT_SIZE_LIMIT = 2**30  # 1 GiB
 
 _FRESHNESS_TTL: dict[str, timedelta] = {
@@ -87,8 +98,9 @@ _SCRAPE_CACHE: diskcache.Cache | None = None
 def _get_cache() -> diskcache.Cache:
     global _SCRAPE_CACHE
     if _SCRAPE_CACHE is None:
+        _CACHE_DIR.mkdir(parents=True, exist_ok=True)
         _SCRAPE_CACHE = diskcache.Cache(
-            directory=_CACHE_DIR,
+            directory=str(_CACHE_DIR),
             size_limit=_DEFAULT_SIZE_LIMIT,
             eviction_policy="least-recently-used",
         )
@@ -223,5 +235,5 @@ class _ScopedCache:
             "size": self._cache.volume(),
             "size_limit": _DEFAULT_SIZE_LIMIT,
             "count": len(self._cache),
-            "directory": _CACHE_DIR,
+            "directory": str(_CACHE_DIR),
         }

@@ -1,32 +1,25 @@
-"""Build adaptive, governed search plans for a given startup name.
+"""Build entity-specific, governed search plans for a startup.
 
-The planner intentionally separates real startup-owned sources from
-third-party ecosystem/directories. Directory pages must never satisfy an
-"official source" gate: they are useful discovery/evidence sources, but they
-are not controlled by the startup.
+The previous planner guessed several domains and attached every configured
+startup directory to every company. That multiplied latency and allowed pages
+about unrelated companies to contaminate the profile. Plans are now built from
+known entity URLs first; a search API is only a discovery mechanism when it is
+actually configured.
 """
 
 from __future__ import annotations
 
 import os
-import re
-from typing import Any
+from typing import Any, Iterable
 from urllib.parse import quote_plus, urlparse
 
 
-def _normalize_startup_name(name: str) -> str:
-    s = name.strip().lower()
-    s = re.sub(r"[^a-z0-9\s-]", "", s)
-    s = re.sub(r"\s+", "-", s)
-    return s
-
-
 def _is_allowed_source(url: str) -> bool:
-    parsed = urlparse(url)
-    if parsed.scheme not in {"http", "https"}:
+    parsed = urlparse(str(url or "").strip())
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         return False
-    blocked = ("login", "signin", "paywall")
-    return not any(term in parsed.path.lower() for term in blocked)
+    blocked = ("/login", "/signin", "/sign-in", "/paywall")
+    return not any(term in parsed.path.casefold() for term in blocked)
 
 
 _NEWS_HOSTS = (
@@ -39,7 +32,6 @@ _NEWS_HOSTS = (
     "mobiletime.com.br",
     "meioemensagem.com.br",
 )
-
 _DIRECTORY_HOSTS = (
     "distrito.me",
     "startse.com",
@@ -60,79 +52,107 @@ _DIRECTORY_HOSTS = (
 )
 
 
-def _classify_source(url: str, *, source_type_hint: str | None = None, is_probable_owned_domain: bool = False) -> str:
-    host = urlparse(url).netloc.lower().replace("www.", "")
-    path = urlparse(url).path.lower()
-    hint = (source_type_hint or "").casefold()
+def _host(url: str) -> str:
+    return urlparse(url).netloc.casefold().removeprefix("www.")
 
-    if hint in {"news"} or any(n in host for n in _NEWS_HOSTS):
+
+def _same_host(left: str, right: str) -> bool:
+    left_host = _host(left)
+    right_host = _host(right)
+    return bool(left_host and right_host and left_host == right_host)
+
+
+def _classify_source(
+    url: str,
+    *,
+    website_url: str = "",
+    source_type_hint: str | None = None,
+) -> str:
+    host = _host(url)
+    path = urlparse(url).path.casefold()
+    hint = (source_type_hint or "").casefold()
+    if website_url and _same_host(url, website_url):
+        if "careers" in path or "jobs" in path or "vagas" in path:
+            return "job_post"
+        if "blog" in path or "engineering" in path:
+            return "blog"
+        return "official_site"
+    if hint in {"official_site", "official_website"}:
+        return "official_site"
+    if hint == "news" or any(value in host for value in _NEWS_HOSTS):
         return "news"
     if "linkedin.com" in host:
         return "founder_profile"
-    if "jobs" in host or "careers" in path or "vagas" in path:
-        return "job_post"
-    if "blog" in host or "blog" in path or "engineering" in path:
-        return "blog"
-    if hint in {"public_directory", "startup_program", "accelerator", "vc_portfolio", "event_page", "manual_seed"}:
+    if hint in {"blog", "job_post", "founder_profile", "search_api"}:
+        return hint
+    if hint in {"public_directory", "startup_program", "accelerator", "vc_portfolio", "event_page", "manual_seed", "directory"}:
         return "directory"
-    if any(d in host for d in _DIRECTORY_HOSTS):
+    if any(value in host for value in _DIRECTORY_HOSTS):
         return "directory"
-    if hint == "search_api":
-        return "search_api"
-    return "official_site" if is_probable_owned_domain and host else "directory"
+    return "news"
 
 
-def build_search_plan(startup_name: str) -> list[dict[str, Any]]:
-    from src.discovery.source_registry import list_enabled_sources
+def build_search_plan(
+    startup_name: str,
+    *,
+    website_url: str = "",
+    known_source_urls: Iterable[str] | None = None,
+    max_sources: int | None = None,
+) -> list[dict[str, Any]]:
+    """Return a compact plan composed only of entity-specific URLs.
+
+    ``known_source_urls`` should come from persisted discovery evidence. Global
+    directory home pages are intentionally excluded because they are not
+    company-specific evidence.
+    """
     from src.sourcing.adaptive_source_planner import SourceCandidate, source_decision_trace
+
+    source_limit = max_sources
+    if source_limit is None:
+        source_limit = int(os.getenv("RADAR_ANALYSIS_MAX_SOURCES", "5"))
+    source_limit = max(1, min(int(source_limit), 12))
 
     plan: list[dict[str, Any]] = []
     seen: set[str] = set()
     source_type_counts: dict[str, int] = {}
-    normalized = _normalize_startup_name(startup_name)
 
-    def _source_metrics(url: str, source_type: str) -> dict[str, float]:
-        authority_by_type = {
+    def add(url: str, reason: str, *, source_type_hint: str | None = None) -> None:
+        normalized_url = str(url or "").strip()
+        if not normalized_url or normalized_url in seen or not _is_allowed_source(normalized_url):
+            return
+        seen.add(normalized_url)
+        source_type = _classify_source(
+            normalized_url,
+            website_url=website_url,
+            source_type_hint=source_type_hint,
+        )
+        prior_count = source_type_counts.get(source_type, 0)
+        authority = {
             "official_site": 0.98,
             "news": 0.82,
-            "founder_profile": 0.72,
+            "founder_profile": 0.70,
             "job_post": 0.68,
             "blog": 0.66,
             "directory": 0.54,
             "search_api": 0.50,
-        }
-        prior_count = source_type_counts.get(source_type, 0)
-        host = url.lower()
-        compliance_risk = 0.10
-        if "linkedin.com" in host:
-            compliance_risk = 0.25
-        freshness = 0.78 if source_type in {"news", "job_post", "blog", "search_api"} else 0.58
-        independence = 0.85 if source_type in {"news", "directory"} else 0.35 if source_type == "official_site" else 0.55
-        return {
-            "authority": authority_by_type.get(source_type, 0.50),
-            "freshness": freshness,
-            "independence": independence,
-            "known_gap_coverage": min(1.0, prior_count / 3.0),
-            "expected_category_coverage": 1.0 / float(prior_count + 1),
-            "marginal_new_evidence": 1.0 / float(prior_count + 1),
-            "estimated_cost": 0.0,
-            "latency_ms": 750.0 if source_type == "official_site" else 950.0,
-            "compliance_risk": compliance_risk,
-        }
-
-    def _add(url: str, reason: str, *, source_type_hint: str | None = None, is_probable_owned_domain: bool = False) -> None:
-        if url in seen:
-            return
-        seen.add(url)
-        if not _is_allowed_source(url):
-            return
-        source_type = _classify_source(url, source_type_hint=source_type_hint, is_probable_owned_domain=is_probable_owned_domain)
-        metrics = _source_metrics(url, source_type)
-        candidate = SourceCandidate(source_name=reason, source_url=url, **metrics)
+        }.get(source_type, 0.50)
+        candidate = SourceCandidate(
+            source_name=reason,
+            source_url=normalized_url,
+            authority=authority,
+            freshness=0.78 if source_type in {"news", "job_post", "blog", "search_api"} else 0.62,
+            independence=0.85 if source_type in {"news", "directory"} else 0.35 if source_type == "official_site" else 0.55,
+            known_gap_coverage=min(1.0, prior_count / 2.0),
+            expected_category_coverage=1.0 / float(prior_count + 1),
+            marginal_new_evidence=1.0 / float(prior_count + 1),
+            estimated_cost=0.0,
+            latency_ms=650.0 if source_type == "official_site" else 900.0,
+            compliance_risk=0.25 if "linkedin.com" in normalized_url.casefold() else 0.10,
+        )
         trace = source_decision_trace(candidate)
         plan.append(
             {
-                "url": url,
+                "url": normalized_url,
                 "source_type": source_type,
                 "is_official_source": source_type == "official_site",
                 "reason": reason,
@@ -144,34 +164,26 @@ def build_search_plan(startup_name: str) -> list[dict[str, Any]]:
                 "decision_formula": trace["formula"],
             }
         )
-        source_type_counts[source_type] = source_type_counts.get(source_type, 0) + 1
+        source_type_counts[source_type] = prior_count + 1
 
-    for source in list_enabled_sources(api_key_available=bool(os.getenv("SERPAPI_API_KEY"))):
-        if source.base_url:
-            _add(
-                source.base_url,
-                f"Configured source: {source.name}",
-                source_type_hint=getattr(source.source_type, "value", str(source.source_type)),
-            )
+    if website_url:
+        add(website_url, f"{startup_name} official website", source_type_hint="official_site")
 
-    # Search APIs are candidate discovery mechanisms, not evidence sources. They
-    # are included only when configured; raw search result URLs must be collected
-    # and validated before becoming evidence.
-    if os.getenv("SERPAPI_API_KEY"):
-        _add(
-            f"https://serpapi.com/search.json?q={quote_plus(startup_name + ' startup AI Brasil')}",
-            "Configured Search API: startup + AI + Brazil",
+    for url in known_source_urls or ():
+        add(str(url), "Persisted entity-specific evidence URL")
+
+    if os.getenv("SERPAPI_API_KEY") and startup_name:
+        add(
+            "https://serpapi.com/search.json?q=" + quote_plus(startup_name + " startup AI Brasil"),
+            "Configured search API for exact company name",
             source_type_hint="search_api",
         )
 
-    direct_urls = [
-        (f"https://br.linkedin.com/company/{normalized}", "LinkedIn company page", False),
-        (f"https://{normalized}.com.br", "Probable startup-owned Brazilian domain", True),
-        (f"https://www.{normalized}.com.br", "Probable startup-owned Brazilian domain (www)", True),
-        (f"https://{normalized}.com", "Probable startup-owned .com domain", True),
-        (f"https://www.{normalized}.com", "Probable startup-owned .com domain (www)", True),
-    ]
-    for url, reason, owned in direct_urls:
-        _add(url, reason, is_probable_owned_domain=owned)
-
-    return sorted(plan, key=lambda item: float(item["marginal_utility"]), reverse=True)
+    plan.sort(
+        key=lambda item: (
+            1 if item["is_official_source"] else 0,
+            float(item["marginal_utility"]),
+        ),
+        reverse=True,
+    )
+    return plan[:source_limit]

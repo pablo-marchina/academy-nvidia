@@ -29,27 +29,27 @@ ProductReady = Annotated[None, Depends(ReadinessGate())]
 @router.post(
     "/workflows/product-runs",
     response_model=ProductWorkflowRunRead,
-    status_code=201,
+    status_code=status.HTTP_202_ACCEPTED,
 )
 def create_product_workflow_run(
     body: ProductWorkflowRunCreate,
     _gate: ProductReady,
     session: DbSession,
 ) -> ProductWorkflowRunRead:
+    """Persist a durable workflow and return immediately for polling."""
     if body.use_rag is False:
         raise HTTPException(status_code=400, detail="Product pipeline requires RAG; use_rag=false is not allowed.")
     svc = WorkflowOrchestrationService(session)
-    state = svc.create_and_run_workflow(
-        startup_id=body.startup_id,
-        discovery_candidate_id=body.discovery_candidate_id,
-        analysis_run_id=body.analysis_run_id,
-        use_rag=body.use_rag,
-    )
-    run = svc.repo.get_workflow_run(state.workflow_id)
-    if run is None:
-        raise HTTPException(status_code=500, detail="Workflow run not found after creation")
-    node_runs = svc.repo.list_node_runs(state.workflow_id)
-    return _workflow_run_read(run, node_runs)
+    try:
+        run = svc.enqueue_workflow(
+            startup_id=body.startup_id,
+            discovery_candidate_id=body.discovery_candidate_id,
+            analysis_run_id=body.analysis_run_id,
+            use_rag=body.use_rag,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+    return _workflow_run_read(run, [])
 
 
 @router.get(
@@ -190,12 +190,7 @@ def resume_workflow(
     body: WorkflowReviewDecisionCreate,
     session: DbSession,
 ) -> ProductWorkflowRunRead:
-    """Resume a workflow that is awaiting human review.
-
-    Persists a ReviewDecision as an audit record (if the workflow is
-    linked to an analysis run), then resumes the LangGraph workflow
-    from its interrupt point via Command(resume=...).
-    """
+    """Resume a workflow that is awaiting human review."""
     repo = WorkflowRepository(session)
     run = repo.get_workflow_run(workflow_id)
     if run is None:

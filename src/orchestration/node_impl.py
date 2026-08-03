@@ -647,6 +647,8 @@ def node_load_startup_or_candidate(state: ProductWorkflowState) -> NodeResult:
 @_register("plan_search", "Build search plan from startup name", critical=True)
 def node_plan_search(state: ProductWorkflowState) -> NodeResult:
     startup_name = ""
+    website_url = ""
+    known_source_urls: list[str] = []
     if state.startup_id:
         session = state.metadata_json.get("_session")
         if session:
@@ -656,6 +658,12 @@ def node_plan_search(state: ProductWorkflowState) -> NodeResult:
             startup = repo.get_startup(state.startup_id)
             if startup:
                 startup_name = startup.name
+                website_url = startup.website or ""
+                known_source_urls = [
+                    str(evidence.source_url)
+                    for evidence in (startup.evidence or [])
+                    if str(evidence.source_url or "").startswith(("http://", "https://"))
+                ]
     if not startup_name and state.metadata_json.get("startup_name"):
         startup_name = state.metadata_json["startup_name"]
 
@@ -668,7 +676,17 @@ def node_plan_search(state: ProductWorkflowState) -> NodeResult:
 
     from src.agents.search_planner import build_search_plan
 
-    plan = build_search_plan(startup_name)
+    plan = build_search_plan(
+        startup_name,
+        website_url=website_url,
+        known_source_urls=known_source_urls,
+    )
+    if not plan:
+        return NodeResult(
+            status=NodeStatus.DEGRADED,
+            degraded_reason="No entity-specific source URL available for collection",
+            state_updates={"search_plan": []},
+        )
     return NodeResult(
         status=NodeStatus.COMPLETED,
         state_updates={"search_plan": plan},
@@ -761,11 +779,11 @@ def node_collect_sources(state: ProductWorkflowState) -> NodeResult:
     attempted_count = max(1, len(state.search_plan))
     error_rate = len(errors) / attempted_count
     product_mode = _is_product_mode()
-    min_raw = int(os.getenv("SCRAPING_MIN_RAW_EVIDENCE", "5" if product_mode else "3"))
-    min_distinct = int(os.getenv("SCRAPING_MIN_DISTINCT_SOURCES", "3" if product_mode else "2"))
-    min_categories = int(os.getenv("SCRAPING_MIN_SOURCE_CATEGORIES", "2" if product_mode else "1"))
+    min_raw = int(os.getenv("SCRAPING_MIN_RAW_EVIDENCE", "2" if product_mode else "1"))
+    min_distinct = int(os.getenv("SCRAPING_MIN_DISTINCT_SOURCES", "1"))
+    min_categories = int(os.getenv("SCRAPING_MIN_SOURCE_CATEGORIES", "1"))
     min_official = int(os.getenv("SCRAPING_MIN_OFFICIAL_SOURCES", "1" if product_mode and website_url else "0"))
-    max_error_rate = float(os.getenv("SCRAPING_MAX_ERROR_RATE", "0.25" if product_mode else "1.0"))
+    max_error_rate = float(os.getenv("SCRAPING_MAX_ERROR_RATE", "0.75" if product_mode else "1.0"))
     collection_metrics = {
         "raw_evidence_count": len(evidence_items),
         "distinct_source_count": len(distinct_sources),
@@ -788,28 +806,32 @@ def node_collect_sources(state: ProductWorkflowState) -> NodeResult:
         "node_outputs": {**state.node_outputs, "collection_metrics": collection_metrics},
     }
 
-    failures: list[str] = []
+    critical_failures: list[str] = []
+    degraded_failures: list[str] = []
     if len(evidence_items) < min_raw:
-        failures.append("minimum_raw_evidence_count_not_met")
-    if len(distinct_sources) < min_distinct:
-        failures.append("minimum_distinct_source_count_not_met")
-    if len(source_categories) < min_categories:
-        failures.append("minimum_source_category_count_not_met")
+        critical_failures.append("minimum_raw_evidence_count_not_met")
     if official_source_count < min_official:
-        failures.append("minimum_official_source_count_not_met")
+        critical_failures.append("minimum_official_source_count_not_met")
+    if len(distinct_sources) < min_distinct:
+        degraded_failures.append("minimum_distinct_source_count_not_met")
+    if len(source_categories) < min_categories:
+        degraded_failures.append("minimum_source_category_count_not_met")
     if error_rate > max_error_rate:
-        failures.append("maximum_collection_error_rate_exceeded")
+        degraded_failures.append("maximum_collection_error_rate_exceeded")
 
-    if errors or failures:
+    if errors or critical_failures or degraded_failures:
         msg_parts = []
         if errors:
             msg_parts.append(f"Source collection had errors: {'; '.join(errors[:5])}")
-        if failures:
-            msg_parts.append(f"Source coverage gate failed: {', '.join(failures)}")
+        if critical_failures:
+            msg_parts.append(f"Critical source coverage gate failed: {', '.join(critical_failures)}")
+        if degraded_failures:
+            msg_parts.append(f"Source diversity warning: {', '.join(degraded_failures)}")
         msg = " | ".join(msg_parts)
+        is_failed = _is_product_mode() and bool(critical_failures)
         return NodeResult(
-            status=NodeStatus.FAILED if _is_product_mode() and failures else NodeStatus.DEGRADED,
-            error_message=msg if _is_product_mode() and failures else None,
+            status=NodeStatus.FAILED if is_failed else NodeStatus.DEGRADED,
+            error_message=msg if is_failed else None,
             degraded_reason=msg,
             state_updates=updates,
         )

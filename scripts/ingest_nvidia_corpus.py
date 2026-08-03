@@ -128,12 +128,12 @@ def load_sources_raw() -> dict[str, Any]:
 
 def compute_content_hash(raw_text: str) -> str:
     """Deterministic MD5 hash of the full document raw text."""
-    return hashlib.md5(raw_text.encode("utf-8")).hexdigest()
+    return hashlib.md5(raw_text.encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
 def compute_chunk_hash(content: str) -> str:
     """Deterministic MD5 hash of a single chunk's content."""
-    return hashlib.md5(content.encode("utf-8")).hexdigest()
+    return hashlib.md5(content.encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
 # ---------------------------------------------------------------------------

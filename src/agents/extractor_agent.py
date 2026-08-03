@@ -1,20 +1,23 @@
 """Deterministic bridge from raw_evidence_candidates to structured evidence/claims/profile.
 
-No LLM, no Qdrant, no scraping, no internet.  Uses the real rule-based
+No LLM, no Qdrant, no scraping, no internet. Uses the real rule-based
 ``src.extraction.extractor.extract_profile`` under the hood.
 """
 
 from __future__ import annotations
 
 import hashlib
+import re
+import unicodedata
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from src.extraction.schemas import Evidence, SourceType, StartupProfile
+from src.extraction.schemas import ConfidenceLevel, Evidence, SourceType, StartupProfile
 from src.scraping.source_policy import source_quality_score
 
 _EXTRACTION_METHOD = "deterministic_pattern"
+_SIGNAL_SEPARATOR_RE = re.compile(r"[^a-z0-9]+")
 
 _NVIDIA_RELEVANCE_KEYWORDS: list[str] = [
     "nvidia",
@@ -39,6 +42,19 @@ _NVIDIA_RELEVANCE_KEYWORDS: list[str] = [
 
 def _content_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def _normalize_signal_text(text: str) -> str:
+    """Normalize internal classifier text while preserving raw citation text.
+
+    Gap and workload taxonomies use canonical ASCII phrases. Real sources use
+    punctuation, hyphens, and Portuguese diacritics (for example,
+    ``computer-vision`` and ``visão computacional``). Normalizing only the
+    classifier field makes these equivalent without altering quotes or source
+    excerpts shown to users.
+    """
+    ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
+    return " ".join(_SIGNAL_SEPARATOR_RE.sub(" ", ascii_text.casefold()).split())
 
 
 def _detect_nvidia_terms(text: str) -> list[str]:
@@ -71,9 +87,34 @@ def _build_evidence_item(
     score = source_quality_score(source_type)
 
     factuality: str = "observed" if text else "unknown"
+    primary_source = profile.sources[0] if profile.sources else None
+    canonical_claim = (
+        primary_source.claim
+        if primary_source is not None and primary_source.claim
+        else f"{profile.startup_name} shows evidence of {', '.join(profile.ai_signals[:3]) or 'AI activity'}."
+    )
+    canonical_quote = (
+        primary_source.quote_or_evidence
+        if primary_source is not None and primary_source.quote_or_evidence
+        else snippet
+    )
+    canonical_confidence = (
+        primary_source.confidence.value
+        if primary_source is not None and hasattr(primary_source.confidence, "value")
+        else ConfidenceLevel.from_score(conf).value
+    )
+    canonical_collected_at = (
+        primary_source.collected_at.isoformat()
+        if primary_source is not None
+        else extracted_at
+    )
+    upstream_evidence_id = source_candidate.get("evidence_id") or source_candidate.get("id")
 
     item: dict[str, Any] = {
-        "evidence_id": str(uuid.uuid4()),
+        "evidence_id": str(upstream_evidence_id or uuid.uuid4()),
+        "claim": canonical_claim,
+        "quote_or_evidence": canonical_quote,
+        "confidence": canonical_confidence,
         "source_id": source_id,
         "source_url": source_url,
         "url": source_url,
@@ -81,7 +122,7 @@ def _build_evidence_item(
         "title": profile.startup_name,
         "snippet": snippet,
         "extracted_text_hash": txt_hash,
-        "collected_at": extracted_at,
+        "collected_at": canonical_collected_at,
         "extracted_at": now_ts,
         "evidence_type": "extracted",
         "source_quality_score": score,
@@ -89,7 +130,8 @@ def _build_evidence_item(
         "confidence_calibration_decision_id": "extraction.confidence_formula_base",
         "factuality_status": factuality,
         "supports_claim_ids": [],
-        "text": text,
+        "text": _normalize_signal_text(text),
+        "raw_text": text,
         "startup_name": profile.startup_name,
         "ai_signals": profile.ai_signals,
     }
@@ -122,8 +164,6 @@ def _build_claim(
 
     conf_value: float = 0.5
     if evidence_source.confidence:
-        from src.extraction.schemas import ConfidenceLevel
-
         conf_map = {
             ConfidenceLevel.HIGH: 0.9,
             ConfidenceLevel.MEDIUM: 0.6,
@@ -234,7 +274,6 @@ def extract_profiles_from_candidates(
         extraction_metrics, errors
     """
     from src.extraction.extractor import extract_profile as _run_extraction
-    from src.extraction.schemas import SourceType
 
     evidence_items: list[dict[str, Any]] = []
     claims: list[dict[str, Any]] = []
@@ -250,7 +289,7 @@ def extract_profiles_from_candidates(
     extraction_success_count = 0
     extraction_failure_count = 0
 
-    _SOURCE_TYPE_ALIASES: dict[str, SourceType] = {
+    source_type_aliases: dict[str, SourceType] = {
         "official_website": SourceType.OFFICIAL_SITE,
     }
 
@@ -273,8 +312,8 @@ def extract_profiles_from_candidates(
         raw_st = candidate.get("source_type") or candidate.get("source_category", "")
         source_type: SourceType = SourceType.DIRECTORY
         if isinstance(raw_st, str) and raw_st:
-            if raw_st in _SOURCE_TYPE_ALIASES:
-                source_type = _SOURCE_TYPE_ALIASES[raw_st]
+            if raw_st in source_type_aliases:
+                source_type = source_type_aliases[raw_st]
             else:
                 try:
                     source_type = SourceType(raw_st)

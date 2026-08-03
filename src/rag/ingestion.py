@@ -1,15 +1,22 @@
-"""Markdown corpus ingestion and chunking for Product RAG."""
+"""NVIDIA corpus ingestion, content cleaning, and deterministic chunking."""
 
 from __future__ import annotations
 
+import re
+from math import ceil
 from pathlib import Path
 
+import trafilatura
 import yaml
+from bs4 import BeautifulSoup
 
 from src.rag.schemas import RagChunk, RagDocument, RagSource
 
 _CORPUS_DIR = Path("data/nvidia_corpus")
 _SOURCES_FILE = _CORPUS_DIR / "sources.yaml"
+_MAX_UNSTRUCTURED_CHUNKS = 5
+_MIN_TARGET_CHARS = 800
+_HTML_MARKER = re.compile(r"<(?:!doctype|html|head|body|main|article)\b", re.IGNORECASE)
 
 
 def load_sources() -> dict[str, RagSource]:
@@ -57,13 +64,65 @@ def _active_version_info(info: dict) -> dict:
 
 
 def load_markdown_document(path: Path) -> RagDocument | None:
-    """Load a single markdown file as a RagDocument."""
+    """Load a corpus file and remove HTML/navigation noise before indexing.
+
+    Source synchronization can persist an HTML response in a ``.md`` file. Raw
+    HTML used to flow directly into chunking, which increased memory, indexing
+    time, and false lexical matches on CSS/navigation text. The ingestion
+    boundary now normalizes those files into clean, human-readable content.
+    """
     if not path.exists() or path.suffix not in (".md", ".markdown"):
         return None
-    text = path.read_text(encoding="utf-8")
+
+    raw_text = path.read_text(encoding="utf-8")
     source_id = path.stem
-    title = _extract_title(text) or source_id
-    return RagDocument(source_id=source_id, title=title, raw_text=text)
+    html_title = _extract_html_title(raw_text) if _looks_like_html(raw_text) else None
+    cleaned_text = _clean_document_text(raw_text)
+    title = _extract_title(cleaned_text) or html_title or source_id
+    return RagDocument(source_id=source_id, title=title, raw_text=cleaned_text)
+
+
+def _looks_like_html(text: str) -> bool:
+    return bool(_HTML_MARKER.search(text[:5000]))
+
+
+def _extract_html_title(text: str) -> str | None:
+    soup = BeautifulSoup(text, "html.parser")
+    for selector, attribute in (
+        ("meta[property='og:title']", "content"),
+        ("meta[name='title']", "content"),
+    ):
+        element = soup.select_one(selector)
+        if element and element.get(attribute):
+            return str(element.get(attribute)).strip()
+    if soup.title and soup.title.string:
+        return soup.title.string.strip()
+    heading = soup.find("h1")
+    return heading.get_text(" ", strip=True) if heading else None
+
+
+def _clean_document_text(text: str) -> str:
+    if not _looks_like_html(text):
+        return text.strip()
+
+    extracted = trafilatura.extract(
+        text,
+        output_format="markdown",
+        include_comments=False,
+        include_tables=True,
+        include_links=False,
+        include_images=False,
+        favor_precision=True,
+        deduplicate=True,
+    )
+    if extracted and len(extracted.strip()) >= 120:
+        return extracted.strip()
+
+    soup = BeautifulSoup(text, "html.parser")
+    for element in soup(["script", "style", "noscript", "template", "svg", "nav", "footer", "header"]):
+        element.decompose()
+    fallback = soup.get_text("\n", strip=True)
+    return re.sub(r"\n{3,}", "\n\n", fallback).strip()
 
 
 def _extract_title(text: str) -> str | None:
@@ -75,29 +134,40 @@ def _extract_title(text: str) -> str | None:
 
 
 def chunk_document(doc: RagDocument, sources: dict[str, RagSource]) -> list[RagChunk]:
-    """Split a RagDocument into RagChunks by ## headings."""
+    """Split a document by meaningful sections or bounded text groups."""
     source_info = sources.get(doc.source_id)
+    section_chunks = _markdown_sections(doc.raw_text)
+
+    if not section_chunks:
+        section_chunks = _chunk_unstructured_text(doc.raw_text)
+
     chunks: list[RagChunk] = []
-    lines = doc.raw_text.splitlines()
+    for index, (heading, content) in enumerate(section_chunks):
+        if not content.strip():
+            continue
+        chunks.append(
+            _make_chunk(
+                doc=doc,
+                source_info=source_info,
+                index=index,
+                heading=heading or doc.title,
+                content=content.strip(),
+            )
+        )
+    return chunks
+
+
+def _markdown_sections(text: str) -> list[tuple[str, str]]:
+    sections: list[tuple[str, str]] = []
     current_section: list[str] = []
     current_heading = ""
-    chunk_index = 0
 
-    for line in lines:
+    for line in text.splitlines():
         if line.startswith("## "):
             if current_section and current_heading:
                 content = "\n".join(current_section).strip()
                 if content:
-                    chunks.append(
-                        _make_chunk(
-                            doc=doc,
-                            source_info=source_info,
-                            index=chunk_index,
-                            heading=current_heading,
-                            content=content,
-                        )
-                    )
-                    chunk_index += 1
+                    sections.append((current_heading, content))
             current_heading = line[3:].strip()
             current_section = [line]
         else:
@@ -106,29 +176,42 @@ def chunk_document(doc: RagDocument, sources: dict[str, RagSource]) -> list[RagC
     if current_section and current_heading:
         content = "\n".join(current_section).strip()
         if content:
-            chunks.append(
-                _make_chunk(
-                    doc=doc,
-                    source_info=source_info,
-                    index=chunk_index,
-                    heading=current_heading,
-                    content=content,
-                )
-            )
+            sections.append((current_heading, content))
+    return sections
 
-    if not chunks:
-        content = doc.raw_text.strip()
-        if content:
-            chunks.append(
-                _make_chunk(
-                    doc=doc,
-                    source_info=source_info,
-                    index=0,
-                    heading=doc.title,
-                    content=content,
-                )
-            )
 
+def _chunk_unstructured_text(text: str) -> list[tuple[str, str]]:
+    """Preserve full text while bounding unstructured documents to five chunks."""
+    normalized = re.sub(r"\n{3,}", "\n\n", text).strip()
+    if not normalized:
+        return []
+
+    paragraphs = [paragraph.strip() for paragraph in re.split(r"\n\s*\n", normalized) if paragraph.strip()]
+    if not paragraphs:
+        paragraphs = [normalized]
+
+    total_chars = sum(len(paragraph) for paragraph in paragraphs)
+    target_size = max(_MIN_TARGET_CHARS, ceil(total_chars / _MAX_UNSTRUCTURED_CHUNKS))
+    chunks: list[tuple[str, str]] = []
+    current: list[str] = []
+    current_chars = 0
+
+    for paragraph in paragraphs:
+        remaining_slots = _MAX_UNSTRUCTURED_CHUNKS - len(chunks)
+        should_flush = (
+            current
+            and current_chars + len(paragraph) > target_size
+            and remaining_slots > 1
+        )
+        if should_flush:
+            chunks.append((f"Part {len(chunks) + 1}", "\n\n".join(current)))
+            current = []
+            current_chars = 0
+        current.append(paragraph)
+        current_chars += len(paragraph)
+
+    if current:
+        chunks.append((f"Part {len(chunks) + 1}", "\n\n".join(current)))
     return chunks
 
 
@@ -139,6 +222,10 @@ def _make_chunk(
     heading: str,
     content: str,
 ) -> RagChunk:
+    heading_prefix = heading.strip()
+    if heading_prefix and not content.lstrip().startswith(("#", heading_prefix)):
+        content = f"## {heading_prefix}\n\n{content}"
+
     return RagChunk(
         chunk_id=f"{doc.source_id}_{index:03d}",
         source_id=doc.source_id,
@@ -169,7 +256,7 @@ def _make_chunk(
 
 
 def load_and_chunk_corpus() -> list[RagChunk]:
-    """Load all markdown files from the corpus directory and chunk them."""
+    """Load all active allowlisted corpus files and return clean chunks."""
     sources = load_sources()
     all_chunks: list[RagChunk] = []
     if not _CORPUS_DIR.exists():
@@ -181,13 +268,11 @@ def load_and_chunk_corpus() -> list[RagChunk]:
         source_id = md_path.stem
         # Production corpus is allowlist-driven. Test fixtures, stale files or
         # ad-hoc markdown files cannot enter retrieval unless they are active in
-        # sources.yaml. This prevents accidental recommendation grounding on
-        # fixture content.
+        # sources.yaml.
         if source_id not in active_source_ids:
             continue
         doc = load_markdown_document(md_path)
         if doc is None:
             continue
-        doc_chunks = chunk_document(doc, sources)
-        all_chunks.extend(doc_chunks)
+        all_chunks.extend(chunk_document(doc, sources))
     return all_chunks

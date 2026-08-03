@@ -2037,6 +2037,7 @@ def populate_radar_dashboard(
     session: DbSession,
     limit: int = Query(default=50, ge=1, le=200),
     source_limit: int = Query(default=6, ge=0, le=20),
+    pipeline_limit: int = Query(default=5, ge=0, le=25),
     run_pipeline: bool = Query(default=True),
     force_rerun: bool = Query(default=False),
 ) -> dict[str, Any]:
@@ -2052,6 +2053,7 @@ def populate_radar_dashboard(
     options = PopulateOptions(
         limit=limit,
         source_limit=source_limit,
+        pipeline_limit=pipeline_limit,
         run_pipeline=run_pipeline,
         force_rerun=force_rerun,
     )

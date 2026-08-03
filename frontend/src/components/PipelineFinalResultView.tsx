@@ -181,6 +181,7 @@ export function PipelineFinalResultView({ workflowId, onBackToWorkflow, onSelect
   const workflowState = asRecord(workflow?.state ?? null);
   const nodeOutputs = asRecord(workflowState.node_outputs ?? null);
   const ragOutput = asRecord(nodeOutputs.retrieve_nvidia_context ?? nodeOutputs.rag_output ?? workflowState.rag_runtime_metrics ?? null);
+  const ragMetrics = asRecord(ragOutput.rag_retrieval_metrics ?? ragOutput.rag_metrics ?? workflowState.rag_runtime_metrics ?? ragOutput);
   const techniquesOutput = asRecord(nodeOutputs.enhance_contexts_with_techniques ?? workflowState.technique_runtime_metrics ?? null);
   const recommendationOutput = asRecord(nodeOutputs.rank_recommendations ?? nodeOutputs.nvidia_recommendation_result ?? nodeOutputs.rank_with_expected_utility ?? null);
   const rankedRecommendations = asArray(workflowState.ranked_recommendations ?? recommendationOutput.ranked_recommendations ?? recommendationOutput.nvidia_recommendations ?? null);
@@ -534,9 +535,10 @@ export function PipelineFinalResultView({ workflowId, onBackToWorkflow, onSelect
                 { label: "Passed metrics", value: quality ? `${quality.passed_metrics}/${quality.total_metrics}` : "—" },
                 { label: "Export readiness", value: quality?.export_readiness_score },
                 { label: "Review readiness", value: quality?.review_readiness_score },
-                { label: "RAG retrieval mode", value: ragOutput.retrieval_mode ?? workflowState.rag_retrieval_mode },
-                { label: "GraphRAG", value: ragOutput.graphrag_enabled ?? workflowState.graphrag_enabled },
-                { label: "Triton rerank", value: ragOutput.triton_reranker_enabled ?? workflowState.triton_reranker_enabled },
+                { label: "Pipeline quality gate", value: asRecord(workflowState.quality_gates_result).status },
+                { label: "RAG retrieval mode", value: ragMetrics.retrieval_mode ?? ragOutput.retrieval_mode ?? workflowState.rag_retrieval_mode },
+                { label: "GraphRAG", value: ragMetrics.graphrag_active ?? ragOutput.graphrag_enabled ?? workflowState.graphrag_enabled },
+                { label: "Triton rerank", value: ragMetrics.triton_reranker_active ?? ragMetrics.triton_reranker_required ?? ragOutput.triton_reranker_enabled ?? workflowState.triton_reranker_enabled },
               ]} />
               <div className="progress-bar"><span style={{ width: `${progress}%` }} /></div>
               <WorkflowNodeTimeline nodes={workflow.nodes} currentNode={workflow.current_node} />

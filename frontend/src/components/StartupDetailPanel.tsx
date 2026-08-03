@@ -9,12 +9,7 @@ interface StartupDetailPanelProps {
   onPipelineCreated?: (workflowId: string, analysisRunId: string | null) => void;
 }
 
-export function StartupDetailPanel({
-  startupId,
-  onBack,
-  onRunCreated,
-  onPipelineCreated,
-}: StartupDetailPanelProps) {
+export function StartupDetailPanel({ startupId, onBack, onRunCreated, onPipelineCreated }: StartupDetailPanelProps) {
   const [startup, setStartup] = useState<StartupRead | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,13 +72,12 @@ export function StartupDetailPanel({
     setRunError(null);
     try {
       const workflow = await runMainProductPipelineForStartup(startupId);
-      if (!workflow.analysis_run_id) {
-        throw new Error("Main product pipeline did not return an analysis_run_id.");
-      }
       if (onPipelineCreated) {
         onPipelineCreated(workflow.id, workflow.analysis_run_id);
-      } else {
+      } else if (workflow.analysis_run_id) {
         onRunCreated(workflow.analysis_run_id);
+      } else {
+        throw new Error("Workflow queued, but this view cannot follow asynchronous execution.");
       }
     } catch (err) {
       setRunError(err instanceof Error ? err.message : String(err));
@@ -115,30 +109,17 @@ export function StartupDetailPanel({
             <button type="button" className="back-button" onClick={onBack}>← Back</button>
             <h2>{startup.name}</h2>
           </div>
-          <button type="button" className="secondary-button" onClick={startEdit}>
-            Edit
-          </button>
+          <button type="button" className="secondary-button" onClick={startEdit}>Edit</button>
         </div>
 
         {editing && (
           <div className="panel-body edit-section">
             <h3>Edit Startup</h3>
-            <div className="form-field">
-              <label>Name</label>
-              <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Website</label>
-              <input type="url" value={editWebsite} onChange={(e) => setEditWebsite(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Sector</label>
-              <input type="text" value={editSector} onChange={(e) => setEditSector(e.target.value)} />
-            </div>
+            <div className="form-field"><label>Name</label><input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} /></div>
+            <div className="form-field"><label>Website</label><input type="url" value={editWebsite} onChange={(e) => setEditWebsite(e.target.value)} /></div>
+            <div className="form-field"><label>Sector</label><input type="text" value={editSector} onChange={(e) => setEditSector(e.target.value)} /></div>
             {editError && <div className="message error-message">{editError}</div>}
-            <button type="button" className="primary-button" onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : "Save"}
-            </button>
+            <button type="button" className="primary-button" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save"}</button>
           </div>
         )}
 
@@ -163,13 +144,8 @@ export function StartupDetailPanel({
         <div className="panel-header"><h2>Analysis</h2></div>
         <div className="panel-body">
           {runError && <div className="message error-message">{runError}</div>}
-          <button
-            type="button"
-            className="primary-button"
-            onClick={handleRunAnalysis}
-            disabled={running}
-          >
-            {running ? "Running Main Pipeline..." : "Run Main Pipeline"}
+          <button type="button" className="primary-button" onClick={handleRunAnalysis} disabled={running}>
+            {running ? "Queueing Main Pipeline..." : "Run Main Pipeline"}
           </button>
         </div>
       </div>

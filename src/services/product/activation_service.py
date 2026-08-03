@@ -231,9 +231,114 @@ class ActivationPlaybookService:
                 if signature not in existing_signature:
                     recommendations.append(rec)
                     existing_signature.add(signature)
+        recommendations = self._filter_recommendations_by_workload(run, recommendations)
         recommendations.sort(key=lambda r: (r["priority"], -_confidence_value(r.get("confidence", "low"))))
 
-        return recommendations
+        return recommendations[:2]
+
+    @staticmethod
+    def _workload_text(run: AnalysisRun) -> str:
+        startup = run.startup
+        if startup is None:
+            return ""
+        snapshot = run.output_snapshot_json or {}
+        profile = snapshot.get("startup_profile") or {}
+        evidence_text = " ".join(
+            f"{evidence.claim} {evidence.quote_or_evidence}"
+            for evidence in (startup.evidence or [])
+        )
+        return " ".join(
+            [
+                str(startup.description or ""),
+                str(startup.product_summary or ""),
+                str(profile.get("description") or ""),
+                " ".join(str(value) for value in profile.get("ai_signals", []) or []),
+                " ".join(str(value) for value in profile.get("tech_stack_signals", []) or []),
+                evidence_text,
+            ]
+        )
+
+    @staticmethod
+    def _filter_recommendations_by_workload(
+        run: AnalysisRun,
+        recommendations: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Keep only recommendations supported by concrete workload evidence."""
+        from src.services.product.workload_classifier import (
+            classify_workloads,
+            needs_guardrails,
+            recommended_technologies,
+        )
+
+        text = ActivationPlaybookService._workload_text(run)
+        matches = classify_workloads(text, max_families=2)
+        allowed = recommended_technologies(matches, limit=6)
+        if needs_guardrails(text) and any(match.family == "llm_nlp" for match in matches):
+            allowed.insert(min(2, len(allowed)), "NeMo Guardrails")
+
+        if not allowed:
+            gap_technology_map = {
+                "high_latency": ("NVIDIA NIM", "TensorRT-LLM", "TensorRT", "Triton Inference Server"),
+                "high_inference_cost": ("NVIDIA NIM", "TensorRT-LLM", "TensorRT", "Triton Inference Server"),
+                "slow_data_pipeline": ("RAPIDS", "cuDF", "cuML"),
+                "heavy_tabular_processing": ("RAPIDS", "cuDF", "cuML"),
+                "agent_governance_gap": ("NeMo Guardrails", "NVIDIA NeMo", "NVIDIA NIM"),
+                "voice_need": ("NVIDIA Riva", "Triton Inference Server"),
+                "computer_vision_need": ("TensorRT", "Triton Inference Server"),
+                "robotics_need": ("NVIDIA Isaac", "NVIDIA Omniverse"),
+                "simulation_need": ("NVIDIA Omniverse", "NVIDIA Isaac"),
+                "ai_cybersecurity_need": ("NVIDIA Morpheus", "RAPIDS"),
+            }
+            for gap in run.gaps:
+                if not gap.detected or gap.confidence == "low":
+                    continue
+                allowed.extend(gap_technology_map.get(gap.gap_type, ()))
+        allowed = list(dict.fromkeys(allowed))[:6]
+        if not allowed:
+            return []
+
+        aliases = {
+            "NVIDIA TensorRT": "TensorRT",
+            "NVIDIA RAPIDS": "RAPIDS",
+            "RAPIDS cuDF": "cuDF",
+            "RAPIDS cuML": "cuML",
+            "Clara / MONAI": "MONAI",
+        }
+        allowed_set = set(allowed)
+        filtered: list[dict[str, Any]] = []
+        for recommendation in recommendations:
+            compatible: list[str] = []
+            for raw_technology in recommendation.get("nvidia_technologies", []) or []:
+                technology = aliases.get(str(raw_technology), str(raw_technology))
+                if technology in allowed_set and technology not in compatible:
+                    compatible.append(technology)
+            if not compatible:
+                continue
+            updated = dict(recommendation)
+            updated["nvidia_technologies"] = compatible[:5]
+            updated["reasoning"] = (
+                f"{updated.get('reasoning', '')} | Workload evidence: "
+                + (
+                    "; ".join(
+                        f"{match.label} ({', '.join(match.matched_phrases[:4])})"
+                        for match in matches
+                    )
+                    if matches
+                    else "validated high/medium-confidence gap mapping"
+                )
+            ).strip(" |")
+            filtered.append(updated)
+
+        # Prefer recommendations that cover more of the evidence-backed stack,
+        # then preserve the calibrated priority/confidence order.
+        filtered.sort(
+            key=lambda item: (
+                -len(item.get("nvidia_technologies", [])),
+                int(item.get("priority", 4)),
+                -_confidence_value(str(item.get("confidence", "low"))),
+            )
+        )
+        return filtered[:2]
 
     def _generate_profile_backed_recommendations(
         self,
@@ -243,198 +348,95 @@ class ActivationPlaybookService:
         unsupported_claim_count: int,
         relevant_degraded: list[str],
     ) -> list[dict[str, Any]]:
-        """Generate a recommendation when the profile proves AI fit but no gap fired.
+        """Generate at most two recommendations from concrete workload phrases."""
+        from src.services.product.workload_classifier import (
+            classify_workloads,
+            needs_guardrails,
+        )
 
-        This is not a static playbook fallback. It is a runtime, profile-backed
-        recommendation: every technology family is selected from the analyzed
-        startup profile, evidence claims, and sector text produced by the central
-        pipeline. It keeps the dashboard complete without inventing unsupported
-        company data.
-        """
         startup = run.startup
         if startup is None:
             return []
-        snapshot = run.output_snapshot_json or {}
-        profile = snapshot.get("startup_profile") or {}
-        classification = snapshot.get("ai_native_classification") or {}
-        class_value = str(classification.get("classification") or "").casefold()
-        text_parts = [
-            startup.name,
-            startup.sector,
-            startup.description,
-            startup.product_summary,
-            str(profile.get("sector") or ""),
-            str(profile.get("description") or ""),
-            " ".join(str(x) for x in profile.get("ai_signals", []) or []),
-            " ".join(str(x) for x in profile.get("tech_stack_signals", []) or []),
-            " ".join(str(ev.claim) + " " + str(ev.quote_or_evidence) for ev in (startup.evidence or [])),
-        ]
-        text = " ".join(text_parts).casefold()
-        if "non_ai" in class_value:
+        classification = (run.output_snapshot_json or {}).get("ai_native_classification") or {}
+        if "non_ai" in str(classification.get("classification") or "").casefold():
             return []
 
-        technologies: list[str] = []
-        matched_reasons: list[str] = []
-
-        def add(reason: str, techs: list[str]) -> None:
-            matched_reasons.append(reason)
-            technologies.extend(techs)
-
-        if any(term in text for term in ("llm", "language model", "modelo de linguagem", "generative", "chatbot", "nlp", "legal ai")):
-            add("runtime profile indicates LLM/generative-AI/NLP workload", [
-                "NVIDIA NIM",
-                "NVIDIA NeMo",
-                "NeMo Guardrails",
-                "TensorRT-LLM",
-                "Triton Inference Server",
-                "NVIDIA AI Enterprise",
-            ])
-        if any(term in text for term in ("computer vision", "visão computacional", "image", "video", "visual inspection", "inspection", "drone", "camera")):
-            add("runtime profile indicates computer-vision inference workload", [
-                "NVIDIA NIM",
-                "TensorRT",
-                "Triton Inference Server",
-                "NVIDIA AI Enterprise",
-            ])
-        if any(term in text for term in ("analytics", "data", "risk", "credit", "predictive", "time series", "optimization", "forecasting", "business intelligence")):
-            add("runtime profile indicates data/ML analytics workload", [
-                "RAPIDS",
-                "cuDF",
-                "cuML",
-                "Triton Inference Server",
-                "NVIDIA AI Enterprise",
-            ])
-        if any(term in text for term in ("speech", "voice", "asr", "call center", "customer interaction", "customer experience", "audio", "interview")):
-            add("runtime profile indicates speech/customer-interaction workload", [
-                "NVIDIA Riva",
-                "NVIDIA NIM",
-                "Triton Inference Server",
-                "NVIDIA AI Enterprise",
-            ])
-        if any(term in text for term in ("agent", "agents", "governance", "orchestration", "compliance", "automation", "workflow")):
-            add("runtime profile indicates AI-agent/governance workload", [
-                "NeMo Guardrails",
-                "NVIDIA NIM",
-                "NVIDIA AI Enterprise",
-                "Triton Inference Server",
-            ])
-        if any(term in text for term in ("health", "medical", "hospital", "clinical", "telemedicine", "patient", "diagnostic", "diagnosis", "healthcare")):
-            add("runtime profile indicates healthcare AI workload", [
-                "NVIDIA Clara",
-                "MONAI",
-                "NVIDIA AI Enterprise",
-                "NeMo Guardrails",
-                "NVIDIA NIM",
-            ])
-        if any(term in text for term in ("agtech", "agri", "agriculture", "crop", "soil", "climate", "field", "farm", "pest", "agronomic", "geospatial", "drone")):
-            add("runtime profile indicates agriculture/geospatial AI workload", [
-                "RAPIDS",
-                "cuDF",
-                "cuML",
-                "TensorRT",
-                "NVIDIA AI Enterprise",
-            ])
-        if any(term in text for term in ("robot", "robotics", "autonomous", "simulation", "digital twin", "heavy equipment", "fleet", "iot")):
-            add("runtime profile indicates robotics/simulation/IoT workload", [
-                "NVIDIA Isaac",
-                "NVIDIA Omniverse",
-                "NVIDIA AI Enterprise",
-                "CUDA",
-            ])
-        if any(term in text for term in ("construction", "proptech", "bim", "civil engineering", "arquitetura", "obra", "house project", "residential", "project planning", "estimate costs", "cost estimate")):
-            add("runtime profile indicates construction/proptech planning workload", [
-                "NVIDIA Omniverse",
-                "NVIDIA AI Enterprise",
-                "NVIDIA NIM",
-                "Triton Inference Server",
-                "RAPIDS",
-            ])
-        if any(term in text for term in ("fintech", "financial", "banking", "payment", "pix", "fraud", "credit risk")):
-            add("runtime profile indicates fintech/fraud/risk AI workload", [
-                "RAPIDS",
-                "cuML",
-                "NVIDIA Morpheus",
-                "NVIDIA NIM",
-                "NVIDIA AI Enterprise",
-            ])
-        if any(term in text for term in ("legal", "law", "lawyer", "jurid", "juríd", "litigation", "contract", "compliance")):
-            add("runtime profile indicates legal/compliance AI workload", [
-                "NVIDIA NeMo",
-                "NeMo Guardrails",
-                "NVIDIA NIM",
-                "TensorRT-LLM",
-                "NVIDIA AI Enterprise",
-            ])
-        if any(term in text for term in ("education", "edtech", "student", "teacher", "tutor", "classroom", "school", "educational")):
-            add("runtime profile indicates education AI workload", [
-                "NVIDIA NIM",
-                "NVIDIA NeMo",
-                "NeMo Guardrails",
-                "NVIDIA Riva",
-                "NVIDIA AI Enterprise",
-            ])
-        if any(term in text for term in ("hr", "recruit", "talent", "payroll", "workforce", "interview", "people")):
-            add("runtime profile indicates HR/recruiting AI workload", [
-                "NVIDIA NIM",
-                "NVIDIA NeMo",
-                "NeMo Guardrails",
-                "NVIDIA Riva",
-                "NVIDIA AI Enterprise",
-            ])
-
-        if not technologies:
+        text = self._workload_text(run)
+        matches = classify_workloads(text, max_families=2)
+        if not matches:
             return []
-        technologies = list(dict.fromkeys(technologies))
-        confidence_score = 0.55
-        if evidence_coverage >= 0.5:
-            confidence_score += 0.15
-        if unsupported_claim_count == 0:
-            confidence_score += 0.10
-        confidence_score -= min(0.20, 0.05 * len(relevant_degraded))
-        confidence_label = _confidence_from_score(max(0.0, min(1.0, confidence_score)))
-        priority = 1 if confidence_label == "high" else _priority_from_confidence_and_value(confidence_label, "expected measurable improvement in cost, latency, governance, and deployment readiness")
-        evidence_refs = [
-            {
-                "source_url": ev.source_url,
-                "claim": ev.claim,
-                "quote_or_evidence": ev.quote_or_evidence,
-                "confidence": ev.confidence,
-            }
-            for ev in (startup.evidence or [])[:5]
-        ]
-        return [{
-            "playbook_id": f"runtime_profile_fit_{startup.id}",
-            "playbook_name": "Sector-Specific Runtime NVIDIA Fit",
-            "matched_gap_types": [],
-            "matched_claim_ids": [],
-            "nvidia_technologies": technologies,
-            "technical_experiment": (
-                "Run a baseline-vs-NVIDIA benchmark using the startup's real workload; "
-                "measure latency, throughput, cost, evidence coverage, and operational readiness before outreach escalation."
-            ),
-            "success_metrics": [
-                "latency_delta_pct",
-                "throughput_delta_pct",
-                "cost_delta_pct",
-                "evidence_coverage_delta",
-                "governance_control_coverage",
-            ],
-            "recommended_motion": "technical_workshop" if confidence_label != "low" else "lack_evidence_more_research",
-            "priority": priority,
-            "confidence": confidence_label,
-            "reasoning": (
-                "No high-confidence explicit gap was detected, but the central runtime profile proves NVIDIA fit: "
-                + "; ".join(matched_reasons)
-                + f"; evidence coverage={evidence_coverage:.0%}; unsupported_claims={unsupported_claim_count}; "
-                + f"degraded_states={', '.join(relevant_degraded) if relevant_degraded else 'none'}."
-            ),
-            "evidence_refs": evidence_refs,
-            "risks": [
-                "Profile-backed recommendation must be converted into a quantified benchmark before sales prioritization.",
-                "Additional direct stack evidence should be collected if public sources are sparse.",
-            ],
-            "next_step": "Schedule technical discovery and benchmark the current AI workload against the selected NVIDIA stack.",
-        }]
+
+        experiment_by_family = {
+            "llm_nlp": "Benchmark the real language workload on NIM/TensorRT-LLM and measure latency, throughput, cost and answer quality.",
+            "voice": "Benchmark representative speech/audio samples with Riva and measure word error rate, latency and throughput.",
+            "computer_vision": "Compile and serve the actual vision model with TensorRT/Triton and compare accuracy, latency and throughput.",
+            "tabular_ml": "Run the production tabular pipeline with RAPIDS/cuDF/cuML and compare end-to-end runtime and model quality.",
+            "robotics_simulation": "Validate the real robotics scenario in Isaac/Omniverse and compare simulation coverage and physical-test reduction.",
+            "cybersecurity": "Replay representative security telemetry with Morpheus and compare detection quality and processing throughput.",
+            "medical_imaging": "Benchmark the actual medical-imaging model with MONAI/TensorRT and compare clinical metrics, latency and throughput.",
+        }
+        metrics_by_family = {
+            "llm_nlp": ["latency_p95", "tokens_per_second", "cost_per_request", "task_quality"],
+            "voice": ["word_error_rate", "latency_p95", "audio_realtime_factor"],
+            "computer_vision": ["accuracy_delta", "latency_p95", "frames_per_second"],
+            "tabular_ml": ["pipeline_runtime", "training_runtime", "model_quality_delta"],
+            "robotics_simulation": ["scenario_coverage", "simulation_runtime", "physical_tests_avoided"],
+            "cybersecurity": ["precision", "recall", "events_per_second"],
+            "medical_imaging": ["clinical_metric_delta", "latency_p95", "throughput"],
+        }
+
+        recommendations: list[dict[str, Any]] = []
+        for index, match in enumerate(matches):
+            technologies = list(match.technologies)
+            if match.family == "llm_nlp" and needs_guardrails(text):
+                technologies.insert(min(2, len(technologies)), "NeMo Guardrails")
+            technologies = list(dict.fromkeys(technologies))[:5]
+
+            confidence_score = 0.45 + min(0.25, match.score / 20.0)
+            confidence_score += 0.15 if evidence_coverage >= 0.5 else 0.0
+            confidence_score += 0.10 if unsupported_claim_count == 0 else -0.10
+            confidence_score -= min(0.20, 0.05 * len(relevant_degraded))
+            confidence_label = _confidence_from_score(max(0.0, min(1.0, confidence_score)))
+            motion = (
+                "technical_workshop"
+                if confidence_label != "low" and evidence_coverage >= 0.5
+                else "lack_evidence_more_research"
+            )
+            evidence_refs = [
+                {
+                    "source_url": evidence.source_url,
+                    "claim": evidence.claim,
+                    "quote_or_evidence": evidence.quote_or_evidence,
+                    "confidence": evidence.confidence,
+                }
+                for evidence in (startup.evidence or [])[:5]
+            ]
+            recommendations.append(
+                {
+                    "playbook_id": f"workload_fit_{match.family}_{startup.id}",
+                    "playbook_name": match.label,
+                    "matched_gap_types": [],
+                    "matched_claim_ids": [],
+                    "nvidia_technologies": technologies,
+                    "technical_experiment": experiment_by_family[match.family],
+                    "success_metrics": metrics_by_family[match.family],
+                    "recommended_motion": motion,
+                    "priority": index + 1 if confidence_label != "low" else 4,
+                    "confidence": confidence_label,
+                    "reasoning": (
+                        f"Concrete workload phrases matched: {', '.join(match.matched_phrases)}. "
+                        f"Workload score={match.score:.2f}; evidence coverage={evidence_coverage:.0%}; "
+                        f"unsupported claims={unsupported_claim_count}."
+                    ),
+                    "evidence_refs": evidence_refs,
+                    "risks": [
+                        "Recommendation must be validated on the startup's real workload.",
+                        "Do not infer production fit from sector labels alone.",
+                    ],
+                    "next_step": experiment_by_family[match.family],
+                }
+            )
+        return recommendations
 
     def _generate_mapping_backed_recommendations(
         self,

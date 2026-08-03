@@ -30,7 +30,7 @@ class SourceDeduplication:
         result = []
 
         for ctx in contexts:
-            content_hash = hashlib.md5(ctx.content.encode()).hexdigest()
+            content_hash = hashlib.md5(ctx.content.encode(), usedforsecurity=False).hexdigest()
 
             if content_hash not in self._seen_hashes:
                 self._seen_hashes.add(content_hash)

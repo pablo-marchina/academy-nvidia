@@ -28,7 +28,7 @@ class DvcGoldenSetVersioning:
 
             self._golden_version = self.config.get("golden_version", "v1")
 
-            golden_hash = hashlib.md5(json.dumps([c.chunk_id for c in contexts], sort_keys=True).encode()).hexdigest()[
+            golden_hash = hashlib.md5(json.dumps([c.chunk_id for c in contexts], sort_keys=True).encode(), usedforsecurity=False).hexdigest()[
                 :12
             ]
 

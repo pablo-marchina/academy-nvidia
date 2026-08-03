@@ -138,7 +138,7 @@ def validate_allowlist_entry(entry: dict[str, Any]) -> list[str]:
 
 def compute_content_hash(text: str) -> str:
     """Deterministic MD5 hash of text content."""
-    return hashlib.md5(text.encode("utf-8")).hexdigest()
+    return hashlib.md5(text.encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
 # ---------------------------------------------------------------------------
