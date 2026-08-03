@@ -308,8 +308,15 @@ def _gap_type_for_runtime_gap(gap_id: str) -> str:
     from src.diagnosis.schemas import GAP_TECH_MAP, GapType
     from src.extraction.schemas import TechnicalGap
 
-    if gap_id in {item.value for item in GapType}:
+    known_gap_types = {item.value for item in GapType}
+    if gap_id in known_gap_types:
         return gap_id
+    # Quantitative diagnosis emits stable runtime IDs such as
+    # ``gap-3-mlops_deployment_gap``. Preserve the semantic suffix instead of
+    # collapsing every runtime ID to the NVIDIA ecosystem fallback.
+    for gap_type in GapType:
+        if gap_id.endswith(gap_type.value):
+            return gap_type.value
     try:
         technical_gap = TechnicalGap(gap_id)
     except ValueError:
@@ -368,16 +375,38 @@ def _normalize_rag_context_for_runtime(ctx: dict[str, Any], default_gap_ids: lis
 
 def _rag_contexts_by_gap(contexts: list[Any], gap_ids: list[str]) -> dict[str, list[dict[str, Any]]]:
     normalized = [_as_state_dict(ctx) for ctx in contexts]
-    target_gap_types = {_gap_type_for_runtime_gap(gap_id) for gap_id in gap_ids}
-    grouped: dict[str, list[dict[str, Any]]] = {gap_type: [] for gap_type in target_gap_types}
+    selected = {gap_id: _gap_type_for_runtime_gap(gap_id) for gap_id in gap_ids}
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for gap_id, gap_type in selected.items():
+        grouped.setdefault(gap_id, [])
+        grouped.setdefault(gap_type, [])
+
     for ctx in normalized:
         if not ctx:
             continue
-        ctx_gap_types = {str(gap_type) for gap_type in ctx.get("gap_types", [])}
-        if not ctx_gap_types:
-            ctx_gap_types = target_gap_types
-        for gap_type in ctx_gap_types & target_gap_types:
-            grouped.setdefault(gap_type, []).append(ctx)
+        raw_labels = ctx.get("gap_types") or ctx.get("gap_type") or []
+        if isinstance(raw_labels, str):
+            raw_labels = [raw_labels]
+        labels = {str(label) for label in raw_labels if label}
+        normalized_labels = {_gap_type_for_runtime_gap(label) for label in labels}
+
+        matched = False
+        for gap_id, gap_type in selected.items():
+            if gap_id in labels or gap_type in labels or gap_type in normalized_labels:
+                for key in (gap_id, gap_type):
+                    bucket = grouped.setdefault(key, [])
+                    if ctx not in bucket:
+                        bucket.append(ctx)
+                matched = True
+
+        # Contexts without an explicit gap label were produced by a query over
+        # the selected gaps, so retain them for audit rather than silently drop.
+        if not labels and not matched:
+            for gap_id, gap_type in selected.items():
+                for key in (gap_id, gap_type):
+                    bucket = grouped.setdefault(key, [])
+                    if ctx not in bucket:
+                        bucket.append(ctx)
     return grouped
 
 
@@ -402,7 +431,15 @@ def _gap_results_for_mapping(state: ProductWorkflowState) -> list[Any]:
         except Exception:
             pass
     if parsed:
-        return parsed
+        selected_gap_ids = set(state.gap_ids)
+        selected_gap_types = {_gap_type_for_runtime_gap(gap_id) for gap_id in state.gap_ids}
+        selected = [
+            item
+            for item in parsed
+            if item.gap_id in selected_gap_ids or item.gap_type.value in selected_gap_types
+        ]
+        if selected:
+            return selected
 
     score = state.evidence_weighted_scores or state.scores or {}
     confidence = max(0.0, min(1.0, float(score.get("confidence", 0.5))))
@@ -1167,9 +1204,16 @@ def node_retrieve_nvidia_context(state: ProductWorkflowState) -> NodeResult:
         contexts: list[dict[str, Any]] = []
         raw_by_gap = result.get("rag_contexts_by_gap", {})
         if isinstance(raw_by_gap, dict):
-            for items in raw_by_gap.values():
-                if isinstance(items, list):
-                    contexts.extend([item for item in items if isinstance(item, dict)])
+            for gap_key, items in raw_by_gap.items():
+                if not isinstance(items, list):
+                    continue
+                for item in items:
+                    if not isinstance(item, dict):
+                        continue
+                    context = dict(item)
+                    if not context.get("gap_types") and not context.get("gap_type"):
+                        context["gap_types"] = [str(gap_key)]
+                    contexts.append(context)
         if not contexts:
             raw_contexts = result.get("rag_contexts", [])
             if isinstance(raw_contexts, list):
