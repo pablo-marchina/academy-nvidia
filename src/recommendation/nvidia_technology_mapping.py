@@ -483,6 +483,21 @@ def build_nvidia_technology_mappings(
                 gap_result=gap_result,
             )
 
+            # Provenance is factual metadata and must survive score/calibration
+            # blockers. A blocked decision is not the same as absent evidence.
+            rag_ctx_ids: list[str] = []
+            for ctx in rag_ctxs:
+                cid = ctx.get("context_id") or ctx.get("chunk_id") or ""
+                if cid and _context_matches_technology(ctx, tech):
+                    rag_ctx_ids.append(str(cid))
+
+            ev_ids: list[str] = []
+            gap_support_ids = set(gap_result.supporting_evidence_ids if gap_result else [])
+            for item in evidence_items:
+                eid = _evidence_id(item)
+                if eid and eid in gap_support_ids:
+                    ev_ids.append(eid)
+
             if is_blocked:
                 mappings.append(
                     NvidiaTechnologyMappingRecord(
@@ -496,8 +511,8 @@ def build_nvidia_technology_mappings(
                         mapping_score=0.0,
                         mapping_confidence=0.0,
                         uncertainty=1.0,
-                        supporting_rag_context_ids=[],
-                        supporting_evidence_ids=[],
+                        supporting_rag_context_ids=rag_ctx_ids,
+                        supporting_evidence_ids=ev_ids,
                         calibration_decision_ids=REQUIRED_MAPPING_DECISIONS,
                         production_allowed=False,
                         blockers=blockers,
@@ -571,20 +586,6 @@ def build_nvidia_technology_mappings(
             conf_feat_dict = conf_feat.model_dump(mode="json")
             raw_conf = _compute_weighted_score(conf_feat_dict, conf_weights)
             final_conf = max(0.0, min(1.0, raw_conf - unc_penalty))
-
-            # ── Supporting IDs ──────────────────────────────────────────
-            rag_ctx_ids: list[str] = []
-            for ctx in rag_ctxs:
-                cid = ctx.get("context_id") or ctx.get("chunk_id") or ""
-                if cid and _context_matches_technology(ctx, tech):
-                    rag_ctx_ids.append(str(cid))
-
-            ev_ids: list[str] = []
-            gap_support_ids = set(gap_result.supporting_evidence_ids if gap_result else [])
-            for item in evidence_items:
-                eid = _evidence_id(item)
-                if eid and eid in gap_support_ids:
-                    ev_ids.append(eid)
 
             # ── Determine status ────────────────────────────────────────
             status: NvidiaMappingStatus

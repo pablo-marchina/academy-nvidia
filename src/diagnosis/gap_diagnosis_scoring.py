@@ -412,12 +412,11 @@ def extract_gap_confidence_features(
 
     source_category_coverage = 0.0
     if collection_metrics:
-        categories = collection_metrics.get("source_categories_covered", [])
-        observed_count = (
-            len(categories)
-            if isinstance(categories, list)
-            else int(collection_metrics.get("source_category_count", 0) or 0)
-        )
+        categories = collection_metrics.get("source_categories_covered")
+        if isinstance(categories, list) and categories:
+            observed_count = len(categories)
+        else:
+            observed_count = int(collection_metrics.get("source_category_count", 0) or 0)
         minimums = collection_metrics.get("minimums", {})
         expected = collection_metrics.get("expected_categories")
         if not isinstance(expected, int | float) or expected <= 0:
