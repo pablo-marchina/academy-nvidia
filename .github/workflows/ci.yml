@@ -80,6 +80,7 @@ jobs:
             tests/unit/test_rag_retrieval_contract.py \
             tests/unit/test_adaptive_source_planner.py \
             tests/unit/test_workflow_transaction_recovery.py \
+            tests/unit/test_workflow_node_snapshot_durability.py \
             tests/unit/test_live_output_validation_contract.py \
             tests/unit/test_governed_collection_scope.py \
             tests/unit/test_extractor_evidence_contract.py \
