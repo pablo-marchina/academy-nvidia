@@ -8,10 +8,9 @@ are not controlled by the startup.
 
 from __future__ import annotations
 
-import os
 import re
 from typing import Any
-from urllib.parse import quote_plus, urlparse
+from urllib.parse import urlparse
 
 
 def _normalize_startup_name(name: str) -> str:
@@ -82,8 +81,7 @@ def _classify_source(url: str, *, source_type_hint: str | None = None, is_probab
     return "official_site" if is_probable_owned_domain and host else "directory"
 
 
-def build_search_plan(startup_name: str) -> list[dict[str, Any]]:
-    from src.discovery.source_registry import list_enabled_sources
+def build_search_plan(startup_name: str, website_url: str = "") -> list[dict[str, Any]]:
     from src.sourcing.adaptive_source_planner import SourceCandidate, source_decision_trace
 
     plan: list[dict[str, Any]] = []
@@ -146,32 +144,21 @@ def build_search_plan(startup_name: str) -> list[dict[str, Any]]:
         )
         source_type_counts[source_type] = source_type_counts.get(source_type, 0) + 1
 
-    for source in list_enabled_sources(api_key_available=bool(os.getenv("SERPAPI_API_KEY"))):
-        if source.base_url:
-            _add(
-                source.base_url,
-                f"Configured source: {source.name}",
-                source_type_hint=getattr(source.source_type, "value", str(source.source_type)),
-            )
-
-    # Search APIs are candidate discovery mechanisms, not evidence sources. They
-    # are included only when configured; raw search result URLs must be collected
-    # and validated before becoming evidence.
-    if os.getenv("SERPAPI_API_KEY"):
+    if website_url:
         _add(
-            f"https://serpapi.com/search.json?q={quote_plus(startup_name + ' startup AI Brasil')}",
-            "Configured Search API: startup + AI + Brazil",
-            source_type_hint="search_api",
+            website_url,
+            "Persisted startup official website",
+            source_type_hint="official_site",
+            is_probable_owned_domain=True,
         )
-
-    direct_urls = [
-        (f"https://br.linkedin.com/company/{normalized}", "LinkedIn company page", False),
-        (f"https://{normalized}.com.br", "Probable startup-owned Brazilian domain", True),
-        (f"https://www.{normalized}.com.br", "Probable startup-owned Brazilian domain (www)", True),
-        (f"https://{normalized}.com", "Probable startup-owned .com domain", True),
-        (f"https://www.{normalized}.com", "Probable startup-owned .com domain (www)", True),
-    ]
-    for url, reason, owned in direct_urls:
-        _add(url, reason, is_probable_owned_domain=owned)
+    else:
+        direct_urls = [
+            (f"https://{normalized}.com.br", "Probable startup-owned Brazilian domain", True),
+            (f"https://www.{normalized}.com.br", "Probable startup-owned Brazilian domain (www)", True),
+            (f"https://{normalized}.com", "Probable startup-owned .com domain", True),
+            (f"https://www.{normalized}.com", "Probable startup-owned .com domain (www)", True),
+        ]
+        for url, reason, owned in direct_urls:
+            _add(url, reason, is_probable_owned_domain=owned)
 
     return sorted(plan, key=lambda item: float(item["marginal_utility"]), reverse=True)
