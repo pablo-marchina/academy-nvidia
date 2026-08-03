@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+# This one-shot patch is intentionally triggered after its workflow exists.
 ROOT = Path(__file__).resolve().parents[1]
 path = ROOT / "scripts/validate_live_outputs.py"
 text = path.read_text(encoding="utf-8")
