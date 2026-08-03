@@ -54,10 +54,10 @@ function Invoke-JsonRequest {
         [Parameter(Mandatory)] [ValidateSet("GET", "POST")] [string]$Method,
         [Parameter(Mandatory)] [string]$Uri
     )
-    return Invoke-RestMethod \
-        -Method $Method \
-        -Uri $Uri \
-        -TimeoutSec $RequestTimeoutSeconds \
+    return Invoke-RestMethod `
+        -Method $Method `
+        -Uri $Uri `
+        -TimeoutSec $RequestTimeoutSeconds `
         -Headers @{ Accept = "application/json" }
 }
 
@@ -110,9 +110,9 @@ function Assert-PersistentService {
     $health = ([string]$record.Health).ToLowerInvariant()
     $running = $state -eq "running"
     $healthOk = (-not $RequireHealthy) -or $health -eq "healthy"
-    Add-Check \
-        -Name "service.${ServiceName}" \
-        -Passed ($running -and $healthOk) \
+    Add-Check `
+        -Name "service.${ServiceName}" `
+        -Passed ($running -and $healthOk) `
         -Detail "state=$state health=$health"
 }
 
@@ -133,9 +133,9 @@ function Assert-OneShotService {
     if ($null -ne $record.ExitCode -and [string]$record.ExitCode -ne "") {
         $exitCode = [int]$record.ExitCode
     }
-    Add-Check \
-        -Name "service.${ServiceName}" \
-        -Passed ($state -eq "exited" -and $exitCode -eq 0) \
+    Add-Check `
+        -Name "service.${ServiceName}" `
+        -Passed ($state -eq "exited" -and $exitCode -eq 0) `
         -Detail "state=$state exit_code=$exitCode"
 }
 
@@ -177,9 +177,9 @@ try {
         $api = Get-ServiceRecord -Services $services -ServiceName "api"
         $frontend = Get-ServiceRecord -Services $services -ServiceName "frontend"
         $worker = Get-ServiceRecord -Services $services -ServiceName "workflow-worker"
-        $ready = \
-            $null -ne $api -and ([string]$api.Health).ToLowerInvariant() -eq "healthy" -and \
-            $null -ne $frontend -and ([string]$frontend.Health).ToLowerInvariant() -eq "healthy" -and \
+        $ready = `
+            $null -ne $api -and ([string]$api.Health).ToLowerInvariant() -eq "healthy" -and `
+            $null -ne $frontend -and ([string]$frontend.Health).ToLowerInvariant() -eq "healthy" -and `
             $null -ne $worker -and ([string]$worker.Health).ToLowerInvariant() -eq "healthy"
         if (-not $ready) {
             Start-Sleep -Seconds 5
@@ -203,25 +203,25 @@ try {
     Add-Check -Name "api.health.ready" -Passed ($null -ne $readyResponse) -Detail "HTTP request completed."
 
     $qualityReport = Invoke-JsonRequest -Method GET -Uri "${ApiBaseUrl}/product/quality-report"
-    Add-Check \
-        -Name "api.product.quality_report" \
-        -Passed ($null -ne $qualityReport -and $null -ne $qualityReport.last_updated) \
+    Add-Check `
+        -Name "api.product.quality_report" `
+        -Passed ($null -ne $qualityReport -and $null -ne $qualityReport.last_updated) `
         -Detail "Endpoint returned last_updated without datetime NameError."
 
     $readiness = Invoke-JsonRequest -Method GET -Uri "${ApiBaseUrl}/product/readiness"
     $readinessJson = $readiness | ConvertTo-Json -Depth 30 -Compress
     $readinessHasFailure = $readinessJson -match '"status":"failed"|"status":"blocked"'
-    Add-Check \
-        -Name "product.readiness" \
-        -Passed (-not $readinessHasFailure) \
+    Add-Check `
+        -Name "product.readiness" `
+        -Passed (-not $readinessHasFailure) `
         -Detail $(if ($readinessHasFailure) { "Readiness contains failed/blocked checks." } else { "No failed/blocked readiness status." })
 
     $populateUri = "${ApiBaseUrl}/radar/dashboard/populate?limit=100&source_limit=0&pipeline_limit=${PipelineLimit}&run_pipeline=true&force_rerun=true"
     $populate = Invoke-JsonRequest -Method POST -Uri $populateUri
     $pipelineResults = @($populate.pipeline_results)
-    Add-Check \
-        -Name "pipeline.result_count" \
-        -Passed ($pipelineResults.Count -ge 1) \
+    Add-Check `
+        -Name "pipeline.result_count" `
+        -Passed ($pipelineResults.Count -ge 1) `
         -Detail "pipeline_results=$($pipelineResults.Count)"
 
     $acceptedStatuses = @("completed", "degraded", "awaiting_review")
@@ -239,9 +239,9 @@ try {
                 $runtimeClean = $false
             }
         }
-        Add-Check \
-            -Name "pipeline.$([string]$result.startup_id)" \
-            -Passed ($statusAccepted -and $runtimeClean) \
+        Add-Check `
+            -Name "pipeline.$([string]$result.startup_id)" `
+            -Passed ($statusAccepted -and $runtimeClean) `
             -Detail "status=$status error=$errorText degraded_reason=$([string]$result.degraded_reason)"
 
         $runId = [string]$result.analysis_run_id
@@ -254,9 +254,9 @@ try {
         $runStatus = ([string]$run.status).ToLowerInvariant()
         $runError = [string]$run.error_message
         $runForbidden = Test-ForbiddenRuntimeError -Text $runError
-        Add-Check \
-            -Name "analysis_run.${runId}" \
-            -Passed (($acceptedStatuses -contains $runStatus) -and $null -eq $runForbidden -and $runStatus -ne "failed") \
+        Add-Check `
+            -Name "analysis_run.${runId}" `
+            -Passed (($acceptedStatuses -contains $runStatus) -and $null -eq $runForbidden -and $runStatus -ne "failed") `
             -Detail "status=$runStatus error_message=$runError"
 
         $analysisSummaries += [ordered]@{
@@ -271,9 +271,9 @@ try {
 
     $dashboard = Invoke-JsonRequest -Method GET -Uri "${ApiBaseUrl}/radar/dashboard?limit=100"
     $dashboardItems = @($dashboard.items)
-    Add-Check \
-        -Name "dashboard.persisted_output" \
-        -Passed ($dashboardItems.Count -ge 1) \
+    Add-Check `
+        -Name "dashboard.persisted_output" `
+        -Passed ($dashboardItems.Count -ge 1) `
         -Detail "dashboard_items=$($dashboardItems.Count) analyzed_total=$([string]$dashboard.analyzed_total)"
 
     $runtimeLogs = @(docker compose logs --no-color --since=15m api workflow-worker) -join "`n"
@@ -281,9 +281,9 @@ try {
         throw "docker compose logs failed with exit code $LASTEXITCODE."
     }
     $forbiddenLogError = Test-ForbiddenRuntimeError -Text $runtimeLogs
-    Add-Check \
-        -Name "runtime.forbidden_regressions" \
-        -Passed ($null -eq $forbiddenLogError) \
+    Add-Check `
+        -Name "runtime.forbidden_regressions" `
+        -Passed ($null -eq $forbiddenLogError) `
         -Detail $(if ($null -eq $forbiddenLogError) { "No known regression signature in recent logs." } else { "Found: $forbiddenLogError" })
 
     $overallPassed = $failures.Count -eq 0
@@ -323,3 +323,4 @@ catch {
     Write-Error $_
     exit 1
 }
+
