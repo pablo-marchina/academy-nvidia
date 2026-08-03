@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+"""Apply the one-time workflow transaction recovery fix and restore final CI."""
+from pathlib import Path
+
+runner_path = Path("src/orchestration/runner.py")
+runner = runner_path.read_text(encoding="utf-8")
+
+old = '''        self.repo.update_workflow_status(
+            state.workflow_id,
+            status=WorkflowStatus.RUNNING,
+            current_node="",
+            state_json=self._dump_state(state),
+        )
+
+        thread_id = state.analysis_run_id or state.workflow_id
+'''
+new = '''        self.repo.update_workflow_status(
+            state.workflow_id,
+            status=WorkflowStatus.RUNNING,
+            current_node="",
+            state_json=self._dump_state(state),
+        )
+        # Establish a durable workflow/analysis boundary before node execution.
+        # If a later node flush fails, rolling back must not delete the workflow
+        # record that is needed to persist the concrete failure for the API/UI.
+        self.session.commit()
+
+        thread_id = state.analysis_run_id or state.workflow_id
+'''
+if old not in runner:
+    raise RuntimeError("workflow running boundary pattern not found")
+runner = runner.replace(old, new, 1)
+
+old = '''        except NodeExecutionError as exc:
+            self._fail_state(state, exc.error_message or f"Node failed: {exc.node_name}", node_name=exc.node_name)
+            return state
+        except Exception as exc:
+            node_name = state.current_node or "workflow_execution"
+            self._fail_state(
+'''
+new = '''        except NodeExecutionError as exc:
+            # A failed flush leaves SQLAlchemy in PendingRollbackError state.
+            # Restore the session before writing the durable workflow failure.
+            self.session.rollback()
+            self._fail_state(state, exc.error_message or f"Node failed: {exc.node_name}", node_name=exc.node_name)
+            return state
+        except Exception as exc:
+            self.session.rollback()
+            node_name = state.current_node or "workflow_execution"
+            self._fail_state(
+'''
+if old not in runner:
+    raise RuntimeError("workflow exception pattern not found")
+runner = runner.replace(old, new, 1)
+
+old = '''        self._sync_analysis_run(state, status=WorkflowStatus.RUNNING)
+
+        token = session_var.set(self.session)
+'''
+new = '''        self._sync_analysis_run(state, status=WorkflowStatus.RUNNING)
+        self.session.commit()
+
+        token = session_var.set(self.session)
+'''
+if old not in runner:
+    raise RuntimeError("resume running boundary pattern not found")
+runner = runner.replace(old, new, 1)
+
+old = '''        except NodeExecutionError as exc:
+            self._fail_state(state, exc.error_message or f"Node failed: {exc.node_name}", node_name=exc.node_name)
+            return state
+        except Exception as exc:
+            self._fail_state(
+                state,
+                f"Workflow resume failed: {type(exc).__name__}: {exc}",
+'''
+new = '''        except NodeExecutionError as exc:
+            self.session.rollback()
+            self._fail_state(state, exc.error_message or f"Node failed: {exc.node_name}", node_name=exc.node_name)
+            return state
+        except Exception as exc:
+            self.session.rollback()
+            self._fail_state(
+                state,
+                f"Workflow resume failed: {type(exc).__name__}: {exc}",
+'''
+if old not in runner:
+    raise RuntimeError("resume exception pattern not found")
+runner = runner.replace(old, new, 1)
+runner_path.write_text(runner, encoding="utf-8")
+
+final_ci = '''name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  product-governance:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: startup_radar
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d startup_radar"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PRODUCT_DB_URL: postgresql+psycopg://postgres:postgres@localhost:5432/startup_radar
+      LANGGRAPH_POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/startup_radar
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Python package and mandatory product runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Install and audit frontend dependencies
+        working-directory: frontend
+        run: |
+          npm ci
+          npm audit --audit-level=high
+
+      - name: Validate deployable configuration contracts
+        run: |
+          docker compose config --quiet
+          python scripts/check_product_configuration.py
+          python -m compileall -q src scripts tests
+
+      - name: Apply product database migrations
+        run: alembic upgrade head
+
+      - name: Runtime governance gates
+        run: |
+          python scripts/check_single_runtime_pipeline.py
+          python scripts/check_no_mock_runtime.py
+          python scripts/build_runtime_usage_inventory.py --output final_case_evidence/runtime_usage_inventory.csv
+          python scripts/build_best_case_runtime_report.py --inventory final_case_evidence/runtime_usage_inventory.csv --output final_case_evidence/best_case_runtime_report.json
+
+      - name: Backend integration and regression tests
+        run: |
+          pytest -q \
+            tests/unit/test_release_runtime_contract.py \
+            tests/unit/test_corpus_release_contract.py \
+            tests/unit/test_corpus_ingestion_manifest.py \
+            tests/unit/test_rag_retrieval_contract.py \
+            tests/unit/test_adaptive_source_planner.py \
+            tests/unit/test_workflow_transaction_recovery.py \
+            tests/unit/test_best_case_runtime_report.py \
+            tests/unit/test_runtime_usage_inventory.py \
+            tests/unit/test_ai_native_model.py \
+            tests/unit/test_probabilistic_workflow_scoring.py \
+            tests/unit/test_rag_technique_registry.py \
+            tests/integration/test_workflow_schema_migration.py \
+            tests/integration/test_postgres_checkpointer_contract.py \
+            tests/integration/test_product_workflow_api.py \
+            tests/acceptance/test_no_mock_in_production.py
+
+      - name: Build production frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install browser for deterministic UI validation
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate final pipeline result in frontend
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_MOCK_API: "true"
+        run: npx playwright test test_final_result_ui.spec.ts
+
+      - name: Upload Playwright diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+'''
+Path(".github/workflows/ci.yml").write_text(final_ci, encoding="utf-8")
+Path(__file__).unlink()
+print("workflow transaction recovery fix applied")
