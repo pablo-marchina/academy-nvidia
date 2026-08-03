@@ -33,14 +33,15 @@ jobs:
           ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Apply one-time reranker import patch
-        if: hashFiles('scripts/apply_lru_cache_patch.py') != ''
         run: |
-          python scripts/apply_lru_cache_patch.py
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/rag/rag_service_factory.py scripts/apply_lru_cache_patch.py
-          git commit -m "fix: import cached local reranker loader"
-          git push origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}
+          if [ -f scripts/apply_lru_cache_patch.py ]; then
+            python scripts/apply_lru_cache_patch.py
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/rag/rag_service_factory.py scripts/apply_lru_cache_patch.py
+            git commit -m "fix: import cached local reranker loader"
+            git push origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}
+          fi
 
       - uses: actions/setup-python@v5
         with:
