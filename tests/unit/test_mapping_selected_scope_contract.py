@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from src.diagnosis.gap_diagnosis_scoring import diagnose_gaps_quantitative
 from src.diagnosis.schemas import GapType
+from src.orchestration.node_impl import _runtime_decision_inventory
 from src.recommendation.nvidia_technology_mapping import (
     GAP_TECHNOLOGY_CANDIDATES,
     build_nvidia_technology_mappings,
@@ -47,6 +48,7 @@ def test_mapping_only_builds_candidates_for_selected_gap_and_reviews_supported_l
         gap_results=[cv_gap],
         gap_metrics=diagnosis.metrics,
         evidence_items=evidence,
+        inventory=_runtime_decision_inventory(),
     )
 
     mappings = result["nvidia_technology_mappings"]

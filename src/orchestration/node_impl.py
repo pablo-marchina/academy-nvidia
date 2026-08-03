@@ -1496,6 +1496,11 @@ def node_match_activation_playbooks(state: ProductWorkflowState) -> NodeResult:
         return NodeResult(status=NodeStatus.SKIPPED, error_message="No analysis_run_id for playbook matching")
 
     try:
+        # Gap and mapping nodes commit their terminal snapshots and product
+        # records before this node runs. Expire identity-map relationships so
+        # ActivationPlaybookService reads the newly persisted gaps/mappings
+        # instead of collections cached when the AnalysisRun was created.
+        session.expire_all()
         act_service = ActivationPlaybookService(session)
         recs = act_service.generate_recommendations_for_run(analysis_run_id)
         if recs:
