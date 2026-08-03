@@ -9,6 +9,7 @@ decisions are not ready.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from functools import lru_cache
 import math
 from typing import Any
 
