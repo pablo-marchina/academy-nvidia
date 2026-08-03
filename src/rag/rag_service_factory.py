@@ -9,6 +9,7 @@ decisions are not ready.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import math
 from typing import Any
 
 from src.diagnosis.nvidia_mapping import map_gap_to_technologies
@@ -47,6 +48,52 @@ REQUIRED_HYBRID_RAG_DECISIONS: list[str] = [
 # Backward-compatible alias for tests/imports; the official path now includes
 # hybrid retrieval and reranking rather than semantic-only retrieval.
 REQUIRED_SEMANTIC_DECISIONS = REQUIRED_HYBRID_RAG_DECISIONS
+
+
+@lru_cache(maxsize=2)
+def _load_local_cross_encoder(model_name: str) -> Any:
+    from sentence_transformers import CrossEncoder
+
+    return CrossEncoder(model_name)
+
+
+def _rerank_with_configured_provider(
+    contexts: list[Any],
+    query: RetrievalQuery,
+) -> tuple[list[Any], dict[str, Any]]:
+    """Run the configured real reranker and fail closed on provider errors."""
+    import os
+
+    provider = os.getenv("RERANKER_PROVIDER", "triton").strip().casefold()
+    if provider in {"triton", "nvidia_triton", "nvidia_triton_inference_server"}:
+        return triton_rerank_contexts(contexts, query)
+    if provider != "local_cross_encoder":
+        raise TritonRerankerUnavailable(f"Unsupported production reranker provider: {provider or 'missing'}")
+
+    model_name = os.getenv("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
+    try:
+        model = _load_local_cross_encoder(model_name)
+    except Exception as exc:
+        raise TritonRerankerUnavailable(f"Local cross-encoder unavailable: {exc}") from exc
+    query_text = " ".join(
+        part for part in [query.gap_type or "", query.technology or "", " ".join(query.keywords)] if part
+    )
+    pairs = [(query_text, ctx.content) for ctx in contexts]
+    try:
+        scores = model.predict(pairs)
+    except Exception as exc:
+        raise TritonRerankerUnavailable(f"Local cross-encoder prediction failed: {exc}") from exc
+
+    for ctx, score in zip(contexts, scores, strict=False):
+        logit = float(score)
+        ctx.relevance_score = round(1.0 / (1.0 + math.exp(-max(min(logit, 60.0), -60.0))), 6)
+    ranked = sorted(contexts, key=lambda item: item.relevance_score, reverse=True)
+    return ranked, {
+        "called": True,
+        "provider": "local_cross_encoder",
+        "model": model_name,
+        "input_count": len(contexts),
+    }
 
 
 def _validate_hybrid_rag_calibrations() -> tuple[dict[str, Any], list[str]]:
@@ -396,10 +443,14 @@ class QdrantRagService:
                 errors.append("blocked_bm25_required: BM25_ENABLED must be true in product mode")
             if os.getenv("GRAPHRAG_ENABLED", "true").lower() not in {"1", "true", "yes"}:
                 errors.append("blocked_graphrag_required: GRAPHRAG_ENABLED must be true in product mode")
-            if os.getenv("TRITON_RERANKER_ENABLED", "true").lower() not in {"1", "true", "yes"}:
-                errors.append("blocked_triton_reranker_required: TRITON_RERANKER_ENABLED must be true in product mode")
-            if not os.getenv("TRITON_RERANKER_URL", "").strip():
-                errors.append("blocked_triton_reranker_required: TRITON_RERANKER_URL must be configured in product mode")
+            reranker_provider = os.getenv("RERANKER_PROVIDER", "").strip().casefold()
+            if reranker_provider in {"triton", "nvidia_triton", "nvidia_triton_inference_server"}:
+                if os.getenv("TRITON_RERANKER_ENABLED", "true").lower() not in {"1", "true", "yes"}:
+                    errors.append("blocked_triton_reranker_required: TRITON_RERANKER_ENABLED must be true for Triton")
+                if not os.getenv("TRITON_RERANKER_URL", "").strip():
+                    errors.append("blocked_triton_reranker_required: TRITON_RERANKER_URL must be configured for Triton")
+            elif reranker_provider != "local_cross_encoder":
+                errors.append("blocked_reranker_required: configure Triton or local_cross_encoder")
 
         if errors:
             self._validation_error = "; ".join(errors)
@@ -450,7 +501,7 @@ class QdrantRagService:
             )
             graph_ids = {ctx.chunk_id for ctx in graph_results}
             merged_results = local_results + [ctx for ctx in graph_results if ctx.chunk_id not in {r.chunk_id for r in local_results}]
-            results, triton_metrics = triton_rerank_contexts(merged_results, rq)
+            results, triton_metrics = _rerank_with_configured_provider(merged_results, rq)
             for ctx in results:
                 if ctx.chunk_id in seen_chunks:
                     continue
@@ -474,7 +525,7 @@ class QdrantRagService:
                         "retrieval_score": ctx.relevance_score,
                         "rerank_score": ctx.relevance_score,
                         "relevance_score": ctx.relevance_score,
-                        "retrieval_mode": "bm25_graphrag_qdrant_triton_rerank",
+                        "retrieval_mode": "bm25_graphrag_qdrant_configured_rerank",
                         "bm25_active": True,
                         "graphrag_active": True,
                         "graphrag_neighbor": ctx.chunk_id in graph_ids,
@@ -685,10 +736,11 @@ class QdrantRagService:
             "citation_ready_context_count": citation_ready_context_count,
             "missing_rag_calibration_count": missing_rag_calibration_count,
             "reranked_context_count": len([c for c in all_contexts if c.get("rerank_score") is not None]),
-            "retrieval_mode": "bm25_graphrag_qdrant_triton_rerank",
+            "retrieval_mode": "bm25_graphrag_qdrant_configured_rerank",
             "bm25_active": True,
                 "graphrag_active": True,
-                "triton_reranker_required": True,
+                "reranker_provider": os.getenv("RERANKER_PROVIDER", "triton"),
+            "reranker_required": True,
                 "lexical_corpus_chunk_count": len(self._chunk_index.chunks),
             "rag_blocker_count": 0,
         }
@@ -723,7 +775,7 @@ class QdrantRagService:
                 "retrieved_context_count": retrieved_context_count,
                 "min_required_contexts": min_contexts_per_gap,
                 "retrieval_status": rag_retrieval_status,
-                "retrieval_mode": "bm25_graphrag_qdrant_triton_rerank",
+                "retrieval_mode": "bm25_graphrag_qdrant_configured_rerank",
                 "reranker_required": True,
                 "rag_required": True,
             },

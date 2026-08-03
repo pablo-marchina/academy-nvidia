@@ -647,6 +647,7 @@ def node_load_startup_or_candidate(state: ProductWorkflowState) -> NodeResult:
 @_register("plan_search", "Build search plan from startup name", critical=True)
 def node_plan_search(state: ProductWorkflowState) -> NodeResult:
     startup_name = ""
+    website_url = ""
     if state.startup_id:
         session = state.metadata_json.get("_session")
         if session:
@@ -656,6 +657,7 @@ def node_plan_search(state: ProductWorkflowState) -> NodeResult:
             startup = repo.get_startup(state.startup_id)
             if startup:
                 startup_name = startup.name
+                website_url = startup.website or ""
     if not startup_name and state.metadata_json.get("startup_name"):
         startup_name = state.metadata_json["startup_name"]
 
@@ -668,7 +670,7 @@ def node_plan_search(state: ProductWorkflowState) -> NodeResult:
 
     from src.agents.search_planner import build_search_plan
 
-    plan = build_search_plan(startup_name)
+    plan = build_search_plan(startup_name, website_url=website_url)
     return NodeResult(
         status=NodeStatus.COMPLETED,
         state_updates={"search_plan": plan},
@@ -741,11 +743,17 @@ def node_collect_sources(state: ProductWorkflowState) -> NodeResult:
                         }
                     )
 
-    distinct_sources = {
-        str(ev.get("source_url") or ev.get("url") or ev.get("source_id") or ev.get("source") or "")
-        for ev in evidence_items
-        if ev.get("source_url") or ev.get("url") or ev.get("source_id") or ev.get("source")
-    }
+    from urllib.parse import urlparse
+
+    distinct_sources: set[str] = set()
+    for ev in evidence_items:
+        raw_source = str(ev.get("source_url") or ev.get("url") or ev.get("source_id") or ev.get("source") or "").strip()
+        if not raw_source:
+            continue
+        parsed = urlparse(raw_source)
+        identity = parsed.netloc.casefold().removeprefix("www.") if parsed.netloc else raw_source
+        if identity:
+            distinct_sources.add(identity)
     source_categories = {
         str(ev.get("source_type") or ev.get("category") or ev.get("source_category") or "")
         for ev in evidence_items
