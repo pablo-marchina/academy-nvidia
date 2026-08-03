@@ -11,6 +11,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from functools import lru_cache
 import math
+import os
 from typing import Any
 
 from src.diagnosis.nvidia_mapping import map_gap_to_technologies
