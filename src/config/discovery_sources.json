@@ -33,7 +33,7 @@
     "source_id": "distrito_startup_programs",
     "name": "Distrito Startup Programs",
     "source_type": "startup_program",
-    "base_url": "https://distrito.me/programas/",
+    "base_url": "https://www.distrito.me/ai-ecosystem",
     "country_scope": "Brazil",
     "sector_scope": "",
     "allowed": true,
@@ -41,8 +41,8 @@
     "rate_limit_hint": 10,
     "collection_method": "static_html",
     "robots_or_terms_note": "Public page. Check robots.txt before automated access.",
-    "enabled_by_default": true,
-    "notes": "Distrito runs startup programs and publishes participant lists."
+    "enabled_by_default": false,
+    "notes": "Official ecosystem page is current; entity-level startup search is gated."
   },
   {
     "source_id": "ace_startups_portfolio",
@@ -63,7 +63,7 @@
     "source_id": "bossa_invest_portfolio",
     "name": "Bossa Invest Portfolio",
     "source_type": "vc_portfolio",
-    "base_url": "https://bossainvest.com.br/portfolio/",
+    "base_url": "https://bossainvest.com/receber-investimento/",
     "country_scope": "Brazil",
     "sector_scope": "",
     "allowed": true,
@@ -71,14 +71,14 @@
     "rate_limit_hint": 10,
     "collection_method": "static_html",
     "robots_or_terms_note": "Public portfolio page. Check robots.txt before automated access.",
-    "enabled_by_default": true,
-    "notes": "Bossa Invest VC portfolio page."
+    "enabled_by_default": false,
+    "notes": "Current official page does not expose a stable public entity list."
   },
   {
     "source_id": "inovativa_startups",
     "name": "Inovativa Startups",
     "source_type": "accelerator",
-    "base_url": "https://inovativa.online/startups/",
+    "base_url": "https://www.inovativa.online/aceleracao",
     "country_scope": "Brazil",
     "sector_scope": "",
     "allowed": true,
@@ -86,8 +86,8 @@
     "rate_limit_hint": 10,
     "collection_method": "static_html",
     "robots_or_terms_note": "Public page. Check robots.txt before automated access.",
-    "enabled_by_default": true,
-    "notes": "Inovativa accelerator cohort listings. URL normalized during runtime-source audit."
+    "enabled_by_default": false,
+    "notes": "Current program page does not expose a stable public cohort listing for static ingestion."
   },
   {
     "source_id": "latitud_ecosystem",
@@ -108,7 +108,7 @@
     "source_id": "cubo_ecosystem",
     "name": "Cubo — Hub de Inovação",
     "source_type": "public_directory",
-    "base_url": "https://cubo.network/startups/",
+    "base_url": "https://pwa.cubo.network/para-startups",
     "country_scope": "Brazil",
     "sector_scope": "",
     "allowed": true,
@@ -116,8 +116,8 @@
     "rate_limit_hint": 10,
     "collection_method": "static_html",
     "robots_or_terms_note": "Public directory. Check robots.txt before automated access.",
-    "enabled_by_default": true,
-    "notes": "Cubo Itaú — largest innovation hub in Latin America."
+    "enabled_by_default": false,
+    "notes": "Official page is current, but the startup directory is gated and not a stable static public list."
   },
   {
     "source_id": "endeavor_ecosystem",
@@ -213,7 +213,7 @@
     "source_id": "open_startups_ecosystem",
     "name": "100 Open Startups — Ranking",
     "source_type": "public_directory",
-    "base_url": "https://www.openstartups.net/startups/",
+    "base_url": "https://www.openstartups.net/site/ranking/rankings-startups.html",
     "country_scope": "Brazil",
     "sector_scope": "",
     "allowed": true,
@@ -222,6 +222,6 @@
     "collection_method": "static_html",
     "robots_or_terms_note": "Public ranking page. Check robots.txt before automated access.",
     "enabled_by_default": true,
-    "notes": "Annual ranking of open innovation startups in Brazil. URL normalized during runtime-source audit."
+    "notes": "Current public ranking table with startup entities."
   }
 ]

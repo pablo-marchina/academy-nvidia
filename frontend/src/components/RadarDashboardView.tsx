@@ -154,6 +154,19 @@ function runtimeItemStatus(item: Record<string, JsonValue>): string {
   return stringValue(item.status) || stringValue(item.reason) || "recorded";
 }
 
+function runtimeItemDetail(item: Record<string, JsonValue>): string {
+  for (const key of ["error", "error_message", "degraded_reason", "current_node"]) {
+    const value = stringValue(item[key]);
+    if (value) return value;
+  }
+  const artifactErrors = item.artifact_errors;
+  if (Array.isArray(artifactErrors)) {
+    const values = artifactErrors.map((value) => stringValue(value)).filter(Boolean);
+    if (values.length > 0) return values.join("; ");
+  }
+  return runtimeItemStatus(item);
+}
+
 function RuntimeRecordList({
   title,
   description,
@@ -184,7 +197,7 @@ function RuntimeRecordList({
               <summary>
                 <span>
                   <strong>{runtimeItemTitle(item, index)}</strong>
-                  <small>{runtimeItemStatus(item)}</small>
+                  <small>{runtimeItemDetail(item)}</small>
                 </span>
                 <span className={`badge status-${runtimeItemStatus(item).toLowerCase()}`}>
                   {runtimeItemStatus(item)}

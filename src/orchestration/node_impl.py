@@ -685,6 +685,7 @@ def node_load_startup_or_candidate(state: ProductWorkflowState) -> NodeResult:
 def node_plan_search(state: ProductWorkflowState) -> NodeResult:
     startup_name = ""
     website_url = ""
+    known_source_urls: list[str] = []
     if state.startup_id:
         session = state.metadata_json.get("_session")
         if session:
@@ -695,6 +696,11 @@ def node_plan_search(state: ProductWorkflowState) -> NodeResult:
             if startup:
                 startup_name = startup.name
                 website_url = startup.website or ""
+                known_source_urls = [
+                    str(evidence.source_url)
+                    for evidence in (startup.evidence or [])
+                    if str(evidence.source_url or "").startswith(("http://", "https://"))
+                ]
     if not startup_name and state.metadata_json.get("startup_name"):
         startup_name = state.metadata_json["startup_name"]
 
@@ -707,7 +713,11 @@ def node_plan_search(state: ProductWorkflowState) -> NodeResult:
 
     from src.agents.search_planner import build_search_plan
 
-    plan = build_search_plan(startup_name, website_url=website_url)
+    plan = build_search_plan(
+        startup_name,
+        website_url=website_url,
+        known_source_urls=known_source_urls,
+    )
     return NodeResult(
         status=NodeStatus.COMPLETED,
         state_updates={"search_plan": plan},
@@ -849,16 +859,17 @@ def node_collect_sources(state: ProductWorkflowState) -> NodeResult:
     if error_rate > max_error_rate:
         degraded_failures.append("maximum_collection_error_rate_exceeded")
 
+    failures = critical_failures + degraded_failures
     if failures:
         msg_parts = []
         if errors:
             msg_parts.append(f"Source collection had errors: {'; '.join(errors[:5])}")
         msg_parts.append(f"Source coverage gate failed: {', '.join(failures)}")
         msg = " | ".join(msg_parts)
-        is_failed = _is_product_mode() and bool(critical_failures)
+        is_failed = product_mode and bool(critical_failures)
         return NodeResult(
-            status=NodeStatus.FAILED if _is_product_mode() else NodeStatus.DEGRADED,
-            error_message=msg if _is_product_mode() else None,
+            status=NodeStatus.FAILED if is_failed else NodeStatus.DEGRADED,
+            error_message=msg if is_failed else None,
             degraded_reason=msg,
             state_updates=updates,
         )

@@ -27,7 +27,7 @@ from src.services.product.opportunity_service import OpportunityService
 
 
 _CONFIDENCE_VALUE = {"high": 0.90, "medium": 0.60, "low": 0.30, "unknown": 0.0}
-_TERMINAL_RUN_STATUSES = {"completed", "degraded"}
+_TERMINAL_RUN_STATUSES = {"completed", "degraded", "awaiting_review"}
 _VALID_SOURCE_TYPES = {"official_site", "news", "directory", "blog", "job_post", "founder_profile"}
 _SOURCE_TYPE_ALIASES = {"web": "directory", "manual_seed": "directory", "official_website": "official_site", "website": "official_site", "social": "founder_profile"}
 
@@ -153,8 +153,17 @@ class RadarDashboardService:
             try:
                 result = self.discovery.run_source_scraper_discovery(source_id)
                 results.append({"source_id": source_id, "status": "completed", **result})
-            except Exception as exc:  # keep dashboard population resilient while reporting the exact blocker
-                results.append({"source_id": source_id, "status": "failed", "error": str(exc)})
+            except Exception as exc:  # optional external acquisition must not block the central pipeline
+                error = str(exc)
+                status = "unavailable" if error.startswith("fetch_failed:") else "failed"
+                results.append(
+                    {
+                        "source_id": source_id,
+                        "status": status,
+                        "error": error,
+                        "blocking": status == "failed",
+                    }
+                )
         return results
 
     def _promote_best_candidates(self, limit: int) -> list[dict[str, Any]]:
@@ -186,16 +195,16 @@ class RadarDashboardService:
         return ids[:limit]
 
     def _run_pipeline_for_startups(self, startup_ids: list[str], *, force_rerun: bool) -> list[dict[str, Any]]:
+        from src.repositories.workflow import WorkflowRepository
         from src.services.product.service import ProductService
 
         results: list[dict[str, Any]] = []
         product_service = ProductService(self.session)
+        workflow_repo = WorkflowRepository(self.session)
         for startup_id in startup_ids:
             latest = self.product_repo.get_latest_analysis_run(startup_id)
             if latest is not None and latest.status in _TERMINAL_RUN_STATUSES and not force_rerun:
-                analysis_run_id = latest.id
-                workflow_id = None
-                status = latest.status
+                run = latest
             else:
                 try:
                     run = product_service.create_analysis_run_for_startup(
@@ -204,24 +213,42 @@ class RadarDashboardService:
                         rag_backend="qdrant",
                         pipeline_version="radar_dashboard_unified_runtime_v2",
                     )
-                    analysis_run_id = run.id
-                    workflow_id = None
-                    status = run.status
                 except Exception as exc:
                     self.session.rollback()
-                    results.append({"startup_id": startup_id, "status": "failed", "error": str(exc)})
+                    results.append(
+                        {
+                            "startup_id": startup_id,
+                            "status": "failed",
+                            "error": f"{type(exc).__name__}: {exc}",
+                            "blocking": True,
+                        }
+                    )
                     continue
 
+            analysis_run_id = run.id
+            status = str(run.status)
+            workflow = workflow_repo.get_workflow_for_analysis_run(analysis_run_id)
+            workflow_id = workflow.id if workflow is not None else None
             artifact_errors: list[str] = []
-            if analysis_run_id:
+            if status in {"completed", "degraded"}:
                 artifact_errors = self._ensure_post_pipeline_artifacts(analysis_run_id)
+
+            result_status = "degraded" if artifact_errors and status == "completed" else status
+            error = str(run.error_message or (workflow.error_message if workflow is not None else "") or "")
+            degraded_reason = str(
+                run.degraded_reason or (workflow.degraded_reason if workflow is not None else "") or ""
+            )
             results.append(
                 {
                     "startup_id": startup_id,
                     "analysis_run_id": analysis_run_id,
                     "workflow_id": workflow_id,
-                    "status": "degraded" if artifact_errors and status == "completed" else status,
+                    "status": result_status,
+                    "current_node": workflow.current_node if workflow is not None else "",
+                    "error": error or None,
+                    "degraded_reason": degraded_reason or None,
                     "artifact_errors": artifact_errors,
+                    "blocking": result_status == "failed",
                 }
             )
         return results

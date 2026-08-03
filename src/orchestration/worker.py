@@ -30,9 +30,18 @@ def _execute(workflow_id: str) -> None:
     try:
         with product_session() as session:
             WorkflowOrchestrationService(session).run_existing_workflow(workflow_id)
-        logger.info("workflow_completed workflow_id=%s", workflow_id)
+            persisted = WorkflowRepository(session).get_workflow_run(workflow_id)
+            raw_status = getattr(persisted.status, "value", persisted.status) if persisted is not None else "unknown"
+            status = str(raw_status).casefold()
+            error = persisted.error_message if persisted is not None else None
+            if status == "failed":
+                logger.error("workflow_finished_failed workflow_id=%s error=%s", workflow_id, error or "unknown")
+            elif status == "degraded":
+                logger.warning("workflow_finished_degraded workflow_id=%s", workflow_id)
+            else:
+                logger.info("workflow_finished workflow_id=%s status=%s", workflow_id, status)
     except Exception as exc:
-        logger.exception("workflow_failed workflow_id=%s", workflow_id)
+        logger.exception("workflow_worker_exception workflow_id=%s", workflow_id)
         with product_session() as session:
             WorkflowRepository(session).fail_workflow(
                 workflow_id,
