@@ -1,0 +1,156 @@
+name: Fix secondary runtime regressions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/fix-runtime-secondary-regressions.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply idempotent runtime repairs
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          routes = Path('src/api/product_routes.py')
+          text = routes.read_text(encoding='utf-8')
+          marker = 'from __future__ import annotations\n\n'
+          addition = 'from datetime import UTC, datetime\n'
+          if addition not in text:
+              if marker not in text:
+                  raise SystemExit('product_routes marker not found')
+              text = text.replace(marker, marker + addition + '\n', 1)
+          routes.write_text(text, encoding='utf-8')
+
+          radar = Path('src/services/product/radar_dashboard_service.py')
+          text = radar.read_text(encoding='utf-8')
+          old = '''            except Exception as exc:  # keep dashboard population resilient while reporting the exact blocker
+                results.append({"source_id": source_id, "status": "failed", "error": str(exc)})'''
+          new = '''            except Exception as exc:  # optional external sources must not block the central product pipeline
+                error = str(exc)
+                status = "unavailable" if error.startswith("fetch_failed:") else "failed"
+                results.append(
+                    {
+                        "source_id": source_id,
+                        "status": status,
+                        "error": error,
+                        "blocking": status == "failed",
+                    }
+                )'''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif 'status = "unavailable" if error.startswith("fetch_failed:") else "failed"' not in text:
+              raise SystemExit('radar source exception block not found')
+          radar.write_text(text, encoding='utf-8')
+
+          compose = Path('docker-compose.yml')
+          text = compose.read_text(encoding='utf-8')
+          old = '''    volumes:
+      - product_data:/app/data/product
+      - model_cache:/opt/model-cache
+
+  frontend:
+'''
+          new = '''    volumes:
+      - product_data:/app/data/product
+      - model_cache:/opt/model-cache
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import pathlib; raise SystemExit(0 if b'src.orchestration.worker' in pathlib.Path('/proc/1/cmdline').read_bytes() else 1)"
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+'''
+          if "pathlib.Path('/proc/1/cmdline')" not in text:
+              pos = text.rfind(old)
+              if pos < 0:
+                  raise SystemExit('workflow-worker volume block not found')
+              text = text[:pos] + new + text[pos + len(old):]
+          compose.write_text(text, encoding='utf-8')
+
+          config_path = Path('src/config/discovery_sources.json')
+          sources = json.loads(config_path.read_text(encoding='utf-8'))
+          updates = {
+              'open_startups_ecosystem': {
+                  'base_url': 'https://www.openstartups.net/site/ranking/rankings-startups.html',
+                  'enabled_by_default': True,
+                  'notes': 'Public, current ranking table of startup entities.',
+              },
+              'cubo_ecosystem': {
+                  'base_url': 'https://pwa.cubo.network/para-startups',
+                  'enabled_by_default': False,
+                  'notes': 'Current official page, but it does not expose a stable public startup listing for static ingestion.',
+              },
+              'bossa_invest_portfolio': {
+                  'base_url': 'https://bossainvest.com/receber-investimento/',
+                  'enabled_by_default': False,
+                  'notes': 'Current official page; portfolio list is not exposed as a stable static public directory.',
+              },
+              'inovativa_startups': {
+                  'base_url': 'https://www.inovativa.online/aceleracao',
+                  'enabled_by_default': False,
+                  'notes': 'Current program page; no stable public cohort listing for static ingestion.',
+              },
+              'distrito_startup_programs': {
+                  'base_url': 'https://www.distrito.me/ai-ecosystem',
+                  'enabled_by_default': False,
+                  'notes': 'Current official ecosystem page; the startup database is gated and not a public static list.',
+              },
+          }
+          found = set()
+          for item in sources:
+              source_id = item.get('source_id')
+              if source_id in updates:
+                  item.update(updates[source_id])
+                  found.add(source_id)
+          missing = set(updates) - found
+          if missing:
+              raise SystemExit(f'discovery source ids not found: {sorted(missing)}')
+          config_path.write_text(json.dumps(sources, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          PY
+
+      - name: Verify repairs
+        shell: bash
+        run: |
+          python -m py_compile src/api/product_routes.py src/services/product/radar_dashboard_service.py src/agents/search_planner.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          assert 'from datetime import UTC, datetime' in Path('src/api/product_routes.py').read_text()
+          assert 'status = "unavailable" if error.startswith("fetch_failed:") else "failed"' in Path('src/services/product/radar_dashboard_service.py').read_text()
+          assert "b'src.orchestration.worker'" in Path('docker-compose.yml').read_text()
+          sources = {x['source_id']: x for x in json.loads(Path('src/config/discovery_sources.json').read_text())}
+          assert sources['open_startups_ecosystem']['enabled_by_default'] is True
+          for source_id in ('cubo_ecosystem', 'bossa_invest_portfolio', 'inovativa_startups', 'distrito_startup_programs'):
+              assert sources[source_id]['enabled_by_default'] is False
+          PY
+
+      - name: Commit repair and remove one-shot workflow
+        shell: bash
+        run: |
+          rm .github/workflows/fix-runtime-secondary-regressions.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/api/product_routes.py src/services/product/radar_dashboard_service.py src/config/discovery_sources.json docker-compose.yml .github/workflows/fix-runtime-secondary-regressions.yml
+          git commit -m "fix: repair quality endpoint, worker health and optional discovery sources"
+          git push origin HEAD:main
