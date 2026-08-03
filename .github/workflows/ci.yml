@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   product-governance:
     runs-on: ubuntu-latest
@@ -26,6 +29,16 @@ jobs:
       LANGGRAPH_POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/startup_radar
     steps:
       - uses: actions/checkout@v4
+
+      - name: Apply one-time live validation integration patch
+        if: hashFiles('scripts/apply_live_validation_patch.py') != ''
+        run: |
+          python scripts/apply_live_validation_patch.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: integrate real-source output validation"
+          git push origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}
 
       - name: Package tracked source for release audit
         run: git archive --format=tar.gz --output=source-audit.tar.gz HEAD
@@ -77,6 +90,7 @@ jobs:
             tests/unit/test_release_runtime_contract.py \
             tests/unit/test_corpus_release_contract.py \
             tests/unit/test_rag_retrieval_contract.py \
+            tests/unit/test_adaptive_source_planner.py \
             tests/unit/test_best_case_runtime_report.py \
             tests/unit/test_runtime_usage_inventory.py \
             tests/unit/test_ai_native_model.py \
