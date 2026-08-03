@@ -19,6 +19,7 @@ dependencies = [
   "PyYAML",
   "beautifulsoup4",
   "trafilatura",
+  "rapidfuzz>=3.0",
   "playwright",
   "qdrant-client>=1.12,<1.13",
   "sentence-transformers>=3.0,<4",

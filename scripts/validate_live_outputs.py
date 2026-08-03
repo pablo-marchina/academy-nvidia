@@ -300,6 +300,11 @@ def _run_case(client: TestClient, case: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+
+def _validation_exit_code(results: list[dict[str, Any]]) -> int:
+    """Return success only when every sampled company passes all checks."""
+    return 0 if results and all(bool(item.get("passed")) for item in results) else 1
+
 def main() -> int:
     database_url = os.environ.get("PRODUCT_DB_URL", "postgresql+psycopg://postgres:postgres@localhost:5432/startup_radar")
     configure_product_database(database_url, create_schema=False)
@@ -347,7 +352,7 @@ def main() -> int:
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(json.dumps(report, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
     print(json.dumps(report, indent=2, ensure_ascii=False, default=str))
-    return 0 if successful_outputs else 1
+    return _validation_exit_code(results)
 
 
 if __name__ == "__main__":
