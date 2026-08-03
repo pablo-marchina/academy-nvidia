@@ -33,7 +33,7 @@ The default reranker is CPU-compatible. An NVIDIA GPU can later be assigned to T
 ```powershell
 git clone https://github.com/pablo-marchina/academy-nvidia.git
 cd academy-nvidia
-git checkout improve/dashboard-output-performance
+git checkout main
 
 # Creates .env from the template with cryptographically random proxy and DB secrets.
 ./scripts/initialize_release_env.ps1
