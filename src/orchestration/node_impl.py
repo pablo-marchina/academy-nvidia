@@ -766,7 +766,10 @@ def node_collect_sources(state: ProductWorkflowState) -> NodeResult:
         in {"official_site", "official_website"}
         and bool(ev.get("is_official_source", True))
     )
-    attempted_count = max(1, len(state.search_plan))
+    # Measure the effective acquisition batch, including valid persisted
+    # evidence merged above. Counting only planned URLs makes one robots block
+    # look like a 100% failure even when several real sources are available.
+    attempted_count = max(1, len(evidence_items) + len(errors))
     error_rate = len(errors) / attempted_count
     product_mode = _is_product_mode()
     min_raw = int(os.getenv("SCRAPING_MIN_RAW_EVIDENCE", "5" if product_mode else "3"))

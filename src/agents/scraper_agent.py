@@ -84,6 +84,16 @@ def collect_sources(
     return evidence_items, errors
 
 
+
+def _timestamp_iso(value: Any) -> str:
+    """Serialize collector timestamps without assuming a datetime instance."""
+    if value is None:
+        return datetime.now(UTC).isoformat()
+    isoformat = getattr(value, "isoformat", None)
+    if callable(isoformat):
+        return str(isoformat())
+    return str(value)
+
 def collect_governed_sources(
     startup_name: str,
     website_url: str,
@@ -186,15 +196,18 @@ def collect_governed_sources(
             authority_weight=0.95,
         ))
 
-    # Add non-blocked configured governed sources after the adaptive plan.
-    for src in governed_records:
-        url = (src.base_url or "").strip()
-        if not url and src.source_category == "official_website":
-            url = website_url
-        if not url or url in seen_urls or src.production_blockers:
-            continue
-        seen_urls.add(url)
-        populated.append(src.model_copy(update={"base_url": url}))
+    # The adaptive plan is authoritative. Global registry sources are a
+    # fallback only when no startup-specific plan exists; otherwise unrelated
+    # ecosystem directories create false errors and contaminate evidence.
+    if not search_plan:
+        for src in governed_records:
+            url = (src.base_url or "").strip()
+            if not url and src.source_category == "official_website":
+                url = website_url
+            if not url or url in seen_urls or src.production_blockers:
+                continue
+            seen_urls.add(url)
+            populated.append(src.model_copy(update={"base_url": url}))
 
     if not populated:
         return [], ["No collectable sources after adaptive plan and URL resolution"]
@@ -221,7 +234,7 @@ def collect_governed_sources(
                 "source_category": sfr.metadata.get("source_category", "unknown"),
                 "source_id": sfr.source_id,
                 "reason": sfr.metadata.get("source_name", ""),
-                "fetched_at": sfr.fetched_at.isoformat(),
+                "fetched_at": _timestamp_iso(sfr.fetched_at),
                 "status_code": sfr.http_status_code,
                 "content_hash": sfr.content_hash,
                 "latency_ms": sfr.latency_ms,
@@ -249,7 +262,7 @@ def collect_governed_sources(
                     "source_category": sfr.metadata.get("source_category", "unknown"),
                     "source_id": sfr.source_id,
                     "reason": sfr.metadata.get("source_name", ""),
-                    "fetched_at": sfr.fetched_at.isoformat(),
+                    "fetched_at": _timestamp_iso(sfr.fetched_at),
                     "status_code": sfr.http_status_code,
                     "content_hash": sfr.content_hash,
                     "latency_ms": sfr.latency_ms,
