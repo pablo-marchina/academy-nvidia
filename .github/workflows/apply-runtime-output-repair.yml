@@ -1,0 +1,56 @@
+name: Apply runtime output repair
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/apply-runtime-output-repair.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Extract deterministic repair script
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          source = Path('.github/workflows/final-runtime-output-repair.yml').read_text(encoding='utf-8').splitlines()
+          start = next(i for i, line in enumerate(source) if line.strip() == "python - <<'PY'") + 1
+          end = next(i for i in range(start, len(source)) if source[i].strip() == 'PY')
+          script = textwrap.dedent('\n'.join(source[start:end])) + '\n'
+          Path('/tmp/apply_runtime_output_repair.py').write_text(script, encoding='utf-8')
+          compile(script, '/tmp/apply_runtime_output_repair.py', 'exec')
+          PY
+
+      - name: Apply repairs
+        run: python /tmp/apply_runtime_output_repair.py
+
+      - name: Commit repairs
+        run: |
+          rm .github/workflows/apply-runtime-output-repair.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/agents/search_planner.py \
+            src/orchestration/node_impl.py \
+            src/api/product_routes.py \
+            src/services/product/radar_dashboard_service.py \
+            src/orchestration/worker.py \
+            src/config/discovery_sources.json \
+            docker-compose.yml \
+            frontend/src/views/RadarDashboardView.tsx \
+            tests/unit/test_runtime_merge_regressions.py \
+            .github/workflows/apply-runtime-output-repair.yml
+          git commit -m "fix: apply end-to-end runtime output corrections"
+          git pull --rebase origin main
+          git push origin HEAD:main
