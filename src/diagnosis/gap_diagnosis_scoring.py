@@ -593,7 +593,10 @@ def _diagnose_single_gap(
             "accepted as proof of an operational gap"
         )
     elif production_threshold is not None and final_severity > production_threshold:
-        status = GapDiagnosisStatus.FAILED
+        # Crossing the calibrated severity threshold means a gap was detected;
+        # it is not a failure of the diagnosis process. Keep it retrieval-eligible
+        # and explicitly mark it for review by downstream decision makers.
+        status = GapDiagnosisStatus.NEEDS_REVIEW
     else:
         status = GapDiagnosisStatus.PASSED
 
@@ -617,11 +620,15 @@ def _diagnose_single_gap(
         f"Confidence features: {confidence_features.model_dump(mode='json')}",
     ]
     if status == GapDiagnosisStatus.PASSED:
-        explanation_parts.append("All checks passed.")
+        explanation_parts.append("No decision-threshold gap was detected from the available evidence.")
+    elif status == GapDiagnosisStatus.NEEDS_REVIEW:
+        explanation_parts.append(
+            f"Evidence-supported gap exceeds the calibrated severity threshold ({production_threshold}) and requires review."
+        )
     elif status == GapDiagnosisStatus.FAILED:
-        explanation_parts.append(f"Severity exceeds production threshold ({production_threshold}).")
+        explanation_parts.append("The diagnosis process failed a validity gate.")
     elif status == GapDiagnosisStatus.NEEDS_MORE_EVIDENCE:
-        explanation_parts.append("Insufficient evidence for reliable diagnosis.")
+        explanation_parts.append("Insufficient positive evidence for reliable diagnosis.")
 
     return GapDiagnosisResultItem(
         gap_id=gap_id,
@@ -643,9 +650,13 @@ def _diagnose_single_gap(
         blockers=gap_blockers,
         explanation="; ".join(explanation_parts),
         recommended_investigation=(
-            "Collect additional evidence for this gap area."
+            "Collect additional positive evidence for this gap area."
             if status == GapDiagnosisStatus.NEEDS_MORE_EVIDENCE
-            else "No further investigation required at this time."
+            else (
+                "Review the supporting company evidence and retrieve NVIDIA technical context."
+                if status == GapDiagnosisStatus.NEEDS_REVIEW
+                else "No further investigation required at this time."
+            )
         ),
     )
 
