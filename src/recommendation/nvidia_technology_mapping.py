@@ -232,8 +232,22 @@ def _lookup_int(
 
 
 def _text_contains_any(text: str, keywords: list[str]) -> bool:
-    lower = text.lower()
-    return any(kw.lower() in lower for kw in keywords)
+    lower = text.casefold()
+    return any(kw.casefold() in lower for kw in keywords if kw)
+
+
+def _evidence_text(item: dict[str, Any]) -> str:
+    return str(
+        item.get("text")
+        or item.get("quote_or_evidence")
+        or item.get("snippet")
+        or item.get("claim")
+        or ""
+    )
+
+
+def _evidence_id(item: dict[str, Any]) -> str:
+    return str(item.get("id") or item.get("evidence_id") or "")
 
 
 # ---------------------------------------------------------------------------
@@ -276,15 +290,12 @@ def extract_mapping_features(
     ]
     rag_relevance_mean = _mean(rag_relevance_scores)
 
-    tech_keywords = [technology.lower(), technology.lower().replace("nvidia ", "")]
-    ev_for_tech = [
-        item
-        for item in evidence_items
-        if _text_contains_any(
-            str(item.get("text", "") or item.get("snippet", "") or item.get("claim", "")),
-            tech_keywords,
-        )
-    ]
+    # Company evidence proves the diagnosed need; governed NVIDIA RAG contexts
+    # prove that a technology addresses that need. Requiring the company source
+    # to already name the recommended NVIDIA product would make novel
+    # recommendations impossible and would conflate adoption with suitability.
+    gap_support_ids = set(gap_result.supporting_evidence_ids if gap_result else [])
+    ev_for_tech = [item for item in evidence_items if _evidence_id(item) in gap_support_ids]
     evidence_count = len(ev_for_tech)
 
     ev_confidences: list[float] = []
@@ -304,7 +315,7 @@ def extract_mapping_features(
     tech_topic_match = 1.0 if _text_contains_any(all_text, topic_keywords) else 0.0
 
     startup_keywords = ["gpu", "cuda", "deep learning", "machine learning", "ai"]
-    startup_text = " ".join(str(item.get("text", "") or item.get("snippet", "") or "") for item in evidence_items)
+    startup_text = " ".join(_evidence_text(item) for item in evidence_items)
     signal_match_count = sum(1 for kw in startup_keywords if kw in startup_text.lower())
     _MAX_SIGNALS = 6.0
     startup_signal_norm = min(1.0, signal_match_count / _MAX_SIGNALS)
@@ -567,14 +578,11 @@ def build_nvidia_technology_mappings(
                     rag_ctx_ids.append(str(cid))
 
             ev_ids: list[str] = []
-            tech_keywords_search = [tech.lower(), tech.replace("nvidia ", "").strip().lower()]
+            gap_support_ids = set(gap_result.supporting_evidence_ids if gap_result else [])
             for item in evidence_items:
-                eid = item.get("id") or item.get("evidence_id") or ""
-                if eid and _text_contains_any(
-                    str(item.get("text", "") or item.get("snippet", "") or item.get("claim", "")),
-                    tech_keywords_search,
-                ):
-                    ev_ids.append(str(eid))
+                eid = _evidence_id(item)
+                if eid and eid in gap_support_ids:
+                    ev_ids.append(eid)
 
             # ── Determine status ────────────────────────────────────────
             status: NvidiaMappingStatus
@@ -608,7 +616,7 @@ def build_nvidia_technology_mappings(
             # ── Build explanation ───────────────────────────────────────
             explanation_parts: list[str] = [
                 f"Mapping '{gap_type_str} → {tech}': score={round(final_score, 4)}, confidence={round(final_conf, 4)}",
-                f"RAG contexts supporting: {rag_count}, Evidence items: {ev_count}",
+                f"RAG technology contexts: {rag_count}, Company gap evidence items: {ev_count}",
             ]
             if status == NvidiaMappingStatus.PASSED:
                 explanation_parts.append("All checks passed. Production allowed.")

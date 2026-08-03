@@ -78,6 +78,14 @@ def _rerank_with_configured_provider(
         raise TritonRerankerUnavailable(f"Unsupported production reranker provider: {provider or 'missing'}")
 
     model_name = os.getenv("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
+    if not contexts:
+        return [], {
+            "called": False,
+            "provider": "local_cross_encoder",
+            "model": model_name,
+            "input_count": 0,
+            "reason": "no_contexts_to_rerank",
+        }
     try:
         model = _load_local_cross_encoder(model_name)
     except Exception as exc:
