@@ -29,6 +29,8 @@ jobs:
       LANGGRAPH_POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/startup_radar
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Apply one-time live validation integration patch
         if: hashFiles('scripts/apply_live_validation_patch.py') != ''
