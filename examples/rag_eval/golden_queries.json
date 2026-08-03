@@ -1,26 +1,22 @@
 {
   "_meta": {
-    "description": "Golden queries for corpus-aware RAG evaluation",
-    "corpus_version": "governed active NVIDIA corpus as of 2026-08-02",
-    "created": "2026-06-09",
-    "updated": "2026-08-02",
-    "relevance_semantics": "expected values are mandatory coverage targets; allowed values include all additional relevant results"
+    "description": "Golden queries for governed NVIDIA RAG retrieval",
+    "corpus_version": "data/nvidia_corpus/ — 20 active sources",
+    "updated": "2026-08-02"
   },
   "queries": [
     {
       "case_id": "inference_cost_all",
-      "description": "high_inference_cost must cover NIM, TensorRT-LLM, and Triton while allowing governed inference guidance",
+      "description": "high_inference_cost covers product documentation and the governed inference guidance",
       "query": { "gap_type": "high_inference_cost", "technology": null, "keywords": [] },
-      "expected_source_ids": ["nim", "tensorrt_llm", "triton"],
-      "expected_products": ["NVIDIA NIM", "TensorRT-LLM", "Triton Inference Server"],
-      "allowed_source_ids": ["nim", "nvidia_whitepaper_inference", "tensorrt", "tensorrt_llm", "triton"],
-      "allowed_products": ["NVIDIA NIM", "NVIDIA Inference Optimization", "TensorRT", "TensorRT-LLM", "Triton Inference Server"],
+      "expected_source_ids": ["nim", "tensorrt_llm", "triton", "nvidia_whitepaper_inference"],
+      "expected_products": ["NVIDIA NIM", "TensorRT-LLM", "Triton Inference Server", "NVIDIA Inference Optimization"],
       "is_critical": true,
       "top_k_for_test": 15
     },
     {
       "case_id": "inference_cost_tensorrt",
-      "description": "high_inference_cost + TensorRT-LLM returns the exact TensorRT-LLM product",
+      "description": "high_inference_cost + TensorRT-LLM returns only TensorRT-LLM chunks",
       "query": { "gap_type": "high_inference_cost", "technology": "TensorRT-LLM", "keywords": [] },
       "expected_source_ids": ["tensorrt_llm"],
       "expected_products": ["TensorRT-LLM"],
@@ -31,7 +27,7 @@
     },
     {
       "case_id": "inference_cost_triton",
-      "description": "high_inference_cost + Triton returns the exact Triton product",
+      "description": "high_inference_cost + Triton returns only Triton chunks",
       "query": { "gap_type": "high_inference_cost", "technology": "Triton Inference Server", "keywords": [] },
       "expected_source_ids": ["triton"],
       "expected_products": ["Triton Inference Server"],
@@ -42,18 +38,16 @@
     },
     {
       "case_id": "latency_all",
-      "description": "high_latency must cover NIM, TensorRT-LLM, and Triton while allowing governed inference guidance",
+      "description": "high_latency covers product documentation and the governed inference guidance",
       "query": { "gap_type": "high_latency", "technology": null, "keywords": [] },
-      "expected_source_ids": ["nim", "tensorrt_llm", "triton"],
-      "expected_products": ["NVIDIA NIM", "TensorRT-LLM", "Triton Inference Server"],
-      "allowed_source_ids": ["nim", "nvidia_whitepaper_inference", "tensorrt", "tensorrt_llm", "triton"],
-      "allowed_products": ["NVIDIA NIM", "NVIDIA Inference Optimization", "TensorRT", "TensorRT-LLM", "Triton Inference Server"],
+      "expected_source_ids": ["nim", "tensorrt_llm", "triton", "nvidia_whitepaper_inference"],
+      "expected_products": ["NVIDIA NIM", "TensorRT-LLM", "Triton Inference Server", "NVIDIA Inference Optimization"],
       "is_critical": false,
       "top_k_for_test": 15
     },
     {
       "case_id": "latency_tensorrt",
-      "description": "high_latency + TensorRT-LLM returns the exact TensorRT-LLM product",
+      "description": "high_latency + TensorRT-LLM returns only TensorRT-LLM chunks",
       "query": { "gap_type": "high_latency", "technology": "TensorRT-LLM", "keywords": [] },
       "expected_source_ids": ["tensorrt_llm"],
       "expected_products": ["TensorRT-LLM"],
@@ -64,34 +58,28 @@
     },
     {
       "case_id": "agent_governance",
-      "description": "agent_governance_gap must cover Guardrails and may return governed agent/RAG guidance",
+      "description": "agent_governance_gap covers Guardrails, agent blueprints, and RAG governance guidance",
       "query": { "gap_type": "agent_governance_gap", "technology": null, "keywords": [] },
-      "expected_source_ids": ["nemo_guardrails"],
-      "expected_products": ["NeMo Guardrails"],
-      "allowed_source_ids": ["nemo_guardrails", "nvidia_blueprint_ai_agents", "nvidia_whitepaper_rag"],
-      "allowed_products": ["NeMo Guardrails", "NVIDIA AI Blueprints", "NVIDIA RAG"],
+      "expected_source_ids": ["nemo_guardrails", "nvidia_blueprint_ai_agents", "nvidia_whitepaper_rag"],
+      "expected_products": ["NeMo Guardrails", "NVIDIA AI Blueprints", "NVIDIA RAG"],
       "is_critical": true,
       "top_k_for_test": 3
     },
     {
       "case_id": "data_pipeline",
-      "description": "slow_data_pipeline must cover RAPIDS and may return its governed cuDF/cuML components",
+      "description": "slow_data_pipeline covers RAPIDS, cuDF, and cuML",
       "query": { "gap_type": "slow_data_pipeline", "technology": null, "keywords": [] },
-      "expected_source_ids": ["rapids"],
-      "expected_products": ["NVIDIA RAPIDS"],
-      "allowed_source_ids": ["rapids", "cudf", "cuml"],
-      "allowed_products": ["NVIDIA RAPIDS", "cuDF", "cuML"],
+      "expected_source_ids": ["rapids", "cudf", "cuml"],
+      "expected_products": ["NVIDIA RAPIDS", "cuDF", "cuML"],
       "is_critical": false,
       "top_k_for_test": 3
     },
     {
       "case_id": "tabular_heavy",
-      "description": "heavy_tabular_processing must cover RAPIDS and may return cuDF",
+      "description": "heavy_tabular_processing covers RAPIDS and cuDF",
       "query": { "gap_type": "heavy_tabular_processing", "technology": null, "keywords": [] },
-      "expected_source_ids": ["rapids"],
-      "expected_products": ["NVIDIA RAPIDS"],
-      "allowed_source_ids": ["rapids", "cudf"],
-      "allowed_products": ["NVIDIA RAPIDS", "cuDF"],
+      "expected_source_ids": ["rapids", "cudf"],
+      "expected_products": ["NVIDIA RAPIDS", "cuDF"],
       "is_critical": false,
       "top_k_for_test": 3
     },
@@ -108,12 +96,10 @@
     },
     {
       "case_id": "external_api",
-      "description": "external_api_dependency must cover NIM and may return the NVIDIA API Catalog",
+      "description": "external_api_dependency covers NIM and the NVIDIA API Catalog",
       "query": { "gap_type": "external_api_dependency", "technology": null, "keywords": [] },
-      "expected_source_ids": ["nim"],
-      "expected_products": ["NVIDIA NIM"],
-      "allowed_source_ids": ["nim", "nvidia_api_catalog"],
-      "allowed_products": ["NVIDIA NIM", "NVIDIA API Catalog"],
+      "expected_source_ids": ["nim", "nvidia_api_catalog"],
+      "expected_products": ["NVIDIA NIM", "NVIDIA API Catalog"],
       "is_critical": false,
       "top_k_for_test": 3
     },
@@ -185,58 +171,48 @@
     },
     {
       "case_id": "kw_inference",
-      "description": "keyword inference must cover NIM, TensorRT-LLM, and Triton while allowing governed inference/CUDA guidance",
+      "description": "keyword inference covers governed inference products and guidance",
       "query": { "gap_type": null, "technology": null, "keywords": ["inference"] },
-      "expected_source_ids": ["nim", "tensorrt_llm", "triton"],
-      "expected_products": ["NVIDIA NIM", "TensorRT-LLM", "Triton Inference Server"],
-      "allowed_source_ids": ["nim", "nvidia_whitepaper_inference", "tensorrt", "tensorrt_llm", "triton", "cuda"],
-      "allowed_products": ["NVIDIA NIM", "NVIDIA Inference Optimization", "TensorRT", "TensorRT-LLM", "Triton Inference Server", "CUDA"],
+      "expected_source_ids": ["nim", "tensorrt_llm", "triton", "nvidia_api_catalog", "nvidia_whitepaper_inference"],
+      "expected_products": ["NVIDIA NIM", "TensorRT-LLM", "Triton Inference Server", "NVIDIA API Catalog", "NVIDIA Inference Optimization"],
       "is_critical": true,
       "top_k_for_test": 10
     },
     {
       "case_id": "kw_production",
-      "description": "keyword production must cover core production runtimes and may return AI Enterprise/Triton",
+      "description": "keyword production covers governed production-serving and deployment sources",
       "query": { "gap_type": null, "technology": null, "keywords": ["production"] },
-      "expected_source_ids": ["nim", "riva", "tensorrt_llm"],
-      "expected_products": ["NVIDIA NIM", "NVIDIA Riva", "TensorRT-LLM"],
-      "allowed_source_ids": ["ai_enterprise", "nim", "riva", "tensorrt", "tensorrt_llm", "triton"],
-      "allowed_products": ["NVIDIA AI Enterprise", "NVIDIA NIM", "NVIDIA Riva", "TensorRT", "TensorRT-LLM", "Triton Inference Server"],
+      "expected_source_ids": ["nim", "riva", "tensorrt_llm", "triton", "ai_enterprise", "nvidia_whitepaper_rag"],
+      "expected_products": ["NVIDIA NIM", "NVIDIA Riva", "TensorRT-LLM", "Triton Inference Server", "NVIDIA AI Enterprise", "NVIDIA RAG"],
       "is_critical": false,
-      "top_k_for_test": 5
+      "top_k_for_test": 8
     },
     {
       "case_id": "kw_open_source",
-      "description": "keyword open-source must cover representative open NVIDIA stacks while allowing either inference runtime",
+      "description": "keyword open-source covers governed open-source NVIDIA frameworks",
       "query": { "gap_type": null, "technology": null, "keywords": ["open-source"] },
-      "expected_source_ids": ["clara_monai", "nemo_guardrails", "rapids"],
-      "expected_products": ["Clara / MONAI", "NeMo Guardrails", "NVIDIA RAPIDS"],
-      "allowed_source_ids": ["clara_monai", "nemo_guardrails", "rapids", "tensorrt_llm", "triton"],
-      "allowed_products": ["Clara / MONAI", "NeMo Guardrails", "NVIDIA RAPIDS", "TensorRT-LLM", "Triton Inference Server"],
+      "expected_source_ids": ["clara_monai", "nemo_guardrails", "rapids", "tensorrt_llm", "cudf", "cuml"],
+      "expected_products": ["Clara / MONAI", "NeMo Guardrails", "NVIDIA RAPIDS", "TensorRT-LLM", "cuDF", "cuML"],
       "is_critical": false,
-      "top_k_for_test": 5
+      "top_k_for_test": 8
     },
     {
       "case_id": "kw_latency",
-      "description": "keyword latency must cover NIM, Riva, TensorRT-LLM, and Triton while allowing governed inference guidance",
+      "description": "keyword latency covers governed low-latency serving products and guidance",
       "query": { "gap_type": null, "technology": null, "keywords": ["latency"] },
-      "expected_source_ids": ["nim", "riva", "tensorrt_llm", "triton"],
-      "expected_products": ["NVIDIA NIM", "NVIDIA Riva", "TensorRT-LLM", "Triton Inference Server"],
-      "allowed_source_ids": ["nim", "nvidia_whitepaper_inference", "riva", "tensorrt", "tensorrt_llm", "triton"],
-      "allowed_products": ["NVIDIA NIM", "NVIDIA Inference Optimization", "NVIDIA Riva", "TensorRT", "TensorRT-LLM", "Triton Inference Server"],
+      "expected_source_ids": ["nim", "riva", "tensorrt_llm", "triton", "nvidia_whitepaper_inference"],
+      "expected_products": ["NVIDIA NIM", "NVIDIA Riva", "TensorRT-LLM", "Triton Inference Server", "NVIDIA Inference Optimization"],
       "is_critical": false,
       "top_k_for_test": 8
     },
     {
       "case_id": "kw_model",
-      "description": "keyword model must cover representative model-building/serving products while allowing newer catalog/model tooling",
+      "description": "keyword model covers governed model-centric NVIDIA sources",
       "query": { "gap_type": null, "technology": null, "keywords": ["model"] },
-      "expected_source_ids": ["clara_monai", "isaac", "nim", "omniverse", "rapids", "riva", "tensorrt_llm"],
-      "expected_products": ["Clara / MONAI", "NVIDIA Isaac", "NVIDIA NIM", "NVIDIA Omniverse", "NVIDIA RAPIDS", "NVIDIA Riva", "TensorRT-LLM"],
-      "allowed_source_ids": ["clara_monai", "isaac", "nim", "omniverse", "rapids", "riva", "tensorrt", "tensorrt_llm", "triton", "nemo", "nvidia_api_catalog", "cuda"],
-      "allowed_products": ["Clara / MONAI", "NVIDIA Isaac", "NVIDIA NIM", "NVIDIA Omniverse", "NVIDIA RAPIDS", "NVIDIA Riva", "TensorRT", "TensorRT-LLM", "Triton Inference Server", "NVIDIA NeMo", "NVIDIA API Catalog", "CUDA"],
+      "expected_source_ids": ["clara_monai", "isaac", "nim", "omniverse", "rapids", "riva", "tensorrt_llm", "triton", "nemo", "cuml", "nvidia_api_catalog", "nvidia_whitepaper_inference", "nvidia_whitepaper_rag"],
+      "expected_products": ["Clara / MONAI", "NVIDIA Isaac", "NVIDIA NIM", "NVIDIA Omniverse", "NVIDIA RAPIDS", "NVIDIA Riva", "TensorRT-LLM", "Triton Inference Server", "NVIDIA NeMo", "cuML", "NVIDIA API Catalog", "NVIDIA Inference Optimization", "NVIDIA RAG"],
       "is_critical": false,
-      "top_k_for_test": 12
+      "top_k_for_test": 15
     }
   ]
 }

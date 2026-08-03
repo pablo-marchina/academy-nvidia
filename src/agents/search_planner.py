@@ -9,9 +9,9 @@ actually configured.
 
 from __future__ import annotations
 
-import os
-from typing import Any, Iterable
-from urllib.parse import quote_plus, urlparse
+import re
+from typing import Any
+from urllib.parse import urlparse
 
 
 def _is_allowed_source(url: str) -> bool:
@@ -92,19 +92,7 @@ def _classify_source(
     return "news"
 
 
-def build_search_plan(
-    startup_name: str,
-    *,
-    website_url: str = "",
-    known_source_urls: Iterable[str] | None = None,
-    max_sources: int | None = None,
-) -> list[dict[str, Any]]:
-    """Return a compact plan composed only of entity-specific URLs.
-
-    ``known_source_urls`` should come from persisted discovery evidence. Global
-    directory home pages are intentionally excluded because they are not
-    company-specific evidence.
-    """
+def build_search_plan(startup_name: str, website_url: str = "") -> list[dict[str, Any]]:
     from src.sourcing.adaptive_source_planner import SourceCandidate, source_decision_trace
 
     source_limit = max_sources
@@ -167,23 +155,20 @@ def build_search_plan(
         source_type_counts[source_type] = prior_count + 1
 
     if website_url:
-        add(website_url, f"{startup_name} official website", source_type_hint="official_site")
-
-    for url in known_source_urls or ():
-        add(str(url), "Persisted entity-specific evidence URL")
-
-    if os.getenv("SERPAPI_API_KEY") and startup_name:
-        add(
-            "https://serpapi.com/search.json?q=" + quote_plus(startup_name + " startup AI Brasil"),
-            "Configured search API for exact company name",
-            source_type_hint="search_api",
+        _add(
+            website_url,
+            "Persisted startup official website",
+            source_type_hint="official_site",
+            is_probable_owned_domain=True,
         )
+    else:
+        direct_urls = [
+            (f"https://{normalized}.com.br", "Probable startup-owned Brazilian domain", True),
+            (f"https://www.{normalized}.com.br", "Probable startup-owned Brazilian domain (www)", True),
+            (f"https://{normalized}.com", "Probable startup-owned .com domain", True),
+            (f"https://www.{normalized}.com", "Probable startup-owned .com domain (www)", True),
+        ]
+        for url, reason, owned in direct_urls:
+            _add(url, reason, is_probable_owned_domain=owned)
 
-    plan.sort(
-        key=lambda item: (
-            1 if item["is_official_source"] else 0,
-            float(item["marginal_utility"]),
-        ),
-        reverse=True,
-    )
-    return plan[:source_limit]
+    return sorted(plan, key=lambda item: float(item["marginal_utility"]), reverse=True)

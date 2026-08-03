@@ -353,6 +353,25 @@ def run_ingestion(args: argparse.Namespace) -> IngestionReport:
             print("  Nothing to upsert.")
 
     report.finished_at = datetime.now(UTC).isoformat()
+    if not args.dry_run and args.backend == "qdrant" and report.documents_valid > 0:
+        manifest = {
+            "schema_version": 1,
+            "ingestion_run_id": report.ingestion_run_id,
+            "finished_at": report.finished_at,
+            "collection_name": report.collection_name,
+            "backend": report.backend,
+            "embedding_model": args.embedding_model,
+            "vector_size": args.vector_size,
+            "documents_valid": report.documents_valid,
+            "chunks_created": report.chunks_created,
+            "chunks_upserted": report.chunks_upserted,
+            "source_hashes": {path.stem: content_hash for path, content_hash in valid_docs},
+        }
+        manifest_path = _CORPUS_DIR / ".ingestion_manifest.json"
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
     return report
 
 

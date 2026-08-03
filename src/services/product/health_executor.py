@@ -6,6 +6,8 @@ Results are cached with a TTL to avoid hammering dependencies on every request.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import time
 from dataclasses import dataclass
@@ -201,15 +203,25 @@ class HealthCheckExecutor:
                 status=CapabilityStatus.degraded,
                 detail="Corpus files found but sources.yaml is missing",
             )
+        manifest_path = corpus_dir / ".ingestion_manifest.json"
+        manifest_ok, manifest_detail = _validate_ingestion_manifest(corpus_dir)
+        if manifest_path.exists() and not manifest_ok:
+            return HealthCheckResult(
+                status=CapabilityStatus.degraded,
+                detail=manifest_detail,
+            )
         freshness_error = _check_sources_freshness(sources_file)
-        if freshness_error:
+        if freshness_error and not manifest_ok:
             return HealthCheckResult(
                 status=CapabilityStatus.degraded,
                 detail=freshness_error,
             )
+        detail = manifest_detail if manifest_ok else f"Corpus found with {len(md_files)} document(s)"
+        if freshness_error and manifest_ok:
+            detail = f"{detail}; upstream review warning: {freshness_error}"
         return HealthCheckResult(
             status=CapabilityStatus.available,
-            detail=f"Corpus found with {len(md_files)} document(s)",
+            detail=detail,
         )
 
     def _check_llm_judge(self) -> HealthCheckResult:
@@ -240,6 +252,99 @@ class HealthCheckExecutor:
             status=CapabilityStatus.degraded,
             detail=f"ANSWER_QUALITY_LLM_JUDGE_PROVIDER={provider} has no active runtime provider implementation",
         )
+
+
+
+def _validate_ingestion_manifest(corpus_dir: Path) -> tuple[bool, str]:
+    """Validate that the active Qdrant index was built from current corpus bytes.
+
+    Source review freshness and index freshness are deliberately separate. A
+    recently built, hash-matched index is operationally usable even when the
+    upstream documentation review policy is overdue; that overdue review is
+    surfaced as an explicit warning by ``_check_rag_corpus``.
+    """
+    manifest_path = corpus_dir / ".ingestion_manifest.json"
+    if not manifest_path.exists():
+        return False, "Corpus ingestion manifest is missing"
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return False, f"Corpus ingestion manifest is unreadable: {exc}"
+
+    expected_collection = os.environ.get("QDRANT_COLLECTION", "").strip()
+    manifest_collection = str(payload.get("collection_name") or "").strip()
+    if expected_collection and manifest_collection != expected_collection:
+        return False, (
+            f"Corpus ingestion manifest targets collection '{manifest_collection}', "
+            f"expected '{expected_collection}'"
+        )
+    if str(payload.get("backend") or "").casefold() != "qdrant":
+        return False, "Corpus ingestion manifest was not produced for Qdrant"
+
+    finished_at = payload.get("finished_at")
+    if not finished_at:
+        return False, "Corpus ingestion manifest has no finished_at timestamp"
+    try:
+        finished = datetime.fromisoformat(str(finished_at).replace("Z", "+00:00"))
+        max_age_hours = float(os.environ.get("RAG_INDEX_MAX_AGE_HOURS", "168"))
+    except (TypeError, ValueError) as exc:
+        return False, f"Corpus ingestion manifest has invalid freshness metadata: {exc}"
+    age_hours = max(0.0, (datetime.now(UTC) - finished).total_seconds() / 3600.0)
+    if age_hours > max_age_hours:
+        return False, (
+            f"Corpus index manifest is {age_hours:.1f}h old, above "
+            f"RAG_INDEX_MAX_AGE_HOURS={max_age_hours:g}"
+        )
+
+    manifest_hashes = payload.get("source_hashes") or {}
+    if not isinstance(manifest_hashes, dict) or not manifest_hashes:
+        return False, "Corpus ingestion manifest has no source hashes"
+
+    sources_file = corpus_dir / "sources.yaml"
+    if not sources_file.exists():
+        return False, "Corpus sources.yaml is missing"
+    try:
+        import yaml
+
+        sources_payload: dict[str, Any] = yaml.safe_load(sources_file.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        return False, f"Corpus sources.yaml is unreadable: {exc}"
+    governed_sources = sources_payload.get("sources") or {}
+    active_ids = {
+        str(source_id)
+        for source_id, item in governed_sources.items()
+        if isinstance(item, dict) and item.get("is_active") is not False
+    }
+    if not active_ids:
+        return False, "Corpus sources.yaml has no active governed sources"
+    if set(manifest_hashes) != active_ids:
+        missing = sorted(active_ids - set(manifest_hashes))
+        extra = sorted(set(manifest_hashes) - active_ids)
+        return False, f"Corpus ingestion manifest source set mismatch (missing={missing}, extra={extra})"
+
+    missing_documents = sorted(source_id for source_id in active_ids if not (corpus_dir / f"{source_id}.md").exists())
+    if missing_documents:
+        return False, f"Active corpus document(s) missing: {', '.join(missing_documents)}"
+    mismatched: list[str] = []
+    for source_id in sorted(active_ids):
+        source_path = corpus_dir / f"{source_id}.md"
+        current_hash = hashlib.md5(source_path.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+        if str(manifest_hashes.get(source_id)) != current_hash:
+            mismatched.append(source_id)
+    if mismatched:
+        return False, f"Corpus changed after ingestion for source(s): {', '.join(sorted(mismatched))}"
+
+    documents_valid = int(payload.get("documents_valid") or 0)
+    chunks_created = int(payload.get("chunks_created") or 0)
+    if documents_valid != len(active_ids) or chunks_created <= 0:
+        return False, (
+            f"Corpus ingestion manifest is incomplete: documents_valid={documents_valid}, "
+            f"active_sources={len(active_ids)}, chunks_created={chunks_created}"
+        )
+    return True, (
+        f"hash-matched Qdrant index built {age_hours:.2f}h ago from "
+        f"{documents_valid} document(s) and {chunks_created} chunk(s)"
+    )
 
 
 def _check_sources_freshness(sources_file: Path) -> str:

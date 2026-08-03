@@ -232,8 +232,22 @@ def _lookup_int(
 
 
 def _text_contains_any(text: str, keywords: list[str]) -> bool:
-    lower = text.lower()
-    return any(kw.lower() in lower for kw in keywords)
+    lower = text.casefold()
+    return any(kw.casefold() in lower for kw in keywords if kw)
+
+
+def _evidence_text(item: dict[str, Any]) -> str:
+    return str(
+        item.get("text")
+        or item.get("quote_or_evidence")
+        or item.get("snippet")
+        or item.get("claim")
+        or ""
+    )
+
+
+def _evidence_id(item: dict[str, Any]) -> str:
+    return str(item.get("id") or item.get("evidence_id") or "")
 
 
 # ---------------------------------------------------------------------------
@@ -276,12 +290,12 @@ def extract_mapping_features(
     ]
     rag_relevance_mean = _mean(rag_relevance_scores)
 
-    supporting_evidence_ids = set(gap_result.supporting_evidence_ids if gap_result else [])
-    ev_for_tech = [
-        item
-        for item in evidence_items
-        if str(item.get("id") or item.get("evidence_id") or "") in supporting_evidence_ids
-    ]
+    # Company evidence proves the diagnosed need; governed NVIDIA RAG contexts
+    # prove that a technology addresses that need. Requiring the company source
+    # to already name the recommended NVIDIA product would make novel
+    # recommendations impossible and would conflate adoption with suitability.
+    gap_support_ids = set(gap_result.supporting_evidence_ids if gap_result else [])
+    ev_for_tech = [item for item in evidence_items if _evidence_id(item) in gap_support_ids]
     evidence_count = len(ev_for_tech)
 
     ev_confidences: list[float] = []
@@ -303,7 +317,7 @@ def extract_mapping_features(
     tech_topic_match = 1.0 if _text_contains_any(all_text, topic_keywords) else 0.0
 
     startup_keywords = ["gpu", "cuda", "deep learning", "machine learning", "ai"]
-    startup_text = " ".join(str(item.get("text", "") or item.get("snippet", "") or "") for item in evidence_items)
+    startup_text = " ".join(_evidence_text(item) for item in evidence_items)
     signal_match_count = sum(1 for kw in startup_keywords if kw in startup_text.lower())
     _MAX_SIGNALS = 6.0
     startup_signal_norm = min(1.0, signal_match_count / _MAX_SIGNALS)
@@ -453,11 +467,14 @@ def build_nvidia_technology_mappings(
     mappings: list[NvidiaTechnologyMappingRecord] = []
     mapping_index = 0
 
+    selected_gap_types = set(gap_result_by_type)
     for gap_type_str, candidate_techs in GAP_TECHNOLOGY_CANDIDATES.items():
-        gap_result = gap_result_by_type.get(gap_type_str)
-        rag_ctxs = rag_contexts_by_gap.get(gap_type_str, [])
-        if gap_result is None or not gap_result.production_allowed or not gap_result.supporting_evidence_ids:
+        if gap_type_str not in selected_gap_types:
             continue
+        gap_result = gap_result_by_type[gap_type_str]
+        rag_ctxs = rag_contexts_by_gap.get(gap_type_str, [])
+        if not rag_ctxs and gap_result is not None:
+            rag_ctxs = rag_contexts_by_gap.get(gap_result.gap_id, [])
 
         for tech in candidate_techs:
             mapping_index += 1
@@ -470,6 +487,21 @@ def build_nvidia_technology_mappings(
                 evidence_items=evidence_items,
                 gap_result=gap_result,
             )
+
+            # Provenance is factual metadata and must survive score/calibration
+            # blockers. A blocked decision is not the same as absent evidence.
+            rag_ctx_ids: list[str] = []
+            for ctx in rag_ctxs:
+                cid = ctx.get("context_id") or ctx.get("chunk_id") or ""
+                if cid and _context_matches_technology(ctx, tech):
+                    rag_ctx_ids.append(str(cid))
+
+            ev_ids: list[str] = []
+            gap_support_ids = set(gap_result.supporting_evidence_ids if gap_result else [])
+            for item in evidence_items:
+                eid = _evidence_id(item)
+                if eid and eid in gap_support_ids:
+                    ev_ids.append(eid)
 
             if is_blocked:
                 mappings.append(
@@ -484,8 +516,8 @@ def build_nvidia_technology_mappings(
                         mapping_score=0.0,
                         mapping_confidence=0.0,
                         uncertainty=1.0,
-                        supporting_rag_context_ids=[],
-                        supporting_evidence_ids=[],
+                        supporting_rag_context_ids=rag_ctx_ids,
+                        supporting_evidence_ids=ev_ids,
                         calibration_decision_ids=REQUIRED_MAPPING_DECISIONS,
                         production_allowed=False,
                         blockers=blockers,
@@ -560,15 +592,6 @@ def build_nvidia_technology_mappings(
             raw_conf = _compute_weighted_score(conf_feat_dict, conf_weights)
             final_conf = max(0.0, min(1.0, raw_conf - unc_penalty))
 
-            # ── Supporting IDs ──────────────────────────────────────────
-            rag_ctx_ids: list[str] = []
-            for ctx in rag_ctxs:
-                cid = ctx.get("context_id") or ctx.get("chunk_id") or ""
-                if cid and _context_matches_technology(ctx, tech):
-                    rag_ctx_ids.append(str(cid))
-
-            ev_ids = list(dict.fromkeys(str(eid) for eid in gap_result.supporting_evidence_ids if eid))
-
             # ── Determine status ────────────────────────────────────────
             status: NvidiaMappingStatus
             prod_allowed = True
@@ -601,7 +624,7 @@ def build_nvidia_technology_mappings(
             # ── Build explanation ───────────────────────────────────────
             explanation_parts: list[str] = [
                 f"Mapping '{gap_type_str} → {tech}': score={round(final_score, 4)}, confidence={round(final_conf, 4)}",
-                f"RAG contexts supporting: {rag_count}, Evidence items: {ev_count}",
+                f"RAG technology contexts: {rag_count}, Company gap evidence items: {ev_count}",
             ]
             if status == NvidiaMappingStatus.PASSED:
                 explanation_parts.append("All checks passed. Production allowed.")
@@ -637,14 +660,17 @@ def build_nvidia_technology_mappings(
     overall_status: str
     if is_blocked:
         overall_status = NvidiaMappingStatus.BLOCKED_UNCALIBRATED_MAPPING.value
-    elif any(m.blockers and "No RAG contexts" in " ".join(m.blockers) for m in mappings) and not any(
-        m.production_allowed for m in mappings
-    ):
-        overall_status = NvidiaMappingStatus.NEEDS_MORE_EVIDENCE.value
     elif any(m.production_allowed for m in mappings):
         overall_status = NvidiaMappingStatus.PASSED.value
-    else:
+    elif any(m.supporting_rag_context_ids and m.supporting_evidence_ids for m in mappings):
+        # At least one candidate is evidence-grounded and RAG-grounded. A score
+        # below the calibrated production threshold requires review; unsupported
+        # sibling candidates must not downgrade the whole gap to missing evidence.
         overall_status = NvidiaMappingStatus.NEEDS_REVIEW.value
+    elif mappings:
+        overall_status = NvidiaMappingStatus.NEEDS_MORE_EVIDENCE.value
+    else:
+        overall_status = NvidiaMappingStatus.FAILED.value
 
     # ── Compute calibration metrics ─────────────────────────────────────
     cal_metrics = NvidiaMappingCalibrationMetrics(

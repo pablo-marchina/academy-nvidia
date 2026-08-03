@@ -9,10 +9,18 @@ decisions are not ready.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from functools import lru_cache
+import math
+import os
 from typing import Any
 
 from src.diagnosis.nvidia_mapping import map_gap_to_technologies
-from src.diagnosis.schemas import GAP_TECH_MAP, GapDiagnosisResultItem, GapDiagnosisSummary
+from src.diagnosis.schemas import (
+    GAP_TECH_MAP,
+    GapDiagnosisResultItem,
+    GapDiagnosisStatus,
+    GapDiagnosisSummary,
+)
 from src.quality.decision_calibration_registry import (
     CalibrationStatus,
     get_project_decision_inventory,
@@ -47,6 +55,60 @@ REQUIRED_HYBRID_RAG_DECISIONS: list[str] = [
 # Backward-compatible alias for tests/imports; the official path now includes
 # hybrid retrieval and reranking rather than semantic-only retrieval.
 REQUIRED_SEMANTIC_DECISIONS = REQUIRED_HYBRID_RAG_DECISIONS
+
+
+@lru_cache(maxsize=2)
+def _load_local_cross_encoder(model_name: str) -> Any:
+    from sentence_transformers import CrossEncoder
+
+    return CrossEncoder(model_name)
+
+
+def _rerank_with_configured_provider(
+    contexts: list[Any],
+    query: RetrievalQuery,
+) -> tuple[list[Any], dict[str, Any]]:
+    """Run the configured real reranker and fail closed on provider errors."""
+    import os
+
+    provider = os.getenv("RERANKER_PROVIDER", "triton").strip().casefold()
+    if provider in {"triton", "nvidia_triton", "nvidia_triton_inference_server"}:
+        return triton_rerank_contexts(contexts, query)
+    if provider != "local_cross_encoder":
+        raise TritonRerankerUnavailable(f"Unsupported production reranker provider: {provider or 'missing'}")
+
+    model_name = os.getenv("RERANKER_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
+    if not contexts:
+        return [], {
+            "called": False,
+            "provider": "local_cross_encoder",
+            "model": model_name,
+            "input_count": 0,
+            "reason": "no_contexts_to_rerank",
+        }
+    try:
+        model = _load_local_cross_encoder(model_name)
+    except Exception as exc:
+        raise TritonRerankerUnavailable(f"Local cross-encoder unavailable: {exc}") from exc
+    query_text = " ".join(
+        part for part in [query.gap_type or "", query.technology or "", " ".join(query.keywords)] if part
+    )
+    pairs = [(query_text, ctx.content) for ctx in contexts]
+    try:
+        scores = model.predict(pairs)
+    except Exception as exc:
+        raise TritonRerankerUnavailable(f"Local cross-encoder prediction failed: {exc}") from exc
+
+    for ctx, score in zip(contexts, scores, strict=False):
+        logit = float(score)
+        ctx.relevance_score = round(1.0 / (1.0 + math.exp(-max(min(logit, 60.0), -60.0))), 6)
+    ranked = sorted(contexts, key=lambda item: item.relevance_score, reverse=True)
+    return ranked, {
+        "called": True,
+        "provider": "local_cross_encoder",
+        "model": model_name,
+        "input_count": len(contexts),
+    }
 
 
 def _validate_hybrid_rag_calibrations() -> tuple[dict[str, Any], list[str]]:
@@ -396,10 +458,14 @@ class QdrantRagService:
                 errors.append("blocked_bm25_required: BM25_ENABLED must be true in product mode")
             if os.getenv("GRAPHRAG_ENABLED", "true").lower() not in {"1", "true", "yes"}:
                 errors.append("blocked_graphrag_required: GRAPHRAG_ENABLED must be true in product mode")
-            if os.getenv("TRITON_RERANKER_ENABLED", "true").lower() not in {"1", "true", "yes"}:
-                errors.append("blocked_triton_reranker_required: TRITON_RERANKER_ENABLED must be true in product mode")
-            if not os.getenv("TRITON_RERANKER_URL", "").strip():
-                errors.append("blocked_triton_reranker_required: TRITON_RERANKER_URL must be configured in product mode")
+            reranker_provider = os.getenv("RERANKER_PROVIDER", "").strip().casefold()
+            if reranker_provider in {"triton", "nvidia_triton", "nvidia_triton_inference_server"}:
+                if os.getenv("TRITON_RERANKER_ENABLED", "true").lower() not in {"1", "true", "yes"}:
+                    errors.append("blocked_triton_reranker_required: TRITON_RERANKER_ENABLED must be true for Triton")
+                if not os.getenv("TRITON_RERANKER_URL", "").strip():
+                    errors.append("blocked_triton_reranker_required: TRITON_RERANKER_URL must be configured for Triton")
+            elif reranker_provider != "local_cross_encoder":
+                errors.append("blocked_reranker_required: configure Triton or local_cross_encoder")
 
         if errors:
             self._validation_error = "; ".join(errors)
@@ -450,7 +516,7 @@ class QdrantRagService:
             )
             graph_ids = {ctx.chunk_id for ctx in graph_results}
             merged_results = local_results + [ctx for ctx in graph_results if ctx.chunk_id not in {r.chunk_id for r in local_results}]
-            results, triton_metrics = triton_rerank_contexts(merged_results, rq)
+            results, triton_metrics = _rerank_with_configured_provider(merged_results, rq)
             for ctx in results:
                 if ctx.chunk_id in seen_chunks:
                     continue
@@ -474,7 +540,7 @@ class QdrantRagService:
                         "retrieval_score": ctx.relevance_score,
                         "rerank_score": ctx.relevance_score,
                         "relevance_score": ctx.relevance_score,
-                        "retrieval_mode": "bm25_graphrag_qdrant_triton_rerank",
+                        "retrieval_mode": "bm25_graphrag_qdrant_configured_rerank",
                         "bm25_active": True,
                         "graphrag_active": True,
                         "graphrag_neighbor": ctx.chunk_id in graph_ids,
@@ -608,13 +674,45 @@ class QdrantRagService:
         if self._validation_error:
             return _validation_error_result()
 
-        calibrated_gaps = [g for g in gap_items if g.production_allowed]
+        production_gaps = [g for g in gap_items if g.production_allowed]
+        investigative_mode = False
+        calibrated_gaps = production_gaps
+
+        # NVIDIA retrieval can help investigate a calibrated hypothesis even when
+        # company evidence is not yet sufficient for a production decision. Keep
+        # this mode explicit and force the RAG result to needs_review; downstream
+        # release validation must never treat it as decision-ready.
+        if not calibrated_gaps:
+            investigative_candidates = [
+                g
+                for g in gap_items
+                if g.status in {GapDiagnosisStatus.NEEDS_MORE_EVIDENCE, GapDiagnosisStatus.NEEDS_REVIEW}
+                and g.calibration_decision_ids
+                and g.severity_score > 0.0
+            ]
+            calibrated_gaps = sorted(
+                investigative_candidates,
+                key=lambda item: (item.severity_score, item.confidence_score),
+                reverse=True,
+            )[:3]
+            investigative_mode = bool(calibrated_gaps)
 
         if not calibrated_gaps:
+            diagnostics = [
+                {
+                    "gap_id": g.gap_id,
+                    "status": g.status.value,
+                    "severity": g.severity_score,
+                    "confidence": g.confidence_score,
+                    "production_allowed": g.production_allowed,
+                    "blockers": g.blockers,
+                }
+                for g in gap_items[:5]
+            ]
             return QdrantRagService._empty_result(
                 status="rag_blocked_no_calibrated_gaps",
                 rag_retrieval_status="blocked_no_calibrated_gaps",
-                blockers=["No calibrated gaps with production_allowed=True"],
+                blockers=[f"No retrieval-eligible calibrated gaps; diagnostics={diagnostics}"],
                 gap_count=len(gap_items),
                 calibrated_gap_count=0,
                 missing_rag_calibration_count=missing_rag_calibration_count,
@@ -685,15 +783,22 @@ class QdrantRagService:
             "citation_ready_context_count": citation_ready_context_count,
             "missing_rag_calibration_count": missing_rag_calibration_count,
             "reranked_context_count": len([c for c in all_contexts if c.get("rerank_score") is not None]),
-            "retrieval_mode": "bm25_graphrag_qdrant_triton_rerank",
+            "retrieval_mode": "bm25_graphrag_qdrant_configured_rerank",
             "bm25_active": True,
                 "graphrag_active": True,
-                "triton_reranker_required": True,
+                "reranker_provider": os.getenv("RERANKER_PROVIDER", "triton"),
+            "reranker_required": True,
                 "lexical_corpus_chunk_count": len(self._chunk_index.chunks),
             "rag_blocker_count": 0,
+            "investigative_mode": investigative_mode,
+            "production_gap_count": len(production_gaps),
         }
 
-        if retrieved_context_count == 0:
+        if investigative_mode:
+            rag_retrieval_status = "needs_review"
+            top_status = "rag_needs_review"
+            review_required = True
+        elif retrieved_context_count == 0:
             rag_retrieval_status = "needs_review"
             top_status = "rag_needs_review"
             review_required = True
@@ -723,13 +828,17 @@ class QdrantRagService:
                 "retrieved_context_count": retrieved_context_count,
                 "min_required_contexts": min_contexts_per_gap,
                 "retrieval_status": rag_retrieval_status,
-                "retrieval_mode": "bm25_graphrag_qdrant_triton_rerank",
+                "retrieval_mode": "bm25_graphrag_qdrant_configured_rerank",
                 "reranker_required": True,
                 "rag_required": True,
             },
             "status": top_status,
             "review_required": review_required,
-            "blockers": None,
+            "blockers": (
+                ["RAG contexts were produced for calibrated hypotheses only; company gap evidence still requires review."]
+                if investigative_mode
+                else None
+            ),
         }
 
 

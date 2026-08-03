@@ -1,25 +1,20 @@
-"""Lexical retrieval over NVIDIA corpus chunks.
-
-The lexical path is intentionally deterministic, but it still needs to model
-query intent correctly. In particular:
-
-* a gap + technology query is an intersection, not a union;
-* an exact product match outranks a product merely mentioned in another page;
-* broad gap/keyword queries should expose source diversity instead of allowing
-  one long document to consume the whole top-k budget;
-* source taxonomy is searchable, so terms such as ``inference`` and ``latency``
-  still retrieve products whose clean page text uses a narrower vocabulary.
-"""
+"""Governed lexical retrieval over NVIDIA corpus chunks."""
 
 from __future__ import annotations
 
 import re
+from collections import defaultdict
 from datetime import UTC, datetime
+from functools import lru_cache
+from pathlib import Path
+
+import yaml
 
 from src.rag.schemas import RagChunk, RetrievalQuery, RetrievedContext
 
 _DEFAULT_TOP_K = 3
-_TOKEN_RE = re.compile(r"[a-z0-9]+")
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_KEYWORDS_FILE = _PROJECT_ROOT / "data" / "nvidia_corpus" / "retrieval_keywords.yaml"
 
 
 class ChunkIndex:
@@ -37,100 +32,53 @@ class ChunkIndex:
         for chunk in self.chunks:
             for gap in chunk.gap_types:
                 self.by_gap.setdefault(gap, []).append(chunk)
-            tech_key = _normalize_text(chunk.product)
-            if tech_key:
-                self.by_tech.setdefault(tech_key, []).append(chunk)
-
-    def _eligible(self, chunks: list[RagChunk], query: RetrievalQuery) -> list[RagChunk]:
-        return [chunk for chunk in chunks if _is_retrievable(chunk, query)]
-
-    def _technology_candidates(self, query: RetrievalQuery) -> list[RagChunk]:
-        if not query.technology:
-            return []
-
-        tech_key = _normalize_text(query.technology)
-        exact = self._eligible(self.by_tech.get(tech_key, []), query)
-        if exact:
-            return exact
-
-        strong = [
-            chunk
-            for chunk in self.chunks
-            if _is_retrievable(chunk, query)
-            and _technology_match_strength(chunk, query.technology) >= 0.7
-        ]
-        if strong:
-            return strong
-
-        # Content-only mentions are a last-resort fallback for aliases or an
-        # incomplete product registry. They must not compete with exact product
-        # matches when those exist.
-        return [
-            chunk
-            for chunk in self.chunks
-            if _is_retrievable(chunk, query)
-            and _technology_match_strength(chunk, query.technology) > 0.0
-        ]
+            tech_key = _normalize_technology(chunk.product)
+            self.by_tech.setdefault(tech_key, []).append(chunk)
 
     def _candidates_from_query(self, query: RetrievalQuery) -> list[RagChunk]:
-        gap_candidates = (
-            self._eligible(self.by_gap.get(query.gap_type, []), query)
-            if query.gap_type
-            else []
-        )
-        technology_candidates = self._technology_candidates(query)
+        """Return candidates using conjunctive structured filters.
 
-        if query.gap_type and query.technology:
-            # Preserve exact product intent before considering aliases. A query
-            # for TensorRT-LLM must not admit the shorter TensorRT product just
-            # because its normalized name is a prefix of the requested name.
-            tech_key = _normalize_text(query.technology)
-            exact_candidates = self._eligible(self.by_tech.get(tech_key, []), query)
-            exact_ids = {chunk.chunk_id for chunk in exact_candidates}
-            exact_intersection = [
-                chunk for chunk in gap_candidates if chunk.chunk_id in exact_ids
-            ]
-            if exact_intersection:
-                return _deduplicate(exact_intersection)
-
-            technology_ids = {chunk.chunk_id for chunk in technology_candidates}
-            fallback_intersection = [
-                chunk for chunk in gap_candidates if chunk.chunk_id in technology_ids
-            ]
-            return _deduplicate(fallback_intersection)
+        A query that specifies both a gap and a technology is an intersection,
+        not a union. Keyword recall is governed by the source alias registry,
+        so downloaded page chrome cannot make an unrelated source eligible.
+        """
+        if not query.gap_type and not query.technology and not query.keywords:
+            return []
 
         if query.gap_type:
-            return _deduplicate(gap_candidates)
+            candidates = list(self.by_gap.get(query.gap_type, []))
+        elif query.technology:
+            candidates = list(self.by_tech.get(_normalize_technology(query.technology), []))
+        else:
+            candidates = list(self.chunks)
 
         if query.technology:
-            return _deduplicate(technology_candidates)
+            candidates = [chunk for chunk in candidates if _technology_matches(chunk, query.technology)]
 
         if query.keywords:
-            return _deduplicate([
-                chunk
-                for chunk in self.chunks
-                if _is_retrievable(chunk, query)
-                and _keyword_match_strength(chunk, query.keywords) > 0.0
-            ])
+            candidates = [chunk for chunk in candidates if _keywords_match(chunk, query.keywords)]
 
-        return []
+        unique: list[RagChunk] = []
+        seen: set[str] = set()
+        for chunk in candidates:
+            if chunk.chunk_id in seen or not _is_retrievable(chunk, query):
+                continue
+            seen.add(chunk.chunk_id)
+            unique.append(chunk)
+        return unique
 
     def retrieve(
         self,
         query: RetrievalQuery,
         top_k: int = _DEFAULT_TOP_K,
     ) -> list[RetrievedContext]:
-        if top_k <= 0:
-            return []
-
         candidates = self._candidates_from_query(query)
-        if not candidates:
+        if not candidates or top_k <= 0:
             return []
 
         scored = [_score_chunk(chunk, query) for chunk in candidates]
-        scored.sort(key=lambda item: (-item[1], item[0].source_id, item[0].chunk_id))
-        selected = _select_source_diverse(scored, query, top_k)
-        return [context for context, _ in selected]
+        top = _source_diverse_top(scored, top_k)
+        return [ctx for ctx, _ in top]
 
     def retrieve_by_gap_type(
         self,
@@ -147,83 +95,100 @@ class ChunkIndex:
         return self.retrieve(RetrievalQuery(technology=technology), top_k=top_k)
 
 
-def _normalize_text(value: str | None) -> str:
-    if not value:
-        return ""
-    return " ".join(_TOKEN_RE.findall(value.casefold()))
+def _normalize_technology(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", value.casefold())
 
 
-def _canonical_technology_tokens(value: str | None) -> frozenset[str]:
-    """Normalize safe aliases without collapsing distinct NVIDIA products."""
-    tokens = set(_normalize_text(value).split())
-    tokens.discard("nvidia")
-    if "triton" in tokens:
-        tokens.difference_update({"inference", "server"})
-    return frozenset(tokens)
+def _normalize_keyword(value: str) -> str:
+    return " ".join(re.findall(r"[a-z0-9]+", value.casefold()))
 
 
-def _technology_match_strength(chunk: RagChunk, technology: str | None) -> float:
-    query = _normalize_text(technology)
-    if not query:
-        return 0.0
+@lru_cache(maxsize=1)
+def _load_retrieval_keywords() -> dict[str, set[str]]:
+    if not _KEYWORDS_FILE.is_file():
+        return {}
+    raw = yaml.safe_load(_KEYWORDS_FILE.read_text(encoding="utf-8")) or {}
+    mapping = raw.get("keywords", {})
+    if not isinstance(mapping, dict):
+        return {}
 
-    product = _normalize_text(chunk.product)
-    registered_technology = _normalize_text(chunk.nvidia_technology)
-    title = _normalize_text(chunk.title)
-    content = _normalize_text(chunk.content)
-    query_tokens = set(query.split())
-    canonical_query = _canonical_technology_tokens(technology)
-
-    if query in {product, registered_technology}:
-        return 1.0
-    if canonical_query and canonical_query == _canonical_technology_tokens(chunk.product):
-        return 0.96
-    if (
-        canonical_query
-        and canonical_query == _canonical_technology_tokens(chunk.nvidia_technology)
-    ):
-        return 0.94
-    if canonical_query and canonical_query == _canonical_technology_tokens(chunk.title):
-        return 0.8
-    if query in content:
-        return 0.35
-    if query_tokens and query_tokens.issubset(set(content.split())):
-        return 0.25
-    return 0.0
-
-
-def _keyword_match_strength(chunk: RagChunk, keywords: list[str]) -> float:
-    normalized_keywords = [_normalize_text(keyword) for keyword in keywords]
-    normalized_keywords = [keyword for keyword in normalized_keywords if keyword]
-    if not normalized_keywords:
-        return 0.0
-
-    product = _normalize_text(chunk.product)
-    title = _normalize_text(chunk.title)
-    content = _normalize_text(chunk.content)
-    taxonomy = _normalize_text(" ".join(chunk.gap_types))
-    taxonomy_tokens = set(taxonomy.split())
-    strengths: list[float] = []
-
-    for keyword in normalized_keywords:
-        keyword_tokens = set(keyword.split())
-        if keyword in product or keyword in title:
-            strengths.append(1.0)
+    normalized: dict[str, set[str]] = {}
+    for source_id, values in mapping.items():
+        if not isinstance(values, list):
             continue
-        if keyword in taxonomy or (
-            keyword_tokens and keyword_tokens.issubset(taxonomy_tokens)
-        ):
-            strengths.append(0.95)
-            continue
-        occurrences = content.count(keyword)
-        if occurrences:
-            # Repeated terms are useful, but capped so boilerplate cannot win
-            # purely by page length.
-            strengths.append(min(0.55 + (0.08 * occurrences), 0.87))
-        else:
-            strengths.append(0.0)
+        aliases = {_normalize_keyword(str(value)) for value in values if str(value).strip()}
+        normalized[str(source_id)] = {alias for alias in aliases if alias}
+    return normalized
 
-    return sum(strengths) / len(strengths)
+
+def reset_retrieval_keyword_cache() -> None:
+    """Clear the governed keyword registry cache for deterministic tests."""
+    _load_retrieval_keywords.cache_clear()
+
+
+def _technology_matches(chunk: RagChunk, technology: str) -> bool:
+    wanted = _normalize_technology(technology)
+    if not wanted:
+        return True
+    product = _normalize_technology(chunk.product)
+    nvidia_technology = _normalize_technology(chunk.nvidia_technology or "")
+    return wanted in {product, nvidia_technology}
+
+
+def _source_aliases(chunk: RagChunk) -> set[str]:
+    governed = set(_load_retrieval_keywords().get(chunk.source_id, set()))
+    governed.add(_normalize_keyword(chunk.product))
+    governed.add(_normalize_keyword(chunk.title))
+    return {alias for alias in governed if alias}
+
+
+def _keyword_hits(chunk: RagChunk, keywords: list[str]) -> int:
+    aliases = _source_aliases(chunk)
+    normalized_queries = [_normalize_keyword(keyword) for keyword in keywords if keyword.strip()]
+    return sum(
+        1
+        for query in normalized_queries
+        if query and any(query == alias or query in alias or alias in query for alias in aliases)
+    )
+
+
+def _keywords_match(chunk: RagChunk, keywords: list[str]) -> bool:
+    return _keyword_hits(chunk, keywords) > 0
+
+
+def _source_diverse_top(
+    scored: list[tuple[RetrievedContext, float]],
+    top_k: int,
+) -> list[tuple[RetrievedContext, float]]:
+    """Rank by relevance while guaranteeing source coverage before duplicates.
+
+    Golden and production queries frequently request a gap addressed by several
+    NVIDIA technologies. Taking the first ``k`` tied chunks allowed one verbose
+    document to occupy every slot. We first select the best chunk per source,
+    then fill remaining capacity with the next best chunks.
+    """
+    ranked = sorted(scored, key=lambda item: (-item[1], item[0].source_id, item[0].chunk_id))
+    by_source: dict[str, list[tuple[RetrievedContext, float]]] = defaultdict(list)
+    for item in ranked:
+        by_source[item[0].source_id].append(item)
+
+    source_heads = sorted(
+        (items[0] for items in by_source.values()),
+        key=lambda item: (-item[1], item[0].source_id, item[0].chunk_id),
+    )
+    selected = source_heads[:top_k]
+    selected_ids = {item[0].chunk_id for item in selected}
+
+    if len(selected) < top_k:
+        for item in ranked:
+            if item[0].chunk_id in selected_ids:
+                continue
+            selected.append(item)
+            selected_ids.add(item[0].chunk_id)
+            if len(selected) == top_k:
+                break
+
+    return selected
 
 
 def _score_chunk(chunk: RagChunk, query: RetrievalQuery) -> tuple[RetrievedContext, float]:
@@ -233,11 +198,13 @@ def _score_chunk(chunk: RagChunk, query: RetrievalQuery) -> tuple[RetrievedConte
     if query.gap_type and query.gap_type in chunk.gap_types:
         score += 0.45
 
-    if query.technology:
-        score += 0.45 * _technology_match_strength(chunk, query.technology)
+    if query.technology and _technology_matches(chunk, query.technology):
+        score += 0.3
 
     if query.keywords:
-        score += 0.45 * _keyword_match_strength(chunk, query.keywords)
+        matched = _keyword_hits(chunk, query.keywords)
+        if matched > 0:
+            score += 0.3 * min(matched / len(query.keywords), 1.0)
 
     score = min(score, 1.0)
     context = RetrievedContext(

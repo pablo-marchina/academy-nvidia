@@ -81,26 +81,29 @@ def run_acceptance(
             run = _request(
                 client,
                 "POST",
-                f"/startups/{created['id']}/analysis-runs",
+                "/workflows/product-runs",
                 steps,
-                json={"use_rag": True, "rag_backend": "qdrant"},
+                json={"startup_id": created["id"], "use_rag": True},
                 expected_status=201,
             )
-            if run["status"] != "completed":
-                raise RuntimeError(f"Product-like RAG analysis did not complete: {run['status']}")
+            if run["status"] not in {"completed", "degraded", "awaiting_review"}:
+                raise RuntimeError(f"Canonical product workflow did not produce an inspectable result: {run['status']}")
+            analysis_run_id = run.get("analysis_run_id")
+            if not analysis_run_id:
+                raise RuntimeError("Canonical workflow did not persist an analysis_run_id.")
 
-            claims = _request(client, "GET", f"/analysis-runs/{run['id']}/claims", steps)
+            claims = _request(client, "GET", f"/analysis-runs/{analysis_run_id}/claims", steps)
             if int(claims["total"]) < int(expected["min_claims"]):
                 raise RuntimeError(f"Claim count too low: {claims['total']}")
 
-            coverage = _request(client, "GET", f"/analysis-runs/{run['id']}/evidence-coverage", steps)
+            coverage = _request(client, "GET", f"/analysis-runs/{analysis_run_id}/evidence-coverage", steps)
             if int(coverage["total_claims"]) <= 0:
                 raise RuntimeError("Evidence coverage has no claims.")
 
             recommendations = _request(
                 client,
                 "POST",
-                f"/analysis-runs/{run['id']}/activation-recommendations/generate",
+                f"/analysis-runs/{analysis_run_id}/activation-recommendations/generate",
                 steps,
                 expected_status=201,
             )
@@ -110,7 +113,7 @@ def run_acceptance(
             dossier = _request(
                 client,
                 "POST",
-                f"/analysis-runs/{run['id']}/dossier",
+                f"/analysis-runs/{analysis_run_id}/dossier",
                 steps,
                 expected_status=201,
             )
@@ -120,7 +123,7 @@ def run_acceptance(
             quality = _request(
                 client,
                 "POST",
-                f"/analysis-runs/{run['id']}/quality-runs",
+                f"/analysis-runs/{analysis_run_id}/quality-runs",
                 steps,
                 expected_status=201,
             )
@@ -130,7 +133,7 @@ def run_acceptance(
             export = _request(
                 client,
                 "POST",
-                f"/analysis-runs/{run['id']}/exports",
+                f"/analysis-runs/{analysis_run_id}/exports",
                 steps,
                 json={"export_type": expected["export_type"]},
                 expected_status=201,
