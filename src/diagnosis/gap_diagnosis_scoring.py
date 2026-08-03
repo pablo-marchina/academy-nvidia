@@ -413,9 +413,17 @@ def extract_gap_confidence_features(
     source_category_coverage = 0.0
     if collection_metrics:
         categories = collection_metrics.get("source_categories_covered", [])
-        expected = collection_metrics.get("expected_categories", 8)
+        observed_count = (
+            len(categories)
+            if isinstance(categories, list)
+            else int(collection_metrics.get("source_category_count", 0) or 0)
+        )
+        minimums = collection_metrics.get("minimums", {})
+        expected = collection_metrics.get("expected_categories")
+        if not isinstance(expected, int | float) or expected <= 0:
+            expected = (minimums.get("source_category_count", 2) if isinstance(minimums, dict) else 2)
         if expected and expected > 0:
-            source_category_coverage = len(categories) / expected
+            source_category_coverage = min(1.0, observed_count / float(expected))
 
     # Normalize count-based features to [0, 1]
     _MAX_SUPPORTING_EVIDENCE = 15.0
@@ -565,12 +573,11 @@ def _diagnose_single_gap(
         for item in evidence_items
         if item.get("source_id") or item.get("source_url") or item.get("url")
     }
-    corroborated_absence = (
-        severity_features.relevant_signal_absence >= 0.5
-        and len(evidence_items) >= 3
-        and len(distinct_sources) >= 3
-        and confidence_features.contradiction_count == 0.0
-    )
+    # Absence of a public mention is not evidence that an operational gap
+    # exists. Three independent sources can corroborate a positive signal, but
+    # they cannot turn silence about latency, cost, governance, or MLOps into a
+    # factual diagnosis. Keep the field for audit compatibility and force it off.
+    corroborated_absence = False
     thresholds["observed_evidence_coverage"] = round(observed_evidence_coverage, 4)
     thresholds["corroborated_absence"] = 1.0 if corroborated_absence else 0.0
 
@@ -597,6 +604,8 @@ def _diagnose_single_gap(
 
     supporting_ids: list[str] = []
     for item in evidence_items:
+        if not related_keywords or not _text_contains_any(_evidence_text(item), related_keywords):
+            continue
         eid = item.get("id") or item.get("evidence_id") or ""
         if eid:
             supporting_ids.append(str(eid))

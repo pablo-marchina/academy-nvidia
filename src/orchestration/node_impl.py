@@ -951,6 +951,11 @@ def node_extract_profile(state: ProductWorkflowState) -> NodeResult:
         state_updates={
             "evidence_items": result.get("evidence_items", []),
             "startup_profile": result.get("startup_profile", {}),
+            "node_outputs": {
+                **state.node_outputs,
+                "claims": result.get("claims", []),
+                "extraction_metrics": result.get("extraction_metrics", {}),
+            },
         },
         degraded_reason="; ".join(errors[:5]) if errors else None,
     )
@@ -1068,6 +1073,9 @@ def node_diagnose_gaps(state: ProductWorkflowState) -> NodeResult:
     from src.diagnosis.gap_diagnosis_scoring import diagnose_gaps_quantitative
 
     accepted = state.node_outputs.get("validated_evidence", []) or state.evidence_items
+    claims = state.node_outputs.get("claims", [])
+    if not isinstance(claims, list):
+        claims = []
     evidence_validation = {
         "accepted_evidence_count": len(accepted),
         "raw_evidence_count": len(state.evidence_items),
@@ -1084,7 +1092,7 @@ def node_diagnose_gaps(state: ProductWorkflowState) -> NodeResult:
             evidence_items=state.evidence_items,
             accepted_evidence_items=accepted,
             rejected_evidence_items=[],
-            claims=[],
+            claims=claims,
             evidence_validation=evidence_validation,
             ai_native_score=float((state.scores or {}).get("probabilistic_score", (state.scores or {}).get("score", 0.0))),
             nvidia_fit_score=float((state.scores or {}).get("inception_fit", 0.0)),

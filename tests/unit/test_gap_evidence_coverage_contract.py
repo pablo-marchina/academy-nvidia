@@ -43,7 +43,7 @@ def test_gap_specific_coverage_compares_raw_ratio_not_normalized_feature() -> No
     assert gap.status != GapDiagnosisStatus.NEEDS_MORE_EVIDENCE
 
 
-def test_absence_is_reliable_only_when_three_sources_corroborate_it() -> None:
+def test_absence_across_three_sources_does_not_invent_an_operational_gap() -> None:
     gap_type = GapType.INFERENCE_PERFORMANCE_GAP
     evidence = [
         _evidence(1, "The company builds artificial intelligence products."),
@@ -61,9 +61,10 @@ def test_absence_is_reliable_only_when_three_sources_corroborate_it() -> None:
     gap = next(item for item in result.gaps if item.gap_type == gap_type)
 
     assert gap.thresholds["observed_evidence_coverage"] == 0.0
-    assert gap.thresholds["corroborated_absence"] == 1.0
-    assert gap.production_allowed is True
-    assert gap.status != GapDiagnosisStatus.NEEDS_MORE_EVIDENCE
+    assert gap.thresholds["corroborated_absence"] == 0.0
+    assert gap.production_allowed is False
+    assert gap.status == GapDiagnosisStatus.NEEDS_MORE_EVIDENCE
+    assert gap.supporting_evidence_ids == []
 
 
 def test_absence_from_two_sources_remains_blocked() -> None:
