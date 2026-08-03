@@ -24,8 +24,8 @@ def test_natural_quote_evidence_and_source_urls_make_relevant_gap_retrieval_elig
         evidence_items=evidence,
         accepted_evidence_items=evidence,
         collection_metrics={
-            "source_categories_covered": ["official_site", "news"],
-            "expected_categories": 2,
+            "source_category_count": 2,
+            "minimums": {"source_category_count": 2},
         },
         extraction_metrics={"total_extractions": 3, "failed_extractions": 0},
     )
@@ -34,6 +34,7 @@ def test_natural_quote_evidence_and_source_urls_make_relevant_gap_retrieval_elig
     assert cv_gap.production_allowed is True
     assert cv_gap.thresholds["observed_evidence_coverage"] == 1.0
     assert cv_gap.features.confidence.supporting_source_count > 0.0
+    assert cv_gap.features.confidence.source_category_coverage == 1.0
     assert len(cv_gap.supporting_evidence_ids) == 3
 
 
