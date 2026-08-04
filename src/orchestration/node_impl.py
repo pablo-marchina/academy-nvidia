@@ -727,7 +727,7 @@ def node_plan_search(state: ProductWorkflowState) -> NodeResult:
 # ---------------------------------------------------------------------------
 # Node 3: collect_sources
 # ---------------------------------------------------------------------------
-@_register("collect_sources", "Collect evidence from governed sources", critical=True)
+@_register("collect_sources", "Collect evidence from governed sources", critical=False)
 def node_collect_sources(state: ProductWorkflowState) -> NodeResult:
     if not state.search_plan:
         return NodeResult(
@@ -848,8 +848,10 @@ def node_collect_sources(state: ProductWorkflowState) -> NodeResult:
 
     critical_failures: list[str] = []
     degraded_failures: list[str] = []
-    if len(evidence_items) < min_raw:
-        critical_failures.append("minimum_raw_evidence_count_not_met")
+    if len(evidence_items) == 0:
+        critical_failures.append("no_raw_evidence_collected")
+    elif len(evidence_items) < min_raw:
+        degraded_failures.append("minimum_raw_evidence_count_not_met")
     if official_source_count < min_official:
         critical_failures.append("minimum_official_source_count_not_met")
     if len(distinct_sources) < min_distinct:
@@ -1256,7 +1258,7 @@ def node_retrieve_nvidia_context(state: ProductWorkflowState) -> NodeResult:
 # ---------------------------------------------------------------------------
 # Node 9: map_nvidia_technologies
 # ---------------------------------------------------------------------------
-@_register("map_nvidia_technologies", "Map NVIDIA technologies to diagnosed gaps", critical=True)
+@_register("map_nvidia_technologies", "Map NVIDIA technologies to diagnosed gaps", critical=False)
 def node_map_nvidia_technologies(state: ProductWorkflowState) -> NodeResult:
     gap_ids = state.gap_ids
     if not gap_ids:
@@ -1294,17 +1296,28 @@ def node_map_nvidia_technologies(state: ProductWorkflowState) -> NodeResult:
         persisted_mapping_ids = _persist_runtime_mappings(session, state, mappings)
     mapping_status = str(mapping_result.get("mapping_status", "failed"))
     node_outputs = {**state.node_outputs, "nvidia_mapping_result": mapping_result}
-    blocked = mapping_status in {"blocked_uncalibrated_mapping", "failed", "needs_more_evidence"}
-    product_blocked = _is_product_mode() and blocked
+    hard_blocked = mapping_status in {"blocked_uncalibrated_mapping", "failed"}
+    needs_more_evidence = mapping_status == "needs_more_evidence"
+    product_blocked = _is_product_mode() and hard_blocked
 
     return NodeResult(
-        status=NodeStatus.FAILED if product_blocked else (NodeStatus.DEGRADED if blocked else NodeStatus.COMPLETED),
+        status=(
+            NodeStatus.FAILED
+            if product_blocked
+            else NodeStatus.DEGRADED
+            if hard_blocked or needs_more_evidence
+            else NodeStatus.COMPLETED
+        ),
         state_updates={
             "nvidia_mappings": mappings,
             "mapping_ids": list(dict.fromkeys(state.mapping_ids + persisted_mapping_ids + [str(item.get("mapping_id", "")) for item in mappings if item.get("mapping_id")])),
             "node_outputs": node_outputs,
         },
-        degraded_reason=f"NVIDIA mapping status: {mapping_status}" if blocked and not product_blocked else None,
+        degraded_reason=(
+            f"NVIDIA mapping status: {mapping_status}"
+            if (hard_blocked or needs_more_evidence) and not product_blocked
+            else None
+        ),
         error_message=f"NVIDIA mapping status: {mapping_status}" if product_blocked else None,
     )
 
@@ -1498,7 +1511,7 @@ def node_generate_claims(state: ProductWorkflowState) -> NodeResult:
 # ---------------------------------------------------------------------------
 # Node 14: match_activation_playbooks
 # ---------------------------------------------------------------------------
-@_register("match_activation_playbooks", "Match activation playbooks to diagnosed gaps", critical=True)
+@_register("match_activation_playbooks", "Match activation playbooks to diagnosed gaps", critical=False)
 def node_match_activation_playbooks(state: ProductWorkflowState) -> NodeResult:
     session = cast(Session | None, state.metadata_json.get("_session"))
     if session is None:

@@ -65,7 +65,7 @@ from src.scraping.cache import scrape_cache
 from src.scraping.circuit_breaker import CircuitBreaker
 from src.scraping.content_quality import ContentQualityValidator, QualityIssue
 from src.scraping.domain_rate_limiter import DomainRateLimiter
-from src.scraping.fetcher import fetch_page
+from src.scraping.fetcher import FetchResult, fetch_page
 from src.scraping.fuzzy_dedup import DedupIndex
 from src.scraping.parser import extract_clean_text
 from src.scraping.rate_limit_policy import get_rate_limit_policy
@@ -972,11 +972,15 @@ class HttpSourceCollector:
         try:
             return _do_fetch()
         except (_RetryableServerOrRateLimitError, _RetryableNetwork) as exc:
-            if hasattr(exc, "args") and exc.args:
-                return exc.args[0]
+            payload = exc.args[0] if getattr(exc, "args", ()) else None
+            if isinstance(payload, FetchResult):
+                return payload
             return FetchResult(
-                url=url, status=None, raw_html="", fetched_at=datetime.now(UTC),
-                error=f"All {max_retries} retries exhausted",
+                url=url,
+                status=None,
+                raw_html="",
+                fetched_at=datetime.now(UTC),
+                error=str(payload or f"All {max_retries} retries exhausted"),
             )
 
     def _get_robots_checker(self, base_url: str, timeout: float) -> RobotsChecker:

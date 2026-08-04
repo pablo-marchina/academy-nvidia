@@ -117,7 +117,7 @@ def _build_evidence_item(
     upstream_evidence_id = source_candidate.get("evidence_id") or source_candidate.get("id")
 
     item: dict[str, Any] = {
-        "evidence_id": str(uuid.uuid4()),
+        "evidence_id": str(upstream_evidence_id or uuid.uuid4()),
         "claim": claim_text,
         "source_id": source_id,
         "source_url": source_url,

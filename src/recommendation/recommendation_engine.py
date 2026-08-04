@@ -706,7 +706,6 @@ def rank_recommendations_from_mappings(
     if mapping_status in (
         "blocked_uncalibrated_mapping",
         "failed",
-        "needs_more_evidence",
     ):
         return {
             "run_id": run_id,
