@@ -23,11 +23,14 @@ class WorkflowOrchestrationService:
         analysis_run_id: str | None = None,
         use_rag: bool = True,
         graph_version: str = "1.0",
+        initial_status: str = WorkflowStatus.QUEUED,
     ) -> Any:
         if not use_rag:
             raise ValueError("RAG is mandatory for the single product workflow; use_rag=false is not allowed.")
         if not any((startup_id, discovery_candidate_id, analysis_run_id)):
             raise ValueError("A startup_id, discovery_candidate_id, or analysis_run_id is required.")
+        if initial_status not in {WorkflowStatus.QUEUED, WorkflowStatus.RUNNING}:
+            raise ValueError("initial_status must be queued or running.")
 
         workflow_run = self.repo.create_workflow_run(
             startup_id=startup_id,
@@ -41,12 +44,15 @@ class WorkflowOrchestrationService:
             startup_id=startup_id,
             discovery_candidate_id=discovery_candidate_id,
             analysis_run_id=analysis_run_id,
-            status=WorkflowStatus.QUEUED,
+            status=initial_status,
             metadata_json={
                 "_rag_available": True,
                 "_langgraph_available": _has_langgraph(),
             },
         )
+        workflow_run.status = initial_status
+        if initial_status == WorkflowStatus.RUNNING:
+            workflow_run.started_at = datetime.now(UTC)
         workflow_run.state_json = state.model_dump(mode="json")
         self.session.commit()
         return workflow_run
@@ -106,6 +112,7 @@ class WorkflowOrchestrationService:
             analysis_run_id=analysis_run_id,
             use_rag=use_rag,
             graph_version=graph_version,
+            initial_status=WorkflowStatus.RUNNING,
         )
         return self.run_existing_workflow(run.id)
 
