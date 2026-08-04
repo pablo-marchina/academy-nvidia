@@ -42,12 +42,16 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Apply idempotent runtime repairs
-        run: python scripts/apply_runtime_repairs.py
+        run: |
+          python scripts/apply_runtime_repairs.py
+          python scripts/apply_evidence_id_repair.py
 
       - name: Validate changed Python syntax
         run: |
           python -m compileall -q \
             scripts/apply_runtime_repairs.py \
+            scripts/apply_evidence_id_repair.py \
+            src/agents/extractor_agent.py \
             src/scraping/http_collector.py \
             src/orchestration/node_impl.py \
             src/diagnosis/gap_diagnosis_scoring.py \
@@ -64,6 +68,8 @@ jobs:
         run: |
           ruff check --select E9,F63,F7,F82 \
             scripts/apply_runtime_repairs.py \
+            scripts/apply_evidence_id_repair.py \
+            src/agents/extractor_agent.py \
             src/scraping/http_collector.py \
             src/orchestration/node_impl.py \
             src/diagnosis/gap_diagnosis_scoring.py \
@@ -161,6 +167,7 @@ jobs:
           git config user.name "OpenAI Runtime Repair"
           git config user.email "runtime-repair@users.noreply.github.com"
           git add \
+            src/agents/extractor_agent.py \
             src/scraping/http_collector.py \
             src/orchestration/node_impl.py \
             src/diagnosis/gap_diagnosis_scoring.py \
