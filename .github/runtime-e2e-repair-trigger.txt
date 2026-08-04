@@ -1,1 +1,0 @@
-Triggers the serialized Runtime E2E Repair workflow after its push-only configuration was installed.
