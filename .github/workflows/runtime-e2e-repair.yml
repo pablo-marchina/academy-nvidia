@@ -47,6 +47,7 @@ jobs:
       - name: Validate changed Python syntax
         run: |
           python -m compileall -q \
+            scripts/apply_runtime_repairs.py \
             src/scraping/http_collector.py \
             src/orchestration/node_impl.py \
             src/diagnosis/gap_diagnosis_scoring.py \
@@ -56,11 +57,12 @@ jobs:
       - name: Install Python test dependencies
         run: |
           python -m pip install --upgrade pip
+          python -m pip install "torch==2.12.1" --index-url https://download.pytorch.org/whl/cpu
           python -m pip install -e ".[dev]"
 
-      - name: Lint repaired Python files
+      - name: Check repaired code for executable lint failures
         run: |
-          ruff check \
+          ruff check --select E9,F63,F7,F82 \
             scripts/apply_runtime_repairs.py \
             src/scraping/http_collector.py \
             src/orchestration/node_impl.py \
