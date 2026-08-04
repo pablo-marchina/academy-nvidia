@@ -166,7 +166,7 @@ jobs:
           Write-Host "Final dashboard output validated: items=$(@($dashboard.items).Count) analyzed_total=$($dashboard.analyzed_total)"
 
       - name: Commit validated repairs
-        if: success() && github.event_name == 'push'
+        if: success()
         shell: bash
         run: |
           if git diff --quiet && [ -z "$(git status --porcelain --untracked-files=all)" ]; then
