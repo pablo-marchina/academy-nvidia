@@ -61,6 +61,18 @@ function Invoke-JsonRequest {
         -Headers @{ Accept = "application/json" }
 }
 
+
+function Get-OptionalProperty {
+    param(
+        [Parameter(Mandatory)] [object]$Object,
+        [Parameter(Mandatory)] [string]$Name
+    )
+    if ($null -eq $Object) { return $null }
+    $property = $Object.PSObject.Properties[$Name]
+    if ($null -eq $property) { return $null }
+    return $property.Value
+}
+
 function Convert-ComposePsOutput {
     param([Parameter(Mandatory)] [object[]]$RawLines)
 
@@ -228,12 +240,12 @@ try {
     $analysisSummaries = @()
     foreach ($result in $pipelineResults) {
         $status = ([string]$result.status).ToLowerInvariant()
-        $errorText = [string]$result.error
+        $errorText = [string](Get-OptionalProperty -Object $result -Name "error")
+        $reason = [string](Get-OptionalProperty -Object $result -Name "degraded_reason")
         $forbidden = Test-ForbiddenRuntimeError -Text $errorText
         $statusAccepted = $acceptedStatuses -contains $status
         $runtimeClean = [string]::IsNullOrWhiteSpace($errorText) -and $null -eq $forbidden
         if ($status -eq "degraded") {
-            $reason = [string]$result.degraded_reason
             $runtimeClean = $null -eq (Test-ForbiddenRuntimeError -Text $reason)
             if ([string]::IsNullOrWhiteSpace($reason)) {
                 $runtimeClean = $false
@@ -242,7 +254,7 @@ try {
         Add-Check `
             -Name "pipeline.$([string]$result.startup_id)" `
             -Passed ($statusAccepted -and $runtimeClean) `
-            -Detail "status=$status error=$errorText degraded_reason=$([string]$result.degraded_reason)"
+            -Detail "status=$status error=$errorText degraded_reason=$reason"
 
         $runId = [string]$result.analysis_run_id
         if ([string]::IsNullOrWhiteSpace($runId)) {
@@ -252,7 +264,7 @@ try {
 
         $run = Invoke-JsonRequest -Method GET -Uri "${ApiBaseUrl}/analysis-runs/${runId}"
         $runStatus = ([string]$run.status).ToLowerInvariant()
-        $runError = [string]$run.error_message
+        $runError = [string](Get-OptionalProperty -Object $run -Name "error_message")
         $runForbidden = Test-ForbiddenRuntimeError -Text $runError
         Add-Check `
             -Name "analysis_run.${runId}" `
@@ -264,7 +276,7 @@ try {
             analysis_run_id = $runId
             workflow_id = [string]$result.workflow_id
             status = $runStatus
-            degraded_reason = [string]$run.degraded_reason
+            degraded_reason = [string](Get-OptionalProperty -Object $run -Name "degraded_reason")
             error_message = $runError
         }
     }

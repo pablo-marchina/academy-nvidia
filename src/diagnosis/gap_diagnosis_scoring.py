@@ -358,6 +358,9 @@ def extract_gap_severity_features(
     claim_texts = [str(c.get("claim_text", "")) for c in claims if isinstance(c, dict)]
     all_texts = ev_texts + ac_texts + claim_texts
 
+    matching_items = _matching_evidence_items(evidence_items, gap_type)
+    has_relevant_signal = bool(matching_items)
+
     related_tech_gaps = GAP_TECH_MAP.get(gap_type, [])
     related_keywords = _technical_gap_keywords(related_tech_gaps)
 
@@ -447,6 +450,8 @@ def extract_gap_confidence_features(
 
     related_tech_gaps = GAP_TECH_MAP.get(gap_type, [])
     related_keywords = _technical_gap_keywords(related_tech_gaps)
+
+    matching_items = _matching_evidence_items(evidence_items, gap_type)
 
     supporting_evidence_count = 0
     if related_keywords:
