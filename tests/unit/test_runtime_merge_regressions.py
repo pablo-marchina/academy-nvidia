@@ -75,3 +75,12 @@ def test_pipeline_results_expose_actionable_failure_details() -> None:
     assert '"error": error or None' in backend
     assert '"current_node": workflow.current_node' in backend
     assert "function runtimeItemDetail" in frontend
+
+
+def test_synchronous_workflow_is_reserved_before_worker_can_claim_it() -> None:
+    source = (ROOT / "src/orchestration/service.py").read_text(encoding="utf-8")
+    assert "initial_status: str = WorkflowStatus.QUEUED" in source
+    assert "initial_status=WorkflowStatus.RUNNING" in source
+    status_position = source.index("workflow_run.status = initial_status")
+    commit_position = source.index("self.session.commit()", status_position)
+    assert status_position < commit_position
