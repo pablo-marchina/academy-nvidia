@@ -45,12 +45,14 @@ jobs:
         run: |
           python scripts/apply_runtime_repairs.py
           python scripts/apply_evidence_id_repair.py
+          python scripts/apply_verifier_reason_repair.py
 
       - name: Validate changed Python syntax
         run: |
           python -m compileall -q \
             scripts/apply_runtime_repairs.py \
             scripts/apply_evidence_id_repair.py \
+            scripts/apply_verifier_reason_repair.py \
             src/agents/extractor_agent.py \
             src/scraping/http_collector.py \
             src/orchestration/node_impl.py \
@@ -69,6 +71,7 @@ jobs:
           ruff check --select E9,F63,F7,F82 \
             scripts/apply_runtime_repairs.py \
             scripts/apply_evidence_id_repair.py \
+            scripts/apply_verifier_reason_repair.py \
             src/agents/extractor_agent.py \
             src/scraping/http_collector.py \
             src/orchestration/node_impl.py \
