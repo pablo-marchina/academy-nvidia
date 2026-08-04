@@ -4,16 +4,13 @@ on:
   push:
     branches:
       - agent/runtime-e2e-repair
-  pull_request:
-    branches:
-      - main
 
 permissions:
   contents: write
 
 concurrency:
-  group: runtime-e2e-repair-${{ github.ref }}
-  cancel-in-progress: true
+  group: runtime-e2e-repair-agent-runtime-e2e-repair
+  cancel-in-progress: false
 
 jobs:
   repair-and-validate:
@@ -24,8 +21,9 @@ jobs:
       - name: Checkout repair branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref || github.ref_name }}
+          ref: agent/runtime-e2e-repair
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -187,6 +185,8 @@ jobs:
             tests/unit/test_runtime_repair_regressions.py \
             tests/unit/test_activation_playbook_abstention.py
           git commit -m "fix: validate product runtime end to end"
+          git fetch origin agent/runtime-e2e-repair
+          git rebase origin/agent/runtime-e2e-repair
           git push origin HEAD:agent/runtime-e2e-repair
 
       - name: Capture diagnostics
